@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { Globe, Video, Camera, MapPin, Mail, Phone } from "lucide-react";
+import { MapPin, Mail, Phone } from "lucide-react";
+import { IconFacebook, IconInstagram, IconYoutube } from "@/components/icons/social-inline";
+
+const socialFacebook = process.env.NEXT_PUBLIC_SOCIAL_FACEBOOK ?? "#";
+const socialInstagram = process.env.NEXT_PUBLIC_SOCIAL_INSTAGRAM ?? "#";
+const socialYoutube = process.env.NEXT_PUBLIC_SOCIAL_YOUTUBE ?? "#";
 
 export function Footer() {
   return (
@@ -11,15 +16,27 @@ export function Footer() {
             A branch of Kingdom Temple led by Bishop Climate Wiseman. Inspiring faith, empowering lives, and advancing the Kingdom of God.
           </p>
           <div className="flex space-x-4 pt-2">
-              <Link href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-accent hover:text-primary transition-colors">
-                <Globe className="w-5 h-5" />
-              </Link>
-              <Link href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-accent hover:text-primary transition-colors">
-                <Video className="w-5 h-5" />
-              </Link>
-              <Link href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-accent hover:text-primary transition-colors">
-                <Camera className="w-5 h-5" />
-              </Link>
+            <Link
+              href={socialFacebook}
+              className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-accent hover:text-primary transition-colors"
+              aria-label="Facebook"
+            >
+              <IconFacebook className="w-5 h-5" />
+            </Link>
+            <Link
+              href={socialInstagram}
+              className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-accent hover:text-primary transition-colors"
+              aria-label="Instagram"
+            >
+              <IconInstagram className="w-5 h-5" />
+            </Link>
+            <Link
+              href={socialYoutube}
+              className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-accent hover:text-primary transition-colors"
+              aria-label="YouTube"
+            >
+              <IconYoutube className="w-5 h-5" />
+            </Link>
           </div>
         </div>
         
