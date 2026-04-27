@@ -1,0 +1,36 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Navigate to the project directory
+            cd /home/n767765/kdcuganda.org/
+            
+            # Pull the latest changes from the main branch
+            git pull origin main
+            
+            # Install dependencies
+            npm install
+            
+            # Build the Next.js production app
+            # Temporarily rejecting TLS since you are using a self-signed cert for Supabase
+            NODE_TLS_REJECT_UNAUTHORIZED=0 npm run build
+            
+            # Restart the Next.js application
+            # If you are using PM2 (recommended), you can restart it here.
+            # Replace 'kingdom-deliverance' with your actual pm2 process name if different.
+            pm2 restart kingdom-deliverance || pm2 start npm --name "kingdom-deliverance" -- run start
