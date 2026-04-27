@@ -20,15 +20,17 @@ jobs:
             # Navigate to the project directory
             cd /home/n767765/kdcuganda.org/
             
+            # Fix the "dubious ownership" git error
+            git config --global --add safe.directory /home/n767765/kdcuganda.org
+            
             # Pull the latest changes from the main branch
             git pull origin main
             
-            # Install dependencies
-            npm install
+            # Install dependencies with lower memory footprint
+            npm ci --no-audit --no-fund --prefer-offline || npm install --no-audit --no-fund
             
-            # Build the Next.js production app
-            # Temporarily rejecting TLS since you are using a self-signed cert for Supabase
-            NODE_TLS_REJECT_UNAUTHORIZED=0 npm run build
+            # Build the Next.js production app (Limit Node memory to prevent OOM kills)
+            NODE_OPTIONS="--max-old-space-size=1024" NODE_TLS_REJECT_UNAUTHORIZED=0 npm run build
             
             # Restart the Next.js application
             # If you are using PM2 (recommended), you can restart it here.
