@@ -14,6 +14,9 @@ const links = [
   { name: "Sermons", href: "/sermons" },
   { name: "Events", href: "/events" },
   { name: "Blog", href: "/blog" },
+  { name: "Gallery", href: "/gallery" },
+  { name: "Live", href: "/live" },
+  { name: "Contact", href: "/contact" },
 ];
 
 export function Navbar() {

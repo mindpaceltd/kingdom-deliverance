@@ -1,4 +1,14 @@
-import { LayoutDashboard, FileText, Video, Calendar, Users, Settings, LogOut } from "lucide-react";
+import {
+  LayoutDashboard,
+  FileText,
+  Video,
+  Calendar,
+  Users,
+  Settings,
+  LogOut,
+  Images,
+  FileCog,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -21,6 +31,8 @@ export default function AdminLayout({
           <SidebarLink href="/admin/posts" icon={<FileText className="w-5 h-5" />} label="Posts & Blogs" />
           <SidebarLink href="/admin/sermons" icon={<Video className="w-5 h-5" />} label="Sermons" />
           <SidebarLink href="/admin/events" icon={<Calendar className="w-5 h-5" />} label="Events" />
+          <SidebarLink href="/admin/media" icon={<Images className="w-5 h-5" />} label="Media Library" />
+          <SidebarLink href="/admin/pages" icon={<FileCog className="w-5 h-5" />} label="Pages Manager" />
           <SidebarLink href="/admin/users" icon={<Users className="w-5 h-5" />} label="Users" />
           <SidebarLink href="/admin/settings" icon={<Settings className="w-5 h-5" />} label="Settings" />
         </nav>

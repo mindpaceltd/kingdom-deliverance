@@ -3,6 +3,14 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: [],
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+    ],
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },

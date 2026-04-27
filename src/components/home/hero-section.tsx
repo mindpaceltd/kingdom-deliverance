@@ -39,7 +39,7 @@ export function HeroSection() {
               <Link href="/about">Plan a Visit</Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-primary text-lg w-full sm:w-auto bg-transparent">
-              <Link href="/sermons">Watch Live</Link>
+              <Link href="/live">Watch Live</Link>
             </Button>
           </div>
         </motion.div>

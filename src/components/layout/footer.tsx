@@ -30,6 +30,9 @@ export function Footer() {
             <li><Link href="/ministries" className="hover:text-accent transition-colors">Ministries</Link></li>
             <li><Link href="/sermons" className="hover:text-accent transition-colors">Latest Sermons</Link></li>
             <li><Link href="/events" className="hover:text-accent transition-colors">Upcoming Events</Link></li>
+            <li><Link href="/gallery" className="hover:text-accent transition-colors">Gallery</Link></li>
+            <li><Link href="/live" className="hover:text-accent transition-colors">Watch Live</Link></li>
+            <li><Link href="/contact" className="hover:text-accent transition-colors">Contact</Link></li>
             <li><Link href="/donations" className="hover:text-accent transition-colors">Give Online</Link></li>
           </ul>
         </div>
