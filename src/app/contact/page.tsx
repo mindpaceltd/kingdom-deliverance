@@ -1,0 +1,132 @@
+"use client";
+
+import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { MapPin, Phone, Mail, Clock, CheckCircle, Loader2 } from "lucide-react";
+
+export default function ContactPage() {
+  const [form, setForm] = useState({ name: "", email: "", phone: "", subject: "", message: "" });
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    const supabase = createClient();
+    const { error: dbError } = await supabase.from("contact_submissions").insert(form);
+    if (dbError) {
+      setError("Failed to send message. Please try again.");
+    } else {
+      setSuccess(true);
+      setForm({ name: "", email: "", phone: "", subject: "", message: "" });
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="flex flex-col">
+      {/* Hero */}
+      <section className="py-28 bg-primary text-white">
+        <div className="container text-center px-4">
+          <span className="inline-block py-1 px-3 rounded-full bg-accent/20 border border-accent/50 text-accent font-medium text-sm tracking-wider uppercase mb-6">
+            Get In Touch
+          </span>
+          <h1 className="font-serif text-5xl md:text-6xl font-bold">Contact Us</h1>
+          <p className="text-white/80 text-lg mt-4 max-w-xl mx-auto">
+            We would love to hear from you. Reach out to us with any questions, prayer requests, or to learn more about our church.
+          </p>
+        </div>
+      </section>
+
+      {/* Contact Content */}
+      <section className="py-20 bg-white">
+        <div className="container px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 max-w-5xl mx-auto">
+            {/* Info */}
+            <div className="space-y-10">
+              <div>
+                <h2 className="font-serif text-3xl font-bold text-primary mb-6">Find Us</h2>
+                <div className="space-y-6">
+                  {[
+                    { icon: <MapPin className="w-5 h-5 text-accent" />, label: "Address", value: "123 Deliverance Way, Kampala, Uganda" },
+                    { icon: <Phone className="w-5 h-5 text-accent" />, label: "Phone", value: "+256 700 000 000" },
+                    { icon: <Mail className="w-5 h-5 text-accent" />, label: "Email", value: "info@kdcuganda.org" },
+                    { icon: <Clock className="w-5 h-5 text-accent" />, label: "Service Times", value: "Sunday: 9:00 AM & 11:30 AM\nWednesday: 6:30 PM\nFriday: 6:30 PM" },
+                  ].map((item) => (
+                    <div key={item.label} className="flex gap-4">
+                      <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0">{item.icon}</div>
+                      <div>
+                        <p className="font-semibold text-primary">{item.label}</p>
+                        <p className="text-primary/70 whitespace-pre-line mt-0.5">{item.value}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Map */}
+              <div className="rounded-2xl overflow-hidden shadow-lg h-64 bg-muted">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d255281.19872065478!2d32.29032!3d0.3476!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x177dbc0f9d74b39b%3A0x4099d33b10770b2!2sKampala%2C%20Uganda!5e0!3m2!1sen!2sus!4v1234567890"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                />
+              </div>
+            </div>
+
+            {/* Form */}
+            <div>
+              <h2 className="font-serif text-3xl font-bold text-primary mb-6">Send a Message</h2>
+              {success ? (
+                <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
+                  <CheckCircle className="w-16 h-16 text-green-500" />
+                  <h3 className="font-serif text-2xl font-bold text-primary">Message Sent!</h3>
+                  <p className="text-primary/70">Thank you for reaching out. We will get back to you as soon as possible.</p>
+                  <Button onClick={() => setSuccess(false)} variant="outline" className="border-primary text-primary mt-4">Send Another Message</Button>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div className="space-y-2">
+                      <Label htmlFor="contact-name">Full Name *</Label>
+                      <Input id="contact-name" placeholder="John Doe" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="contact-email">Email *</Label>
+                      <Input id="contact-email" type="email" placeholder="john@example.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contact-phone">Phone (optional)</Label>
+                    <Input id="contact-phone" placeholder="+256 700 000 000" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contact-subject">Subject *</Label>
+                    <Input id="contact-subject" placeholder="How can we help?" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contact-message">Message *</Label>
+                    <Textarea id="contact-message" placeholder="Write your message here..." rows={6} value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} required />
+                  </div>
+                  {error && <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</div>}
+                  <Button type="submit" disabled={loading} className="w-full bg-accent text-primary hover:bg-accent/90 h-12 font-semibold text-base">
+                    {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...</> : "Send Message"}
+                  </Button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

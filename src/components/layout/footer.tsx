@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Facebook, Youtube, Instagram, MapPin, Mail, Phone } from "lucide-react";
+import { Globe, Video, Camera, MapPin, Mail, Phone } from "lucide-react";
 
 export function Footer() {
   return (
@@ -11,9 +11,15 @@ export function Footer() {
             A branch of Kingdom Temple led by Bishop Climate Wiseman. Inspiring faith, empowering lives, and advancing the Kingdom of God.
           </p>
           <div className="flex space-x-4 pt-2">
-            <Link href="#" className="text-white/80 hover:text-accent transition-colors"><Facebook className="w-5 h-5" /></Link>
-            <Link href="#" className="text-white/80 hover:text-accent transition-colors"><Youtube className="w-5 h-5" /></Link>
-            <Link href="#" className="text-white/80 hover:text-accent transition-colors"><Instagram className="w-5 h-5" /></Link>
+              <Link href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-accent hover:text-primary transition-colors">
+                <Globe className="w-5 h-5" />
+              </Link>
+              <Link href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-accent hover:text-primary transition-colors">
+                <Video className="w-5 h-5" />
+              </Link>
+              <Link href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-accent hover:text-primary transition-colors">
+                <Camera className="w-5 h-5" />
+              </Link>
           </div>
         </div>
         

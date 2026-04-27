@@ -1,0 +1,91 @@
+
+> kingdom-deliverance@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.35
+  - Environments: .env.local
+
+(node:2934) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests insecure by disabling certificate verification.
+(Use `node --trace-warnings ...` to show where the warning was created)
+   Creating an optimized production build ...
+(node:2942) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests insecure by disabling certificate verification.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2948) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+Failed to compile.
+
+./src/app/globals.css.webpack[javascript/auto]!=!./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[3]!./src/app/globals.css
+Error: Cannot find module 'tailwindcss-animate'
+Require stack:
+- /Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/tailwind.config.ts
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1409:15)
+    at /Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/server/require-hook.js:55:36
+    at Function.resolve (node:internal/modules/helpers:145:19)
+    at _resolve (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/jiti/dist/jiti.js:1:246378)
+    at jiti (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/jiti/dist/jiti.js:1:249092)
+    at /Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/tailwind.config.ts:81:13
+    at evalModule (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/jiti/dist/jiti.js:1:251913)
+    at jiti (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/jiti/dist/jiti.js:1:249841)
+    at /Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/tailwindcss/lib/lib/load-config.js:53:30
+    at loadConfig (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/tailwindcss/lib/lib/load-config.js:55:6)
+
+Import trace for requested module:
+./src/app/globals.css.webpack[javascript/auto]!=!./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[3]!./src/app/globals.css
+./src/app/globals.css
+
+./src/app/globals.css
+Error: Cannot find module 'tailwindcss-animate'
+Require stack:
+- /Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/tailwind.config.ts
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1409:15)
+    at /Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/server/require-hook.js:55:36
+    at Function.resolve (node:internal/modules/helpers:145:19)
+    at _resolve (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/jiti/dist/jiti.js:1:246378)
+    at jiti (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/jiti/dist/jiti.js:1:249092)
+    at /Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/tailwind.config.ts:81:13
+    at evalModule (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/jiti/dist/jiti.js:1:251913)
+    at jiti (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/jiti/dist/jiti.js:1:249841)
+    at /Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/tailwindcss/lib/lib/load-config.js:53:30
+    at loadConfig (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/tailwindcss/lib/lib/load-config.js:55:6)
+    at tryRunOrWebpackError (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/compiled/webpack/bundle5.js:28:312989)
+    at __webpack_require_module__ (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/compiled/webpack/bundle5.js:28:131165)
+    at __nested_webpack_require_153728__ (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/compiled/webpack/bundle5.js:28:130607)
+    at /Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/compiled/webpack/bundle5.js:28:131454
+    at symbolIterator (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/compiled/neo-async/async.js:1:14444)
+    at done (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/compiled/neo-async/async.js:1:14824)
+    at Hook.eval [as callAsync] (eval at create (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/compiled/webpack/bundle5.js:13:28858), <anonymous>:15:1)
+    at Hook.CALL_ASYNC_DELEGATE [as _callAsync] (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/compiled/webpack/bundle5.js:13:26012)
+    at /Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/compiled/webpack/bundle5.js:28:130328
+    at symbolIterator (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/compiled/neo-async/async.js:1:14402)
+-- inner error --
+Error: Cannot find module 'tailwindcss-animate'
+Require stack:
+- /Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/tailwind.config.ts
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1409:15)
+    at /Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/server/require-hook.js:55:36
+    at Function.resolve (node:internal/modules/helpers:145:19)
+    at _resolve (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/jiti/dist/jiti.js:1:246378)
+    at jiti (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/jiti/dist/jiti.js:1:249092)
+    at /Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/tailwind.config.ts:81:13
+    at evalModule (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/jiti/dist/jiti.js:1:251913)
+    at jiti (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/jiti/dist/jiti.js:1:249841)
+    at /Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/tailwindcss/lib/lib/load-config.js:53:30
+    at loadConfig (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/tailwindcss/lib/lib/load-config.js:55:6)
+    at Object.<anonymous> (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[2]!/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[3]!/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/src/app/globals.css:1:7)
+    at /Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/compiled/webpack/bundle5.js:28:922493
+    at Hook.eval [as call] (eval at create (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/compiled/webpack/bundle5.js:13:28636), <anonymous>:7:1)
+    at Hook.CALL_DELEGATE [as _call] (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/compiled/webpack/bundle5.js:13:25906)
+    at /Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/compiled/webpack/bundle5.js:28:131198
+    at tryRunOrWebpackError (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/compiled/webpack/bundle5.js:28:312943)
+    at __webpack_require_module__ (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/compiled/webpack/bundle5.js:28:131165)
+    at __nested_webpack_require_153728__ (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/compiled/webpack/bundle5.js:28:130607)
+    at /Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/compiled/webpack/bundle5.js:28:131454
+    at symbolIterator (/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/compiled/neo-async/async.js:1:14444)
+
+Generated code for /Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[2]!/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[3]!/Users/mindpace/.gemini/antigravity/scratch/kingdom-deliverance/src/app/globals.css
+
+Import trace for requested module:
+./src/app/globals.css
+
+
+> Build failed because of webpack errors

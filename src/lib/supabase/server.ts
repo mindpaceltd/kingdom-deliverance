@@ -2,10 +2,11 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
+import https from 'https'
+
 // Self-hosted Supabase uses a self-signed cert — disable TLS verification on Node.js side.
 // In production with a valid cert, remove this.
 const fetchWithInsecure = (input: RequestInfo | URL, init?: RequestInit) => {
-  const https = require('https')
   const agent = new https.Agent({ rejectUnauthorized: false })
   return fetch(input, { ...init, ...(agent ? { agent } : {}) } as RequestInit)
 }
@@ -28,7 +29,7 @@ export function createClient() {
         set(name: string, value: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value, ...options })
-          } catch (error) {
+          } catch {
             // The `set` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing
             // user sessions.
@@ -37,7 +38,7 @@ export function createClient() {
         remove(name: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value: '', ...options })
-          } catch (error) {
+          } catch {
             // The `delete` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing
             // user sessions.
