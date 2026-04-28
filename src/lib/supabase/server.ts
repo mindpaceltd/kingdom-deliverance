@@ -2,8 +2,6 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
-import { fetchWithInsecure } from './fetch'
-
 export function createClient() {
   const cookieStore = cookies()
 
@@ -11,10 +9,6 @@ export function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      global: {
-        // Bypass self-signed SSL on server side
-        fetch: fetchWithInsecure,
-      },
       cookies: {
         get(name: string) {
           return cookieStore.get(name)?.value
@@ -23,18 +17,14 @@ export function createClient() {
           try {
             cookieStore.set({ name, value, ...options })
           } catch {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
+            // Called from a Server Component — safe to ignore
           }
         },
         remove(name: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value: '', ...options })
           } catch {
-            // The `delete` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
+            // Called from a Server Component — safe to ignore
           }
         },
       },
@@ -43,17 +33,14 @@ export function createClient() {
 }
 
 /**
- * Admin client with service role key — bypasses RLS.
- * ONLY use in Server Actions, API routes, or server-side code. Never expose to the client.
+ * Admin client — bypasses RLS via service role key.
+ * ONLY use in Server Actions or API routes. Never expose to the browser.
  */
 export function createAdminClient() {
   return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
-      global: {
-        fetch: fetchWithInsecure,
-      },
       auth: {
         autoRefreshToken: false,
         persistSession: false,

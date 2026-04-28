@@ -1,6 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { fetchWithInsecure } from './lib/supabase/fetch'
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -9,9 +8,6 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      global: {
-        fetch: fetchWithInsecure,
-      },
       cookies: {
         getAll() {
           return request.cookies.getAll()
@@ -27,6 +23,7 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+  // Refresh session if expired
   const { data: { user } } = await supabase.auth.getUser()
 
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
