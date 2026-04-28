@@ -1,10 +1,19 @@
-import https from 'https'
-
 /**
- * Self-hosted Supabase uses a self-signed cert — disable TLS verification on Node.js side.
- * In production with a valid cert, you can remove this or set rejectUnauthorized to true.
+ * Utility to handle fetch requests to a self-hosted Supabase instance.
+ * In Node.js environment (Server Components/Actions), it bypasses self-signed certificate checks.
+ * In Edge environment (Middleware), it falls back to standard fetch.
  */
-export const fetchWithInsecure = (input: RequestInfo | URL, init?: RequestInit) => {
-  const agent = new https.Agent({ rejectUnauthorized: false })
-  return fetch(input, { ...init, ...(agent ? { agent } : {}) } as RequestInit)
+export const fetchWithInsecure = async (input: RequestInfo | URL, init?: RequestInit) => {
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    try {
+      const https = await import('https')
+      const agent = new https.Agent({ rejectUnauthorized: false })
+      return fetch(input, { ...init, ...(agent ? { agent } : {}) } as any)
+    } catch (e) {
+      console.error('Failed to load https module in Node.js runtime:', e)
+    }
+  }
+
+  // Fallback for Edge Runtime or Browser
+  return fetch(input, init)
 }
