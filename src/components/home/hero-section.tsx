@@ -2,57 +2,59 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Play, ArrowRight, Sparkles, Heart } from "lucide-react";
+import { Play, ArrowRight, Sparkles, Heart, Clock } from "lucide-react";
 import Link from "next/link";
 
 export function HeroSection() {
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden">
-      {/* Animated Background */}
+      {/* Background */}
       <div className="absolute inset-0 z-0">
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat parallax-bg"
-          style={{ 
-            backgroundImage: "url('https://images.unsplash.com/photo-1438232992991-995b7058bbb3?q=80&w=2073&auto=format&fit=crop')" 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1438232992991-995b7058bbb3?q=80&w=2073&auto=format&fit=crop')",
           }}
         />
-        <div className="absolute inset-0 gradient-primary opacity-85" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/20 to-primary/60" />
-        
-        {/* Floating Elements */}
-        <div className="absolute top-20 left-10 w-2 h-2 bg-accent/30 rounded-full float-animation" style={{ animationDelay: '0s' }} />
-        <div className="absolute top-40 right-20 w-3 h-3 bg-accent/20 rounded-full float-animation" style={{ animationDelay: '2s' }} />
-        <div className="absolute bottom-40 left-20 w-1 h-1 bg-accent/40 rounded-full float-animation" style={{ animationDelay: '4s' }} />
+        {/* Dark overlay for readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0d1b3e]/90 via-[#0d1b3e]/80 to-[#0d1b3e]/95" />
+
+        {/* Subtle floating orbs */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl float-animation" style={{ animationDelay: "0s" }} />
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl float-animation" style={{ animationDelay: "3s" }} />
       </div>
 
-      <div className="container relative z-10 text-center text-white px-4">
+      {/* Content */}
+      <div className="container relative z-10 px-4 py-32 text-center text-white">
         <motion.div
-          initial={{ opacity: 0, y: 50 }}
+          initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, ease: "easeOut" }}
-          className="mx-auto max-w-5xl space-y-8"
+          transition={{ duration: 0.9, ease: "easeOut" }}
+          className="mx-auto max-w-4xl space-y-8"
         >
           {/* Badge */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={{ opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="inline-flex items-center gap-3 rounded-full glass-morphism px-6 py-3 text-sm font-medium uppercase tracking-[0.25em] text-white/90 pulse-glow"
+            transition={{ duration: 0.7, delay: 0.2 }}
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-white/90"
           >
-            <Sparkles className="w-4 h-4 text-accent" />
+            <Sparkles className="w-3.5 h-3.5 text-accent" />
             Welcome to Kingdom Deliverance Centre Uganda
-            <Heart className="w-4 h-4 text-accent" />
+            <Heart className="w-3.5 h-3.5 text-accent" />
           </motion.div>
 
-          {/* Main Heading */}
+          {/* Heading */}
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.4 }}
-            className="font-serif text-5xl font-bold leading-tight md:text-7xl lg:text-8xl"
+            transition={{ duration: 0.9, delay: 0.35 }}
+            className="font-serif text-5xl font-bold leading-[1.1] tracking-tight md:text-6xl lg:text-7xl"
           >
-            Encounter God, <br />
-            <span className="text-gradient bg-gradient-to-r from-accent to-yellow-300 bg-clip-text text-transparent">
+            Encounter God,{" "}
+            <br className="hidden sm:block" />
+            <span className="bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent">
               Experience Deliverance.
             </span>
           </motion.h1>
@@ -61,40 +63,40 @@ export function HeroSection() {
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="mx-auto max-w-3xl text-lg leading-relaxed text-white/90 md:text-xl lg:text-2xl"
+            transition={{ duration: 0.8, delay: 0.5 }}
+            className="mx-auto max-w-2xl text-base leading-relaxed text-white/80 md:text-lg lg:text-xl"
           >
-            Join us this Sunday as we worship together, grow in faith, and experience the 
-            <span className="text-accent font-semibold"> transformative power </span>
+            Join us this Sunday as we worship together, grow in faith, and experience the{" "}
+            <span className="font-semibold text-accent">transformative power</span>{" "}
             of the Holy Spirit in our lives.
           </motion.p>
 
-          {/* Call to Action Buttons */}
+          {/* CTA Buttons */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
-            className="flex flex-col items-center justify-center gap-6 pt-8 sm:flex-row"
+            transition={{ duration: 0.8, delay: 0.65 }}
+            className="flex flex-col items-center justify-center gap-4 sm:flex-row"
           >
-            <Button 
-              asChild 
-              size="lg" 
-              className="group w-full gradient-accent text-primary font-semibold hover:scale-105 hover:shadow-2xl hover:shadow-accent/30 sm:w-auto transition-all duration-300"
+            <Button
+              asChild
+              size="lg"
+              className="group w-full sm:w-auto bg-accent hover:bg-accent/90 text-primary font-bold px-8 py-6 text-base rounded-full shadow-lg shadow-accent/30 hover:shadow-accent/50 hover:scale-105 transition-all duration-300"
             >
               <Link href="/about" className="flex items-center gap-2">
                 Plan a Visit
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
               </Link>
             </Button>
-            
-            <Button 
-              asChild 
-              size="lg" 
-              variant="outline" 
-              className="group w-full glass-morphism border-white/30 text-white hover:scale-105 hover:bg-white/10 hover:border-accent/50 sm:w-auto transition-all duration-300"
+
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="group w-full sm:w-auto border-white/30 bg-white/10 backdrop-blur-md text-white hover:bg-white/20 hover:border-white/50 hover:scale-105 px-8 py-6 text-base rounded-full transition-all duration-300"
             >
               <Link href="/live" className="flex items-center gap-2">
-                <Play className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
+                <Play className="w-4 h-4 fill-current" />
                 Watch Live
               </Link>
             </Button>
@@ -104,23 +106,30 @@ export function HeroSection() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1 }}
-            className="pt-12"
+            transition={{ duration: 0.8, delay: 0.8 }}
+            className="mx-auto max-w-2xl"
           >
-            <div className="glass-morphism rounded-2xl p-6 mx-auto max-w-2xl">
-              <h3 className="text-lg font-semibold text-accent mb-4">Join Us This Week</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div className="text-center">
+            <div className="rounded-2xl border border-white/15 bg-white/8 backdrop-blur-md p-6">
+              <div className="flex items-center justify-center gap-2 mb-5">
+                <Clock className="w-4 h-4 text-accent" />
+                <span className="text-sm font-semibold uppercase tracking-widest text-accent">
+                  Join Us This Week
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="text-center space-y-1">
                   <div className="font-semibold text-white">Sunday Service</div>
-                  <div className="text-white/70">9:00 AM - 12:00 PM</div>
+                  <div className="text-white/60 text-xs">9:00 AM – 12:00 PM</div>
                 </div>
-                <div className="text-center">
+                <div className="relative text-center space-y-1">
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-px h-8 bg-white/15" />
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-8 bg-white/15" />
                   <div className="font-semibold text-white">Bible Study</div>
-                  <div className="text-white/70">Wednesday 6:00 PM</div>
+                  <div className="text-white/60 text-xs">Wednesday 6:00 PM</div>
                 </div>
-                <div className="text-center">
+                <div className="text-center space-y-1">
                   <div className="font-semibold text-white">Prayer Meeting</div>
-                  <div className="text-white/70">Friday 6:00 PM</div>
+                  <div className="text-white/60 text-xs">Friday 6:00 PM</div>
                 </div>
               </div>
             </div>
@@ -128,15 +137,18 @@ export function HeroSection() {
         </motion.div>
       </div>
 
-      {/* Scroll Indicator */}
+      {/* Scroll indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1, delay: 1.2 }}
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2"
       >
-        <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-accent rounded-full mt-2 animate-bounce" />
+        <div className="flex flex-col items-center gap-1">
+          <span className="text-white/40 text-xs tracking-widest uppercase">Scroll</span>
+          <div className="w-5 h-8 border border-white/25 rounded-full flex justify-center pt-1.5">
+            <div className="w-0.5 h-2 bg-accent rounded-full animate-bounce" />
+          </div>
         </div>
       </motion.div>
     </section>

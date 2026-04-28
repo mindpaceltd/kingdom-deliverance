@@ -85,11 +85,6 @@
   
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    background: 
-      radial-gradient(circle at 25% 0%, hsl(var(--accent) / 0.05) 0%, transparent 50%),
-      radial-gradient(circle at 75% 100%, hsl(var(--primary) / 0.03) 0%, transparent 50%),
-      linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--secondary) / 0.3) 100%);
-    background-attachment: fixed;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -121,9 +116,18 @@
 
 @layer utilities {
   .glass-morphism {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .bg-white\/8 {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .bg-accent\/8 {
+    background-color: hsl(var(--accent) / 0.08);
   }
 
   .glass-morphism-dark {
