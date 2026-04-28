@@ -33,14 +33,16 @@ export default async function EventsPage() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="py-28 bg-primary text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=2069&auto=format&fit=crop')" }} />
+      <section className="relative py-40 text-white overflow-hidden">
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=2069&auto=format&fit=crop')" }} />
+        <div className="absolute inset-0 bg-[#0d1b3e]/88" />
         <div className="container relative z-10 text-center px-4">
-          <span className="inline-block py-1 px-3 rounded-full bg-accent/20 border border-accent/50 text-accent font-medium text-sm tracking-wider uppercase mb-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-5 py-2 text-sm font-semibold text-accent mb-8">
             What&apos;s Happening
-          </span>
-          <h1 className="font-serif text-5xl md:text-6xl font-bold">Upcoming Events</h1>
-          <p className="text-white/80 text-lg mt-4 max-w-xl mx-auto">
+          </div>
+          <h1 className="font-serif text-5xl md:text-6xl font-bold text-white leading-tight">Upcoming Events</h1>
+          <div className="mx-auto mt-5 h-1 w-20 rounded-full bg-accent" />
+          <p className="mt-6 text-white/90 text-lg md:text-xl max-w-xl mx-auto">
             Join us for powerful services, conferences, outreaches and special programs.
           </p>
         </div>

@@ -32,14 +32,15 @@ export default function ContactPage() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="py-28 bg-primary text-white">
+      <section className="relative py-40 bg-[#0d1b3e] text-white">
         <div className="container text-center px-4">
-          <span className="inline-block py-1 px-3 rounded-full bg-accent/20 border border-accent/50 text-accent font-medium text-sm tracking-wider uppercase mb-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-5 py-2 text-sm font-semibold text-accent mb-8">
             Get In Touch
-          </span>
-          <h1 className="font-serif text-5xl md:text-6xl font-bold">Contact Us</h1>
-          <p className="text-white/80 text-lg mt-4 max-w-xl mx-auto">
-            We would love to hear from you. Reach out to us with any questions, prayer requests, or to learn more about our church.
+          </div>
+          <h1 className="font-serif text-5xl md:text-6xl font-bold text-white leading-tight">Contact Us</h1>
+          <div className="mx-auto mt-5 h-1 w-20 rounded-full bg-accent" />
+          <p className="mt-6 text-white/90 text-lg md:text-xl max-w-xl mx-auto">
+            We would love to hear from you. Reach out with any questions, prayer requests, or to learn more about our church.
           </p>
         </div>
       </section>

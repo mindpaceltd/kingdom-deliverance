@@ -13,14 +13,15 @@ export default function LivePage() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="py-20 bg-primary text-white">
+      <section className="relative py-40 bg-[#0d1b3e] text-white">
         <div className="container text-center px-4">
           <div className="flex items-center justify-center gap-3 mb-6">
             <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
             <span className="text-red-400 font-bold text-sm tracking-wider uppercase">Live Now</span>
           </div>
-          <h1 className="font-serif text-5xl md:text-6xl font-bold">Watch Live</h1>
-          <p className="text-white/80 text-lg mt-4 max-w-xl mx-auto">
+          <h1 className="font-serif text-5xl md:text-6xl font-bold text-white leading-tight">Watch Live</h1>
+          <div className="mx-auto mt-5 h-1 w-20 rounded-full bg-accent" />
+          <p className="mt-6 text-white/90 text-lg md:text-xl max-w-xl mx-auto">
             Join us for live worship, powerful messages, and encounter God from wherever you are.
           </p>
         </div>

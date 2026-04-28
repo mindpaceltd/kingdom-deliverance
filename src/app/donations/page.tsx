@@ -40,16 +40,17 @@ export default function DonationsPage() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="py-28 bg-primary text-white relative overflow-hidden">
+      <section className="relative py-40 bg-[#0d1b3e] text-white overflow-hidden">
         <div className="container relative z-10 text-center px-4">
           <div className="w-16 h-16 bg-accent/20 border-2 border-accent rounded-full flex items-center justify-center mx-auto mb-6">
             <Heart className="w-8 h-8 text-accent" fill="currentColor" />
           </div>
-          <span className="inline-block py-1 px-3 rounded-full bg-accent/20 border border-accent/50 text-accent font-medium text-sm tracking-wider uppercase mb-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-5 py-2 text-sm font-semibold text-accent mb-6">
             Partner With Us
-          </span>
-          <h1 className="font-serif text-5xl md:text-6xl font-bold">Give & Support</h1>
-          <p className="text-white/80 text-lg mt-4 max-w-2xl mx-auto">
+          </div>
+          <h1 className="font-serif text-5xl md:text-6xl font-bold text-white leading-tight">Give &amp; Support</h1>
+          <div className="mx-auto mt-5 h-1 w-20 rounded-full bg-accent" />
+          <p className="mt-6 text-white/90 text-lg md:text-xl max-w-2xl mx-auto">
             Your generosity empowers the Gospel, supports our community programs, and helps us build the Kingdom of God in Uganda and beyond.
           </p>
         </div>
