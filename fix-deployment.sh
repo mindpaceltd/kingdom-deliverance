@@ -7,9 +7,13 @@ echo "=================================================="
 cd /home/n767765/kdcuganda.org
 
 echo ""
-echo "Step 1: Stopping all running PM2 processes..."
-pm2 stop all
-pm2 delete all
+echo "Step 1: Stopping duplicate PM2 processes (keeping bclimax)..."
+pm2 stop kdc-uganda 2>/dev/null || true
+pm2 delete kdc-uganda 2>/dev/null || true
+pm2 stop kingdom-deliverance 2>/dev/null || true
+pm2 delete kingdom-deliverance 2>/dev/null || true
+pm2 stop kdcuganda 2>/dev/null || true
+pm2 delete kdcuganda 2>/dev/null || true
 
 echo ""
 echo "Step 2: Cleaning up old files..."
@@ -51,7 +55,10 @@ echo ""
 echo "=================================================="
 echo "✅ Fix script completed!"
 echo ""
-echo "Your application should now be running."
+echo "You should now have 2 apps running:"
+echo "  - bclimax (your other website)"
+echo "  - kdcuganda (this website)"
+echo ""
 echo "Check status: pm2 status"
 echo "View logs: pm2 logs kdcuganda"
 echo "Restart: pm2 restart kdcuganda"

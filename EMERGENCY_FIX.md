@@ -2,7 +2,7 @@
 
 ## Current Issues Detected:
 1. ❌ `next: command not found` - Dependencies not properly installed
-2. ❌ Multiple PM2 processes running causing conflicts
+2. ❌ Multiple duplicate PM2 processes for kdcuganda.org
 3. ❌ 500 errors and chunk loading failures
 4. ❌ MIME type errors on JavaScript files
 
@@ -14,9 +14,11 @@ Connect to your server and run these commands **one by one**:
 # 1. Navigate to your project
 cd /home/n767765/kdcuganda.org
 
-# 2. Stop ALL PM2 processes
-pm2 stop all
-pm2 delete all
+# 2. Stop ONLY the duplicate kdcuganda processes (keeping bclimax running)
+pm2 stop kdc-uganda
+pm2 delete kdc-uganda
+pm2 stop kingdom-deliverance
+pm2 delete kingdom-deliverance
 
 # 3. Clean up old build files
 rm -rf node_modules
@@ -38,7 +40,7 @@ pm2 save
 # 8. Test if it's working
 curl http://localhost:3005
 
-# 9. Check PM2 status
+# 9. Check PM2 status (should show bclimax + kdcuganda only)
 pm2 status
 
 # 10. View logs if there are issues
@@ -63,9 +65,11 @@ ls -la .next
 
 After **Step 6** (pm2 start), verify:
 ```bash
-# Should show only ONE app running
+# Should show TWO apps running: bclimax + kdcuganda
 pm2 status
-# Should show: kdcuganda | online
+# Should show:
+# bclimax  | online
+# kdcuganda | online
 ```
 
 ## 🧪 Test Your Website
@@ -187,7 +191,7 @@ chmod -R 755 /home/n767765/kdcuganda.org
 ## ✅ Success Indicators
 
 Your deployment is successful when:
-- ✅ `pm2 status` shows ONE app "kdcuganda" as "online"
+- ✅ `pm2 status` shows TWO apps: "bclimax" and "kdcuganda" both as "online"
 - ✅ `curl http://localhost:3005` returns HTML content
 - ✅ https://kdcuganda.org loads without errors
 - ✅ Browser console has no red errors
@@ -196,3 +200,5 @@ Your deployment is successful when:
 ---
 
 **After running these commands, your website should be fully functional with the new modern design!**
+
+**Note:** We're keeping your bclimax website running and only fixing the kdcuganda.org deployment.
