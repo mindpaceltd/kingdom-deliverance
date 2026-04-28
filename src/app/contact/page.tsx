@@ -57,7 +57,7 @@ export default function ContactPage() {
                 <h2 className="font-serif text-3xl font-bold text-primary mb-6">Find Us</h2>
                 <div className="space-y-6">
                   {[
-                    { icon: <MapPin className="w-5 h-5 text-accent" />, label: "Address", value: "123 Deliverance Way, Kampala, Uganda" },
+                    { icon: <MapPin className="w-5 h-5 text-accent" />, label: "Address", value: "Kingdom Deliverance Centre Uganda\nKampala, Uganda" },
                     { icon: <Phone className="w-5 h-5 text-accent" />, label: "Phone", value: "+256 700 000 000" },
                     { icon: <Mail className="w-5 h-5 text-accent" />, label: "Email", value: "info@kdcuganda.org" },
                     { icon: <Clock className="w-5 h-5 text-accent" />, label: "Service Times", value: "Sunday: 9:00 AM & 11:30 AM\nWednesday: 6:30 PM\nFriday: 6:30 PM" },
@@ -74,15 +74,27 @@ export default function ContactPage() {
               </div>
 
               {/* Map */}
-              <div className="rounded-2xl overflow-hidden shadow-lg h-64 bg-muted">
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d255281.19872065478!2d32.29032!3d0.3476!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x177dbc0f9d74b39b%3A0x4099d33b10770b2!2sKampala%2C%20Uganda!5e0!3m2!1sen!2sus!4v1234567890"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                />
+              <div className="rounded-2xl overflow-hidden shadow-lg bg-muted">
+                <div className="h-72">
+                  <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.7573!2d32.5825!3d0.3136!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x177dbc0f9d74b39b%3A0x4099d33b10770b2!2sKingdom+Deliverance+Centre+Uganda!5e0!3m2!1sen!2sug!4v1714000000000"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+                <a
+                  href="https://maps.app.goo.gl/RrBd8tDxEDky8D6N7"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 py-3 bg-accent/10 hover:bg-accent/20 text-accent font-semibold text-sm transition-colors duration-200"
+                >
+                  <MapPin className="w-4 h-4" />
+                  Open in Google Maps
+                </a>
               </div>
             </div>
 

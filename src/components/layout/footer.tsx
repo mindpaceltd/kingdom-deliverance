@@ -132,7 +132,14 @@ export function Footer() {
                 <ul className="space-y-4 text-sm">
                   <li className="flex items-start space-x-3 group">
                     <MapPin className="w-5 h-5 text-accent shrink-0 mt-0.5 group-hover:scale-110 transition-transform duration-300" />
-                    <span className="text-white/80">123 Deliverance Way, Kampala, Uganda</span>
+                    <a
+                      href="https://maps.app.goo.gl/RrBd8tDxEDky8D6N7"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-white/80 hover:text-accent transition-colors duration-200"
+                    >
+                      Kingdom Deliverance Centre Uganda, Kampala, Uganda
+                    </a>
                   </li>
                   <li className="flex items-center space-x-3 group">
                     <Phone className="w-5 h-5 text-accent shrink-0 group-hover:scale-110 transition-transform duration-300" />
