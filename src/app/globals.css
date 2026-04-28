@@ -4,67 +4,73 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 261 73% 23%;
+    --background: 40 33% 98%;
+    --foreground: 230 26% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 261 73% 23%;
+    --card-foreground: 230 26% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 261 73% 23%;
+    --popover-foreground: 230 26% 20%;
 
-    /* Deep Purple */
-    --primary: 261 73% 23%;
+    /* Rich navy blue */
+    --primary: 220 40% 15%;
     --primary-foreground: 0 0% 100%;
 
-    /* Gold */
-    --secondary: 44 55% 53%;
-    --secondary-foreground: 0 0% 100%;
+    /* Soft cream */
+    --secondary: 45 50% 95%;
+    --secondary-foreground: 230 26% 20%;
 
-    --muted: 261 30% 95%;
-    --muted-foreground: 261 40% 40%;
+    --muted: 45 30% 92%;
+    --muted-foreground: 230 16% 40%;
 
-    --accent: 44 55% 53%;
-    --accent-foreground: 0 0% 100%;
+    /* Elegant gold */
+    --accent: 45 85% 65%;
+    --accent-foreground: 220 40% 15%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 261 30% 90%;
-    --input: 261 30% 90%;
-    --ring: 44 55% 53%;
+    --border: 45 25% 88%;
+    --input: 45 25% 88%;
+    --ring: 45 85% 65%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+
+    /* Custom gradient colors */
+    --gradient-start: 220 40% 15%;
+    --gradient-middle: 220 35% 25%;
+    --gradient-end: 220 30% 35%;
   }
 
   .dark {
-    --background: 261 73% 15%;
+    --background: 220 40% 8%;
     --foreground: 0 0% 98%;
 
-    --card: 261 73% 20%;
+    --card: 220 40% 12%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 261 73% 20%;
+    --popover: 220 40% 12%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 44 55% 53%;
-    --primary-foreground: 261 73% 15%;
+    --primary: 45 85% 65%;
+    --primary-foreground: 220 40% 8%;
 
-    --secondary: 261 30% 30%;
+    --secondary: 220 30% 20%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 261 30% 25%;
-    --muted-foreground: 261 20% 70%;
+    --muted: 220 30% 18%;
+    --muted-foreground: 220 20% 70%;
 
-    --accent: 44 55% 53%;
-    --accent-foreground: 261 73% 15%;
+    --accent: 45 85% 65%;
+    --accent-foreground: 220 40% 8%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 261 30% 30%;
-    --input: 261 30% 30%;
-    --ring: 44 55% 53%;
+    --border: 220 30% 25%;
+    --input: 220 30% 25%;
+    --ring: 45 85% 65%;
   }
 }
 
@@ -72,10 +78,184 @@
   * {
     @apply border-border;
   }
-  body {
-    @apply bg-background text-foreground font-sans;
+  
+  html {
+    scroll-behavior: smooth;
   }
+  
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    background: 
+      radial-gradient(circle at 25% 0%, hsl(var(--accent) / 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 75% 100%, hsl(var(--primary) / 0.03) 0%, transparent 50%),
+      linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--secondary) / 0.3) 100%);
+    background-attachment: fixed;
+  }
+  
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif text-primary;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  a, button {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-secondary/50;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-accent/60 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-accent/80;
+  }
+}
+
+@layer utilities {
+  .glass-morphism {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .glass-morphism-dark {
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .gradient-primary {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--gradient-start)) 0%,
+      hsl(var(--gradient-middle)) 50%,
+      hsl(var(--gradient-end)) 100%
+    );
+  }
+
+  .gradient-accent {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--accent)) 0%,
+      hsl(var(--accent) / 0.8) 100%
+    );
+  }
+
+  .classic-surface {
+    background: linear-gradient(
+      160deg,
+      hsl(var(--secondary) / 0.8) 0%,
+      hsl(var(--background)) 45%,
+      hsl(var(--background)) 100%
+    );
+    position: relative;
+  }
+
+  .classic-surface::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      45deg,
+      transparent 0%,
+      hsl(var(--accent) / 0.02) 50%,
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
+  .section-fade-up {
+    animation: fade-up 0.8s ease-out both;
+  }
+
+  .section-fade-in {
+    animation: fade-in 1s ease-out both;
+  }
+
+  .float-animation {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite alternate;
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(var(--primary)) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  }
+
+  .parallax-bg {
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 0 0 20px hsl(var(--accent) / 0.3);
+  }
+  100% {
+    box-shadow: 0 0 40px hsl(var(--accent) / 0.6);
+  }
+}
+
+/* Responsive animations */
+@media (prefers-reduced-motion: reduce) {
+  .section-fade-up,
+  .section-fade-in,
+  .float-animation,
+  .pulse-glow {
+    animation: none;
   }
 }
