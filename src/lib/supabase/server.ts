@@ -2,14 +2,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
-import https from 'https'
-
-// Self-hosted Supabase uses a self-signed cert — disable TLS verification on Node.js side.
-// In production with a valid cert, remove this.
-const fetchWithInsecure = (input: RequestInfo | URL, init?: RequestInit) => {
-  const agent = new https.Agent({ rejectUnauthorized: false })
-  return fetch(input, { ...init, ...(agent ? { agent } : {}) } as RequestInit)
-}
+import { fetchWithInsecure } from './fetch'
 
 export function createClient() {
   const cookieStore = cookies()
