@@ -52,7 +52,7 @@ export default function AboutPage() {
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: "url('https://images.unsplash.com/photo-1493397212122-2b85dda8106b?q=80&w=2071&auto=format&fit=crop')" }}
         />
-        <div className="absolute inset-0 bg-[#0d1b3e]/88" />
+        <div className="absolute inset-0 bg-black/70" />
         <div className="container relative z-10 text-center max-w-4xl mx-auto px-4">
           <FadeInSection>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-5 py-2 text-sm font-semibold text-accent mb-8">

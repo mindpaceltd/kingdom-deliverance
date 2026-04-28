@@ -32,8 +32,10 @@ export default function ContactPage() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="relative py-40 bg-[#0d1b3e] text-white">
-        <div className="container text-center px-4">
+      <section className="relative py-40 text-white overflow-hidden">
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1423666639041-f56000c27a9a?q=80&w=2074&auto=format&fit=crop')" }} />
+        <div className="absolute inset-0 bg-black/70" />
+        <div className="container relative z-10 text-center px-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-5 py-2 text-sm font-semibold text-accent mb-8">
             Get In Touch
           </div>

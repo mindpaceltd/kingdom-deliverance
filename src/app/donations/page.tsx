@@ -40,7 +40,9 @@ export default function DonationsPage() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="relative py-40 bg-[#0d1b3e] text-white overflow-hidden">
+      <section className="relative py-40 text-white overflow-hidden">
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?q=80&w=2070&auto=format&fit=crop')" }} />
+        <div className="absolute inset-0 bg-black/70" />
         <div className="container relative z-10 text-center px-4">
           <div className="w-16 h-16 bg-accent/20 border-2 border-accent rounded-full flex items-center justify-center mx-auto mb-6">
             <Heart className="w-8 h-8 text-accent" fill="currentColor" />

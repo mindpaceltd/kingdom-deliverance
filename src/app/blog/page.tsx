@@ -25,7 +25,8 @@ export default async function BlogPage() {
   return (
     <div className="flex flex-col">
       <section className="relative py-40 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-[#0d1b3e]" />
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1455390582262-044cdead277a?q=80&w=2073&auto=format&fit=crop')" }} />
+        <div className="absolute inset-0 bg-black/70" />
         <div className="container relative z-10 text-center px-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-5 py-2 text-sm font-semibold text-accent mb-8">
             News &amp; Teachings

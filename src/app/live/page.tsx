@@ -13,8 +13,10 @@ export default function LivePage() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="relative py-40 bg-[#0d1b3e] text-white">
-        <div className="container text-center px-4">
+      <section className="relative py-40 text-white overflow-hidden">
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=2070&auto=format&fit=crop')" }} />
+        <div className="absolute inset-0 bg-black/75" />
+        <div className="container relative z-10 text-center px-4">
           <div className="flex items-center justify-center gap-3 mb-6">
             <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
             <span className="text-red-400 font-bold text-sm tracking-wider uppercase">Live Now</span>
