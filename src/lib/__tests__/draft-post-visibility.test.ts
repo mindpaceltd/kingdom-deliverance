@@ -48,6 +48,7 @@ let mockPost: Record<string, unknown> | null = null
  * - On resolution, returns the mockPost only if capturedStatusFilter matches
  *   mockPost.status (simulating DB-side filtering)
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function makeMockBuilder(useSingle: boolean) {
   // We need a local copy of the filter state per builder instance so that
   // the closure captures the right value at resolution time.
@@ -99,6 +100,7 @@ function makeMockBuilder(useSingle: boolean) {
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () => ({
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     from: (_table: string) => {
       // We can't know ahead of time whether .single() will be called,
       // so we use a proxy that detects it and adjusts resolution accordingly.

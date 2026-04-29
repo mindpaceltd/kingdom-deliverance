@@ -53,6 +53,7 @@ vi.mock('@/lib/supabase/server', () => ({
         error: null,
       }),
     },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     from: (_table: string) => makeMockProfileBuilder(),
   }),
 }))

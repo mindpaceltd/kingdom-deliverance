@@ -71,6 +71,7 @@ vi.mock('@/lib/supabase/server', () => ({
     auth: {
       getUser: async () => ({ data: { user: { id: 'user-123' } }, error: null }),
     },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     from: (_table: string) => makeMockQueryBuilder(),
   }),
 }))

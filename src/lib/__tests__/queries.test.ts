@@ -58,7 +58,8 @@ let fromCallCount = 0
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () => ({
-    from: (table: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    from: (_table: string) => {
       fromCallCount++
       return makeMockBuilder(mockQueryResult)
     },
@@ -356,7 +357,9 @@ describe('Property 13 — searchContent returns mocked data for valid queries', 
         async (query) => {
           // Mock returns posts/sermons/events that include the query in their title
           const mockPost = { id: '1', title: `Result for ${query}`, slug: 'test', excerpt: query }
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const mockSermon = { id: '2', title: `Sermon about ${query}`, slug: 'sermon-test' }
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const mockEvent = { id: '3', title: `Event: ${query}`, slug: 'event-test' }
 
           // searchContent calls from() 3 times (posts, sermons, events)
