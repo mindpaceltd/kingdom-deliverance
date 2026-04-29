@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Users, FileText, Video, Calendar, MessageSquare,
-  Heart, Image, BookOpen, TrendingUp, Clock, CheckCircle, AlertCircle,
+  Heart, Image as ImageIcon, BookOpen, TrendingUp, CheckCircle, AlertCircle,
 } from "lucide-react"
 import { format, subMonths, startOfMonth, endOfMonth } from "date-fns"
 import { ActivityChart } from "@/components/admin/dashboard/activity-chart"
@@ -106,7 +106,7 @@ export default async function AdminDashboard() {
       {/* Secondary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <MiniStatCard title="Ministries" value={stats.ministries} icon={<BookOpen className="w-4 h-4" />} href="/admin/ministries" />
-        <MiniStatCard title="Gallery Items" value={stats.gallery} icon={<Image className="w-4 h-4" />} href="/admin/gallery" />
+        <MiniStatCard title="Gallery Items" value={stats.gallery} icon={<ImageIcon className="w-4 h-4" />} href="/admin/gallery" />
         <MiniStatCard title="Media Files" value={stats.media} icon={<TrendingUp className="w-4 h-4" />} href="/admin/media" />
         <MiniStatCard title="Prayer Requests" value={stats.unreadPrayer} icon={<Heart className="w-4 h-4" />} href="/admin/inbox" alert={stats.unreadPrayer > 0} />
         <MiniStatCard title="Unread Messages" value={stats.unreadContact} icon={<MessageSquare className="w-4 h-4" />} href="/admin/inbox" alert={stats.unreadContact > 0} />
