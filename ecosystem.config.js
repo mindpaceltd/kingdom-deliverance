@@ -2,9 +2,9 @@ module.exports = {
   apps: [
     {
       name: 'kingdom-deliverance',
-      script: 'npm',
-      args: 'start',
-      cwd: './',
+      script: './node_modules/.bin/next',
+      args: 'start -p 3005',
+      cwd: '/home/n767765/kdcuganda.org',
       instances: 1,
       autorestart: true,
       watch: false,
