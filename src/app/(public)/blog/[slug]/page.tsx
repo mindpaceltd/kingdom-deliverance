@@ -5,6 +5,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, User } from "lucide-react";
 import type { Metadata } from "next";
+import { ViewTracker } from "@/components/blog/view-tracker";
 
 interface Props { params: { slug: string } }
 
@@ -39,6 +40,8 @@ export default async function BlogPostPage({ params }: Props) {
 
   return (
     <div className="flex flex-col">
+      {/* View tracker — fires incrementPostViews on client mount */}
+      <ViewTracker slug={params.slug} path={`/blog/${params.slug}`} />
       {/* Hero */}
       <section className="py-24 bg-primary text-white">
         <div className="container px-4 max-w-4xl mx-auto">

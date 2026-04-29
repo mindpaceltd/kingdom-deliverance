@@ -248,7 +248,7 @@ export async function searchContent(query: string): Promise<{
   if (eventsResult.error) console.error('[searchContent:events]', eventsResult.error.message)
 
   return {
-    posts: postsResult.data ?? [],
+    posts: (postsResult.data ?? []) as Post[],
     sermons: sermonsResult.data ?? [],
     events: eventsResult.data ?? [],
   }

@@ -20,10 +20,20 @@ export interface Post {
   featured_image: string | null
   author_id: string | null
   type: 'blog' | 'news'
-  status: 'draft' | 'published' | 'archived'
+  // Extended status union
+  status: 'draft' | 'published' | 'archived' | 'scheduled' | 'trash'
   published_at: string | null
   created_at: string
   updated_at: string
+  // New CMS fields
+  meta_title: string | null
+  meta_description: string | null
+  focus_keyword: string | null
+  seo_score: number
+  scheduled_at: string | null
+  deleted_at: string | null
+  views: number
+  // Joined relation
   profiles?: Pick<Profile, 'name' | 'avatar_url'>
 }
 
@@ -141,6 +151,24 @@ export interface PrayerRequest {
   is_reviewed: boolean
   created_at: string
 }
+
+export interface PostData {
+  title: string
+  slug: string
+  content?: string
+  excerpt?: string
+  featured_image?: string
+  type: 'blog' | 'news'
+  // Extended status (trash/archived set by dedicated actions only)
+  status: 'draft' | 'published' | 'scheduled'
+  // New optional SEO + scheduling fields
+  meta_title?: string
+  meta_description?: string
+  focus_keyword?: string
+  seo_score?: number
+  scheduled_at?: string  // ISO string; only used when status = 'scheduled'
+}
+
 
 export interface ContactSubmission {
   id: string

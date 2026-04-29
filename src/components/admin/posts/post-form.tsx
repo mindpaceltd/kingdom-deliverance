@@ -53,7 +53,9 @@ export function PostForm({ post, onSuccess, onCancel }: PostFormProps) {
     content: post?.content ?? '',
     featured_image: post?.featured_image ?? '',
     type: post?.type ?? 'blog',
-    status: post?.status === 'archived' ? 'draft' : (post?.status ?? 'draft'),
+    status: post?.status === 'archived' || post?.status === 'scheduled' || post?.status === 'trash'
+      ? 'draft'
+      : (post?.status as 'draft' | 'published') ?? 'draft',
   })
 
   const [submitting, setSubmitting] = React.useState(false)
