@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'kingdom-deliverance',
       script: './node_modules/.bin/next',
-      args: 'start -p 3005',
+      args: 'start',
       cwd: '/home/n767765/kdcuganda.org',
       instances: 1,
       autorestart: true,
