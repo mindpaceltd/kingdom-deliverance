@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AdminProvider } from '@/lib/admin-context'
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
@@ -15,8 +14,10 @@ export default async function AdminLayout({
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Allow auth group routes (e.g. /admin/login) to render without forcing
+  // the admin shell. Middleware already protects private admin pages.
   if (!user) {
-    redirect('/admin/login')
+    return <>{children}</>
   }
 
   const { data: profile } = await supabase
@@ -26,7 +27,7 @@ export default async function AdminLayout({
     .single()
 
   if (!profile) {
-    redirect('/admin/login')
+    return <>{children}</>
   }
 
   return (

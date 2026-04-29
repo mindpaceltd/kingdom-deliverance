@@ -1,18 +1,11 @@
 "use client";
 
-import { useState, Suspense } from "react";
-import { createBrowserClient } from "@supabase/ssr";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2, ShieldCheck, Eye, EyeOff } from "lucide-react";
 
-function LoginForm() {
+export default function AdminLoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") || "/admin";
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -25,10 +18,13 @@ function LoginForm() {
     setError(null);
 
     try {
+      // Dynamically import to avoid any server-side module issues
+      const { createBrowserClient } = await import("@supabase/ssr");
       const supabase = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
+
       const { error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -40,7 +36,7 @@ function LoginForm() {
         return;
       }
 
-      router.push(redirectTo);
+      router.push("/admin");
       router.refresh();
     } catch {
       setError("An unexpected error occurred. Please try again.");
@@ -49,94 +45,112 @@ function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleLogin} className="p-8 space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="email" className="text-gray-700 font-medium">
-          Email Address
-        </Label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="admin@kdcuganda.org"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="h-11"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="password" className="text-gray-700 font-medium">
-          Password
-        </Label>
-        <div className="relative">
-          <Input
-            id="password"
-            type={showPw ? "text" : "password"}
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="h-11 pr-10"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPw(!showPw)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-          >
-            {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
-        </div>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
-          {error}
-        </div>
-      )}
-
-      <Button type="submit" disabled={loading} className="w-full h-11 font-semibold text-base">
-        {loading ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing in...
-          </>
-        ) : (
-          "Sign In to Dashboard"
-        )}
-      </Button>
-
-      <p className="text-center text-xs text-gray-500">
-        Only authorized church administrators may access this area.
-      </p>
-    </form>
-  );
-}
-
-export default function AdminLoginPage() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900">
-      <div className="relative w-full max-w-md mx-4">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%)",
+        fontFamily: "'Inter', system-ui, sans-serif",
+      }}
+    >
+      <div style={{ width: "100%", maxWidth: "420px", margin: "0 16px" }}>
+        <div style={{ background: "#fff", borderRadius: "16px", overflow: "hidden", boxShadow: "0 25px 50px rgba(0,0,0,0.4)" }}>
           {/* Header */}
-          <div className="bg-gradient-to-r from-indigo-900 to-purple-800 px-8 py-10 text-center">
-            <div className="w-16 h-16 bg-yellow-400/20 border-2 border-yellow-400 rounded-full flex items-center justify-center mx-auto mb-4">
-              <ShieldCheck className="w-8 h-8 text-yellow-400" />
+          <div style={{ background: "linear-gradient(135deg, #1e1b4b, #4c1d95)", padding: "40px 32px", textAlign: "center" }}>
+            <div style={{
+              width: "64px", height: "64px", borderRadius: "50%",
+              border: "2px solid #fbbf24", background: "rgba(251,191,36,0.1)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              margin: "0 auto 16px",
+            }}>
+              <ShieldCheck size={32} color="#fbbf24" />
             </div>
-            <h1 className="text-2xl font-bold text-white">KDC Admin</h1>
-            <p className="text-white/70 text-sm mt-1">
-              Kingdom Deliverance Centre Uganda
-            </p>
+            <h1 style={{ color: "#fff", fontSize: "24px", fontWeight: 700, margin: "0 0 4px" }}>KDC Admin</h1>
+            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "14px", margin: 0 }}>Kingdom Deliverance Centre Uganda</p>
           </div>
 
-          <Suspense
-            fallback={
-              <div className="p-8 flex justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
+          {/* Form */}
+          <form onSubmit={handleLogin} style={{ padding: "32px" }}>
+            <div style={{ marginBottom: "20px" }}>
+              <label htmlFor="email" style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#374151", marginBottom: "6px" }}>
+                Email Address
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@kdcuganda.org"
+                required
+                style={{
+                  width: "100%", padding: "10px 14px", fontSize: "14px",
+                  border: "1px solid #d1d5db", borderRadius: "8px",
+                  outline: "none", boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <label htmlFor="password" style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#374151", marginBottom: "6px" }}>
+                Password
+              </label>
+              <div style={{ position: "relative" }}>
+                <input
+                  id="password"
+                  type={showPw ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  style={{
+                    width: "100%", padding: "10px 40px 10px 14px", fontSize: "14px",
+                    border: "1px solid #d1d5db", borderRadius: "8px",
+                    outline: "none", boxSizing: "border-box",
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  style={{
+                    position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)",
+                    background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 0,
+                  }}
+                >
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
-            }
-          >
-            <LoginForm />
-          </Suspense>
+            </div>
+
+            {error && (
+              <div style={{
+                background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626",
+                padding: "12px 16px", borderRadius: "8px", fontSize: "14px", marginBottom: "20px",
+              }}>
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: "100%", padding: "12px", fontSize: "15px", fontWeight: 600,
+                background: loading ? "#6366f1" : "#4f46e5", color: "#fff",
+                border: "none", borderRadius: "8px", cursor: loading ? "not-allowed" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+              }}
+            >
+              {loading ? (
+                <><Loader2 size={16} className="animate-spin" /> Signing in...</>
+              ) : "Sign In to Dashboard"}
+            </button>
+
+            <p style={{ textAlign: "center", fontSize: "12px", color: "#9ca3af", marginTop: "16px", marginBottom: 0 }}>
+              Only authorized church administrators may access this area.
+            </p>
+          </form>
         </div>
       </div>
     </div>
