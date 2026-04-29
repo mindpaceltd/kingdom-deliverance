@@ -62,7 +62,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Only run middleware on admin routes to avoid unnecessary overhead on
-  // public pages.
-  matcher: ['/admin/:path*'],
+  // Only run middleware on admin routes (excluding the login page itself
+  // to prevent redirect loops).
+  matcher: ['/admin', '/admin/((?!login).*)'],
 }
