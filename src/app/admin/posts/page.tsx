@@ -1,11 +1,14 @@
-import { CmsPlaceholder } from "@/components/admin/cms-placeholder";
+import { createClient } from '@/lib/supabase/server'
+import { PostsManager } from '@/components/admin/posts/posts-manager'
+import type { Post } from '@/lib/types'
 
-export default function AdminPostsPage() {
-  return (
-    <CmsPlaceholder
-      title="Posts Manager"
-      description="Create, edit, and publish blog posts and sermon articles. This page is scaffolded and ready for Supabase CRUD integration."
-      primaryActionLabel="Create New Post"
-    />
-  );
+export default async function AdminPostsPage() {
+  const supabase = createClient()
+
+  const { data: posts } = await supabase
+    .from('posts')
+    .select('*, profiles(name, avatar_url)')
+    .order('updated_at', { ascending: false })
+
+  return <PostsManager initialPosts={(posts as Post[]) ?? []} />
 }

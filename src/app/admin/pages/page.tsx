@@ -1,11 +1,9 @@
-import { CmsPlaceholder } from "@/components/admin/cms-placeholder";
+import { PagesManager } from '@/components/admin/pages/pages-manager'
+import { createClient } from '@/lib/supabase/server'
+import type { CmsPage } from '@/lib/types'
 
-export default function AdminPagesPage() {
-  return (
-    <CmsPlaceholder
-      title="Pages Manager"
-      description="Edit homepage and other dynamic page sections using structured content blocks powered by `pages.content_json`."
-      primaryActionLabel="Edit Page Sections"
-    />
-  );
+export default async function AdminPagesPage() {
+  const supabase = createClient()
+  const { data } = await supabase.from('pages').select('*').order('updated_at', { ascending: false })
+  return <PagesManager initialPages={(data ?? []) as CmsPage[]} />
 }

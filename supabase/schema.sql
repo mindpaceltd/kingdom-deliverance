@@ -164,6 +164,21 @@ CREATE TABLE IF NOT EXISTS public.media (
 );
 
 -- ============================================================
+-- CMS PAGES (JSON section editor)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.pages (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  title TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  content_json JSONB NOT NULL DEFAULT '{"sections":[]}'::jsonb,
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS pages_slug_idx ON public.pages(slug);
+
+-- ============================================================
 -- GALLERY
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.gallery (
@@ -224,8 +239,17 @@ CREATE TABLE IF NOT EXISTS public.contact_submissions (
 -- ROW LEVEL SECURITY
 -- ============================================================
 
--- Helper: check if current user is admin or editor
-CREATE OR REPLACE FUNCTION public.is_admin_or_editor()
+-- Helper: check if current user is admin, editor, or author (content roles)
+CREATE OR REPLACE FUNCTION public.is_content_manager()
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role IN ('admin', 'editor', 'author')
+  );
+$$ LANGUAGE sql SECURITY DEFINER;
+
+-- Helper: check if current user can manage structural CMS resources
+CREATE OR REPLACE FUNCTION public.is_structure_manager()
 RETURNS BOOLEAN AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.profiles
@@ -255,36 +279,59 @@ CREATE POLICY "Only admins can modify settings" ON public.site_settings FOR ALL 
 
 -- POSTS
 ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Published posts are public" ON public.posts FOR SELECT USING (status = 'published' OR public.is_admin_or_editor() OR author_id = auth.uid());
-CREATE POLICY "Editors/admins can insert posts" ON public.posts FOR INSERT WITH CHECK (public.is_admin_or_editor() OR auth.uid() IS NOT NULL);
-CREATE POLICY "Authors can update own posts" ON public.posts FOR UPDATE USING (author_id = auth.uid() OR public.is_admin_or_editor());
-CREATE POLICY "Admins can delete posts" ON public.posts FOR DELETE USING (public.is_admin_or_editor());
+CREATE POLICY "Published posts are public" ON public.posts FOR SELECT USING (status = 'published' OR public.is_content_manager() OR author_id = auth.uid());
+CREATE POLICY "Content managers can insert posts" ON public.posts FOR INSERT WITH CHECK (public.is_content_manager());
+CREATE POLICY "Authors can update own posts" ON public.posts FOR UPDATE USING (author_id = auth.uid() OR public.is_content_manager());
+CREATE POLICY "Content managers can delete posts" ON public.posts FOR DELETE USING (public.is_content_manager());
 
 -- SERMONS
 ALTER TABLE public.sermons ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Published sermons are public" ON public.sermons FOR SELECT USING (status = 'published' OR public.is_admin_or_editor());
-CREATE POLICY "Editors can manage sermons" ON public.sermons FOR ALL USING (public.is_admin_or_editor());
+CREATE POLICY "Published sermons are public" ON public.sermons FOR SELECT USING (status = 'published' OR public.is_content_manager());
+CREATE POLICY "Content managers can manage sermons" ON public.sermons FOR ALL USING (public.is_content_manager());
 
 -- EVENTS
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Events are public" ON public.events FOR SELECT USING (TRUE);
-CREATE POLICY "Editors can manage events" ON public.events FOR ALL USING (public.is_admin_or_editor());
+CREATE POLICY "Content managers can manage events" ON public.events FOR ALL USING (public.is_content_manager());
 
 -- MINISTRIES
 ALTER TABLE public.ministries ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Ministries are public" ON public.ministries FOR SELECT USING (is_active = TRUE OR public.is_admin_or_editor());
-CREATE POLICY "Editors can manage ministries" ON public.ministries FOR ALL USING (public.is_admin_or_editor());
+CREATE POLICY "Ministries are public" ON public.ministries FOR SELECT USING (is_active = TRUE OR public.is_structure_manager());
+CREATE POLICY "Structure managers can manage ministries" ON public.ministries FOR ALL USING (public.is_structure_manager());
 
 -- MEDIA
 ALTER TABLE public.media ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Media is public" ON public.media FOR SELECT USING (TRUE);
-CREATE POLICY "Authenticated users can upload" ON public.media FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-CREATE POLICY "Admins can delete media" ON public.media FOR DELETE USING (public.is_admin_or_editor());
+CREATE POLICY "Content managers can upload media metadata" ON public.media FOR INSERT WITH CHECK (public.is_content_manager());
+CREATE POLICY "Content managers can update media metadata" ON public.media FOR UPDATE USING (public.is_content_manager());
+CREATE POLICY "Structure managers can delete media" ON public.media FOR DELETE USING (public.is_structure_manager());
+
+-- Supabase Storage policies for media bucket
+CREATE POLICY "Public read media objects"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'media');
+
+CREATE POLICY "Content managers can upload media objects"
+ON storage.objects FOR INSERT
+WITH CHECK (bucket_id = 'media' AND auth.role() = 'authenticated' AND public.is_content_manager());
+
+CREATE POLICY "Content managers can update media objects"
+ON storage.objects FOR UPDATE
+USING (bucket_id = 'media' AND public.is_content_manager());
+
+CREATE POLICY "Structure managers can delete media objects"
+ON storage.objects FOR DELETE
+USING (bucket_id = 'media' AND public.is_structure_manager());
 
 -- GALLERY
 ALTER TABLE public.gallery ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Gallery is public" ON public.gallery FOR SELECT USING (TRUE);
-CREATE POLICY "Editors can manage gallery" ON public.gallery FOR ALL USING (public.is_admin_or_editor());
+CREATE POLICY "Content managers can manage gallery" ON public.gallery FOR ALL USING (public.is_content_manager());
+
+-- PAGES
+ALTER TABLE public.pages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Published pages are public" ON public.pages FOR SELECT USING (status = 'published' OR public.is_structure_manager());
+CREATE POLICY "Structure managers can manage pages" ON public.pages FOR ALL USING (public.is_structure_manager());
 
 -- DONATIONS
 ALTER TABLE public.donations ENABLE ROW LEVEL SECURITY;
@@ -295,12 +342,12 @@ CREATE POLICY "Admins can update donations" ON public.donations FOR UPDATE USING
 -- PRAYER REQUESTS
 ALTER TABLE public.prayer_requests ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Anyone can submit prayer request" ON public.prayer_requests FOR INSERT WITH CHECK (TRUE);
-CREATE POLICY "Only admins can view prayer requests" ON public.prayer_requests FOR SELECT USING (public.is_admin_or_editor());
+CREATE POLICY "Only content managers can view prayer requests" ON public.prayer_requests FOR SELECT USING (public.is_content_manager());
 
 -- CONTACT SUBMISSIONS
 ALTER TABLE public.contact_submissions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Anyone can submit contact form" ON public.contact_submissions FOR INSERT WITH CHECK (TRUE);
-CREATE POLICY "Only admins can view submissions" ON public.contact_submissions FOR SELECT USING (public.is_admin_or_editor());
+CREATE POLICY "Only content managers can view submissions" ON public.contact_submissions FOR SELECT USING (public.is_content_manager());
 
 -- ============================================================
 -- SEED DATA

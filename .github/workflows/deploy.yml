@@ -30,7 +30,7 @@ jobs:
             npm ci --no-audit --no-fund --prefer-offline || npm install --no-audit --no-fund
             
             # Build the Next.js production app (Limit Node memory to prevent OOM kills)
-            NODE_OPTIONS="--max-old-space-size=1024" NODE_TLS_REJECT_UNAUTHORIZED=0 npm run build
+            NODE_OPTIONS="--max-old-space-size=1024" npm run build
             
             # Restart the Next.js application
             # If you are using PM2 (recommended), you can restart it here.

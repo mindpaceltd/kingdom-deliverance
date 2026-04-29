@@ -1,56 +1,154 @@
-export type UserRole = 'admin' | 'editor' | 'author' | 'member';
+export type UserRole = 'admin' | 'editor' | 'author' | 'member'
 
-export interface UserProfile {
-  id: string;
-  name: string | null;
-  email: string;
-  role: UserRole;
-  created_at: string;
+export interface Profile {
+  id: string
+  name: string | null
+  avatar_url: string | null
+  role: UserRole
+  phone: string | null
+  bio: string | null
+  created_at: string
+  updated_at: string
 }
 
 export interface Post {
-  id: string;
-  title: string;
-  slug: string;
-  content: string;
-  author_id: string;
-  type: 'blog' | 'news';
-  status: 'draft' | 'published' | 'archived';
-  featured_image: string | null;
-  created_at: string;
-  updated_at: string;
-  users?: { name: string | null };
+  id: string
+  title: string
+  slug: string
+  content: string | null
+  excerpt: string | null
+  featured_image: string | null
+  author_id: string | null
+  type: 'blog' | 'news'
+  status: 'draft' | 'published' | 'archived'
+  published_at: string | null
+  created_at: string
+  updated_at: string
+  profiles?: Pick<Profile, 'name' | 'avatar_url'>
 }
 
 export interface Sermon {
-  id: string;
-  title: string;
-  slug: string;
-  description: string | null;
-  video_url: string | null;
-  audio_url: string | null;
-  preacher: string;
-  date: string;
-  created_at: string;
+  id: string
+  title: string
+  slug: string
+  description: string | null
+  content: string | null
+  video_url: string | null
+  audio_url: string | null
+  thumbnail_url: string | null
+  preacher: string
+  series: string | null
+  date: string
+  duration_minutes: number | null
+  status: 'draft' | 'published'
+  created_at: string
+  updated_at: string
 }
 
 export interface Event {
-  id: string;
-  title: string;
-  description: string | null;
-  date: string;
-  end_date: string | null;
-  location: string | null;
-  image_url: string | null;
-  created_at: string;
+  id: string
+  title: string
+  slug: string
+  description: string | null
+  content: string | null
+  date: string
+  end_date: string | null
+  location: string | null
+  image_url: string | null
+  is_featured: boolean
+  registration_url: string | null
+  status: 'upcoming' | 'ongoing' | 'past' | 'cancelled'
+  created_at: string
+  updated_at: string
 }
 
 export interface Ministry {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  leader: string | null;
-  image_url: string | null;
-  created_at: string;
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  content: string | null
+  leader: string | null
+  meeting_time: string | null
+  image_url: string | null
+  icon: string | null
+  display_order: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface MediaAsset {
+  id: string
+  filename: string
+  url: string
+  type: 'image' | 'video' | 'audio' | 'document'
+  mime_type: string | null
+  size_bytes: number | null
+  alt_text: string | null
+  caption: string | null
+  uploaded_by: string | null
+  bucket: string
+  created_at: string
+}
+
+export interface SiteSetting {
+  key: string
+  value: string | null
+  updated_at: string
+}
+
+export interface CmsPage {
+  id: string
+  title: string
+  slug: string
+  content_json: Record<string, unknown>
+  status: 'draft' | 'published'
+  updated_at: string
+  created_at: string
+}
+
+export interface GalleryItem {
+  id: string
+  title: string | null
+  description: string | null
+  image_url: string
+  album: string
+  display_order: number
+  created_at: string
+}
+
+export interface Donation {
+  id: string
+  donor_name: string | null
+  donor_email: string | null
+  amount: number
+  currency: string
+  method: string | null
+  reference: string | null
+  notes: string | null
+  is_anonymous: boolean
+  status: string
+  created_at: string
+}
+
+export interface PrayerRequest {
+  id: string
+  name: string | null
+  email: string | null
+  request: string
+  is_anonymous: boolean
+  is_reviewed: boolean
+  created_at: string
+}
+
+export interface ContactSubmission {
+  id: string
+  name: string
+  email: string
+  phone: string | null
+  subject: string | null
+  message: string
+  is_read: boolean
+  created_at: string
 }

@@ -61,8 +61,6 @@ export default async function MinistriesPage() {
     .eq("is_active", true)
     .order("display_order", { ascending: true });
 
-  const ministries = dbMinistries && dbMinistries.length > 0 ? null : staticMinistries;
-
   return (
     <div className="flex flex-col">
       {/* Hero */}

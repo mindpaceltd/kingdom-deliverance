@@ -1,4 +1,5 @@
 import { HeroSection } from "@/components/home/hero-section";
+import { PageSection } from "@/components/content/section";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -6,15 +7,67 @@ import {
   Users, Award, Globe, ArrowRight, Play, Quote,
 } from "lucide-react";
 import Link from "next/link";
+import type { Metadata } from "next";
+import { createClient } from "@/lib/supabase/server";
+import { PostCard } from "@/components/content/post-card";
+import { EventCard } from "@/components/content/event-card";
+import type { Post, Sermon, Event } from "@/lib/types";
 
-export default function Home() {
+export const revalidate = 3600;
+
+export const metadata: Metadata = {
+  title: "Home",
+  description: "Welcome to Kingdom Deliverance Centre Uganda. Join worship services, sermons, events, and ministries.",
+};
+
+export default async function Home() {
+  const supabase = createClient();
+
+  // Fetch: latest published sermon, featured upcoming events (fallback to next 3 upcoming), latest 3 posts
+  const [sermonRes, featuredEventsRes, postsRes] = await Promise.all([
+    supabase
+      .from("sermons")
+      .select("*")
+      .eq("status", "published")
+      .order("date", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("events")
+      .select("*")
+      .eq("is_featured", true)
+      .eq("status", "upcoming")
+      .order("date", { ascending: true })
+      .limit(3),
+    supabase
+      .from("posts")
+      .select("*, profiles(name, avatar_url)")
+      .eq("status", "published")
+      .order("published_at", { ascending: false })
+      .limit(3),
+  ]);
+
+  const featuredSermon: Sermon | null = sermonRes.data ?? null;
+  let upcomingEvents: Event[] = featuredEventsRes.data ?? [];
+
+  // Fallback: if no featured events, get next 3 upcoming regardless of is_featured
+  if (upcomingEvents.length === 0) {
+    const { data: fallbackEvents } = await supabase
+      .from("events")
+      .select("*")
+      .eq("status", "upcoming")
+      .order("date", { ascending: true })
+      .limit(3);
+    upcomingEvents = fallbackEvents ?? [];
+  }
+
+  const latestPosts: Post[] = (postsRes.data as Post[]) ?? [];
   return (
     <div className="flex min-h-screen flex-col">
       <HeroSection />
 
       {/* Mission / Stats */}
-      <section className="py-24 bg-white">
-        <div className="container px-4">
+      <PageSection className="bg-white py-24">
           <div className="mx-auto max-w-3xl text-center space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/8 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
               <Sparkles className="h-3.5 w-3.5" />
@@ -52,8 +105,7 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
+      </PageSection>
 
       {/* Grow With Us */}
       <section className="py-24 bg-gray-50/80">
@@ -111,7 +163,7 @@ export default function Home() {
                 <Play className="w-3.5 h-3.5 fill-current" />
                 Latest Message
               </div>
-              <h2 className="text-4xl font-bold font-serif md:text-5xl">Recent Message</h2>
+                <h2 className="text-4xl font-bold font-serif md:text-5xl">Recent Message</h2>
               <p className="text-white/60 text-base">The latest word from our leadership.</p>
             </div>
             <Button
@@ -154,28 +206,27 @@ export default function Home() {
                 Featured Sermon
               </div>
               <h3 className="text-3xl font-bold font-serif md:text-4xl leading-tight">
-                The Power of Faith in Troubled Times
+                {featuredSermon?.title ?? "The Power of Faith in Troubled Times"}
               </h3>
               <p className="text-white/75 leading-relaxed text-base md:text-lg">
-                In this powerful message, we explore how standing firm in faith can break chains and
-                bring deliverance in our darkest moments. Discover the biblical keys to overcoming
-                adversity and walking in victory.
+                {featuredSermon?.description ??
+                  "In this powerful message, we explore how standing firm in faith can break chains and bring deliverance in our darkest moments."}
               </p>
               <div className="flex items-center gap-4 text-sm text-white/50">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center">
                     <Users className="w-3.5 h-3.5 text-accent" />
                   </div>
-                  <span>Bishop Climate Wiseman</span>
+                  <span>{featuredSermon?.preacher ?? "Bishop Climate Wiseman"}</span>
                 </div>
                 <span>·</span>
-                <span>April 24, 2026</span>
+                <span>{featuredSermon ? new Date(featuredSermon.date).toLocaleDateString() : "April 24, 2026"}</span>
               </div>
               <Button
                 asChild
                 className="bg-accent hover:bg-accent/90 text-primary font-bold rounded-full px-8 shadow-lg shadow-accent/30 hover:shadow-accent/50 hover:scale-105 transition-all duration-300"
               >
-                <Link href="/sermons" className="flex items-center gap-2">
+                <Link href={featuredSermon ? `/sermons/${featuredSermon.slug}` : "/sermons"} className="flex items-center gap-2">
                   Watch Full Message
                   <Play className="w-4 h-4 fill-current" />
                 </Link>
@@ -220,6 +271,56 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Upcoming Events Section */}
+      {upcomingEvents.length > 0 && (
+        <section className="py-20 bg-white">
+          <div className="container px-4">
+            <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-accent">
+                  <Calendar className="h-3.5 w-3.5" />
+                  Upcoming Events
+                </div>
+                <h2 className="text-3xl font-bold font-serif text-primary md:text-4xl">What&apos;s Coming Up</h2>
+              </div>
+              <Button asChild variant="outline" className="self-start border-primary/20 text-primary rounded-full px-6">
+                <Link href="/events" className="flex items-center gap-2">View All Events <ArrowRight className="w-4 h-4" /></Link>
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {upcomingEvents.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Latest Posts Section */}
+      {latestPosts.length > 0 && (
+        <section className="py-20 bg-gray-50/80">
+          <div className="container px-4">
+            <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-accent">
+                  <BookOpen className="h-3.5 w-3.5" />
+                  Latest Posts
+                </div>
+                <h2 className="text-3xl font-bold font-serif text-primary md:text-4xl">News &amp; Teachings</h2>
+              </div>
+              <Button asChild variant="outline" className="self-start border-primary/20 text-primary rounded-full px-6">
+                <Link href="/blog" className="flex items-center gap-2">Read All Posts <ArrowRight className="w-4 h-4" /></Link>
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {latestPosts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA Banner */}
       <section className="py-20 bg-gradient-to-r from-accent via-yellow-400 to-accent">

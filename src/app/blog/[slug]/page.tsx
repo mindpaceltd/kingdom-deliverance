@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { format } from "date-fns";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, User } from "lucide-react";
 import type { Metadata } from "next";
@@ -61,8 +62,8 @@ export default async function BlogPostPage({ params }: Props) {
 
       {/* Featured Image */}
       {post.featured_image && (
-        <div className="aspect-[21/9] max-h-96 overflow-hidden bg-muted">
-          <img src={post.featured_image} alt={post.title} className="w-full h-full object-cover" />
+        <div className="relative aspect-[21/9] max-h-96 overflow-hidden bg-muted">
+          <Image src={post.featured_image} alt={post.title} fill className="object-cover" sizes="100vw" />
         </div>
       )}
 

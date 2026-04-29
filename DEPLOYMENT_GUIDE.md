@@ -340,6 +340,23 @@ Your deployment is successful when:
 - Your domain `kdcuganda.org` loads without 404 errors
 - Apache logs show successful proxy requests
 
+## 🧪 Smoke Test Checklist
+
+After deployment, run:
+
+```bash
+SMOKE_BASE_URL="https://kdcuganda.org" npm run smoke
+```
+
+Expected smoke checks:
+- `/`, `/sermons`, `/events`, `/blog`, and `/search?q=faith` return `200`
+- `/admin` redirects unauthenticated users to `/admin/login`
+
+## ♻️ Backup and Rollback
+
+Operational backup and rollback procedures are documented in:
+- `BACKUP_AND_ROLLBACK.md`
+
 ---
 
 **Next Steps:** Run the quick fix commands above, then test your website. If you encounter any issues, check the logs using the troubleshooting commands provided.

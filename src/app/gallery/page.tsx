@@ -7,6 +7,8 @@ export const metadata: Metadata = {
     "View moments from worship services, outreaches, conferences, and church life at Kingdom Deliverance Centre Uganda.",
 };
 
+export const revalidate = 3600;
+
 const galleryItems = [
   {
     id: "worship-night",

@@ -4,9 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { SearchModal } from "@/components/search/search-modal";
 
 const links = [
   { name: "Home", href: "/" },
@@ -24,6 +25,7 @@ export function Navbar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 30);
@@ -83,8 +85,17 @@ export function Navbar() {
           ))}
         </div>
 
-        {/* Donate Button + Mobile Toggle */}
+        {/* Donate Button + Search + Mobile Toggle */}
         <div className="flex items-center gap-3">
+          {/* Search button */}
+          <button
+            className="text-white p-2 rounded-lg hover:bg-white/10 transition-colors duration-200"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Search"
+          >
+            <Search className="w-5 h-5" />
+          </button>
+
           <Button
             asChild
             className="hidden lg:flex bg-accent hover:bg-accent/90 text-primary font-bold rounded-full px-6 shadow-md shadow-accent/25 hover:shadow-accent/40 hover:scale-105 transition-all duration-300"
@@ -156,6 +167,9 @@ export function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Search modal */}
+      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </motion.nav>
   );
 }

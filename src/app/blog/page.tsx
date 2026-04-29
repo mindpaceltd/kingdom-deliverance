@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import Image from "next/image";
 import { format } from "date-fns";
 import { ArrowRight, BookOpen } from "lucide-react";
 import type { Metadata } from "next";
@@ -52,9 +53,9 @@ export default async function BlogPage() {
               {/* Featured */}
               {featured && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center pb-16 border-b border-primary/10">
-                  <div className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl overflow-hidden">
+                  <div className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl overflow-hidden relative">
                     {featured.featured_image ? (
-                      <img src={featured.featured_image} alt={featured.title} className="w-full h-full object-cover" />
+                      <Image src={featured.featured_image} alt={featured.title} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <BookOpen className="w-20 h-20 text-primary/20" />
@@ -82,9 +83,9 @@ export default async function BlogPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {rest.map((post) => (
                   <Link key={post.id} href={`/blog/${post.slug}`} className="group block bg-white rounded-2xl overflow-hidden border border-primary/10 shadow hover:shadow-lg transition-all hover:-translate-y-1">
-                    <div className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 overflow-hidden">
+                    <div className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 overflow-hidden relative">
                       {post.featured_image ? (
-                        <img src={post.featured_image} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <Image src={post.featured_image} alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 768px) 100vw, 33vw" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <BookOpen className="w-10 h-10 text-primary/20" />
