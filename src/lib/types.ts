@@ -74,6 +74,11 @@ export interface SermonSeries {
   slug: string
   description: string | null
   image_url: string | null
+  // SEO fields
+  meta_title: string | null
+  meta_description: string | null
+  focus_keyword: string | null
+  seo_score: number
   created_at: string
   updated_at: string
 }

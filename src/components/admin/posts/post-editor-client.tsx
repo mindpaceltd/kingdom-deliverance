@@ -244,7 +244,7 @@ export function PostEditorClient({ post, authorName, allTags, initialTags = [] }
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="flex h-screen flex-col bg-background overflow-hidden">
+    <div className="flex h-screen flex-col bg-background overflow-hidden -m-6">
       {/* Top bar — fixed height */}
       <div className="shrink-0 sticky top-0 z-10 flex items-center gap-3 border-b border-border bg-background/95 px-6 py-3 backdrop-blur">
         <Button
