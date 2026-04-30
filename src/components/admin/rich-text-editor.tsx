@@ -209,10 +209,13 @@ export function RichTextEditor({
   const toolbarRef = React.useRef<HTMLDivElement>(null)
 
   const editor = useEditor({
+    // Prevent SSR/hydration mismatch — only render on client
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
-        // StarterKit includes codeBlock — we keep it
-        horizontalRule: false, // we add our own
+        // Disable extensions we're adding separately with custom config
+        link: false,
+        horizontalRule: false,
       }),
       Underline,
       Link.configure({

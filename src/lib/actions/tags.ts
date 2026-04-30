@@ -29,9 +29,11 @@ export async function getAllTags(): Promise<Tag[]> {
 
 export async function getPostTags(postId: string): Promise<Tag[]> {
   const supabase = createClient()
+
+  // Use explicit join via tag_id to avoid nested select issues
   const { data, error } = await supabase
     .from('post_tags')
-    .select('tags(*)')
+    .select('tag_id')
     .eq('post_id', postId)
 
   if (error) {
@@ -39,8 +41,22 @@ export async function getPostTags(postId: string): Promise<Tag[]> {
     return []
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data?.map((row: any) => row.tags).filter(Boolean) ?? []) as Tag[]
+  if (!data || data.length === 0) return []
+
+  const tagIds = data.map((row) => row.tag_id)
+
+  const { data: tags, error: tagsError } = await supabase
+    .from('tags')
+    .select('*')
+    .in('id', tagIds)
+    .order('name', { ascending: true })
+
+  if (tagsError) {
+    console.error('[getPostTags] tags fetch error', tagsError.message)
+    return []
+  }
+
+  return (tags as Tag[]) ?? []
 }
 
 // ---------------------------------------------------------------------------
