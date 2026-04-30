@@ -250,30 +250,31 @@ export default async function BlogPostPage({ params }: Props) {
       </div>
 
       <main className="container px-4 max-w-7xl mx-auto py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 xl:gap-12">
           
-          {/* Main Content */}
-          <div className="lg:col-span-8">
-            <article className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100">
+          {/* Main Content — 2 columns */}
+          <div className="lg:col-span-2">
+            <article className="bg-white p-6 md:p-10 rounded-2xl shadow-sm border border-gray-100">
               {post.excerpt && (
-                <div className="text-xl text-gray-500 font-medium italic leading-relaxed mb-10 border-l-4 border-[#eab308] pl-6">
+                <div className="text-lg md:text-xl text-gray-600 font-light italic leading-relaxed mb-10 border-l-4 border-[#eab308] pl-6 bg-amber-50/30 py-4 rounded-r-xl">
                   {post.excerpt}
                 </div>
               )}
 
               <div
                 className="prose prose-lg prose-slate max-w-none
-                  prose-headings:font-bold prose-headings:text-[#0a121f] prose-headings:mt-8 prose-headings:mb-4
-                  prose-h2:text-2xl prose-h2:border-b prose-h2:border-gray-100 prose-h2:pb-3
-                  prose-h3:text-xl
-                  prose-p:text-gray-600 prose-p:leading-relaxed prose-p:mb-4
-                  prose-a:text-[#eab308] prose-a:no-underline hover:prose-a:underline
+                  prose-headings:font-bold prose-headings:text-[#0a121f] prose-headings:mt-10 prose-headings:mb-5
+                  prose-h2:text-3xl prose-h2:border-b prose-h2:border-gray-100 prose-h2:pb-4
+                  prose-h3:text-2xl
+                  prose-p:text-gray-700 prose-p:leading-[1.8] prose-p:mb-5 prose-p:text-base
+                  prose-a:text-[#eab308] prose-a:font-medium prose-a:no-underline hover:prose-a:underline
                   prose-strong:text-[#0a121f] prose-strong:font-bold
-                  prose-ul:list-disc prose-ul:pl-6 prose-li:text-gray-600 prose-li:mb-1
-                  prose-ol:list-decimal prose-ol:pl-6
-                  prose-blockquote:border-l-4 prose-blockquote:border-[#eab308] prose-blockquote:bg-amber-50 prose-blockquote:rounded-r-xl prose-blockquote:py-2 prose-blockquote:px-6 prose-blockquote:italic prose-blockquote:text-gray-600
-                  prose-img:rounded-xl prose-img:shadow-md prose-img:my-8
-                  prose-code:bg-gray-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm"
+                  prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2 prose-li:text-gray-700 prose-li:leading-relaxed
+                  prose-ol:list-decimal prose-ol:pl-6 prose-ol:space-y-2
+                  prose-blockquote:border-l-4 prose-blockquote:border-[#eab308] prose-blockquote:bg-amber-50 prose-blockquote:rounded-r-xl prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:italic prose-blockquote:text-gray-600 prose-blockquote:my-8
+                  prose-img:rounded-xl prose-img:shadow-lg prose-img:my-10
+                  prose-code:bg-gray-100 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm prose-code:text-gray-800
+                  prose-pre:bg-gray-900 prose-pre:text-gray-100"
                 dangerouslySetInnerHTML={{ __html: contentWithIds || "" }}
               />
 
@@ -323,8 +324,9 @@ export default async function BlogPostPage({ params }: Props) {
             </div>
           </div>
 
-          {/* Sidebar */}
-          <aside className="lg:col-span-4 space-y-10 lg:sticky lg:top-8 lg:self-start">
+          {/* Sidebar — 1 column, sticky */}
+          <aside className="lg:col-span-1 space-y-8">
+            <div className="lg:sticky lg:top-8 lg:self-start space-y-8">
             {/* Table of Contents */}
             {headings.length > 0 && (
               <div className="bg-[#0a121f] p-8 rounded-xl text-white">
@@ -377,6 +379,7 @@ export default async function BlogPostPage({ params }: Props) {
                   <Mail className="w-5 h-5" />
                 </a>
               </div>
+            </div>
             </div>
           </aside>
         </div>
