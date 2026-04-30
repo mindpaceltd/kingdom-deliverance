@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Calendar, Video, Heart, BookOpen, Sparkles,
-  Users, Award, Globe, ArrowRight, Play, Quote, ChevronRight, Target, ShieldCheck, Zap
+  Users, Award, Globe, ArrowRight, Play, Quote,
 } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -12,13 +12,12 @@ import { createClient } from "@/lib/supabase/server";
 import { PostCard } from "@/components/content/post-card";
 import { EventCard } from "@/components/content/event-card";
 import type { Post, Sermon, Event } from "@/lib/types";
-import { FadeInSection } from "@/components/ui/page-transition";
 
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "Kingdom Deliverance Centre Uganda | Encounter God, Experience Deliverance",
-  description: "Welcome to Kingdom Deliverance Centre Uganda. Join our worship services, explore powerful sermons, find upcoming events, and discover our ministries.",
+  title: "Home",
+  description: "Welcome to Kingdom Deliverance Centre Uganda. Join worship services, sermons, events, and ministries.",
 };
 
 export default async function Home() {
@@ -63,200 +62,211 @@ export default async function Home() {
   }
 
   const latestPosts: Post[] = (postsRes.data as Post[]) ?? [];
-  
   return (
-    <div className="flex min-h-screen flex-col bg-[#f8fafc]">
+    <div className="flex min-h-screen flex-col">
       <HeroSection />
 
-      {/* Mission & Vision Section */}
-      <section className="py-32 relative overflow-hidden bg-white">
-        <div className="container px-4 max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-            <FadeInSection>
-              <div className="space-y-8">
-                <div className="inline-flex items-center gap-2 rounded-full bg-[#eab308]/10 border border-[#eab308]/20 px-5 py-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#eab308]">
-                  <Target className="h-3.5 w-3.5" />
-                  Our Calling
-                </div>
-                <h2 className="text-4xl md:text-6xl font-bold font-serif text-[#0a121f] leading-[1.1]">
-                  A Church Rooted in <br />
-                  <span className="text-[#eab308] italic">Truth & Power</span>
-                </h2>
-                <div className="h-1.5 w-20 rounded-full bg-gradient-to-r from-[#eab308] to-yellow-500" />
-                <p className="text-lg leading-relaxed text-gray-500 font-medium">
-                  Kingdom Deliverance Centre Uganda exists to bring the message of salvation, healing, and
-                  deliverance to our generation. Led by Bishop Climate Wiseman, we are a global 
-                  family committed to passionate worship and deep biblical transformation.
-                </p>
-                <div className="pt-6">
-                  <Button asChild className="bg-[#0a121f] hover:bg-[#eab308] text-white hover:text-[#0a121f] px-10 py-7 rounded-2xl font-black uppercase tracking-widest transition-all duration-500 shadow-xl shadow-[#0a121f]/10">
-                    <Link href="/about" className="flex items-center gap-3">
-                      Discover Our Story <ChevronRight className="w-4 h-4" />
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            </FadeInSection>
-
-            <FadeInSection delay={0.2}>
-              <div className="grid grid-cols-2 gap-6">
-                {[
-                  { value: "3K+", label: "Faithful Members", icon: <Users className="w-5 h-5" /> },
-                  { value: "18+", label: "Years of Ministry", icon: <Award className="w-5 h-5" /> },
-                  { value: "10+", label: "Church Branches", icon: <Globe className="w-5 h-5" /> },
-                  { value: "50+", label: "Social Programs", icon: <Heart className="w-5 h-5" /> },
-                ].map((stat, i) => (
-                  <div
-                    key={stat.label}
-                    className="bg-gray-50 p-8 rounded-[2rem] border border-gray-100 hover:border-[#eab308]/30 hover:bg-white hover:shadow-2xl hover:shadow-[#0a121f]/5 transition-all duration-500 group"
-                  >
-                    <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-[#eab308] group-hover:bg-[#eab308] group-hover:text-white transition-all duration-500 mb-6">
-                      {stat.icon}
-                    </div>
-                    <div className="text-3xl md:text-4xl font-bold text-[#0a121f] mb-1">{stat.value}</div>
-                    <div className="text-xs text-gray-400 font-black uppercase tracking-widest">{stat.label}</div>
-                  </div>
-                ))}
-              </div>
-            </FadeInSection>
-          </div>
-        </div>
-      </section>
-
-      {/* Feature Navigation Grid */}
-      <section className="py-32 bg-gray-50/50">
-        <div className="container px-4 max-w-7xl mx-auto">
-          <FadeInSection className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-bold font-serif text-[#0a121f]">Pathways to Growth</h2>
-            <p className="text-gray-500 mt-6 max-w-xl mx-auto font-medium">
-              Resources and community designed to help you encounter God and grow in your spiritual journey.
+      {/* Mission / Stats */}
+      <PageSection className="bg-white py-24">
+          <div className="mx-auto max-w-3xl text-center space-y-6">
+            <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/8 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+              <Sparkles className="h-3.5 w-3.5" />
+              Our Mission
+            </div>
+            <h2 className="text-4xl font-bold md:text-5xl font-serif text-primary leading-tight">
+              A Church Rooted in{" "}
+              <span className="bg-gradient-to-r from-accent to-yellow-500 bg-clip-text text-transparent">
+                Truth and Love
+              </span>
+            </h2>
+            <div className="mx-auto h-1 w-20 rounded-full bg-gradient-to-r from-accent to-yellow-400" />
+            <p className="text-base leading-relaxed text-primary/70 md:text-lg">
+              Kingdom Deliverance Centre Uganda exists to bring the message of salvation, healing, and
+              deliverance to our generation. Under the leadership of Bishop Climate Wiseman, we are a
+              family of believers committed to passionate worship, deep biblical teaching, and
+              transforming our community through the love of Jesus Christ.
             </p>
-          </FadeInSection>
+          </div>
 
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Stats */}
+          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[
+              { value: "500+", label: "Church Members" },
+              { value: "15+", label: "Years of Ministry" },
+              { value: "50+", label: "Lives Transformed" },
+              { value: "10+", label: "Community Programs" },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="text-center rounded-2xl border border-accent/15 bg-accent/5 p-6 hover:border-accent/30 hover:bg-accent/10 transition-all duration-300"
+              >
+                <div className="text-3xl md:text-4xl font-bold text-accent mb-1">{stat.value}</div>
+                <div className="text-sm text-primary/60 font-medium">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+      </PageSection>
+
+      {/* Grow With Us */}
+      <section className="py-24 bg-gray-50/80">
+        <div className="container px-4">
+          <div className="mb-14 text-center space-y-4">
+            <h2 className="text-4xl font-bold md:text-5xl font-serif text-primary">Grow With Us</h2>
+            <p className="text-base text-primary/60 max-w-xl mx-auto md:text-lg">
+              Resources and community designed to help you grow in your faith journey.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <FeatureCard
-              icon={<Zap className="w-8 h-8" />}
+              icon={<Video className="w-7 h-7 text-accent" />}
               title="Latest Sermons"
-              description="Anointed teachings from our leadership to nourish your spirit and strengthen your faith."
+              description="Catch up on recent teachings and be blessed by the Word of God delivered with passion and truth."
               link="/sermons"
               linkText="Watch Now"
             />
             <FeatureCard
-              icon={<Calendar className="w-8 h-8" />}
+              icon={<Calendar className="w-7 h-7 text-accent" />}
               title="Upcoming Events"
-              description="Join us for life-transforming conferences, worship nights, and community outreaches."
+              description="Join us for special services, conferences, and community outreaches that transform lives."
               link="/events"
               linkText="View Calendar"
             />
             <FeatureCard
-              icon={<Sparkles className="w-8 h-8" />}
-              title="Our Ministries"
-              description="Find your place to serve and grow in our various ministries for every age and calling."
+              icon={<BookOpen className="w-7 h-7 text-accent" />}
+              title="Ministries"
+              description="Find your place to serve and grow in our various church ministries for every age and calling."
               link="/ministries"
-              linkText="Step In"
+              linkText="Explore Ministries"
             />
             <FeatureCard
-              icon={<Heart className="w-8 h-8" />}
-              title="Kingdom Giving"
-              description="Partner with us in spreading the Gospel globally through your faithful stewardship."
+              icon={<Heart className="w-7 h-7 text-accent" />}
+              title="Give Online"
+              description="Partner with us in spreading the Gospel through your generous giving and support the Kingdom work."
               link="/donations"
-              linkText="Partner Now"
+              linkText="Donate Now"
             />
           </div>
         </div>
       </section>
 
-      {/* High-Impact Featured Sermon Section */}
-      <section className="py-32 bg-[#0a121f] text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.05]">
+      {/* Featured Sermon */}
+      <section className="py-24 bg-[#0d1b3e] text-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.04]">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15)_1px,transparent_1px)] bg-[length:40px_40px]" />
         </div>
 
-        <div className="container px-4 max-w-7xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 items-center gap-20 lg:grid-cols-2">
-            <FadeInSection>
-              <div className="space-y-10">
-                <div className="inline-flex items-center gap-2 rounded-full bg-[#eab308]/10 border border-[#eab308]/20 px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.3em] text-[#eab308]">
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  Latest Word
-                </div>
-                <h3 className="text-4xl md:text-6xl font-bold font-serif leading-[1.1]">
-                  {featuredSermon?.title ?? "The Power of Faith in Troubled Times"}
-                </h3>
-                <p className="text-white/50 leading-relaxed text-lg md:text-xl font-medium italic">
-                  "{featuredSermon?.description ??
-                    "Discover how the power of unwavering faith can silence every storm and bring divine deliverance into your life."}"
-                </p>
-                <div className="flex flex-wrap items-center gap-10 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
-                  <div className="flex items-center gap-3">
-                    <Users className="w-4 h-4 text-[#eab308]" />
-                    <span className="text-white">{featuredSermon?.preacher ?? "Bishop Climate Wiseman"}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-4 h-4 text-[#eab308]" />
-                    <span className="text-white">{featuredSermon ? new Date(featuredSermon.date).toLocaleDateString() : "April 24, 2026"}</span>
-                  </div>
-                </div>
-                <div className="pt-6">
-                  <Button asChild className="bg-[#eab308] hover:bg-white text-[#0a121f] px-12 py-8 rounded-2xl font-black uppercase tracking-widest transition-all duration-500 shadow-2xl shadow-[#eab308]/10 group">
-                    <Link href={featuredSermon ? `/sermons/${featuredSermon.slug}` : "/sermons"} className="flex items-center gap-3">
-                      Watch Full Message <Play className="w-4 h-4 fill-current group-hover:scale-125 transition-transform" />
-                    </Link>
-                  </Button>
-                </div>
+        <div className="container px-4 relative z-10">
+          <div className="mb-14 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-2 rounded-full bg-accent/20 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-accent">
+                <Play className="w-3.5 h-3.5 fill-current" />
+                Latest Message
               </div>
-            </FadeInSection>
+                <h2 className="text-4xl font-bold font-serif md:text-5xl">Recent Message</h2>
+              <p className="text-white/60 text-base">The latest word from our leadership.</p>
+            </div>
+            <Button
+              asChild
+              variant="outline"
+              className="self-start border-white/20 bg-white/8 text-white hover:bg-white/15 hover:border-white/30 rounded-full px-6 transition-all duration-300"
+            >
+              <Link href="/sermons" className="flex items-center gap-2">
+                View All Sermons
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </Button>
+          </div>
 
-            <FadeInSection delay={0.3}>
-              <div className="relative group">
-                <div className="absolute -inset-10 bg-[#eab308]/10 rounded-full blur-[100px] group-hover:bg-[#eab308]/20 transition-all duration-700" />
-                <div className="relative aspect-video overflow-hidden rounded-[3rem] bg-black shadow-2xl border border-white/5">
-                  <div
-                    className="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-700"
-                    style={{
-                      backgroundImage:
-                        "url('https://images.unsplash.com/photo-1544427920-c49ccfb85579?q=80&w=2000&auto=format&fit=crop')",
-                    }}
-                  >
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                      <div className="w-24 h-24 flex items-center justify-center rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl hover:bg-[#eab308] hover:text-[#0a121f] text-white transition-all duration-500 cursor-pointer group/play">
-                        <Play className="w-10 h-10 ml-1 group-hover/play:scale-125 transition-transform" fill="currentColor" />
-                      </div>
+          <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
+            {/* Video Thumbnail */}
+            <div className="relative group">
+              <div className="absolute -inset-3 bg-gradient-to-r from-accent/20 to-yellow-400/10 rounded-2xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500" />
+              <div className="relative aspect-video overflow-hidden rounded-2xl bg-black shadow-2xl ring-1 ring-white/10">
+                <div
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{
+                    backgroundImage:
+                      "url('https://images.unsplash.com/photo-1544427920-c49ccfb85579?q=80&w=2000&auto=format&fit=crop')",
+                  }}
+                >
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <div className="w-18 h-18 flex items-center justify-center rounded-full bg-accent/90 shadow-xl shadow-accent/40 hover:scale-110 hover:bg-accent transition-all duration-300 cursor-pointer">
+                      <Play className="w-8 h-8 text-primary ml-1" fill="currentColor" />
                     </div>
                   </div>
                 </div>
               </div>
-            </FadeInSection>
+            </div>
+
+            {/* Sermon Info */}
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-accent">
+                <Quote className="w-3.5 h-3.5" />
+                Featured Sermon
+              </div>
+              <h3 className="text-3xl font-bold font-serif md:text-4xl leading-tight">
+                {featuredSermon?.title ?? "The Power of Faith in Troubled Times"}
+              </h3>
+              <p className="text-white/75 leading-relaxed text-base md:text-lg">
+                {featuredSermon?.description ??
+                  "In this powerful message, we explore how standing firm in faith can break chains and bring deliverance in our darkest moments."}
+              </p>
+              <div className="flex items-center gap-4 text-sm text-white/50">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center">
+                    <Users className="w-3.5 h-3.5 text-accent" />
+                  </div>
+                  <span>{featuredSermon?.preacher ?? "Bishop Climate Wiseman"}</span>
+                </div>
+                <span>·</span>
+                <span>{featuredSermon ? new Date(featuredSermon.date).toLocaleDateString() : "April 24, 2026"}</span>
+              </div>
+              <Button
+                asChild
+                className="bg-accent hover:bg-accent/90 text-primary font-bold rounded-full px-8 shadow-lg shadow-accent/30 hover:shadow-accent/50 hover:scale-105 transition-all duration-300"
+              >
+                <Link href={featuredSermon ? `/sermons/${featuredSermon.slug}` : "/sermons"} className="flex items-center gap-2">
+                  Watch Full Message
+                  <Play className="w-4 h-4 fill-current" />
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Core Values Section */}
-      <section className="py-32 bg-white">
-        <div className="container px-4 max-w-7xl mx-auto">
-          <FadeInSection className="text-center mb-20">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#eab308]/10 border border-[#eab308]/20 px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.3em] text-[#eab308] mb-6">
+      {/* Values */}
+      <section className="py-24 bg-white">
+        <div className="container px-4">
+          <div className="mb-14 text-center space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/8 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
               <Award className="h-3.5 w-3.5" />
-              Our Identity
+              Our Values
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold font-serif text-[#0a121f]">What We Stand For</h2>
-          </FadeInSection>
+            <h2 className="text-4xl font-bold md:text-5xl font-serif text-primary">
+              What We Stand For
+            </h2>
+            <p className="text-base text-primary/60 max-w-xl mx-auto md:text-lg">
+              Our core values guide everything we do as a church community.
+            </p>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <ValueCard
-              icon={<Heart className="w-10 h-10" />}
-              title="Divine Love"
-              description="We believe in demonstrating Christ's unconditional love through radical compassion and service to all humanity."
+              icon={<Heart className="w-10 h-10 text-accent" />}
+              title="Love & Compassion"
+              description="We believe in showing Christ's love through our actions, caring for one another and our community with genuine compassion."
             />
             <ValueCard
-              icon={<ShieldCheck className="w-10 h-10" />}
-              title="Absolute Truth"
-              description="We are unapologetically committed to the authority of Scripture as the foundation of our faith and life."
+              icon={<BookOpen className="w-10 h-10 text-accent" />}
+              title="Biblical Truth"
+              description="We are committed to teaching and living by the Word of God, ensuring our faith is grounded in biblical truth and sound doctrine."
             />
             <ValueCard
-              icon={<Zap className="w-10 h-10" />}
-              title="Manifest Power"
-              description="We believe in the active presence of the Holy Spirit, demonstrating God's power through healing and deliverance."
+              icon={<Globe className="w-10 h-10 text-accent" />}
+              title="Global Impact"
+              description="We strive to make a difference not just locally but globally, spreading the Gospel and serving communities worldwide."
             />
           </div>
         </div>
@@ -264,27 +274,23 @@ export default async function Home() {
 
       {/* Upcoming Events Section */}
       {upcomingEvents.length > 0 && (
-        <section className="py-32 bg-gray-50/50">
-          <div className="container px-4 max-w-7xl mx-auto">
-            <FadeInSection>
-              <div className="mb-16 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-[#eab308]/10 border border-[#eab308]/20 px-5 py-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#eab308]">
-                    <Calendar className="h-3.5 w-3.5" />
-                    Kingdom Calendar
-                  </div>
-                  <h2 className="text-4xl font-bold font-serif text-[#0a121f]">Experience It Live</h2>
+        <section className="py-20 bg-white">
+          <div className="container px-4">
+            <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-accent">
+                  <Calendar className="h-3.5 w-3.5" />
+                  Upcoming Events
                 </div>
-                <Button asChild variant="outline" className="h-14 px-8 border-gray-200 rounded-2xl font-bold hover:bg-[#0a121f] hover:text-white transition-all">
-                  <Link href="/events" className="flex items-center gap-2">Explore All Events <ChevronRight className="w-4 h-4" /></Link>
-                </Button>
+                <h2 className="text-3xl font-bold font-serif text-primary md:text-4xl">What&apos;s Coming Up</h2>
               </div>
-            </FadeInSection>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {upcomingEvents.map((event, i) => (
-                <FadeInSection key={event.id} delay={i * 0.1}>
-                  <EventCard event={event} />
-                </FadeInSection>
+              <Button asChild variant="outline" className="self-start border-primary/20 text-primary rounded-full px-6">
+                <Link href="/events" className="flex items-center gap-2">View All Events <ArrowRight className="w-4 h-4" /></Link>
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {upcomingEvents.map((event) => (
+                <EventCard key={event.id} event={event} />
               ))}
             </div>
           </div>
@@ -293,66 +299,53 @@ export default async function Home() {
 
       {/* Latest Posts Section */}
       {latestPosts.length > 0 && (
-        <section className="py-32 bg-white">
-          <div className="container px-4 max-w-7xl mx-auto">
-            <FadeInSection>
-              <div className="mb-16 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-[#eab308]/10 border border-[#eab308]/20 px-5 py-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#eab308]">
-                    <BookOpen className="h-3.5 w-3.5" />
-                    The Knowledge
-                  </div>
-                  <h2 className="text-4xl font-bold font-serif text-[#0a121f]">Grace & Truth Blog</h2>
+        <section className="py-20 bg-gray-50/80">
+          <div className="container px-4">
+            <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-accent">
+                  <BookOpen className="h-3.5 w-3.5" />
+                  Latest Posts
                 </div>
-                <Button asChild variant="outline" className="h-14 px-8 border-gray-200 rounded-2xl font-bold hover:bg-[#0a121f] hover:text-white transition-all">
-                  <Link href="/blog" className="flex items-center gap-2">Read Articles <ChevronRight className="w-4 h-4" /></Link>
-                </Button>
+                <h2 className="text-3xl font-bold font-serif text-primary md:text-4xl">News &amp; Teachings</h2>
               </div>
-            </FadeInSection>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {latestPosts.map((post, i) => (
-                <FadeInSection key={post.id} delay={i * 0.1}>
-                  <PostCard post={post} />
-                </FadeInSection>
+              <Button asChild variant="outline" className="self-start border-primary/20 text-primary rounded-full px-6">
+                <Link href="/blog" className="flex items-center gap-2">Read All Posts <ArrowRight className="w-4 h-4" /></Link>
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {latestPosts.map((post) => (
+                <PostCard key={post.id} post={post} />
               ))}
             </div>
           </div>
         </section>
       )}
 
-      {/* Stunning Final CTA Section */}
-      <section className="py-32 bg-[#0a121f] relative overflow-hidden">
-        <div className="absolute inset-0 bg-cover bg-center opacity-20 grayscale" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1438232992991-995b7058bbb3?q=80&w=2073&auto=format&fit=crop')" }} />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a121f] via-[#0a121f]/90 to-transparent" />
-        
-        <div className="container relative z-10 px-4 max-w-4xl mx-auto text-center space-y-12">
-          <FadeInSection>
-            <div className="inline-block px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[#eab308] text-[10px] font-black uppercase tracking-[0.3em] mb-6">
-              Step Into Your Destiny
-            </div>
-            <h2 className="text-4xl md:text-7xl font-bold font-serif text-white leading-tight">
-              Ready to Encounter <br />
-              <span className="text-[#eab308]">The King?</span>
-            </h2>
-            <p className="text-white/60 text-lg md:text-2xl leading-relaxed max-w-2xl mx-auto font-medium">
-              We can't wait to welcome you home. Join us this Sunday and experience a life-altering encounter with the Holy Spirit.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-10">
-              <Button
-                asChild
-                className="w-full sm:w-auto bg-[#eab308] hover:bg-white text-[#0a121f] font-black px-12 py-8 rounded-2xl text-sm uppercase tracking-widest shadow-2xl shadow-[#eab308]/20 transition-all duration-500"
-              >
-                <Link href="/about">Plan Your Visit</Link>
-              </Button>
-              <Button
-                asChild
-                variant="outline"
-                className="w-full sm:w-auto border-white/10 bg-white/5 backdrop-blur-xl text-white hover:bg-white/10 px-12 py-8 rounded-2xl font-bold transition-all"
-              >
-                <Link href="/contact">Speak to a Leader</Link>
-              </Button>
-            </div>
-          </FadeInSection>
+      {/* CTA Banner */}
+      <section className="py-20 bg-gradient-to-r from-accent via-yellow-400 to-accent">
+        <div className="container px-4 text-center space-y-6">
+          <h2 className="text-3xl md:text-4xl font-bold font-serif text-primary">
+            Ready to Experience God&apos;s Presence?
+          </h2>
+          <p className="text-primary/80 text-base md:text-lg max-w-xl mx-auto">
+            Join us this Sunday and become part of a community that loves God and loves people.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button
+              asChild
+              className="bg-primary hover:bg-primary/90 text-white font-bold rounded-full px-8 py-6 text-base shadow-xl hover:scale-105 transition-all duration-300"
+            >
+              <Link href="/about">Plan Your Visit</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="border-primary/30 bg-transparent text-primary hover:bg-primary/10 font-bold rounded-full px-8 py-6 text-base transition-all duration-300"
+            >
+              <Link href="/contact">Get in Touch</Link>
+            </Button>
+          </div>
         </div>
       </section>
     </div>
@@ -369,21 +362,27 @@ function FeatureCard({
   linkText: string;
 }) {
   return (
-    <Card className="group border-none bg-white p-2 rounded-[2.5rem] shadow-sm hover:shadow-2xl hover:shadow-[#0a121f]/5 transition-all duration-700 flex flex-col h-full">
-      <CardHeader className="p-8 pb-4">
-        <div className="mb-8 w-16 h-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-[#eab308] group-hover:bg-[#eab308] group-hover:text-white transition-all duration-500">
+    <Card className="group border border-gray-100 bg-white shadow-sm hover:shadow-xl hover:border-accent/20 hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+      <CardHeader>
+        <div className="mb-3 w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors duration-300">
           {icon}
         </div>
-        <CardTitle className="text-2xl font-serif text-[#0a121f] group-hover:text-[#eab308] transition-colors duration-500">
+        <CardTitle className="text-xl font-serif text-primary group-hover:text-accent transition-colors duration-300">
           {title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-8 pt-0 flex flex-col flex-1 justify-between gap-8">
-        <p className="text-sm text-gray-500 leading-relaxed font-medium">{description}</p>
-        <Link href={link} className="flex items-center justify-between group-hover:translate-x-1 transition-transform duration-500">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0a121f]">{linkText}</span>
-          <ArrowRight className="w-4 h-4 text-[#eab308]" />
-        </Link>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-primary/60 leading-relaxed">{description}</p>
+        <Button
+          asChild
+          variant="link"
+          className="px-0 text-accent font-semibold text-sm hover:translate-x-1 transition-all duration-300 group/btn"
+        >
+          <Link href={link} className="flex items-center gap-1.5">
+            {linkText}
+            <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform duration-300" />
+          </Link>
+        </Button>
       </CardContent>
     </Card>
   );
@@ -397,16 +396,14 @@ function ValueCard({
   description: string;
 }) {
   return (
-    <div className="group text-center space-y-8 p-10 rounded-[2.5rem] bg-gray-50 border border-gray-100 hover:bg-white hover:shadow-2xl hover:shadow-[#0a121f]/5 hover:-translate-y-2 transition-all duration-700">
-      <div className="mx-auto w-20 h-20 rounded-3xl bg-white border border-gray-100 flex items-center justify-center text-[#eab308] group-hover:bg-[#eab308] group-hover:text-white transition-all duration-500 shadow-sm">
+    <div className="group text-center space-y-5 p-8 rounded-2xl border border-gray-100 hover:border-accent/20 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+      <div className="mx-auto w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors duration-300">
         {icon}
       </div>
-      <div className="space-y-4">
-        <h3 className="text-2xl font-bold font-serif text-[#0a121f] group-hover:text-[#eab308] transition-colors duration-500">
-          {title}
-        </h3>
-        <p className="text-sm text-gray-500 leading-relaxed font-medium">{description}</p>
-      </div>
+      <h3 className="text-xl font-bold font-serif text-primary group-hover:text-accent transition-colors duration-300">
+        {title}
+      </h3>
+      <p className="text-sm text-primary/60 leading-relaxed">{description}</p>
     </div>
   );
 }
