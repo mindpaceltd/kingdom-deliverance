@@ -39,8 +39,8 @@ export default async function EditPostPage({ params }: Props) {
       : Promise.resolve(null),
   ])
 
-  if (!authorName && currentProfile && 'data' in currentProfile && currentProfile.data?.name) {
-    authorName = currentProfile.data.name
+  if (!authorName && currentProfile && typeof currentProfile === 'object' && 'data' in currentProfile && currentProfile.data?.name) {
+    authorName = (currentProfile.data as { name: string }).name
   }
   if (!authorName) authorName = 'Unknown'
 
