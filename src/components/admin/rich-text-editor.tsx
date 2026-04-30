@@ -1,10 +1,54 @@
 'use client'
 
-import { useEffect } from 'react'
+import * as React from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+import Link from '@tiptap/extension-link'
+import Image from '@tiptap/extension-image'
+import Youtube from '@tiptap/extension-youtube'
+import Underline from '@tiptap/extension-underline'
+import TextAlign from '@tiptap/extension-text-align'
+import { TextStyle } from '@tiptap/extension-text-style'
+import Color from '@tiptap/extension-color'
+import Placeholder from '@tiptap/extension-placeholder'
+import HorizontalRule from '@tiptap/extension-horizontal-rule'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import {
+  BoldIcon,
+  ItalicIcon,
+  UnderlineIcon,
+  StrikethroughIcon,
+  LinkIcon,
+  ImageIcon,
+  AlignLeftIcon,
+  AlignCenterIcon,
+  AlignRightIcon,
+  AlignJustifyIcon,
+  ListIcon,
+  ListOrderedIcon,
+  QuoteIcon,
+  CodeIcon,
+  MinusIcon,
+  Undo2Icon,
+  Redo2Icon,
+  XIcon,
+  CheckIcon,
+} from 'lucide-react'
+
+// YouTube icon (not in this version of lucide-react)
+function YtIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.75 15.5v-7l6.25 3.5-6.25 3.5z" />
+    </svg>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 interface RichTextEditorProps {
   value: string
@@ -13,14 +57,178 @@ interface RichTextEditorProps {
   disabled?: boolean
 }
 
+// ---------------------------------------------------------------------------
+// Toolbar separator
+// ---------------------------------------------------------------------------
+
+function Sep() {
+  return <div className="mx-0.5 h-5 w-px bg-border shrink-0" />
+}
+
+// ---------------------------------------------------------------------------
+// Toolbar button
+// ---------------------------------------------------------------------------
+
+function ToolbarBtn({
+  active,
+  disabled,
+  onClick,
+  title,
+  children,
+}: {
+  active?: boolean
+  disabled?: boolean
+  onClick: () => void
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        'inline-flex h-7 w-7 items-center justify-center rounded text-sm transition-colors',
+        'hover:bg-muted hover:text-foreground',
+        'disabled:pointer-events-none disabled:opacity-40',
+        active
+          ? 'bg-primary/10 text-primary'
+          : 'text-muted-foreground'
+      )}
+    >
+      {children}
+    </button>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Inline popover for link / image / youtube insertion
+// ---------------------------------------------------------------------------
+
+type PopoverType = 'link' | 'image' | 'youtube' | null
+
+function InsertPopover({
+  type,
+  onClose,
+  onInsert,
+}: {
+  type: PopoverType
+  onClose: () => void
+  onInsert: (value: string, altText?: string) => void
+}) {
+  const [url, setUrl] = React.useState('')
+  const [alt, setAlt] = React.useState('')
+
+  if (!type) return null
+
+  const labels: Record<NonNullable<PopoverType>, { title: string; placeholder: string }> = {
+    link: { title: 'Insert Link', placeholder: 'https://example.com' },
+    image: { title: 'Insert Image', placeholder: 'https://example.com/image.jpg' },
+    youtube: { title: 'Insert YouTube Video', placeholder: 'https://youtube.com/watch?v=...' },
+  }
+
+  const { title, placeholder } = labels[type]
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (url.trim()) {
+      onInsert(url.trim(), alt.trim() || undefined)
+      setUrl('')
+      setAlt('')
+    }
+  }
+
+  return (
+    <div className="absolute left-0 top-full z-50 mt-1 w-80 rounded-lg border border-border bg-popover p-3 shadow-lg">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-sm font-medium">{title}</span>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded p-0.5 hover:bg-muted"
+          aria-label="Close"
+        >
+          <XIcon className="size-3.5" />
+        </button>
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-2">
+        <Input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder={placeholder}
+          className="h-8 text-sm"
+          autoFocus
+        />
+        {type === 'image' && (
+          <Input
+            value={alt}
+            onChange={(e) => setAlt(e.target.value)}
+            placeholder="Alt text (optional)"
+            className="h-8 text-sm"
+          />
+        )}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" size="sm" disabled={!url.trim()}>
+            <CheckIcon className="size-3.5" />
+            Insert
+          </Button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Heading selector
+// ---------------------------------------------------------------------------
+
+const HEADING_OPTIONS = [
+  { label: 'Paragraph', value: 0 },
+  { label: 'Heading 1', value: 1 },
+  { label: 'Heading 2', value: 2 },
+  { label: 'Heading 3', value: 3 },
+  { label: 'Heading 4', value: 4 },
+] as const
+
+// ---------------------------------------------------------------------------
+// RichTextEditor
+// ---------------------------------------------------------------------------
+
 export function RichTextEditor({
   value,
   onChange,
   placeholder,
   disabled = false,
 }: RichTextEditorProps) {
+  const [popover, setPopover] = React.useState<PopoverType>(null)
+  const toolbarRef = React.useRef<HTMLDivElement>(null)
+
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [
+      StarterKit.configure({
+        // StarterKit includes codeBlock — we keep it
+        horizontalRule: false, // we add our own
+      }),
+      Underline,
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
+      }),
+      Image.configure({ inline: false, allowBase64: false }),
+      Youtube.configure({ width: 640, height: 360, nocookie: true }),
+      TextStyle,
+      Color,
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      HorizontalRule,
+      Placeholder.configure({
+        placeholder: placeholder ?? 'Write your post content here…',
+      }),
+    ],
     content: value,
     editable: !disabled,
     onUpdate: ({ editor }) => {
@@ -29,28 +237,80 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          'prose prose-sm dark:prose-invert max-w-none min-h-[200px] px-4 py-3 focus:outline-none',
+          'prose prose-sm dark:prose-invert max-w-none min-h-[320px] px-4 py-3 focus:outline-none',
           disabled && 'opacity-60 cursor-not-allowed'
         ),
-        ...(placeholder ? { 'data-placeholder': placeholder } : {}),
       },
     },
   })
 
-  // Sync external value changes to editor
-  useEffect(() => {
+  // Sync external value
+  React.useEffect(() => {
     if (!editor) return
-    const currentHTML = editor.getHTML()
-    if (value !== currentHTML) {
+    if (value !== editor.getHTML()) {
       editor.commands.setContent(value, { emitUpdate: false })
     }
   }, [value, editor])
 
-  // Sync disabled state
-  useEffect(() => {
+  // Sync disabled
+  React.useEffect(() => {
     if (!editor) return
     editor.setEditable(!disabled)
   }, [disabled, editor])
+
+  // Close popover on outside click
+  React.useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (toolbarRef.current && !toolbarRef.current.contains(e.target as Node)) {
+        setPopover(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  // ---------------------------------------------------------------------------
+  // Insert handlers
+  // ---------------------------------------------------------------------------
+
+  function handleInsert(url: string, alt?: string) {
+    if (!editor) return
+    if (popover === 'link') {
+      editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+    } else if (popover === 'image') {
+      editor.chain().focus().setImage({ src: url, alt: alt ?? '' }).run()
+    } else if (popover === 'youtube') {
+      editor.chain().focus().setYoutubeVideo({ src: url }).run()
+    }
+    setPopover(null)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Active heading level
+  // ---------------------------------------------------------------------------
+
+  function getActiveHeading(): number {
+    if (!editor) return 0
+    for (let i = 1; i <= 4; i++) {
+      if (editor.isActive('heading', { level: i })) return i
+    }
+    return 0
+  }
+
+  function setHeading(level: number) {
+    if (!editor) return
+    if (level === 0) {
+      editor.chain().focus().setParagraph().run()
+    } else {
+      editor.chain().focus().toggleHeading({ level: level as 1 | 2 | 3 | 4 }).run()
+    }
+  }
+
+  const activeHeading = getActiveHeading()
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
 
   return (
     <div
@@ -59,200 +319,250 @@ export function RichTextEditor({
         disabled && 'opacity-60'
       )}
     >
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-0.5 border-b border-input px-2 py-1.5">
+      {/* ------------------------------------------------------------------ */}
+      {/* Toolbar                                                              */}
+      {/* ------------------------------------------------------------------ */}
+      <div
+        ref={toolbarRef}
+        className="relative flex flex-wrap items-center gap-0.5 border-b border-input px-2 py-1.5"
+      >
+        {/* Heading / Paragraph selector */}
+        <select
+          value={activeHeading}
+          onChange={(e) => setHeading(Number(e.target.value))}
+          disabled={disabled}
+          className="h-7 rounded border border-input bg-background px-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-40"
+          aria-label="Text style"
+        >
+          {HEADING_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+
+        <Sep />
+
         {/* Bold */}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
+        <ToolbarBtn
+          active={editor?.isActive('bold')}
           disabled={disabled}
           onClick={() => editor?.chain().focus().toggleBold().run()}
-          className={cn(
-            editor?.isActive('bold') && 'bg-muted text-foreground'
-          )}
-          aria-label="Bold"
-          title="Bold"
+          title="Bold (Ctrl+B)"
         >
-          <span className="font-bold text-sm">B</span>
-        </Button>
+          <BoldIcon className="size-3.5" />
+        </ToolbarBtn>
 
         {/* Italic */}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
+        <ToolbarBtn
+          active={editor?.isActive('italic')}
           disabled={disabled}
           onClick={() => editor?.chain().focus().toggleItalic().run()}
-          className={cn(
-            editor?.isActive('italic') && 'bg-muted text-foreground'
-          )}
-          aria-label="Italic"
-          title="Italic"
+          title="Italic (Ctrl+I)"
         >
-          <span className="italic text-sm">I</span>
-        </Button>
+          <ItalicIcon className="size-3.5" />
+        </ToolbarBtn>
 
-        <div className="mx-1 h-5 w-px bg-border" />
-
-        {/* H1 */}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
+        {/* Underline */}
+        <ToolbarBtn
+          active={editor?.isActive('underline')}
           disabled={disabled}
-          onClick={() =>
-            editor?.chain().focus().toggleHeading({ level: 1 }).run()
-          }
-          className={cn(
-            editor?.isActive('heading', { level: 1 }) &&
-              'bg-muted text-foreground'
-          )}
-          aria-label="Heading 1"
-          title="Heading 1"
+          onClick={() => editor?.chain().focus().toggleUnderline().run()}
+          title="Underline (Ctrl+U)"
         >
-          <span className="text-xs font-semibold">H1</span>
-        </Button>
+          <UnderlineIcon className="size-3.5" />
+        </ToolbarBtn>
 
-        {/* H2 */}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
+        {/* Strikethrough */}
+        <ToolbarBtn
+          active={editor?.isActive('strike')}
           disabled={disabled}
-          onClick={() =>
-            editor?.chain().focus().toggleHeading({ level: 2 }).run()
-          }
-          className={cn(
-            editor?.isActive('heading', { level: 2 }) &&
-              'bg-muted text-foreground'
-          )}
-          aria-label="Heading 2"
-          title="Heading 2"
+          onClick={() => editor?.chain().focus().toggleStrike().run()}
+          title="Strikethrough"
         >
-          <span className="text-xs font-semibold">H2</span>
-        </Button>
+          <StrikethroughIcon className="size-3.5" />
+        </ToolbarBtn>
 
-        {/* H3 */}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
+        {/* Text color */}
+        <label
+          title="Text Color"
+          className={cn(
+            'inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded transition-colors',
+            'hover:bg-muted',
+            disabled && 'pointer-events-none opacity-40'
+          )}
+        >
+          <span className="relative">
+            <span className="text-xs font-bold" style={{ color: editor?.getAttributes('textStyle').color ?? 'currentColor' }}>A</span>
+            <span
+              className="absolute -bottom-0.5 left-0 right-0 h-1 rounded-sm"
+              style={{ backgroundColor: editor?.getAttributes('textStyle').color ?? '#000' }}
+            />
+          </span>
+          <input
+            type="color"
+            className="sr-only"
+            disabled={disabled}
+            onChange={(e) => editor?.chain().focus().setColor(e.target.value).run()}
+          />
+        </label>
+
+        <Sep />
+
+        {/* Align left */}
+        <ToolbarBtn
+          active={editor?.isActive({ textAlign: 'left' })}
           disabled={disabled}
-          onClick={() =>
-            editor?.chain().focus().toggleHeading({ level: 3 }).run()
-          }
-          className={cn(
-            editor?.isActive('heading', { level: 3 }) &&
-              'bg-muted text-foreground'
-          )}
-          aria-label="Heading 3"
-          title="Heading 3"
+          onClick={() => editor?.chain().focus().setTextAlign('left').run()}
+          title="Align Left"
         >
-          <span className="text-xs font-semibold">H3</span>
-        </Button>
+          <AlignLeftIcon className="size-3.5" />
+        </ToolbarBtn>
 
-        <div className="mx-1 h-5 w-px bg-border" />
+        {/* Align center */}
+        <ToolbarBtn
+          active={editor?.isActive({ textAlign: 'center' })}
+          disabled={disabled}
+          onClick={() => editor?.chain().focus().setTextAlign('center').run()}
+          title="Align Center"
+        >
+          <AlignCenterIcon className="size-3.5" />
+        </ToolbarBtn>
 
-        {/* Bullet List */}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
+        {/* Align right */}
+        <ToolbarBtn
+          active={editor?.isActive({ textAlign: 'right' })}
+          disabled={disabled}
+          onClick={() => editor?.chain().focus().setTextAlign('right').run()}
+          title="Align Right"
+        >
+          <AlignRightIcon className="size-3.5" />
+        </ToolbarBtn>
+
+        {/* Align justify */}
+        <ToolbarBtn
+          active={editor?.isActive({ textAlign: 'justify' })}
+          disabled={disabled}
+          onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
+          title="Justify"
+        >
+          <AlignJustifyIcon className="size-3.5" />
+        </ToolbarBtn>
+
+        <Sep />
+
+        {/* Bullet list */}
+        <ToolbarBtn
+          active={editor?.isActive('bulletList')}
           disabled={disabled}
           onClick={() => editor?.chain().focus().toggleBulletList().run()}
-          className={cn(
-            editor?.isActive('bulletList') && 'bg-muted text-foreground'
-          )}
-          aria-label="Bullet List"
           title="Bullet List"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="size-4"
-            aria-hidden="true"
-          >
-            <line x1="8" y1="6" x2="21" y2="6" />
-            <line x1="8" y1="12" x2="21" y2="12" />
-            <line x1="8" y1="18" x2="21" y2="18" />
-            <line x1="3" y1="6" x2="3.01" y2="6" />
-            <line x1="3" y1="12" x2="3.01" y2="12" />
-            <line x1="3" y1="18" x2="3.01" y2="18" />
-          </svg>
-        </Button>
+          <ListIcon className="size-3.5" />
+        </ToolbarBtn>
 
-        {/* Ordered List */}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
+        {/* Ordered list */}
+        <ToolbarBtn
+          active={editor?.isActive('orderedList')}
           disabled={disabled}
           onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-          className={cn(
-            editor?.isActive('orderedList') && 'bg-muted text-foreground'
-          )}
-          aria-label="Ordered List"
-          title="Ordered List"
+          title="Numbered List"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="size-4"
-            aria-hidden="true"
-          >
-            <line x1="10" y1="6" x2="21" y2="6" />
-            <line x1="10" y1="12" x2="21" y2="12" />
-            <line x1="10" y1="18" x2="21" y2="18" />
-            <path d="M4 6h1v4" />
-            <path d="M4 10h2" />
-            <path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1" />
-          </svg>
-        </Button>
-
-        <div className="mx-1 h-5 w-px bg-border" />
+          <ListOrderedIcon className="size-3.5" />
+        </ToolbarBtn>
 
         {/* Blockquote */}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
+        <ToolbarBtn
+          active={editor?.isActive('blockquote')}
           disabled={disabled}
           onClick={() => editor?.chain().focus().toggleBlockquote().run()}
-          className={cn(
-            editor?.isActive('blockquote') && 'bg-muted text-foreground'
-          )}
-          aria-label="Blockquote"
           title="Blockquote"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="size-4"
-            aria-hidden="true"
-          >
-            <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z" />
-            <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z" />
-          </svg>
-        </Button>
+          <QuoteIcon className="size-3.5" />
+        </ToolbarBtn>
+
+        {/* Code block */}
+        <ToolbarBtn
+          active={editor?.isActive('codeBlock')}
+          disabled={disabled}
+          onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
+          title="Code Block"
+        >
+          <CodeIcon className="size-3.5" />
+        </ToolbarBtn>
+
+        {/* Horizontal rule */}
+        <ToolbarBtn
+          disabled={disabled}
+          onClick={() => editor?.chain().focus().setHorizontalRule().run()}
+          title="Horizontal Rule"
+        >
+          <MinusIcon className="size-3.5" />
+        </ToolbarBtn>
+
+        <Sep />
+
+        {/* Link */}
+        <ToolbarBtn
+          active={editor?.isActive('link') || popover === 'link'}
+          disabled={disabled}
+          onClick={() => setPopover(popover === 'link' ? null : 'link')}
+          title="Insert Link"
+        >
+          <LinkIcon className="size-3.5" />
+        </ToolbarBtn>
+
+        {/* Image */}
+        <ToolbarBtn
+          active={popover === 'image'}
+          disabled={disabled}
+          onClick={() => setPopover(popover === 'image' ? null : 'image')}
+          title="Insert Image"
+        >
+          <ImageIcon className="size-3.5" />
+        </ToolbarBtn>
+
+        {/* YouTube */}
+        <ToolbarBtn
+          active={popover === 'youtube'}
+          disabled={disabled}
+          onClick={() => setPopover(popover === 'youtube' ? null : 'youtube')}
+          title="Embed YouTube Video"
+        >
+          <YtIcon className="size-3.5" />
+        </ToolbarBtn>
+
+        <Sep />
+
+        {/* Undo */}
+        <ToolbarBtn
+          disabled={disabled || !editor?.can().undo()}
+          onClick={() => editor?.chain().focus().undo().run()}
+          title="Undo (Ctrl+Z)"
+        >
+          <Undo2Icon className="size-3.5" />
+        </ToolbarBtn>
+
+        {/* Redo */}
+        <ToolbarBtn
+          disabled={disabled || !editor?.can().redo()}
+          onClick={() => editor?.chain().focus().redo().run()}
+          title="Redo (Ctrl+Y)"
+        >
+          <Redo2Icon className="size-3.5" />
+        </ToolbarBtn>
+
+        {/* Insert popover */}
+        <InsertPopover
+          type={popover}
+          onClose={() => setPopover(null)}
+          onInsert={handleInsert}
+        />
       </div>
 
-      {/* Editor content area */}
+      {/* ------------------------------------------------------------------ */}
+      {/* Editor content                                                       */}
+      {/* ------------------------------------------------------------------ */}
       <EditorContent editor={editor} />
     </div>
   )

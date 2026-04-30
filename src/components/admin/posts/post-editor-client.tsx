@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeftIcon, SparklesIcon } from 'lucide-react'
+import { ArrowLeftIcon, SparklesIcon, EyeIcon, EyeOffIcon, LoaderIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -20,7 +20,9 @@ import { PublishPanel } from './publish-panel'
 import { FeaturedImagePanel } from './featured-image-panel'
 import { SeoPanel } from './seo-panel'
 import { createPost, updatePost, checkSlugAvailability } from '@/lib/actions/posts'
+import { generatePostContent } from '@/lib/actions/ai'
 import { computeSeoScore } from '@/lib/seo-scorer'
+import { cn } from '@/lib/utils'
 import type { Post } from '@/lib/types'
 
 // ---------------------------------------------------------------------------
@@ -28,7 +30,7 @@ import type { Post } from '@/lib/types'
 // ---------------------------------------------------------------------------
 
 export interface PostEditorClientProps {
-  post?: Post  // undefined = new post mode
+  post?: Post
   authorName: string
 }
 
@@ -77,6 +79,15 @@ export function PostEditorClient({ post, authorName }: PostEditorClientProps) {
   const [slugError, setSlugError] = React.useState<string | null>(null)
   const slugCheckTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // AI state
+  const [aiLoading, setAiLoading] = React.useState(false)
+  const [aiError, setAiError] = React.useState<string | null>(null)
+  const [showAiMenu, setShowAiMenu] = React.useState(false)
+  const aiMenuRef = React.useRef<HTMLDivElement>(null)
+
+  // Preview mode
+  const [previewMode, setPreviewMode] = React.useState(false)
+
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
     setError(null)
@@ -86,19 +97,62 @@ export function PostEditorClient({ post, authorName }: PostEditorClientProps) {
   function handleSlugChange(slug: string) {
     setField('slug', slug)
     setSlugError(null)
-
-    if (slugCheckTimerRef.current) {
-      clearTimeout(slugCheckTimerRef.current)
-    }
-
+    if (slugCheckTimerRef.current) clearTimeout(slugCheckTimerRef.current)
     if (slug.trim()) {
       slugCheckTimerRef.current = setTimeout(async () => {
         const result = await checkSlugAvailability(slug, post?.id)
-        if (!result.available) {
-          setSlugError('This slug is already taken by another post.')
-        }
+        if (!result.available) setSlugError('This slug is already taken by another post.')
       }, 400)
     }
+  }
+
+  // Close AI menu on outside click
+  React.useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (aiMenuRef.current && !aiMenuRef.current.contains(e.target as Node)) {
+        setShowAiMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  // ---------------------------------------------------------------------------
+  // AI generation
+  // ---------------------------------------------------------------------------
+
+  async function handleAiGenerate(mode: 'full' | 'improve') {
+    setShowAiMenu(false)
+    setAiError(null)
+
+    if (!form.title.trim()) {
+      setAiError('Please enter a post title before generating content.')
+      return
+    }
+
+    if (mode === 'improve' && !form.content.trim()) {
+      setAiError('There is no existing content to improve. Use "Generate Full Post" instead.')
+      return
+    }
+
+    setAiLoading(true)
+
+    const result = await generatePostContent({
+      mode,
+      title: form.title,
+      excerpt: form.excerpt || undefined,
+      existingContent: form.content || undefined,
+      focusKeyword: form.focus_keyword || undefined,
+    })
+
+    setAiLoading(false)
+
+    if ('error' in result) {
+      setAiError(result.error)
+      return
+    }
+
+    setField('content', result.html)
   }
 
   // ---------------------------------------------------------------------------
@@ -110,8 +164,6 @@ export function PostEditorClient({ post, authorName }: PostEditorClientProps) {
     setSubmitting(true)
 
     const effectiveStatus = overrideStatus ?? form.status
-
-    // Compute SEO score at save time
     const { score } = computeSeoScore({
       focusKeyword: form.focus_keyword,
       seoTitle: form.meta_title || form.title,
@@ -155,29 +207,13 @@ export function PostEditorClient({ post, authorName }: PostEditorClientProps) {
 
   async function handlePublish() {
     const result = await save()
-    if (result) {
-      router.push('/admin/posts')
-    }
+    if (result) router.push('/admin/posts')
   }
 
   async function handleSaveDraft() {
     const result = await save('draft')
-    if (result) {
-      setDraftSaved(true)
-    }
+    if (result) setDraftSaved(true)
   }
-
-  function handleAiGenerate() {
-    // Coming soon — show inline notification
-    setDraftSaved(false)
-    // Use a temporary state to show the "Coming soon" message
-    setError(null)
-    // We'll use a separate state for the AI toast
-    setAiToast(true)
-    setTimeout(() => setAiToast(false), 3000)
-  }
-
-  const [aiToast, setAiToast] = React.useState(false)
 
   // ---------------------------------------------------------------------------
   // Render
@@ -209,18 +245,16 @@ export function PostEditorClient({ post, authorName }: PostEditorClientProps) {
         <main className="flex-1 overflow-y-auto px-6 py-8 max-w-3xl mx-auto w-full">
           <div className="space-y-6">
             {/* Title */}
-            <div className="space-y-1.5">
-              <Input
-                id="post-title"
-                value={form.title}
-                onChange={(e) => setField('title', e.target.value)}
-                placeholder="Post title"
-                required
-                disabled={submitting}
-                className="text-2xl font-bold h-auto py-3 border-0 border-b border-input rounded-none px-0 focus-visible:ring-0 focus-visible:border-ring placeholder:text-muted-foreground/50"
-                aria-label="Post title"
-              />
-            </div>
+            <Input
+              id="post-title"
+              value={form.title}
+              onChange={(e) => setField('title', e.target.value)}
+              placeholder="Post title"
+              required
+              disabled={submitting}
+              className="text-2xl font-bold h-auto py-3 border-0 border-b border-input rounded-none px-0 focus-visible:ring-0 focus-visible:border-ring placeholder:text-muted-foreground/50"
+              aria-label="Post title"
+            />
 
             {/* Slug */}
             <SlugInput
@@ -230,7 +264,7 @@ export function PostEditorClient({ post, authorName }: PostEditorClientProps) {
               disabled={submitting}
             />
             {slugError && (
-              <p role="alert" className="text-sm text-destructive">
+              <p role="alert" className="text-sm text-destructive -mt-4">
                 {slugError}
               </p>
             )}
@@ -272,39 +306,129 @@ export function PostEditorClient({ post, authorName }: PostEditorClientProps) {
             </div>
 
             {/* Content */}
-            <div className="space-y-1.5">
+            <div className="space-y-2">
+              {/* Content header row */}
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-medium">Content</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAiGenerate}
-                  disabled={submitting}
-                  className="gap-1.5 text-xs"
-                >
-                  <SparklesIcon className="size-3.5" />
-                  Generate with AI
-                </Button>
+                <div className="flex items-center gap-2">
+                  {/* Preview toggle */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setPreviewMode((p) => !p)}
+                    className="gap-1.5 text-xs"
+                    title={previewMode ? 'Back to editor' : 'Preview content'}
+                  >
+                    {previewMode ? (
+                      <>
+                        <EyeOffIcon className="size-3.5" />
+                        Edit
+                      </>
+                    ) : (
+                      <>
+                        <EyeIcon className="size-3.5" />
+                        Preview
+                      </>
+                    )}
+                  </Button>
+
+                  {/* AI Generate button + dropdown */}
+                  <div className="relative" ref={aiMenuRef}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAiMenu((v) => !v)}
+                      disabled={submitting || aiLoading}
+                      className="gap-1.5 text-xs"
+                    >
+                      {aiLoading ? (
+                        <LoaderIcon className="size-3.5 animate-spin" />
+                      ) : (
+                        <SparklesIcon className="size-3.5" />
+                      )}
+                      {aiLoading ? 'Generating…' : 'Generate with AI'}
+                    </Button>
+
+                    {/* Dropdown menu */}
+                    {showAiMenu && (
+                      <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-lg border border-border bg-popover shadow-lg overflow-hidden">
+                        <button
+                          type="button"
+                          className="flex w-full items-start gap-3 px-4 py-3 text-left text-sm hover:bg-muted transition-colors"
+                          onClick={() => handleAiGenerate('full')}
+                        >
+                          <SparklesIcon className="size-4 mt-0.5 shrink-0 text-primary" />
+                          <div>
+                            <p className="font-medium">Generate Full Post</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Write a complete post from your title
+                            </p>
+                          </div>
+                        </button>
+                        <div className="border-t border-border" />
+                        <button
+                          type="button"
+                          className={cn(
+                            'flex w-full items-start gap-3 px-4 py-3 text-left text-sm hover:bg-muted transition-colors',
+                            !form.content.trim() && 'opacity-40 pointer-events-none'
+                          )}
+                          onClick={() => handleAiGenerate('improve')}
+                        >
+                          <SparklesIcon className="size-4 mt-0.5 shrink-0 text-violet-500" />
+                          <div>
+                            <p className="font-medium">Improve Content</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Rewrite &amp; expand existing content
+                            </p>
+                          </div>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
-              {/* AI "Coming soon" toast */}
-              {aiToast && (
+              {/* AI error */}
+              {aiError && (
+                <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {aiError}
+                </p>
+              )}
+
+              {/* AI loading overlay message */}
+              {aiLoading && (
                 <div
                   role="status"
                   aria-live="polite"
-                  className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground"
+                  className="flex items-center gap-2 rounded-md bg-primary/5 px-3 py-2 text-sm text-primary"
                 >
-                  Coming soon
+                  <LoaderIcon className="size-4 animate-spin" />
+                  Gemini AI is writing your post…
                 </div>
               )}
 
-              <RichTextEditor
-                value={form.content}
-                onChange={(html) => setField('content', html)}
-                placeholder="Write your post content here…"
-                disabled={submitting}
-              />
+              {/* Preview mode */}
+              {previewMode ? (
+                <div className="rounded-md border border-input bg-background px-4 py-3 min-h-[320px]">
+                  {form.content ? (
+                    <div
+                      className="prose prose-sm dark:prose-invert max-w-none"
+                      dangerouslySetInnerHTML={{ __html: form.content }}
+                    />
+                  ) : (
+                    <p className="text-muted-foreground text-sm italic">No content yet.</p>
+                  )}
+                </div>
+              ) : (
+                <RichTextEditor
+                  value={form.content}
+                  onChange={(html) => setField('content', html)}
+                  placeholder="Write your post content here…"
+                  disabled={submitting || aiLoading}
+                />
+              )}
             </div>
 
             {/* Draft saved confirmation */}
@@ -318,7 +442,6 @@ export function PostEditorClient({ post, authorName }: PostEditorClientProps) {
 
         {/* Right: sidebar */}
         <aside className="w-80 shrink-0 border-l border-border overflow-y-auto px-4 py-8 space-y-4">
-          {/* Publish Panel */}
           <PublishPanel
             status={form.status}
             scheduledAt={form.scheduled_at}
@@ -331,15 +454,11 @@ export function PostEditorClient({ post, authorName }: PostEditorClientProps) {
             onPublish={handlePublish}
             onSaveDraft={handleSaveDraft}
           />
-
-          {/* Featured Image Panel */}
           <FeaturedImagePanel
             value={form.featured_image}
             onChange={(url) => setField('featured_image', url)}
             disabled={submitting}
           />
-
-          {/* SEO Panel */}
           <SeoPanel
             focusKeyword={form.focus_keyword}
             seoTitle={form.meta_title || form.title}
