@@ -31,8 +31,8 @@ export async function generatePostContent(
   }
 
   const genAI = new GoogleGenerativeAI(apiKey)
-  // Use gemini-2.0-flash — fast, free-tier compatible
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
+  // gemini-1.5-flash-8b has a separate free-tier quota from gemini-2.0-flash
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-8b' })
 
   let prompt: string
 
@@ -87,6 +87,14 @@ Requirements:
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)
     console.error('[generatePostContent] Gemini error:', message)
+
+    // Friendly message for quota errors
+    if (message.includes('429') || message.includes('quota') || message.includes('Too Many Requests')) {
+      return {
+        error: 'AI quota limit reached. Please wait a minute and try again, or try later today.',
+      }
+    }
+
     return { error: `AI generation failed: ${message}` }
   }
 }

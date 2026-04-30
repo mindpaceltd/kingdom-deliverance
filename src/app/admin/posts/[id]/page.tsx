@@ -11,34 +11,40 @@ interface Props {
 export default async function EditPostPage({ params }: Props) {
   const supabase = createClient()
 
-  const { data: post, error } = await supabase
-    .from('posts')
-    .select('*, profiles(name, avatar_url)')
-    .eq('id', params.id)
-    .single()
+  // Run all fetches in parallel
+  const [postResult, userResult] = await Promise.all([
+    supabase
+      .from('posts')
+      .select('*, profiles(name, avatar_url)')
+      .eq('id', params.id)
+      .single(),
+    supabase.auth.getUser(),
+  ])
+
+  const { data: post, error } = postResult
 
   if (error || !post) {
     redirect('/admin/posts')
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = userResult.data.user
 
-  let authorName = post.profiles?.name ?? 'Unknown'
-  if (user && !authorName) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('name')
-      .eq('id', user.id)
-      .single()
-    if (profile?.name) authorName = profile.name
-  }
+  // Resolve author name — prefer the joined profile, fall back to current user's profile
+  let authorName: string = (post.profiles as { name?: string | null } | null)?.name ?? ''
 
-  const [allTags, postTags] = await Promise.all([
+  // Fetch tags and (if needed) current user profile in parallel
+  const [allTags, postTags, currentProfile] = await Promise.all([
     getAllTags(),
     getPostTags(params.id),
+    !authorName && user
+      ? supabase.from('profiles').select('name').eq('id', user.id).single()
+      : Promise.resolve(null),
   ])
+
+  if (!authorName && currentProfile && 'data' in currentProfile && currentProfile.data?.name) {
+    authorName = currentProfile.data.name
+  }
+  if (!authorName) authorName = 'Unknown'
 
   return (
     <PostEditorClient
