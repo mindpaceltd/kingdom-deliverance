@@ -31,8 +31,14 @@ export async function generatePostContent(
   }
 
   const genAI = new GoogleGenerativeAI(apiKey)
-  // gemini-1.5-flash-8b has a separate free-tier quota from gemini-2.0-flash
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-8b' })
+
+  // Try models in order — fall back if one is unavailable or quota-exceeded
+  const MODEL_CHAIN = [
+    'gemini-2.5-flash-lite-preview-06-17', // fastest free tier
+    'gemini-2.5-flash',                     // standard free tier
+    'gemini-2.0-flash',                     // fallback
+    'gemini-1.5-flash',                     // last resort
+  ]
 
   let prompt: string
 
@@ -73,28 +79,49 @@ Requirements:
   }
 
   try {
-    const result = await model.generateContent(prompt)
-    const text = result.response.text()
+    let lastError = ''
 
-    // Strip any accidental markdown code fences
-    const html = text
-      .replace(/^```html\s*/i, '')
-      .replace(/^```\s*/i, '')
-      .replace(/\s*```$/i, '')
-      .trim()
+    for (const modelName of MODEL_CHAIN) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName })
+        const result = await model.generateContent(prompt)
+        const text = result.response.text()
 
-    return { html }
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err)
-    console.error('[generatePostContent] Gemini error:', message)
+        // Strip any accidental markdown code fences
+        const html = text
+          .replace(/^```html\s*/i, '')
+          .replace(/^```\s*/i, '')
+          .replace(/\s*```$/i, '')
+          .trim()
 
-    // Friendly message for quota errors
-    if (message.includes('429') || message.includes('quota') || message.includes('Too Many Requests')) {
-      return {
-        error: 'AI quota limit reached. Please wait a minute and try again, or try later today.',
+        return { html }
+      } catch (modelErr: unknown) {
+        const msg = modelErr instanceof Error ? modelErr.message : String(modelErr)
+        lastError = msg
+        console.warn(`[generatePostContent] model ${modelName} failed:`, msg)
+
+        // If it's a quota error, try next model
+        if (msg.includes('429') || msg.includes('quota') || msg.includes('Too Many Requests')) {
+          continue
+        }
+        // If it's a 404 (model not found), try next
+        if (msg.includes('404') || msg.includes('not found')) {
+          continue
+        }
+        // Any other error — stop trying
+        break
       }
     }
 
+    // All models failed
+    if (lastError.includes('429') || lastError.includes('quota') || lastError.includes('Too Many Requests')) {
+      return { error: 'AI quota limit reached. Please wait a minute and try again.' }
+    }
+    return { error: `AI generation failed: ${lastError}` }
+
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('[generatePostContent] unexpected error:', message)
     return { error: `AI generation failed: ${message}` }
   }
 }
