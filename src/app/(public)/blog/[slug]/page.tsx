@@ -221,68 +221,69 @@ export default async function BlogPostPage({ params }: Props) {
       <div className="flex flex-col min-h-screen">
 
         {/* ================================================================ */}
-        {/* HERO — dark bg, ~280px tall, left text + right image              */}
+        {/* HERO SECTION                                                     */}
         {/* ================================================================ */}
-        <section className="relative bg-[#0a121f] text-white overflow-hidden" style={{ minHeight: 280 }}>
-          {/* Right-side featured image */}
+        <section className="relative w-full min-h-[40vh] lg:min-h-[60vh] flex items-center overflow-hidden bg-[#0a1428]">
+          {/* Background Image */}
           {post.featured_image && (
-            <div className="absolute inset-y-0 right-0 w-[40%] hidden lg:block">
+            <div className="absolute inset-0 w-full h-full">
               <Image
                 src={post.featured_image}
                 alt={post.meta_title || post.title}
                 fill
-                className="object-cover"
-                sizes="40vw"
                 priority
+                className="object-cover object-center lg:object-[center_right]"
+                sizes="100vw"
               />
-              {/* Gradient fade from dark bg into image — sits on left edge of image area */}
-              <div className="absolute inset-y-0 left-0 w-40 bg-gradient-to-r from-[#0a121f] via-[#0a121f]/80 to-transparent" />
+              {/* Overlay: Solid dark on mobile, Gradient on desktop */}
+              <div className="absolute inset-0 bg-[rgba(10,20,40,0.85)] lg:bg-transparent lg:bg-gradient-to-r lg:from-[rgba(10,20,40,0.9)] lg:from-40% lg:to-[rgba(10,20,40,0.2)] lg:to-100%" />
             </div>
           )}
 
-          {/* Left content — 60% wide on desktop */}
-          <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-16">
-            <div className="lg:w-[60%]">
+          {/* Content Container */}
+          <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+            <div className="w-full lg:w-2/3 flex flex-col items-start gap-5 lg:gap-6">
+              
               {/* Breadcrumbs */}
-              <nav aria-label="Breadcrumb" className="mb-4 text-sm text-white/50 flex items-center gap-1.5 flex-wrap">
-                <Link href="/" className="hover:text-white transition-colors">Home</Link>
-                <ChevronRight className="w-3 h-3" />
-                <Link href="/blog" className="hover:text-white transition-colors">Blog</Link>
-                <ChevronRight className="w-3 h-3" />
-                <span className="text-amber-400/80 line-clamp-1">{post.title}</span>
+              <nav aria-label="Breadcrumb" className="text-sm text-gray-400 flex items-center gap-2 flex-wrap">
+                <Link href="/" className="hover:text-gray-200 transition-colors">Home</Link>
+                <ChevronRight className="w-3.5 h-3.5" />
+                <Link href="/blog" className="hover:text-gray-200 transition-colors">Blog</Link>
+                <ChevronRight className="w-3.5 h-3.5" />
+                <span className="text-gray-300 line-clamp-1">{post.title}</span>
               </nav>
 
               {/* Category badge */}
-              <span className="inline-block self-start mb-4 text-xs font-bold tracking-widest uppercase bg-amber-400 text-[#1a1a2e] rounded-full px-4 py-1.5">
+              <span className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-[#eab308] text-[#0a121f] text-xs font-bold tracking-widest uppercase shadow-sm">
                 {post.type === "news" ? "NEWS" : post.type === "biography" ? "BIOGRAPHY" : "BLOG POST"}
               </span>
 
               {/* Title */}
-              <h1 className="font-serif text-2xl md:text-3xl xl:text-4xl font-bold leading-tight mb-5 text-white">
+              <h1 className="text-white font-bold leading-tight line-clamp-3 text-3xl md:text-4xl lg:text-[clamp(2.5rem,4vw,3.75rem)]">
                 {post.title}
               </h1>
 
               {/* Meta row */}
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/60">
+              <div className="flex flex-wrap items-center gap-4 lg:gap-6 text-sm text-gray-300 mt-2">
                 {authorName && (
-                  <span className="flex items-center gap-1.5">
-                    <User className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span className="text-white/80">{authorName}</span>
+                  <span className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-[#eab308]" />
+                    <span className="text-white font-medium">{authorName}</span>
                   </span>
                 )}
                 {post.published_at && (
-                  <span className="flex items-center gap-1.5">
-                    <Calendar className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-[#eab308]" />
                     {format(new Date(post.published_at), "MMMM d, yyyy")}
                   </span>
                 )}
-                <span className="flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-[#eab308]" />
                   {rt}
                 </span>
                 {(post.views ?? 0) > 0 && (
-                  <span className="flex items-center gap-1.5">
-                    <Eye className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span className="flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-[#eab308]" />
                     {(post.views ?? 0).toLocaleString()} views
                   </span>
                 )}
