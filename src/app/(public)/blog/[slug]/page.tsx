@@ -259,7 +259,7 @@ export default async function BlogPostPage({ params }: Props) {
               </span>
 
               {/* Title */}
-              <h1 className="text-white font-bold leading-snug text-3xl md:text-4xl lg:text-[clamp(2.5rem,4vw,3.75rem)] drop-shadow-md">
+              <h1 className="text-white font-bold leading-tight text-2xl md:text-3xl xl:text-4xl drop-shadow-md">
                 {post.title}
               </h1>
 
