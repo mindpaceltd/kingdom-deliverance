@@ -11,7 +11,7 @@ interface Props {
 export default async function EditPostPage({ params }: Props) {
   const supabase = createClient()
 
-  // Run all fetches in parallel
+  // Run post fetch and user auth in parallel
   const [postResult, userResult] = await Promise.all([
     supabase
       .from('posts')
@@ -28,16 +28,14 @@ export default async function EditPostPage({ params }: Props) {
   }
 
   const user = userResult.data.user
-
-  // Resolve author name — prefer the joined profile, fall back to current user's profile
   let authorName: string = (post.profiles as { name?: string | null } | null)?.name ?? ''
 
-  // Fetch tags and (if needed) current user profile in parallel
+  // Fetch tags in parallel — wrapped in try/catch so a tags error doesn't 500 the whole page
   const [allTags, postTags, currentProfile] = await Promise.all([
-    getAllTags(),
-    getPostTags(params.id),
+    getAllTags().catch(() => []),
+    getPostTags(params.id).catch(() => []),
     !authorName && user
-      ? supabase.from('profiles').select('name').eq('id', user.id).single()
+      ? Promise.resolve(supabase.from('profiles').select('name').eq('id', user.id).single())
       : Promise.resolve(null),
   ])
 

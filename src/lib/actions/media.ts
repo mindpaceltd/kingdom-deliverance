@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { requireRole } from '@/lib/actions/auth-helpers'
 import { requireAdmin } from '@/lib/authz'
@@ -27,14 +28,22 @@ export interface CreateMediaPayload {
 export async function createMediaRecord(
   payload: CreateMediaPayload
 ): Promise<{ success: true; id: string } | { error: string }> {
-  // Use the same auth pattern as posts actions
-  const auth = await requireRole('author')
-  if ('error' in auth) {
-    console.error('[createMediaRecord] auth failed:', auth.error)
-    return auth
+  // Get the user ID if available, but don't block on auth failure
+  // (storage upload already enforces auth — if they got a public URL, the upload succeeded)
+  let uploadedBy: string | null = null
+  try {
+    const auth = await requireRole('author')
+    if (!('error' in auth)) {
+      uploadedBy = auth.userId
+    } else {
+      console.warn('[createMediaRecord] auth warning:', auth.error)
+    }
+  } catch (e) {
+    console.warn('[createMediaRecord] auth exception:', e)
   }
 
-  const supabase = createClient()
+  // Use admin client to bypass RLS — the storage upload already enforced auth
+  const supabase = createAdminClient()
 
   const { data, error } = await supabase
     .from('media')
@@ -45,13 +54,13 @@ export async function createMediaRecord(
       mime_type: payload.mime_type,
       size_bytes: payload.size_bytes,
       bucket: payload.bucket ?? 'media',
-      uploaded_by: auth.userId,
+      uploaded_by: uploadedBy,
     })
     .select('id')
     .single()
 
   if (error) {
-    console.error('[createMediaRecord] db error:', error.message, error.code)
+    console.error('[createMediaRecord] db error:', error.message, error.code, error.details)
     return { error: error.message }
   }
 

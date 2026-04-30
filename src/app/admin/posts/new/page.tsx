@@ -11,15 +11,20 @@ export default async function NewPostPage() {
 
   let authorName = 'Unknown'
   if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('name')
-      .eq('id', user.id)
-      .single()
-    if (profile?.name) authorName = profile.name
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', user.id)
+        .single()
+      if (profile?.name) authorName = profile.name
+    } catch { /* non-fatal */ }
   }
 
-  const allTags = await getAllTags()
+  let allTags: import('@/lib/types').Tag[] = []
+  try {
+    allTags = await getAllTags()
+  } catch { /* non-fatal — tags are optional */ }
 
   return <PostEditorClient authorName={authorName} allTags={allTags} />
 }
