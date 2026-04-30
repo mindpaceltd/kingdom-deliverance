@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
-import { createMediaRecord } from '@/lib/actions/media'
 import type { MediaAsset } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import {
@@ -184,23 +183,36 @@ function MediaPickerModal({
 
     const { data: urlData } = supabase.storage.from('media').getPublicUrl(path)
 
-    const result = await createMediaRecord({
-      filename: file.name,
-      url: urlData.publicUrl,
-      type,
-      mime_type: file.type || 'application/octet-stream',
-      size_bytes: file.size,
-      bucket: 'media',
-    })
+    // Use API route directly — more reliable than server action in production
+    let recordError: string | null = null
+    try {
+      const res = await fetch('/api/media', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: file.name,
+          url: urlData.publicUrl,
+          type,
+          mime_type: file.type || 'application/octet-stream',
+          size_bytes: file.size,
+          bucket: 'media',
+          uploaded_by: session.user.id,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok || json.error) {
+        recordError = json.error ?? `HTTP ${res.status}`
+      }
+    } catch (e) {
+      recordError = e instanceof Error ? e.message : String(e)
+    }
 
-    if ('error' in result) {
-      // Storage upload succeeded but DB record failed — still show the image
-      console.error('[upload] createMediaRecord error:', result.error)
+    if (recordError) {
+      console.error('[upload] record error:', recordError)
       setUploadState({
         status: 'error',
-        message: `File uploaded but record failed: ${result.error}`,
+        message: `File uploaded to storage but record failed: ${recordError}`,
       })
-      // Still refresh to show the file if it somehow got recorded
       await fetchAssets()
       return
     }

@@ -28,44 +28,49 @@ export interface CreateMediaPayload {
 export async function createMediaRecord(
   payload: CreateMediaPayload
 ): Promise<{ success: true; id: string } | { error: string }> {
-  // Get the user ID if available, but don't block on auth failure
-  // (storage upload already enforces auth — if they got a public URL, the upload succeeded)
-  let uploadedBy: string | null = null
   try {
-    const auth = await requireRole('author')
-    if (!('error' in auth)) {
-      uploadedBy = auth.userId
-    } else {
-      console.warn('[createMediaRecord] auth warning:', auth.error)
+    // Get the user ID if available, but don't block on auth failure
+    let uploadedBy: string | null = null
+    try {
+      const auth = await requireRole('author')
+      if (!('error' in auth)) {
+        uploadedBy = auth.userId
+      } else {
+        console.warn('[createMediaRecord] auth warning:', auth.error)
+      }
+    } catch (e) {
+      console.warn('[createMediaRecord] auth exception:', e)
     }
+
+    // Use admin client to bypass RLS
+    const supabase = createAdminClient()
+
+    const { data, error } = await supabase
+      .from('media')
+      .insert({
+        filename: payload.filename,
+        url: payload.url,
+        type: payload.type,
+        mime_type: payload.mime_type,
+        size_bytes: payload.size_bytes,
+        bucket: payload.bucket ?? 'media',
+        uploaded_by: uploadedBy,
+      })
+      .select('id')
+      .single()
+
+    if (error) {
+      console.error('[createMediaRecord] db error:', error.message, error.code, error.details)
+      return { error: error.message }
+    }
+
+    revalidatePath('/admin/media')
+    return { success: true, id: data.id }
   } catch (e) {
-    console.warn('[createMediaRecord] auth exception:', e)
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('[createMediaRecord] unexpected error:', msg)
+    return { error: `Server error: ${msg}` }
   }
-
-  // Use admin client to bypass RLS — the storage upload already enforced auth
-  const supabase = createAdminClient()
-
-  const { data, error } = await supabase
-    .from('media')
-    .insert({
-      filename: payload.filename,
-      url: payload.url,
-      type: payload.type,
-      mime_type: payload.mime_type,
-      size_bytes: payload.size_bytes,
-      bucket: payload.bucket ?? 'media',
-      uploaded_by: uploadedBy,
-    })
-    .select('id')
-    .single()
-
-  if (error) {
-    console.error('[createMediaRecord] db error:', error.message, error.code, error.details)
-    return { error: error.message }
-  }
-
-  revalidatePath('/admin/media')
-  return { success: true, id: data.id }
 }
 
 // ---------------------------------------------------------------------------
