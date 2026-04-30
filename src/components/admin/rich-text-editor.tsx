@@ -207,6 +207,9 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   const [popover, setPopover] = React.useState<PopoverType>(null)
   const toolbarRef = React.useRef<HTMLDivElement>(null)
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => { setMounted(true) }, [])
 
   const editor = useEditor({
     // Prevent SSR/hydration mismatch — only render on client
@@ -215,6 +218,7 @@ export function RichTextEditor({
       StarterKit.configure({
         // Disable extensions we're adding separately with custom config
         link: false,
+        underline: false,
         horizontalRule: false,
       }),
       Underline,
@@ -322,9 +326,8 @@ export function RichTextEditor({
         disabled && 'opacity-60'
       )}
     >
-      {/* ------------------------------------------------------------------ */}
-      {/* Toolbar                                                              */}
-      {/* ------------------------------------------------------------------ */}
+      {/* Toolbar — only rendered after mount to avoid hydration mismatch */}
+      {mounted && (
       <div
         ref={toolbarRef}
         className="relative flex flex-wrap items-center gap-0.5 border-b border-input px-2 py-1.5"
@@ -562,10 +565,9 @@ export function RichTextEditor({
           onInsert={handleInsert}
         />
       </div>
+      )} {/* end mounted */}
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Editor content                                                       */}
-      {/* ------------------------------------------------------------------ */}
+      {/* Editor content */}
       <EditorContent editor={editor} />
     </div>
   )

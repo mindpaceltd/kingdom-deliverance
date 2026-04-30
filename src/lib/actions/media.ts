@@ -2,7 +2,8 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { requireAdmin, requireRoles, ROLES } from '@/lib/authz'
+import { requireRole } from '@/lib/actions/auth-helpers'
+import { requireAdmin } from '@/lib/authz'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -20,14 +21,18 @@ export interface CreateMediaPayload {
 // ---------------------------------------------------------------------------
 // createMediaRecord
 // Inserts a new row into the `media` table.
-// Requires `editor` or `admin` role.
+// Requires at minimum the `author` role.
 // ---------------------------------------------------------------------------
 
 export async function createMediaRecord(
   payload: CreateMediaPayload
 ): Promise<{ success: true; id: string } | { error: string }> {
-  const result = await requireRoles(ROLES.CONTENT)
-  if ('error' in result) return result
+  // Use the same auth pattern as posts actions
+  const auth = await requireRole('author')
+  if ('error' in auth) {
+    console.error('[createMediaRecord] auth failed:', auth.error)
+    return auth
+  }
 
   const supabase = createClient()
 
@@ -40,13 +45,13 @@ export async function createMediaRecord(
       mime_type: payload.mime_type,
       size_bytes: payload.size_bytes,
       bucket: payload.bucket ?? 'media',
-      uploaded_by: result.id,
+      uploaded_by: auth.userId,
     })
     .select('id')
     .single()
 
   if (error) {
-    console.error('[createMediaRecord]', error.message)
+    console.error('[createMediaRecord] db error:', error.message, error.code)
     return { error: error.message }
   }
 
