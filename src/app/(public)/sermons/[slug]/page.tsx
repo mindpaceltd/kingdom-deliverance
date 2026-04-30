@@ -25,6 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
 
 export default async function SermonDetailPage({ params }: Props) {
   const supabase = createClient();
@@ -36,8 +37,8 @@ export default async function SermonDetailPage({ params }: Props) {
 
   if (!sermon) notFound();
 
-  // Track view (server-side action)
-  await incrementSermonViews(sermon.id);
+  // Track view (fire-and-forget, don't block render)
+  void incrementSermonViews(sermon.id);
 
   const { data: related } = await supabase
     .from("sermons")

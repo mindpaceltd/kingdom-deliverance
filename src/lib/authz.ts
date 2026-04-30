@@ -1,15 +1,10 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { ROLES } from '@/lib/roles'
 import type { Profile, UserRole } from '@/lib/types'
 
 export type AuthzResult = Profile | { error: string }
-
-export const ROLES = {
-  ADMIN: ['admin'] as UserRole[],
-  CONTENT: ['admin', 'editor', 'author'] as UserRole[],
-  MANAGE_STRUCTURE: ['admin', 'editor'] as UserRole[],
-} as const
 
 export async function requireRoles(allowedRoles: readonly UserRole[]): Promise<AuthzResult> {
   const supabase = createClient()

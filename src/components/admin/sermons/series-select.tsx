@@ -1,134 +1,83 @@
 'use client'
 
 import * as React from 'react'
-import { Check, ChevronsUpDown, Plus } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { PlusIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
+import { Input } from '@/components/ui/input'
 import { createSermonSeries } from '@/lib/actions/sermon-series'
 import type { SermonSeries } from '@/lib/types'
 
 interface SeriesSelectProps {
-  value: string | null // series_id
+  value: string | null
   allSeries: SermonSeries[]
   onChange: (id: string | null) => void
   disabled?: boolean
 }
 
 export function SeriesSelect({ value, allSeries, onChange, disabled }: SeriesSelectProps) {
-  const [open, setOpen] = React.useState(false)
-  const [searchValue, setSearchValue] = React.useState('')
-  const [isCreating, setIsCreating] = React.useState(false)
+  const [showCreate, setShowCreate] = React.useState(false)
+  const [newName, setNewName] = React.useState('')
+  const [creating, setCreating] = React.useState(false)
+  const [createError, setCreateError] = React.useState<string | null>(null)
 
-  const selectedSeries = allSeries.find((s) => s.id === value)
-
-  async function handleCreateNew() {
-    if (!searchValue.trim()) return
-    setIsCreating(true)
-    const result = await createSermonSeries({
-      name: searchValue.trim(),
-      slug: searchValue.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      description: null,
-      image_url: null,
-    })
-    setIsCreating(false)
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault()
+    if (!newName.trim()) return
+    setCreating(true)
+    setCreateError(null)
+    const slug = newName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+    const result = await createSermonSeries({ name: newName.trim(), slug, description: null, image_url: null })
+    setCreating(false)
     if ('success' in result) {
       onChange(result.id)
-      setOpen(false)
-      setSearchValue('')
-      // Note: Ideally allSeries would refresh via revalidation, 
-      // but for better UX we might want to reload or pass a refresher.
-      window.location.reload() 
+      setNewName('')
+      setShowCreate(false)
+      window.location.reload()
     } else {
-      alert(result.error)
+      setCreateError(result.error)
     }
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between"
-          disabled={disabled}
+    <div className="space-y-2">
+      <select
+        value={value ?? ''}
+        onChange={(e) => onChange(e.target.value || null)}
+        disabled={disabled}
+        className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+      >
+        <option value="">None / Individual Sermon</option>
+        {allSeries.map((s) => (
+          <option key={s.id} value={s.id}>{s.name}</option>
+        ))}
+      </select>
+
+      {!showCreate ? (
+        <button
+          type="button"
+          onClick={() => setShowCreate(true)}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          {selectedSeries ? selectedSeries.name : "Select series..."}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-        <Command>
-          <CommandInput 
-            placeholder="Search series..." 
-            value={searchValue}
-            onValueChange={setSearchValue}
+          <PlusIcon className="size-3" /> Create new series
+        </button>
+      ) : (
+        <form onSubmit={handleCreate} className="flex gap-2">
+          <Input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Series name"
+            className="h-8 text-sm flex-1"
+            autoFocus
           />
-          <CommandList>
-            <CommandEmpty className="py-2 px-4 text-sm">
-              <p className="text-muted-foreground mb-2">No series found.</p>
-              <Button 
-                size="sm" 
-                variant="secondary" 
-                className="w-full gap-2"
-                onClick={handleCreateNew}
-                disabled={isCreating}
-              >
-                <Plus className="h-4 w-4" />
-                Create "{searchValue}"
-              </Button>
-            </CommandEmpty>
-            <CommandGroup>
-              <CommandItem
-                value="none"
-                onSelect={() => {
-                  onChange(null)
-                  setOpen(false)
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === null ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                None / Individual Sermon
-              </CommandItem>
-              {allSeries.map((s) => (
-                <CommandItem
-                  key={s.id}
-                  value={s.name}
-                  onSelect={() => {
-                    onChange(s.id)
-                    setOpen(false)
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === s.id ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {s.name}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+          <Button type="submit" size="sm" disabled={creating || !newName.trim()}>
+            {creating ? '…' : 'Add'}
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => { setShowCreate(false); setNewName('') }}>
+            Cancel
+          </Button>
+        </form>
+      )}
+      {createError && <p className="text-xs text-destructive">{createError}</p>}
+    </div>
   )
 }

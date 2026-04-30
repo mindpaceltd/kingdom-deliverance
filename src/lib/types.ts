@@ -186,15 +186,15 @@ export interface SermonData {
   featured_image_alt?: string
   preacher: string
   series?: string
-  series_id?: string
+  series_id?: string | null
   date: string
   duration_minutes?: number
   status: 'draft' | 'published' | 'scheduled'
+  scheduled_at?: string
   meta_title?: string
   meta_description?: string
   focus_keyword?: string
   seo_score?: number
-  scheduled_at?: string
 }
 
 export interface PostData {

@@ -3,25 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { requireRoles, ROLES } from '@/lib/authz'
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-export interface SermonData {
-  title: string
-  slug: string
-  description?: string
-  content?: string
-  video_url?: string
-  audio_url?: string
-  thumbnail_url?: string
-  preacher: string
-  series?: string
-  date: string
-  duration_minutes?: number
-  status: 'draft' | 'published'
-}
+import type { SermonData } from '@/lib/types'
 
 // ---------------------------------------------------------------------------
 // Revalidate all sermon-related paths after any mutation
@@ -330,9 +312,10 @@ export async function checkSlugAvailability(
   excludeId?: string
 ): Promise<{ available: boolean }> {
   const supabase = createClient()
-  const query = supabase.from('sermons').select('id').eq('slug', slug)
-  if (excludeId) query.neq('id', excludeId)
-
+  let query = supabase.from('sermons').select('id').eq('slug', slug)
+  if (excludeId) {
+    query = query.neq('id', excludeId)
+  }
   const { data } = await query.maybeSingle()
   return { available: !data }
 }
