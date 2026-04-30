@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, ShieldCheck, Eye, EyeOff } from "lucide-react";
+import { Loader2, ShieldCheck, Eye, EyeOff, Lock, User, ChevronRight } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -18,7 +20,6 @@ export default function AdminLoginPage() {
     setError(null);
 
     try {
-      // Dynamically import to avoid any server-side module issues
       const { createBrowserClient } = await import("@supabase/ssr");
       const supabase = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -45,58 +46,59 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%)",
-        fontFamily: "'Inter', system-ui, sans-serif",
-      }}
-    >
-      <div style={{ width: "100%", maxWidth: "420px", margin: "0 16px" }}>
-        <div style={{ background: "#fff", borderRadius: "16px", overflow: "hidden", boxShadow: "0 25px 50px rgba(0,0,0,0.4)" }}>
+    <div className="min-h-screen flex items-center justify-center bg-[#0a121f] p-4 relative overflow-hidden font-sans">
+      {/* Background Decorative Elements */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-[#eab308]/10 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-1/4 -right-20 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: "2s" }} />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[length:32px_32px]" />
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
+        <div className="bg-white/[0.03] backdrop-blur-2xl rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden">
           {/* Header */}
-          <div style={{ background: "linear-gradient(135deg, #1e1b4b, #4c1d95)", padding: "40px 32px", textAlign: "center" }}>
-            <div style={{
-              width: "64px", height: "64px", borderRadius: "50%",
-              border: "2px solid #fbbf24", background: "rgba(251,191,36,0.1)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 16px",
-            }}>
-              <ShieldCheck size={32} color="#fbbf24" />
+          <div className="p-10 pb-6 text-center space-y-6">
+            <Link href="/" className="inline-flex items-center gap-3 group">
+              <div className="w-12 h-12 rounded-2xl bg-[#eab308] flex items-center justify-center shadow-xl shadow-[#eab308]/20 group-hover:scale-105 transition-transform duration-500">
+                <ShieldCheck className="w-6 h-6 text-[#0a121f]" />
+              </div>
+            </Link>
+            <div className="space-y-2">
+              <h1 className="text-3xl font-serif font-bold text-white tracking-tight">Admin <span className="text-[#eab308]">Portal</span></h1>
+              <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.3em]">Kingdom Deliverance Centre</p>
             </div>
-            <h1 style={{ color: "#fff", fontSize: "24px", fontWeight: 700, margin: "0 0 4px" }}>KDC Admin</h1>
-            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "14px", margin: 0 }}>Kingdom Deliverance Centre Uganda</p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleLogin} style={{ padding: "32px" }}>
-            <div style={{ marginBottom: "20px" }}>
-              <label htmlFor="email" style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#374151", marginBottom: "6px" }}>
-                Email Address
+          <form onSubmit={handleLogin} className="p-10 pt-4 space-y-6">
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-[10px] font-black uppercase tracking-[0.2em] text-[#eab308] ml-1">
+                Identity
               </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@kdcuganda.org"
-                required
-                style={{
-                  width: "100%", padding: "10px 14px", fontSize: "14px",
-                  border: "1px solid #d1d5db", borderRadius: "8px",
-                  outline: "none", boxSizing: "border-box",
-                }}
-              />
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-white/20 group-focus-within:text-[#eab308] transition-colors" />
+                </div>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@kdcuganda.org"
+                  required
+                  className="block w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/10 focus:outline-none focus:ring-2 focus:ring-[#eab308]/20 focus:border-[#eab308]/50 transition-all font-medium"
+                />
+              </div>
             </div>
 
-            <div style={{ marginBottom: "20px" }}>
-              <label htmlFor="password" style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#374151", marginBottom: "6px" }}>
-                Password
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-[10px] font-black uppercase tracking-[0.2em] text-[#eab308] ml-1">
+                Authorization
               </label>
-              <div style={{ position: "relative" }}>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-white/20 group-focus-within:text-[#eab308] transition-colors" />
+                </div>
                 <input
                   id="password"
                   type={showPw ? "text" : "password"}
@@ -104,53 +106,59 @@ export default function AdminLoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  style={{
-                    width: "100%", padding: "10px 40px 10px 14px", fontSize: "14px",
-                    border: "1px solid #d1d5db", borderRadius: "8px",
-                    outline: "none", boxSizing: "border-box",
-                  }}
+                  className="block w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/10 focus:outline-none focus:ring-2 focus:ring-[#eab308]/20 focus:border-[#eab308]/50 transition-all font-medium"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPw(!showPw)}
-                  style={{
-                    position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)",
-                    background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 0,
-                  }}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-white/20 hover:text-white transition-colors"
                 >
-                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
 
             {error && (
-              <div style={{
-                background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626",
-                padding: "12px 16px", borderRadius: "8px", fontSize: "14px", marginBottom: "20px",
-              }}>
+              <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-2xl text-sm font-medium flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
                 {error}
               </div>
             )}
 
-            <button
+            <Button
               type="submit"
               disabled={loading}
-              style={{
-                width: "100%", padding: "12px", fontSize: "15px", fontWeight: 600,
-                background: loading ? "#6366f1" : "#4f46e5", color: "#fff",
-                border: "none", borderRadius: "8px", cursor: loading ? "not-allowed" : "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-              }}
+              className="w-full bg-[#eab308] hover:bg-white text-[#0a121f] h-16 font-black uppercase tracking-[0.2em] rounded-2xl shadow-2xl shadow-[#eab308]/10 transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed group"
             >
               {loading ? (
-                <><Loader2 size={16} className="animate-spin" /> Signing in...</>
-              ) : "Sign In to Dashboard"}
-            </button>
+                <div className="flex items-center gap-3">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Verifying...</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <span>Sign In</span>
+                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </div>
+              )}
+            </Button>
 
-            <p style={{ textAlign: "center", fontSize: "12px", color: "#9ca3af", marginTop: "16px", marginBottom: 0 }}>
-              Only authorized church administrators may access this area.
-            </p>
+            <div className="pt-6 text-center border-t border-white/5">
+              <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.3em]">
+                Restricted Access Zone
+              </p>
+              <p className="text-[10px] text-white/20 font-medium mt-1">
+                Authorized Personnel Only
+              </p>
+            </div>
           </form>
+        </div>
+        
+        {/* Back to Site */}
+        <div className="mt-8 text-center">
+          <Link href="/" className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-[#eab308] transition-colors flex items-center justify-center gap-2">
+            Return to Kingdom Home
+          </Link>
         </div>
       </div>
     </div>

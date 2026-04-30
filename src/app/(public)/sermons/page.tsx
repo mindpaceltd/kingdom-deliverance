@@ -37,28 +37,23 @@ export default async function SermonsPage({ searchParams }: SermonsPageProps) {
   ]);
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col min-h-screen bg-[#f8fafc]">
       {/* Hero */}
-      <section className="relative py-40 text-white overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1544427920-c49ccfb85579?q=80&w=2000&auto=format&fit=crop')",
-          }}
-        />
-        <div className="absolute inset-0 bg-black/70" />
-        <div className="container relative z-10 text-center px-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-5 py-2 text-sm font-semibold text-accent mb-8">
+      <section className="relative pt-40 pb-24 text-white overflow-hidden bg-[#0a121f]">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15)_1px,transparent_1px)] bg-[length:40px_40px]" />
+        </div>
+        
+        <div className="container relative z-10 text-center px-4 max-w-4xl mx-auto">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#eab308]/10 border border-[#eab308]/20 px-5 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[#eab308] mb-8">
             The Word of God
           </div>
-          <h1 className="font-serif text-5xl md:text-6xl font-bold text-white leading-tight">
-            Sermons &amp; Messages
+          <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight">
+            Sermons & <span className="text-[#eab308]">Messages</span>
           </h1>
-          <div className="mx-auto mt-5 h-1 w-20 rounded-full bg-accent" />
-          <p className="mt-6 text-white/90 text-lg md:text-xl max-w-xl mx-auto">
-            Be transformed by the power of God&apos;s Word. Watch, listen, and
-            be blessed.
+          <div className="mx-auto mt-8 h-1 w-20 rounded-full bg-gradient-to-r from-[#eab308] to-yellow-500" />
+          <p className="mt-8 text-white/70 text-lg md:text-xl leading-relaxed max-w-2xl mx-auto">
+            Be transformed by the power of God&apos;s Word. Watch, listen, and experience the message of salvation and deliverance.
           </p>
         </div>
       </section>

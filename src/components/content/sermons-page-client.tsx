@@ -94,24 +94,24 @@ export function SermonsPageClient({
   };
 
   return (
-    <section className="py-20 bg-muted">
-      <div className="container px-4">
+    <section className="py-20 bg-[#f8fafc]">
+      <div className="container px-4 max-w-7xl mx-auto">
         {/* Filter bar */}
-        <div className="bg-white rounded-2xl shadow-sm p-5 mb-10">
-          <div className="flex flex-wrap gap-3 items-end">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-12 -mt-16 relative z-20">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
             {/* Preacher filter */}
-            <div className="flex flex-col gap-1.5 min-w-[160px]">
-              <label className="text-xs font-medium text-muted-foreground">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-[#0a121f] uppercase tracking-widest">
                 Preacher
               </label>
               <Select
                 value={currentFilters.preacher ?? "__all__"}
                 onValueChange={handlePreacherChange}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full bg-gray-50 border-gray-100 h-11 rounded-xl focus:ring-[#eab308]">
                   <SelectValue placeholder="All Preachers" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl border-gray-100">
                   <SelectItem value="__all__">All Preachers</SelectItem>
                   {preachers.map((p) => (
                     <SelectItem key={p} value={p}>
@@ -123,18 +123,18 @@ export function SermonsPageClient({
             </div>
 
             {/* Series filter */}
-            <div className="flex flex-col gap-1.5 min-w-[160px]">
-              <label className="text-xs font-medium text-muted-foreground">
-                Series
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-[#0a121f] uppercase tracking-widest">
+                Sermon Series
               </label>
               <Select
                 value={currentFilters.series ?? "__all__"}
                 onValueChange={handleSeriesChange}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full bg-gray-50 border-gray-100 h-11 rounded-xl focus:ring-[#eab308]">
                   <SelectValue placeholder="All Series" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl border-gray-100">
                   <SelectItem value="__all__">All Series</SelectItem>
                   {series.map((s) => (
                     <SelectItem key={s} value={s}>
@@ -146,70 +146,67 @@ export function SermonsPageClient({
             </div>
 
             {/* Date from */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                From
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-[#0a121f] uppercase tracking-widest">
+                From Date
               </label>
               <input
                 type="date"
                 value={currentFilters.from ?? ""}
                 onChange={handleFromChange}
-                className="h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors"
+                className="w-full h-11 rounded-xl border border-gray-100 bg-gray-50 px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-[#eab308] transition-all"
               />
             </div>
 
             {/* Date to */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                To
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-[#0a121f] uppercase tracking-widest">
+                To Date
               </label>
-              <input
-                type="date"
-                value={currentFilters.to ?? ""}
-                onChange={handleToChange}
-                className="h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={currentFilters.to ?? ""}
+                  onChange={handleToChange}
+                  className="flex-1 h-11 rounded-xl border border-gray-100 bg-gray-50 px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-[#eab308] transition-all"
+                />
+                {hasFilters && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleClearFilters}
+                    className="h-11 w-11 rounded-xl border-gray-100 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                    title="Clear Filters"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
             </div>
-
-            {/* Clear filters */}
-            {hasFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClearFilters}
-                className="flex items-center gap-1.5 text-muted-foreground hover:text-destructive self-end"
-              >
-                <X className="w-3.5 h-3.5" />
-                Clear filters
-              </Button>
-            )}
           </div>
 
           {/* Active filter summary */}
           {hasFilters && (
-            <div className="mt-3 pt-3 border-t border-border flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <span className="font-medium">Active filters:</span>
-              {currentFilters.preacher && (
-                <span className="bg-accent/10 text-accent px-2 py-0.5 rounded-full font-medium">
-                  Preacher: {currentFilters.preacher}
-                </span>
-              )}
-              {currentFilters.series && (
-                <span className="bg-accent/10 text-accent px-2 py-0.5 rounded-full font-medium">
-                  Series: {currentFilters.series}
-                </span>
-              )}
-              {currentFilters.from && (
-                <span className="bg-accent/10 text-accent px-2 py-0.5 rounded-full font-medium">
-                  From: {currentFilters.from}
-                </span>
-              )}
-              {currentFilters.to && (
-                <span className="bg-accent/10 text-accent px-2 py-0.5 rounded-full font-medium">
-                  To: {currentFilters.to}
-                </span>
-              )}
-              <span className="ml-auto">
+            <div className="mt-6 pt-6 border-t border-gray-50 flex flex-wrap items-center gap-3">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Active:</span>
+              <div className="flex flex-wrap gap-2">
+                {currentFilters.preacher && (
+                  <div className="inline-flex items-center gap-2 bg-[#0a121f] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest">
+                    Preacher: {currentFilters.preacher}
+                  </div>
+                )}
+                {currentFilters.series && (
+                  <div className="inline-flex items-center gap-2 bg-[#0a121f] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest">
+                    Series: {currentFilters.series}
+                  </div>
+                )}
+                {(currentFilters.from || currentFilters.to) && (
+                  <div className="inline-flex items-center gap-2 bg-[#0a121f] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest">
+                    Date Range Applied
+                  </div>
+                )}
+              </div>
+              <span className="ml-auto text-xs font-medium text-gray-400 italic">
                 {total} sermon{total !== 1 ? "s" : ""} found
               </span>
             </div>
@@ -218,28 +215,29 @@ export function SermonsPageClient({
 
         {/* Sermon grid */}
         {sermons.length === 0 ? (
-          <div className="text-center py-24 text-muted-foreground">
-            <Play className="w-16 h-16 mx-auto mb-4 opacity-20" />
-            <p className="text-xl font-medium">No sermons found</p>
-            <p className="text-sm mt-2">
+          <div className="text-center py-32 bg-white rounded-2xl border border-gray-100">
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Play className="w-10 h-10 text-gray-200" />
+            </div>
+            <h3 className="text-2xl font-bold text-[#0a121f] mb-2">No sermons found</h3>
+            <p className="text-gray-500 max-w-md mx-auto">
               {hasFilters
-                ? "Try adjusting or clearing your filters."
-                : "Check back soon for new messages."}
+                ? "We couldn't find any sermons matching your current filters. Try adjusting your search criteria."
+                : "Check back soon for new messages and spiritual teachings."}
             </p>
             {hasFilters && (
               <Button
                 variant="outline"
-                size="sm"
                 onClick={handleClearFilters}
-                className="mt-4"
+                className="mt-8 rounded-full px-8 h-12 border-[#0a121f] text-[#0a121f] hover:bg-[#0a121f] hover:text-white transition-all font-bold"
               >
-                Clear filters
+                Clear All Filters
               </Button>
             )}
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
               {sermons.map((sermon) => (
                 <SermonCard key={sermon.id} sermon={sermon} />
               ))}
@@ -247,67 +245,65 @@ export function SermonsPageClient({
 
             {/* Pagination */}
             {total > PAGE_SIZE && (
-              <div className="mt-12 flex items-center justify-center gap-2">
+              <div className="mt-20 flex items-center justify-center gap-3">
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => handlePageChange(page - 1)}
                   disabled={page <= 1}
-                  aria-label="Previous page"
+                  className="w-11 h-11 rounded-xl border-gray-100 hover:border-[#eab308] hover:text-[#eab308] transition-all"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-5 h-5" />
                 </Button>
 
-                {/* Page numbers */}
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter(
-                    (p) =>
-                      p === 1 ||
-                      p === totalPages ||
-                      Math.abs(p - page) <= 2
-                  )
-                  .reduce<(number | "ellipsis")[]>((acc, p, idx, arr) => {
-                    if (idx > 0 && p - (arr[idx - 1] as number) > 1) {
-                      acc.push("ellipsis");
-                    }
-                    acc.push(p);
-                    return acc;
-                  }, [])
-                  .map((item, idx) =>
-                    item === "ellipsis" ? (
-                      <span
-                        key={`ellipsis-${idx}`}
-                        className="px-1 text-muted-foreground text-sm"
-                      >
-                        …
-                      </span>
-                    ) : (
-                      <Button
-                        key={item}
-                        variant={item === page ? "default" : "outline"}
-                        size="icon"
-                        onClick={() => handlePageChange(item as number)}
-                        aria-label={`Page ${item}`}
-                        aria-current={item === page ? "page" : undefined}
-                        className={
-                          item === page
-                            ? "bg-accent text-primary hover:bg-accent/90 border-accent"
-                            : ""
-                        }
-                      >
-                        {item}
-                      </Button>
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(
+                      (p) =>
+                        p === 1 ||
+                        p === totalPages ||
+                        Math.abs(p - page) <= 1
                     )
-                  )}
+                    .reduce<(number | "ellipsis")[]>((acc, p, idx, arr) => {
+                      if (idx > 0 && p - (arr[idx - 1] as number) > 1) {
+                        acc.push("ellipsis");
+                      }
+                      acc.push(p);
+                      return acc;
+                    }, [])
+                    .map((item, idx) =>
+                      item === "ellipsis" ? (
+                        <span
+                          key={`ellipsis-${idx}`}
+                          className="px-2 text-gray-300"
+                        >
+                          &bull;&bull;&bull;
+                        </span>
+                      ) : (
+                        <Button
+                          key={item}
+                          variant={item === page ? "default" : "outline"}
+                          onClick={() => handlePageChange(item as number)}
+                          className={`w-11 h-11 rounded-xl font-bold text-sm transition-all ${
+                            item === page
+                              ? "bg-[#eab308] text-[#0a121f] hover:bg-[#eab308]/90 border-[#eab308]"
+                              : "border-gray-100 text-gray-500 hover:border-[#eab308] hover:text-[#eab308]"
+                          }`}
+                        >
+                          {item}
+                        </Button>
+                      )
+                    )}
+                </div>
 
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => handlePageChange(page + 1)}
                   disabled={page >= totalPages}
-                  aria-label="Next page"
+                  className="w-11 h-11 rounded-xl border-gray-100 hover:border-[#eab308] hover:text-[#eab308] transition-all"
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-5 h-5" />
                 </Button>
               </div>
             )}
