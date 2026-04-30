@@ -47,11 +47,33 @@ export interface Sermon {
   video_url: string | null
   audio_url: string | null
   thumbnail_url: string | null
+  featured_image_alt: string | null
   preacher: string
   series: string | null
+  series_id: string | null
   date: string
   duration_minutes: number | null
-  status: 'draft' | 'published'
+  status: 'draft' | 'published' | 'scheduled' | 'trash' | 'archived'
+  meta_title: string | null
+  meta_description: string | null
+  focus_keyword: string | null
+  seo_score: number
+  views: number
+  published_at: string | null
+  scheduled_at: string | null
+  deleted_at: string | null
+  created_at: string
+  updated_at: string
+  // Relations
+  sermon_series?: SermonSeries
+}
+
+export interface SermonSeries {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  image_url: string | null
   created_at: string
   updated_at: string
 }
@@ -151,6 +173,28 @@ export interface PrayerRequest {
   is_anonymous: boolean
   is_reviewed: boolean
   created_at: string
+}
+
+export interface SermonData {
+  title: string
+  slug: string
+  description?: string
+  content?: string
+  video_url?: string
+  audio_url?: string
+  thumbnail_url?: string
+  featured_image_alt?: string
+  preacher: string
+  series?: string
+  series_id?: string
+  date: string
+  duration_minutes?: number
+  status: 'draft' | 'published' | 'scheduled'
+  meta_title?: string
+  meta_description?: string
+  focus_keyword?: string
+  seo_score?: number
+  scheduled_at?: string
 }
 
 export interface PostData {

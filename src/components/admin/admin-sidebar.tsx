@@ -24,6 +24,7 @@ const allNavLinks = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, adminOnly: false },
   { href: '/admin/posts', label: 'Posts & Blogs', icon: FileText, adminOnly: false },
   { href: '/admin/sermons', label: 'Sermons', icon: Video, adminOnly: false },
+  { href: '/admin/sermons/series', label: 'Sermon Series', icon: GalleryHorizontal, adminOnly: false },
   { href: '/admin/events', label: 'Events', icon: Calendar, adminOnly: false },
   { href: '/admin/ministries', label: 'Ministries', icon: Users2, adminOnly: false },
   { href: '/admin/media', label: 'Media Library', icon: Images, adminOnly: false },

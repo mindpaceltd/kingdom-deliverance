@@ -2,7 +2,7 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-export type AiGenerateMode = 'full' | 'improve'
+export type AiGenerateMode = 'full' | 'improve' | 'sermon_full' | 'sermon_improve'
 
 export interface AiGenerateRequest {
   mode: AiGenerateMode
@@ -57,7 +57,7 @@ Requirements:
 - Write in a warm, faith-based, inspiring tone appropriate for a church audience
 - Include an introduction, 2-3 main sections with headings, and a conclusion
 - Return ONLY the HTML content, no markdown, no code fences`
-  } else {
+  } else if (req.mode === 'improve') {
     prompt = `You are a professional content editor for KDC Uganda, a Christian church website.
 
 Improve and expand the following blog post content. Make it more engaging, better structured, and at least 400 words.
@@ -74,6 +74,38 @@ Requirements:
 - Use proper HTML tags: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>, <blockquote>
 - Do NOT include <html>, <head>, <body>, or <title> tags — only the inner content
 - Write in a warm, faith-based, inspiring tone
+- Return ONLY the HTML content, no markdown, no code fences`
+  } else if (req.mode === 'sermon_full') {
+    prompt = `You are a professional sermon transcriber and editor for KDC Uganda.
+
+Write a well-structured sermon transcript or detailed notes in HTML format for the following:
+
+Title: ${req.title}
+${req.excerpt ? `Summary: ${req.excerpt}` : ''}
+${req.focusKeyword ? `Key Verse/Keyword: ${req.focusKeyword}` : ''}
+
+Requirements:
+- Write at least 500 words
+- Use proper HTML tags: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>, <blockquote>
+- Structure: Introduction, 3 Biblical Points with scripture references (placeholder), and a Closing Prayer/Call to Action
+- Write in a warm, powerful, anointed tone appropriate for a sermon
+- Return ONLY the HTML content, no markdown, no code fences`
+  } else {
+    // sermon_improve
+    prompt = `You are a professional sermon editor for KDC Uganda.
+
+Improve and expand the following sermon notes or transcript. Make it more powerful, better structured, and more detailed.
+
+Title: ${req.title}
+${req.focusKeyword ? `Key Verse/Keyword: ${req.focusKeyword}` : ''}
+
+Existing content:
+${req.existingContent}
+
+Requirements:
+- Expand to at least 500 words
+- Use proper HTML tags: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>, <blockquote>
+- Enhance the spiritual depth and biblical flow
 - Return ONLY the HTML content, no markdown, no code fences`
   }
 

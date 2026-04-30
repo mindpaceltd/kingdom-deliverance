@@ -1,7 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import { PlusIcon, PencilIcon, Trash2Icon } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { PlusIcon, PencilIcon, Trash2Icon, CopyIcon, RotateCcw, TrashIcon } from 'lucide-react'
 
 import { DataTable, type ColumnDef } from '@/components/admin/data-table'
 import { StatusBadge } from '@/components/admin/status-badge'
@@ -14,16 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
-import { deleteSermon } from '@/lib/actions/sermons'
+import { 
+  trashSermon, 
+  restoreSermon, 
+  duplicateSermon, 
+  deleteSermon 
+} from '@/lib/actions/sermons'
 import { createClient } from '@/lib/supabase/client'
 import type { Sermon } from '@/lib/types'
-import { SermonForm } from './sermon-form'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -56,76 +55,107 @@ interface SermonsManagerProps {
 }
 
 export function SermonsManager({ initialSermons }: SermonsManagerProps) {
+  const router = useRouter()
   const [sermons, setSermons] = React.useState<Sermon[]>(initialSermons)
-  const [sheetOpen, setSheetOpen] = React.useState(false)
-  const [editingSermon, setEditingSermon] = React.useState<Sermon | null>(null)
+  const [isRefreshing, setIsRefreshing] = React.useState(false)
 
   // Filter state
   const [filterPreacher, setFilterPreacher] = React.useState<string>('all')
-  const [filterSeries, setFilterSeries] = React.useState<string>('all')
+  const [filterStatus, setFilterStatus] = React.useState<string>('all')
   const [filterDateFrom, setFilterDateFrom] = React.useState<string>('')
   const [filterDateTo, setFilterDateTo] = React.useState<string>('')
 
   // Derived option lists
   const preachers = React.useMemo(() => uniqueValues(sermons, 'preacher'), [sermons])
-  const seriesList = React.useMemo(() => uniqueValues(sermons, 'series'), [sermons])
 
   // Re-fetch sermons from Supabase using the browser client
   const refreshSermons = React.useCallback(async () => {
+    setIsRefreshing(true)
     const supabase = createClient()
     const { data } = await supabase
       .from('sermons')
-      .select('*')
+      .select('*, sermon_series(name)')
       .order('date', { ascending: false })
     if (data) setSermons(data as Sermon[])
+    setIsRefreshing(false)
   }, [])
 
   function openNew() {
-    setEditingSermon(null)
-    setSheetOpen(true)
+    router.push('/admin/sermons/new')
   }
 
   function openEdit(sermon: Sermon) {
-    setEditingSermon(sermon)
-    setSheetOpen(true)
+    router.push(`/admin/sermons/${sermon.id}`)
   }
 
-  async function handleDelete(sermon: Sermon) {
-    if (!window.confirm(`Delete "${sermon.title}"? This cannot be undone.`)) return
-    await deleteSermon(sermon.id)
-    await refreshSermons()
+  async function handleDuplicate(sermon: Sermon) {
+    const result = await duplicateSermon(sermon.id)
+    if ('success' in result) {
+      await refreshSermons()
+    } else {
+      alert(result.error)
+    }
   }
 
-  function handleFormSuccess() {
-    setSheetOpen(false)
-    refreshSermons()
+  async function handleTrash(sermon: Sermon) {
+    if (!window.confirm(`Move "${sermon.title}" to trash?`)) return
+    const result = await trashSermon(sermon.id)
+    if ('success' in result) {
+      await refreshSermons()
+    } else {
+      alert(result.error)
+    }
+  }
+
+  async function handleRestore(sermon: Sermon) {
+    const result = await restoreSermon(sermon.id)
+    if ('success' in result) {
+      await refreshSermons()
+    } else {
+      alert(result.error)
+    }
+  }
+
+  async function handlePermanentDelete(sermon: Sermon) {
+    if (!window.confirm(`Permanently delete "${sermon.title}"? THIS CANNOT BE UNDONE.`)) return
+    const result = await deleteSermon(sermon.id)
+    if ('success' in result) {
+      await refreshSermons()
+    } else {
+      alert(result.error)
+    }
   }
 
   // Client-side filtering
   const filteredSermons = React.useMemo(() => {
     return sermons.filter((s) => {
       if (filterPreacher !== 'all' && s.preacher !== filterPreacher) return false
-      if (filterSeries !== 'all' && s.series !== filterSeries) return false
+      if (filterStatus !== 'all' && s.status !== filterStatus) return false
       if (filterDateFrom && s.date < filterDateFrom) return false
       if (filterDateTo && s.date > filterDateTo) return false
       return true
     })
-  }, [sermons, filterPreacher, filterSeries, filterDateFrom, filterDateTo])
+  }, [sermons, filterPreacher, filterStatus, filterDateFrom, filterDateTo])
 
   const columns: ColumnDef<Sermon>[] = [
     {
       key: 'title',
       header: 'Title',
-      className: 'max-w-[220px]',
+      className: 'max-w-[250px]',
       cell: (sermon) => (
-        <button
-          type="button"
-          onClick={() => openEdit(sermon)}
-          className="truncate text-left text-sm font-medium text-foreground underline-offset-2 hover:underline max-w-[200px] block"
-          title={sermon.title}
-        >
-          {sermon.title}
-        </button>
+        <div className="flex flex-col">
+          <button
+            type="button"
+            onClick={() => openEdit(sermon)}
+            className="truncate text-left text-sm font-medium text-foreground underline-offset-2 hover:underline block"
+            title={sermon.title}
+          >
+            {sermon.title}
+          </button>
+          <span className="text-[11px] text-muted-foreground mt-0.5">
+            {sermon.sermon_series?.name || sermon.series || 'Individual Sermon'}
+          </span>
+        </div>
       ),
     },
     {
@@ -136,18 +166,18 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
       ),
     },
     {
-      key: 'series',
-      header: 'Series',
-      cell: (sermon) => (
-        <span className="text-sm text-muted-foreground">{sermon.series ?? '—'}</span>
-      ),
-    },
-    {
       key: 'date',
       header: 'Date',
       cell: (sermon) => (
         <span className="text-sm text-muted-foreground">{formatDate(sermon.date)}</span>
       ),
+    },
+    {
+      key: 'views',
+      header: 'Views',
+      cell: (sermon) => (
+        <span className="text-sm text-muted-foreground">{sermon.views?.toLocaleString() ?? 0}</span>
+      )
     },
     {
       key: 'status',
@@ -157,26 +187,58 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
     {
       key: 'actions',
       header: '',
-      className: 'w-[80px]',
+      className: 'w-[120px]',
       cell: (sermon) => (
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => openEdit(sermon)}
-            aria-label={`Edit ${sermon.title}`}
-          >
-            <PencilIcon className="size-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => handleDelete(sermon)}
-            aria-label={`Delete ${sermon.title}`}
-            className="text-destructive hover:text-destructive"
-          >
-            <Trash2Icon className="size-3.5" />
-          </Button>
+        <div className="flex items-center gap-1 justify-end">
+          {sermon.status === 'trash' ? (
+            <>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => handleRestore(sermon)}
+                title="Restore"
+              >
+                <RotateCcw className="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => handlePermanentDelete(sermon)}
+                title="Delete Permanently"
+                className="text-destructive hover:text-destructive"
+              >
+                <TrashIcon className="size-3.5" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => handleDuplicate(sermon)}
+                title="Duplicate"
+              >
+                <CopyIcon className="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => openEdit(sermon)}
+                title="Edit"
+              >
+                <PencilIcon className="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => handleTrash(sermon)}
+                title="Trash"
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2Icon className="size-3.5" />
+              </Button>
+            </>
+          )}
         </div>
       ),
     },
@@ -184,7 +246,6 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
 
   const filterSlot = (
     <>
-      {/* Preacher filter */}
       <Select value={filterPreacher} onValueChange={(v) => setFilterPreacher(v ?? 'all')}>
         <SelectTrigger className="h-9 w-[160px]">
           <SelectValue placeholder="All preachers" />
@@ -199,28 +260,24 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
         </SelectContent>
       </Select>
 
-      {/* Series filter */}
-      <Select value={filterSeries} onValueChange={(v) => setFilterSeries(v ?? 'all')}>
-        <SelectTrigger className="h-9 w-[160px]">
-          <SelectValue placeholder="All series" />
+      <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v ?? 'all')}>
+        <SelectTrigger className="h-9 w-[140px]">
+          <SelectValue placeholder="All status" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All series</SelectItem>
-          {seriesList.map((s) => (
-            <SelectItem key={s} value={s}>
-              {s}
-            </SelectItem>
-          ))}
+          <SelectItem value="all">All status</SelectItem>
+          <SelectItem value="published">Published</SelectItem>
+          <SelectItem value="draft">Draft</SelectItem>
+          <SelectItem value="scheduled">Scheduled</SelectItem>
+          <SelectItem value="trash">Trash</SelectItem>
         </SelectContent>
       </Select>
 
-      {/* Date range */}
       <Input
         type="date"
         value={filterDateFrom}
         onChange={(e) => setFilterDateFrom(e.target.value)}
         className="h-9 w-[140px]"
-        aria-label="Filter from date"
         title="From date"
       />
       <Input
@@ -228,7 +285,6 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
         value={filterDateTo}
         onChange={(e) => setFilterDateTo(e.target.value)}
         className="h-9 w-[140px]"
-        aria-label="Filter to date"
         title="To date"
       />
     </>
@@ -236,7 +292,6 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
 
   return (
     <div className="space-y-4 p-6">
-      {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">Sermons</h1>
@@ -245,34 +300,18 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
           </p>
         </div>
         <Button onClick={openNew} size="sm">
-          <PlusIcon />
+          <PlusIcon className="mr-2 h-4 w-4" />
           New Sermon
         </Button>
       </div>
 
-      {/* Table with filter bar */}
       <DataTable
         columns={columns}
         data={filteredSermons}
         searchPlaceholder="Search sermons…"
         filterSlot={filterSlot}
+        isLoading={isRefreshing}
       />
-
-      {/* Sheet — create / edit */}
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>{editingSermon ? 'Edit Sermon' : 'New Sermon'}</SheetTitle>
-          </SheetHeader>
-          <div className="px-4 pb-6">
-            <SermonForm
-              sermon={editingSermon ?? undefined}
-              onSuccess={handleFormSuccess}
-              onCancel={() => setSheetOpen(false)}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
     </div>
   )
 }

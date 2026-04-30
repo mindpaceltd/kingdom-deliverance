@@ -2,24 +2,42 @@ import { createClient } from "@/lib/supabase/server";
 import { format } from "date-fns";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Headphones, Calendar, User, ArrowLeft, Clock } from "lucide-react";
+import { Headphones, Calendar, User, ArrowLeft, Clock, Eye } from "lucide-react";
 import type { Metadata } from "next";
+import { incrementSermonViews } from "@/lib/actions/sermons";
 
 interface Props { params: { slug: string } }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = createClient();
-  const { data } = await supabase.from("sermons").select("title,description").eq("slug", params.slug).single();
+  const { data } = await supabase
+    .from("sermons")
+    .select("title, description, meta_title, meta_description")
+    .eq("slug", params.slug)
+    .single();
+
   if (!data) return { title: "Sermon Not Found" };
-  return { title: `${data.title} | KDC Uganda Sermons`, description: data.description ?? undefined };
+
+  return {
+    title: data.meta_title || `${data.title} | KDC Uganda Sermons`,
+    description: data.meta_description || data.description || undefined,
+  };
 }
 
 export const revalidate = 3600;
 
 export default async function SermonDetailPage({ params }: Props) {
   const supabase = createClient();
-  const { data: sermon } = await supabase.from("sermons").select("*").eq("slug", params.slug).single();
+  const { data: sermon } = await supabase
+    .from("sermons")
+    .select("*, sermon_series(name)")
+    .eq("slug", params.slug)
+    .single();
+
   if (!sermon) notFound();
+
+  // Track view (server-side action)
+  await incrementSermonViews(sermon.id);
 
   const { data: related } = await supabase
     .from("sermons")
@@ -36,12 +54,17 @@ export default async function SermonDetailPage({ params }: Props) {
           <Link href="/sermons" className="inline-flex items-center gap-2 text-white/60 hover:text-accent text-sm mb-8 transition-colors">
             <ArrowLeft className="w-4 h-4" /> All Sermons
           </Link>
-          {sermon.series && <p className="text-accent font-semibold text-sm tracking-wider uppercase mb-3">{sermon.series}</p>}
+          {(sermon.sermon_series?.name || sermon.series) && (
+            <p className="text-accent font-semibold text-sm tracking-wider uppercase mb-3">
+              {sermon.sermon_series?.name || sermon.series}
+            </p>
+          )}
           <h1 className="font-serif text-4xl md:text-5xl font-bold leading-tight">{sermon.title}</h1>
           <div className="flex flex-wrap gap-5 mt-6 text-white/70 text-sm">
             <span className="flex items-center gap-1.5"><User className="w-4 h-4 text-accent" />{sermon.preacher}</span>
             <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-accent" />{format(new Date(sermon.date), "MMMM d, yyyy")}</span>
             {sermon.duration_minutes && <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-accent" />{sermon.duration_minutes} min</span>}
+            <span className="flex items-center gap-1.5"><Eye className="w-4 h-4 text-accent" />{(sermon.views || 0).toLocaleString()} views</span>
           </div>
         </div>
       </section>
