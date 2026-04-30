@@ -123,13 +123,13 @@ function InsertPopover({
 
   if (!type) return null
 
-  const labels: Record<NonNullable<PopoverType>, { title: string; placeholder: string }> = {
-    link: { title: 'Insert Link', placeholder: 'https://example.com' },
-    image: { title: 'Insert Image', placeholder: 'https://example.com/image.jpg' },
-    youtube: { title: 'Insert YouTube Video', placeholder: 'https://youtube.com/watch?v=...' },
+  const labels: Record<NonNullable<PopoverType>, { title: string; placeholder: string; urlLabel: string }> = {
+    link: { title: 'Insert Link', placeholder: 'https://example.com', urlLabel: 'URL' },
+    image: { title: 'Insert Image', placeholder: 'https://example.com/image.jpg', urlLabel: 'Image URL' },
+    youtube: { title: 'Embed YouTube Video', placeholder: 'https://youtube.com/watch?v=...', urlLabel: 'YouTube URL' },
   }
 
-  const { title, placeholder } = labels[type]
+  const { title, placeholder, urlLabel } = labels[type]
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -154,26 +154,46 @@ function InsertPopover({
         </button>
       </div>
       <form onSubmit={handleSubmit} className="space-y-2">
-        <Input
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder={placeholder}
-          className="h-8 text-sm"
-          autoFocus
-        />
-        {type === 'image' && (
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground">{urlLabel}</label>
           <Input
-            value={alt}
-            onChange={(e) => setAlt(e.target.value)}
-            placeholder="Alt text (optional)"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder={placeholder}
             className="h-8 text-sm"
+            autoFocus
           />
+        </div>
+        {type === 'image' && (
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">
+              Alt Text <span className="text-primary">(required for SEO)</span>
+            </label>
+            <Input
+              value={alt}
+              onChange={(e) => setAlt(e.target.value)}
+              placeholder="Describe the image for screen readers and SEO"
+              className="h-8 text-sm"
+              required
+            />
+          </div>
+        )}
+        {type === 'link' && (
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Link Text (optional)</label>
+            <Input
+              value={alt}
+              onChange={(e) => setAlt(e.target.value)}
+              placeholder="Display text (leave blank to use selection)"
+              className="h-8 text-sm"
+            />
+          </div>
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" size="sm" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" size="sm" disabled={!url.trim()}>
+          <Button type="submit" size="sm" disabled={!url.trim() || (type === 'image' && !alt.trim())}>
             <CheckIcon className="size-3.5" />
             Insert
           </Button>

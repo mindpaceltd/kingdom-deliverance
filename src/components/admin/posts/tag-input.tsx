@@ -18,8 +18,6 @@ interface TagInputProps {
   allTags: Tag[]
   /** Called when the tag list changes */
   onChange: (tags: Tag[]) => void
-  /** Called when a new tag name needs to be created */
-  onCreateTag: (name: string) => Promise<Tag | null>
   disabled?: boolean
 }
 
@@ -27,7 +25,6 @@ export function TagInput({
   value,
   allTags,
   onChange,
-  onCreateTag,
   disabled = false,
 }: TagInputProps) {
   const [inputValue, setInputValue] = React.useState('')
@@ -81,7 +78,24 @@ export function TagInput({
   async function handleCreateAndAdd() {
     if (!trimmed || creating) return
     setCreating(true)
-    const tag = await onCreateTag(trimmed)
+
+    let tag: Tag | null = null
+    try {
+      const res = await fetch('/api/tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmed }),
+      })
+      const json = await res.json()
+      if (json.tag) {
+        tag = json.tag as Tag
+      } else {
+        console.error('[TagInput] create tag error:', json.error)
+      }
+    } catch (e) {
+      console.error('[TagInput] fetch error:', e)
+    }
+
     setCreating(false)
     if (tag) {
       addTag(tag)

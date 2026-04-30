@@ -22,7 +22,6 @@ import { SeoPanel } from './seo-panel'
 import { TagInput } from './tag-input'
 import { SharePanel } from './share-panel'
 import { createPost, updatePost, checkSlugAvailability } from '@/lib/actions/posts'
-import { upsertTag, syncPostTags } from '@/lib/actions/tags'
 import { generatePostContent } from '@/lib/actions/ai'
 import { computeSeoScore } from '@/lib/seo-scorer'
 import { cn } from '@/lib/utils'
@@ -80,7 +79,7 @@ export function PostEditorClient({ post, authorName, allTags, initialTags = [] }
 
   // Tags state — keep a local copy of all known tags so newly created ones appear in autocomplete
   const [selectedTags, setSelectedTags] = React.useState<Tag[]>(initialTags)
-  const [knownTags, setKnownTags] = React.useState<Tag[]>(allTags)
+  const [knownTags] = React.useState<Tag[]>(allTags)
 
   const [submitting, setSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -165,27 +164,8 @@ export function PostEditorClient({ post, authorName, allTags, initialTags = [] }
   }
 
   // ---------------------------------------------------------------------------
-  // Tag helpers
+  // Tag helpers — handled directly in TagInput via /api/tags
   // ---------------------------------------------------------------------------
-
-  async function handleCreateTag(name: string): Promise<Tag | null> {
-    const result = await upsertTag(name)
-    if ('error' in result) {
-      setAiError(result.error)
-      return null
-    }
-    const newTag: Tag = {
-      id: result.id,
-      name: name.trim(),
-      slug: name.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
-      created_at: new Date().toISOString(),
-    }
-    // Add to known tags if not already there
-    setKnownTags((prev) =>
-      prev.some((t) => t.id === newTag.id) ? prev : [...prev, newTag]
-    )
-    return newTag
-  }
 
   // ---------------------------------------------------------------------------
   // Save helpers
@@ -234,9 +214,17 @@ export function PostEditorClient({ post, authorName, allTags, initialTags = [] }
       return
     }
 
-    // Sync tags
+    // Sync tags via API route (more reliable than server action in production)
     const postId = isEditing ? post!.id : (result as { success: true; id: string }).id
-    await syncPostTags(postId, selectedTags.map((t) => t.id))
+    try {
+      await fetch('/api/tags', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId, tagIds: selectedTags.map((t) => t.id) }),
+      })
+    } catch (e) {
+      console.error('[save] syncPostTags error:', e)
+    }
 
     return result
   }
@@ -503,7 +491,6 @@ export function PostEditorClient({ post, authorName, allTags, initialTags = [] }
               value={selectedTags}
               allTags={knownTags}
               onChange={setSelectedTags}
-              onCreateTag={handleCreateTag}
               disabled={submitting}
             />
           </div>
