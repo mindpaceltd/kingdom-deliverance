@@ -27,15 +27,24 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://kingdomdeliverance.org",
+    url: "https://kdcuganda.org",
     title: "Kingdom Deliverance Centre Uganda",
     description: "Experience God's love, healing, and deliverance in our vibrant church community.",
     siteName: "Kingdom Deliverance Centre Uganda",
+    images: [
+      {
+        url: "https://kdcuganda.org/og?title=Kingdom+Deliverance+Centre+Uganda",
+        width: 1200,
+        height: 630,
+        alt: "Kingdom Deliverance Centre Uganda",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Kingdom Deliverance Centre Uganda",
     description: "Experience God's love, healing, and deliverance in our vibrant church community.",
+    images: ["https://kdcuganda.org/og?title=Kingdom+Deliverance+Centre+Uganda"],
   },
   robots: {
     index: true,

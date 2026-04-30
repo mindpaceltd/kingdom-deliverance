@@ -26,7 +26,12 @@ export function FeaturedImagePanel({
 }: FeaturedImagePanelProps) {
   return (
     <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-      <h3 className="text-sm font-semibold text-foreground">Featured Image</h3>
+      <div>
+        <h3 className="text-sm font-semibold text-foreground">Featured Image</h3>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Recommended: <span className="font-medium text-foreground">1200 × 630 px</span> (1.91:1) — used for social sharing previews on WhatsApp, Facebook, Twitter.
+        </p>
+      </div>
 
       {/* Thumbnail preview */}
       {value ? (

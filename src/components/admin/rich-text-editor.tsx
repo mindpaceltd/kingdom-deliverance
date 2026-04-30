@@ -176,6 +176,9 @@ function InsertPopover({
               className="h-8 text-sm"
               required
             />
+            <p className="text-[10px] text-muted-foreground">
+              Recommended size: <span className="font-medium">800 × 450 px</span> minimum. Use descriptive alt text for SEO.
+            </p>
           </div>
         )}
         {type === 'link' && (

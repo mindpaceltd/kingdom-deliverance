@@ -12,9 +12,46 @@ interface Props { params: { slug: string } }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = createClient();
-  const { data } = await supabase.from("posts").select("title,excerpt").eq("slug", params.slug).single();
+  const { data } = await supabase
+    .from("posts")
+    .select("title, excerpt, featured_image, meta_title, meta_description, slug")
+    .eq("slug", params.slug)
+    .single();
+
   if (!data) return { title: "Post Not Found" };
-  return { title: `${data.title} | KDC Uganda Blog`, description: data.excerpt ?? undefined };
+
+  const title = data.meta_title || data.title;
+  const description = data.meta_description || data.excerpt || "Read this post on KDC Uganda.";
+  const url = `https://kdcuganda.org/blog/${data.slug}`;
+  // Use featured image if available, otherwise generate a dynamic OG image
+  const image = data.featured_image ||
+    `https://kdcuganda.org/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description.slice(0, 100))}`;
+
+  return {
+    title: `${title} | KDC Uganda`,
+    description,
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: "Kingdom Deliverance Centre Uganda",
+      type: "article",
+      images: [
+        {
+          url: image,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image],
+    },
+  };
 }
 
 export const revalidate = 3600;
