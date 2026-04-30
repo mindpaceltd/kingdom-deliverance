@@ -303,14 +303,14 @@ export default async function BlogPostPage({ params }: Props) {
         {/* ================================================================ */}
         {/* MAIN CONTENT + SIDEBAR                                            */}
         {/* ================================================================ */}
-        <section className="py-12 bg-white">
+        <section className="py-10 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col lg:flex-row gap-10 xl:gap-14">
+            <div className="flex flex-col lg:flex-row gap-8">
 
               {/* ---------------------------------------------------------- */}
-              {/* LEFT — Article (flex-1, max-w-2xl)                          */}
+              {/* LEFT — Article (flex-1, no max-width cap)                   */}
               {/* ---------------------------------------------------------- */}
-              <article className="flex-1 min-w-0 max-w-2xl">
+              <article className="flex-1 min-w-0">
 
                 {/* Lead quote block */}
                 {post.excerpt && (
@@ -323,13 +323,15 @@ export default async function BlogPostPage({ params }: Props) {
                 {contentWithIds ? (
                   <div
                     className="prose prose-lg prose-slate max-w-none
-                      prose-headings:font-serif prose-headings:text-primary
-                      prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
-                      prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
+                      prose-headings:font-bold prose-headings:text-gray-900
+                      prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-3 prose-h2:pb-2 prose-h2:border-b prose-h2:border-gray-100
+                      prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-2
+                      prose-p:text-gray-700 prose-p:leading-relaxed prose-p:text-base
                       prose-a:text-amber-600 prose-a:no-underline hover:prose-a:underline
                       prose-img:rounded-xl prose-img:shadow-md
-                      prose-blockquote:border-amber-400 prose-blockquote:bg-amber-50 prose-blockquote:rounded-r-lg prose-blockquote:py-1
-                      prose-strong:text-primary
+                      prose-blockquote:border-l-4 prose-blockquote:border-amber-400 prose-blockquote:bg-amber-50 prose-blockquote:rounded-r-lg prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:italic
+                      prose-strong:text-gray-900 prose-strong:font-bold
+                      prose-ul:space-y-1 prose-li:text-gray-700
                       prose-li:marker:text-amber-500
                       leading-relaxed"
                     dangerouslySetInnerHTML={{ __html: contentWithIds }}
@@ -389,7 +391,7 @@ export default async function BlogPostPage({ params }: Props) {
               {/* ---------------------------------------------------------- */}
               {/* RIGHT — Sidebar (w-72)                                       */}
               {/* ---------------------------------------------------------- */}
-              <aside className="w-full lg:w-72 shrink-0">
+              <aside className="w-full lg:w-64 shrink-0">
                 <div className="lg:sticky lg:top-24 space-y-6">
 
                   <div className="rounded-xl border border-gray-200 bg-white p-5">
