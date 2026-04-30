@@ -348,14 +348,12 @@ export function MediaPicker({
         {/* Trigger button */}
         <DialogTrigger
           render={
-            <Button type="button" variant="outline" size="sm">
-              <span />
+            <Button type="button" variant="outline" size="sm" className="gap-1.5">
+              <ImageIcon className="size-4" />
+              {label}
             </Button>
           }
-        >
-          <ImageIcon />
-          {label}
-        </DialogTrigger>
+        />
       </div>
 
       <DialogContent

@@ -20,6 +20,7 @@ import { PublishPanel } from './publish-panel'
 import { FeaturedImagePanel } from './featured-image-panel'
 import { SeoPanel } from './seo-panel'
 import { TagInput } from './tag-input'
+import { SharePanel } from './share-panel'
 import { createPost, updatePost, checkSlugAvailability } from '@/lib/actions/posts'
 import { upsertTag, syncPostTags } from '@/lib/actions/tags'
 import { generatePostContent } from '@/lib/actions/ai'
@@ -519,6 +520,15 @@ export function PostEditorClient({ post, authorName, allTags, initialTags = [] }
             onSeoTitleChange={(v) => setField('meta_title', v)}
             onMetaDescriptionChange={(v) => setField('meta_description', v)}
             disabled={submitting}
+          />
+
+          {/* Share Panel */}
+          <SharePanel
+            title={form.title}
+            excerpt={form.excerpt}
+            featuredImage={form.featured_image}
+            slug={form.slug}
+            status={form.status}
           />
         </aside>
       </div>

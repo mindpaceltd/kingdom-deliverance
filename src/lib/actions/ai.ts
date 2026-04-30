@@ -2,8 +2,6 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? '')
-
 export type AiGenerateMode = 'full' | 'improve'
 
 export interface AiGenerateRequest {
@@ -27,11 +25,14 @@ export interface AiGenerateResult {
 export async function generatePostContent(
   req: AiGenerateRequest
 ): Promise<AiGenerateResult | { error: string }> {
-  if (!process.env.GEMINI_API_KEY) {
-    return { error: 'Gemini API key is not configured.' }
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) {
+    return { error: 'Gemini API key is not configured on the server.' }
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const genAI = new GoogleGenerativeAI(apiKey)
+  // Use gemini-2.0-flash — fast, free-tier compatible
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
   let prompt: string
 
@@ -83,8 +84,9 @@ Requirements:
       .trim()
 
     return { html }
-  } catch (err) {
-    console.error('[generatePostContent]', err)
-    return { error: 'AI generation failed. Please try again.' }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('[generatePostContent] Gemini error:', message)
+    return { error: `AI generation failed: ${message}` }
   }
 }
