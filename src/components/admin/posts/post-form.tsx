@@ -144,6 +144,7 @@ export function PostForm({ post, onSuccess, onCancel }: PostFormProps) {
       {/* Featured Image */}
       <div className="space-y-1.5">
         <Label>Featured Image</Label>
+        <p className="text-[11px] text-muted-foreground">Recommended size: 1200x630px (16:9 ratio)</p>
         <MediaPicker
           value={form.featured_image || undefined}
           onSelect={(url) => setField('featured_image', url)}

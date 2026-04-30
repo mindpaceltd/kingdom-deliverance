@@ -236,13 +236,13 @@ export default async function BlogPostPage({ params }: Props) {
                 sizes="100vw"
               />
               {/* Overlay: Solid dark on mobile, Gradient on desktop */}
-              <div className="absolute inset-0 bg-[rgba(10,20,40,0.85)] lg:bg-transparent lg:bg-gradient-to-r lg:from-[rgba(10,20,40,0.9)] lg:from-40% lg:to-[rgba(10,20,40,0.2)] lg:to-100%" />
+              <div className="absolute inset-0 bg-[#0a1428]/85 lg:bg-transparent lg:bg-gradient-to-r lg:from-[#0a1428] lg:from-30% lg:via-[#0a1428]/60 lg:via-55% lg:to-transparent" />
             </div>
           )}
 
           {/* Content Container */}
           <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-            <div className="w-full lg:w-2/3 flex flex-col items-start gap-5 lg:gap-6">
+            <div className="w-full lg:w-3/5 flex flex-col items-start gap-5 lg:gap-6">
               
               {/* Breadcrumbs */}
               <nav aria-label="Breadcrumb" className="text-sm text-gray-400 flex items-center gap-2 flex-wrap">
@@ -259,7 +259,7 @@ export default async function BlogPostPage({ params }: Props) {
               </span>
 
               {/* Title */}
-              <h1 className="text-white font-bold leading-tight line-clamp-3 text-3xl md:text-4xl lg:text-[clamp(2.5rem,4vw,3.75rem)]">
+              <h1 className="text-white font-bold leading-snug text-3xl md:text-4xl lg:text-[clamp(2.5rem,4vw,3.75rem)] drop-shadow-md">
                 {post.title}
               </h1>
 
