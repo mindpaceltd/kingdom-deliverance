@@ -19,7 +19,7 @@ import { RichTextEditor } from '@/components/admin/rich-text-editor'
 import { PublishPanel } from './publish-panel'
 import { FeaturedImagePanel } from './featured-image-panel'
 import { SeoPanel } from './seo-panel'
-import { createPost, updatePost } from '@/lib/actions/posts'
+import { createPost, updatePost, checkSlugAvailability } from '@/lib/actions/posts'
 import { computeSeoScore } from '@/lib/seo-scorer'
 import type { Post } from '@/lib/types'
 
@@ -74,11 +74,31 @@ export function PostEditorClient({ post, authorName }: PostEditorClientProps) {
   const [submitting, setSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [draftSaved, setDraftSaved] = React.useState(false)
+  const [slugError, setSlugError] = React.useState<string | null>(null)
+  const slugCheckTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
     setError(null)
     setDraftSaved(false)
+  }
+
+  function handleSlugChange(slug: string) {
+    setField('slug', slug)
+    setSlugError(null)
+
+    if (slugCheckTimerRef.current) {
+      clearTimeout(slugCheckTimerRef.current)
+    }
+
+    if (slug.trim()) {
+      slugCheckTimerRef.current = setTimeout(async () => {
+        const result = await checkSlugAvailability(slug, post?.id)
+        if (!result.available) {
+          setSlugError('This slug is already taken by another post.')
+        }
+      }, 400)
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -206,9 +226,14 @@ export function PostEditorClient({ post, authorName }: PostEditorClientProps) {
             <SlugInput
               title={form.title}
               value={form.slug}
-              onChange={(slug) => setField('slug', slug)}
+              onChange={handleSlugChange}
               disabled={submitting}
             />
+            {slugError && (
+              <p role="alert" className="text-sm text-destructive">
+                {slugError}
+              </p>
+            )}
 
             {/* Type selector */}
             <div className="space-y-1.5">
@@ -322,6 +347,7 @@ export function PostEditorClient({ post, authorName }: PostEditorClientProps) {
             content={form.content}
             slug={form.slug}
             featuredImage={form.featured_image}
+            publicUrl={`https://kdcuganda.org/blog/${form.slug || ''}`}
             onFocusKeywordChange={(v) => setField('focus_keyword', v)}
             onSeoTitleChange={(v) => setField('meta_title', v)}
             onMetaDescriptionChange={(v) => setField('meta_description', v)}

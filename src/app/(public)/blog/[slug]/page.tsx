@@ -5,7 +5,8 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, User } from "lucide-react";
 import type { Metadata } from "next";
-import { ViewTracker } from "@/components/blog/view-tracker";
+import { headers } from "next/headers";
+import { incrementPostViews, autoPublishScheduled } from "@/lib/actions/posts";
 
 interface Props { params: { slug: string } }
 
@@ -19,6 +20,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export const revalidate = 3600;
 
 export default async function BlogPostPage({ params }: Props) {
+  // Auto-publish any scheduled posts whose time has arrived (Requirement 10.1)
+  await autoPublishScheduled();
+
   const supabase = createClient();
   const { data: post } = await supabase
     .from("posts")
@@ -28,6 +32,15 @@ export default async function BlogPostPage({ params }: Props) {
     .single();
 
   if (!post) notFound();
+
+  // Track page view server-side with IP and user-agent for bot filtering and throttling (Requirement 9.1)
+  const headersList = headers();
+  const ip =
+    headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    headersList.get("x-real-ip") ??
+    undefined;
+  const userAgent = headersList.get("user-agent") ?? undefined;
+  void incrementPostViews(params.slug, `/blog/${params.slug}`, ip, userAgent);
 
   const { data: related } = await supabase
     .from("posts")
@@ -40,8 +53,6 @@ export default async function BlogPostPage({ params }: Props) {
 
   return (
     <div className="flex flex-col">
-      {/* View tracker — fires incrementPostViews on client mount */}
-      <ViewTracker slug={params.slug} path={`/blog/${params.slug}`} />
       {/* Hero */}
       <section className="py-24 bg-primary text-white">
         <div className="container px-4 max-w-4xl mx-auto">

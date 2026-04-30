@@ -168,17 +168,19 @@ describe('Property 7 — Slug uniqueness enforcement across content tables', () 
   })
 
   // -------------------------------------------------------------------------
-  // Property 7a: createPost returns { error: 'Slug already exists' } on 23505
+  // Property 7a: createPost returns { error: 'Slug already exists...' } on 23505
+  // Per requirement 8.13, the error includes a suggested alternative slug.
   // -------------------------------------------------------------------------
 
-  describe('Property 7a — createPost: 23505 → { error: "Slug already exists" }', () => {
-    it('returns { error: "Slug already exists" } for a known duplicate slug', async () => {
+  describe('Property 7a — createPost: 23505 → { error: "Slug already exists. Suggested: ..." }', () => {
+    it('returns an error starting with "Slug already exists" for a known duplicate slug', async () => {
       setUniqueConstraintError()
       const result = await createPost(makePostData('my-duplicate-slug'))
-      expect(result).toEqual({ error: 'Slug already exists' })
+      expect('error' in result).toBe(true)
+      expect((result as { error: string }).error).toMatch(/^Slug already exists/)
     })
 
-    it('Property 7a: for any slug string, a 23505 error always returns { error: "Slug already exists" } (fast-check, 100 runs)', async () => {
+    it('Property 7a: for any slug string, a 23505 error always returns an error starting with "Slug already exists" (fast-check, 100 runs)', async () => {
       setUniqueConstraintError()
       await fc.assert(
         fc.asyncProperty(
@@ -186,7 +188,7 @@ describe('Property 7 — Slug uniqueness enforcement across content tables', () 
           fc.string({ minLength: 1, maxLength: 200 }),
           async (slug) => {
             const result = await createPost(makePostData(slug))
-            return 'error' in result && result.error === 'Slug already exists'
+            return 'error' in result && result.error.startsWith('Slug already exists')
           }
         ),
         { numRuns: 100 }
@@ -252,25 +254,25 @@ describe('Property 7 — Slug uniqueness enforcement across content tables', () 
   // -------------------------------------------------------------------------
 
   describe('Property 7d — Non-23505 errors pass through the actual message', () => {
-    it('createPost: non-23505 error returns { error: <actual message> }, not "Slug already exists"', async () => {
+    it('createPost: non-23505 error returns { error: <actual message> }, not starting with "Slug already exists"', async () => {
       setOtherDbError('relation "posts" does not exist')
       const result = await createPost(makePostData('some-slug'))
       expect(result).toEqual({ error: 'relation "posts" does not exist' })
-      expect((result as { error: string }).error).not.toBe('Slug already exists')
+      expect((result as { error: string }).error).not.toMatch(/^Slug already exists/)
     })
 
-    it('createSermon: non-23505 error returns { error: <actual message> }, not "Slug already exists"', async () => {
+    it('createSermon: non-23505 error returns { error: <actual message> }, not starting with "Slug already exists"', async () => {
       setOtherDbError('permission denied for table sermons')
       const result = await createSermon(makeSermonData('some-slug'))
       expect(result).toEqual({ error: 'permission denied for table sermons' })
-      expect((result as { error: string }).error).not.toBe('Slug already exists')
+      expect((result as { error: string }).error).not.toMatch(/^Slug already exists/)
     })
 
-    it('createEvent: non-23505 error returns { error: <actual message> }, not "Slug already exists"', async () => {
+    it('createEvent: non-23505 error returns { error: <actual message> }, not starting with "Slug already exists"', async () => {
       setOtherDbError('permission denied for table events')
       const result = await createEvent(makeEventData('some-slug'))
       expect(result).toEqual({ error: 'permission denied for table events' })
-      expect((result as { error: string }).error).not.toBe('Slug already exists')
+      expect((result as { error: string }).error).not.toMatch(/^Slug already exists/)
     })
 
     it('Property 7d: for any non-23505 error code and any slug, the action never returns "Slug already exists" (fast-check, 100 runs)', async () => {
@@ -296,11 +298,11 @@ describe('Property 7 — Slug uniqueness enforcement across content tables', () 
             // All three must return an error (not success)
             if (!postError || !sermonError || !eventError) return false
 
-            // None of them should say 'Slug already exists' for a non-23505 code
+            // None of them should start with 'Slug already exists' for a non-23505 code
             return (
-              postError !== 'Slug already exists' &&
-              sermonError !== 'Slug already exists' &&
-              eventError !== 'Slug already exists'
+              !postError.startsWith('Slug already exists') &&
+              !sermonError.startsWith('Slug already exists') &&
+              !eventError.startsWith('Slug already exists')
             )
           }
         ),

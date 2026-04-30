@@ -20,6 +20,7 @@ export interface SeoPanelProps {
   content: string
   slug: string
   featuredImage: string
+  publicUrl: string
   onFocusKeywordChange: (v: string) => void
   onSeoTitleChange: (v: string) => void
   onMetaDescriptionChange: (v: string) => void
@@ -52,7 +53,7 @@ function CharCounter({
   )
 }
 
-function CheckItem({ label, passing }: { label: string; passing: boolean }) {
+function CheckItem({ label, passing, points }: { label: string; passing: boolean; points: string }) {
   return (
     <li className="flex items-start gap-2 text-xs">
       {passing ? (
@@ -60,9 +61,10 @@ function CheckItem({ label, passing }: { label: string; passing: boolean }) {
       ) : (
         <XIcon className="size-3.5 shrink-0 mt-0.5 text-destructive" aria-hidden="true" />
       )}
-      <span className={passing ? 'text-foreground' : 'text-muted-foreground'}>
+      <span className={cn('flex-1', passing ? 'text-foreground' : 'text-muted-foreground')}>
         {label}
       </span>
+      <span className="text-muted-foreground shrink-0">{points}</span>
     </li>
   )
 }
@@ -78,6 +80,7 @@ export function SeoPanel({
   content,
   slug,
   featuredImage,
+  publicUrl,
   onFocusKeywordChange,
   onSeoTitleChange,
   onMetaDescriptionChange,
@@ -185,32 +188,60 @@ export function SeoPanel({
           <CheckItem
             label="Focus keyword in SEO title"
             passing={checks.keywordInTitle}
+            points="+15 pts"
           />
           <CheckItem
             label="Focus keyword in first 200 characters"
             passing={checks.keywordInIntro}
+            points="+15 pts"
           />
           <CheckItem
             label="Meta description length (150–160 chars)"
             passing={checks.metaDescriptionLength}
+            points="+15 pts"
           />
           <CheckItem
             label="SEO title length (50–60 chars)"
             passing={checks.seoTitleLength}
+            points="+15 pts"
           />
           <CheckItem
             label="Content word count ≥ 300 words"
             passing={checks.contentWordCount}
+            points="+15 pts"
           />
           <CheckItem
             label="Featured image present"
             passing={checks.featuredImagePresent}
+            points="+10 pts"
           />
           <CheckItem
             label="Focus keyword in slug"
             passing={checks.keywordInSlug}
+            points="+15 pts"
           />
         </ul>
+      </div>
+
+      {/* Google-style search result preview */}
+      <div className="space-y-1.5">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Search Preview
+        </p>
+        <div className="rounded-md border border-border bg-white dark:bg-zinc-900 p-3 space-y-0.5">
+          {/* Title */}
+          <p className="text-sm font-medium text-blue-600 dark:text-blue-400 truncate">
+            {seoTitle || 'Post Title'}
+          </p>
+          {/* URL */}
+          <p className="text-xs text-green-700 dark:text-green-500 truncate">
+            {publicUrl}
+          </p>
+          {/* Meta description */}
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {metaDescription || 'No meta description provided.'}
+          </p>
+        </div>
       </div>
     </div>
   )

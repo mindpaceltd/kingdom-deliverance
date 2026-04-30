@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { requireRoles, ROLES } from '@/lib/authz'
+import { requireRole } from '@/lib/actions/auth-helpers'
 import type { PostData } from '@/lib/types'
 
 // ---------------------------------------------------------------------------
@@ -16,16 +16,31 @@ function revalidatePostPaths() {
 }
 
 // ---------------------------------------------------------------------------
+// suggestAlternativeSlug
+// Generates a suggested alternative slug when a slug conflict occurs.
+// ---------------------------------------------------------------------------
+
+function suggestAlternativeSlug(slug: string): string {
+  return `${slug}-${Date.now().toString(36)}`
+}
+
+// ---------------------------------------------------------------------------
 // createPost
 // Inserts a new post. Sets `published_at` if status is `published`.
-// Requires `editor` or `admin` role.
+// Requires at minimum the `author` role.
+// Authors can only create posts (author_id is set to their own ID).
 // ---------------------------------------------------------------------------
 
 export async function createPost(
   data: PostData
 ): Promise<{ success: true; id: string } | { error: string }> {
-  const result = await requireRoles(ROLES.CONTENT)
+  const result = await requireRole('author')
   if ('error' in result) return result
+
+  // Validate scheduled_at is provided when status is 'scheduled'
+  if (data.status === 'scheduled' && !data.scheduled_at) {
+    return { error: 'scheduled_at is required for scheduled posts' }
+  }
 
   const supabase = createClient()
 
@@ -39,7 +54,7 @@ export async function createPost(
       featured_image: data.featured_image ?? null,
       type: data.type,
       status: data.status,
-      author_id: result.id,
+      author_id: result.userId,
       published_at: data.status === 'published' ? new Date().toISOString() : null,
       meta_title: data.meta_title ?? null,
       meta_description: data.meta_description ?? null,
@@ -52,7 +67,9 @@ export async function createPost(
 
   if (error) {
     console.error('[createPost]', error.message)
-    if (error.code === '23505') return { error: 'Slug already exists' }
+    if (error.code === '23505') {
+      return { error: `Slug already exists. Suggested: ${suggestAlternativeSlug(data.slug)}` }
+    }
     return { error: error.message }
   }
 
@@ -64,28 +81,39 @@ export async function createPost(
 // updatePost
 // Updates an existing post. Sets `published_at` on first publish (i.e. when
 // the post had no prior `published_at`).
-// Requires `editor` or `admin` role.
+// Requires at minimum the `author` role.
+// Authors can only update their own posts.
 // ---------------------------------------------------------------------------
 
 export async function updatePost(
   id: string,
   data: PostData
 ): Promise<{ success: true } | { error: string }> {
-  const result = await requireRoles(ROLES.CONTENT)
+  const result = await requireRole('author')
   if ('error' in result) return result
+
+  // Validate scheduled_at is provided when status is 'scheduled'
+  if (data.status === 'scheduled' && !data.scheduled_at) {
+    return { error: 'scheduled_at is required for scheduled posts' }
+  }
 
   const supabase = createClient()
 
-  // Fetch the existing post to check whether it has already been published
+  // Fetch the existing post to check ownership and published_at
   const { data: existing, error: fetchError } = await supabase
     .from('posts')
-    .select('published_at')
+    .select('published_at, author_id')
     .eq('id', id)
     .single()
 
   if (fetchError || !existing) {
     console.error('[updatePost] fetch error', fetchError?.message)
     return { error: fetchError?.message ?? 'Post not found' }
+  }
+
+  // Authors can only update their own posts
+  if (result.role === 'author' && existing.author_id !== result.userId) {
+    return { error: 'Forbidden' }
   }
 
   // Only set published_at on the first publish transition
@@ -115,7 +143,9 @@ export async function updatePost(
 
   if (error) {
     console.error('[updatePost]', error.message)
-    if (error.code === '23505') return { error: 'Slug already exists' }
+    if (error.code === '23505') {
+      return { error: `Slug already exists. Suggested: ${suggestAlternativeSlug(data.slug)}` }
+    }
     return { error: error.message }
   }
 
@@ -127,13 +157,13 @@ export async function updatePost(
 // deletePost
 // Soft-archives a post by setting `status = 'archived'`.
 // Kept for backward compatibility with existing code.
-// Requires `editor` or `admin` role.
+// Requires at minimum the `author` role.
 // ---------------------------------------------------------------------------
 
 export async function deletePost(
   id: string
 ): Promise<{ success: true } | { error: string }> {
-  const result = await requireRoles(ROLES.CONTENT)
+  const result = await requireRole('author')
   if ('error' in result) return result
 
   const supabase = createClient()
@@ -154,16 +184,18 @@ export async function deletePost(
 
 // ---------------------------------------------------------------------------
 // duplicatePost
-// Copies all fields of the source post, prefixes title with "Copy of ",
-// sets status = 'draft', clears published_at / scheduled_at / deleted_at,
-// and generates a unique slug by appending -copy (or -copy-2, -copy-3, etc.)
-// Requires `editor` or `admin` role.
+// Copies all fields of the source post, prefixes title with "Copy of " only
+// if the title doesn't already start with "Copy of ", sets status = 'draft',
+// clears published_at / scheduled_at / deleted_at, and generates a unique
+// slug by appending -copy (or -copy-2, -copy-3, etc.)
+// Requires at minimum the `author` role.
+// Authors can only duplicate their own posts.
 // ---------------------------------------------------------------------------
 
 export async function duplicatePost(
   id: string
 ): Promise<{ success: true; id: string } | { error: string }> {
-  const result = await requireRoles(ROLES.CONTENT)
+  const result = await requireRole('author')
   if ('error' in result) return result
 
   const supabase = createClient()
@@ -178,6 +210,16 @@ export async function duplicatePost(
   if (fetchError || !source) {
     return { error: fetchError?.message ?? 'Post not found' }
   }
+
+  // Authors can only duplicate their own posts
+  if (result.role === 'author' && source.author_id !== result.userId) {
+    return { error: 'Forbidden' }
+  }
+
+  // Only prefix "Copy of " if the title doesn't already start with it
+  const newTitle = source.title.startsWith('Copy of ')
+    ? source.title
+    : `Copy of ${source.title}`
 
   // Generate a unique slug
   const baseSlug = source.slug
@@ -204,14 +246,14 @@ export async function duplicatePost(
   const { data: newPost, error: insertError } = await supabase
     .from('posts')
     .insert({
-      title: `Copy of ${source.title}`,
+      title: newTitle,
       slug: candidateSlug,
       content: source.content,
       excerpt: source.excerpt,
       featured_image: source.featured_image,
       type: source.type,
       status: 'draft',
-      author_id: result.id,
+      author_id: result.userId,
       published_at: null,
       scheduled_at: null,
       deleted_at: null,
@@ -225,7 +267,9 @@ export async function duplicatePost(
 
   if (insertError) {
     console.error('[duplicatePost]', insertError.message)
-    if (insertError.code === '23505') return { error: 'Slug already exists' }
+    if (insertError.code === '23505') {
+      return { error: `Slug already exists. Suggested: ${suggestAlternativeSlug(candidateSlug)}` }
+    }
     return { error: insertError.message }
   }
 
@@ -236,16 +280,34 @@ export async function duplicatePost(
 // ---------------------------------------------------------------------------
 // trashPost
 // Soft-deletes a post by setting status = 'trash' and deleted_at = NOW().
-// Requires `editor` or `admin` role.
+// Requires at minimum the `author` role.
+// Authors can only trash their own posts.
 // ---------------------------------------------------------------------------
 
 export async function trashPost(
   id: string
 ): Promise<{ success: true } | { error: string }> {
-  const result = await requireRoles(ROLES.CONTENT)
+  const result = await requireRole('author')
   if ('error' in result) return result
 
   const supabase = createClient()
+
+  // Authors can only trash their own posts — fetch author_id first
+  if (result.role === 'author') {
+    const { data: post, error: fetchError } = await supabase
+      .from('posts')
+      .select('author_id')
+      .eq('id', id)
+      .single()
+
+    if (fetchError || !post) {
+      return { error: fetchError?.message ?? 'Post not found' }
+    }
+
+    if (post.author_id !== result.userId) {
+      return { error: 'Forbidden' }
+    }
+  }
 
   const { error } = await supabase
     .from('posts')
@@ -264,13 +326,14 @@ export async function trashPost(
 // ---------------------------------------------------------------------------
 // restorePost
 // Restores a trashed post by setting status = 'draft' and deleted_at = NULL.
-// Requires `editor` or `admin` role.
+// Requires at minimum the `author` role.
+// Editors and admins can restore any post.
 // ---------------------------------------------------------------------------
 
 export async function restorePost(
   id: string
 ): Promise<{ success: true } | { error: string }> {
-  const result = await requireRoles(ROLES.CONTENT)
+  const result = await requireRole('author')
   if ('error' in result) return result
 
   const supabase = createClient()
@@ -298,7 +361,7 @@ export async function restorePost(
 export async function permanentDeletePost(
   id: string
 ): Promise<{ success: true } | { error: string }> {
-  const result = await requireRoles(ROLES.ADMIN)
+  const result = await requireRole('admin')
   if ('error' in result) return result
 
   const supabase = createClient()
@@ -321,12 +384,22 @@ export async function permanentDeletePost(
 // incrementPostViews
 // Increments the views counter on the post identified by slug and inserts
 // a record into page_views. No authentication required (called from public page).
+// Includes bot filtering and IP-based throttling (1 view per IP per 10 seconds).
 // ---------------------------------------------------------------------------
+
+const BOT_PATTERNS = /bot|crawler|spider|googlebot|bingbot/i
 
 export async function incrementPostViews(
   slug: string,
-  path?: string
+  path?: string,
+  ip?: string,
+  userAgent?: string
 ): Promise<void> {
+  // Skip bot traffic
+  if (userAgent && BOT_PATTERNS.test(userAgent)) {
+    return
+  }
+
   const supabase = createClient()
 
   // Find the post by slug (published only)
@@ -342,19 +415,105 @@ export async function incrementPostViews(
     return
   }
 
+  // IP throttling: skip if a page_views record exists for the same ip + post_id within the last 10 seconds
+  if (ip) {
+    const tenSecondsAgo = new Date(Date.now() - 10_000).toISOString()
+    const { data: recentView } = await supabase
+      .from('page_views')
+      .select('id')
+      .eq('post_id', post.id)
+      .eq('ip', ip)
+      .gte('created_at', tenSecondsAgo)
+      .maybeSingle()
+
+    if (recentView) {
+      // Already recorded a view from this IP within the last 10 seconds
+      return
+    }
+  }
+
   // Atomically increment views counter via RPC
   await supabase.rpc('increment_post_views', { p_post_id: post.id })
 
-  // Insert page_views record
+  // Insert page_views record (including ip for throttling)
   await supabase
     .from('page_views')
     .insert({
       post_id: post.id,
       path: path ?? null,
+      ip: ip ?? null,
     })
     .then(({ error }) => {
       if (error) {
         console.error('[incrementPostViews] page_views insert error', error)
       }
     })
+}
+
+// ---------------------------------------------------------------------------
+// checkSlugAvailability
+// Checks whether a slug is available (not used by any other post).
+// No authentication required.
+// ---------------------------------------------------------------------------
+
+export async function checkSlugAvailability(
+  slug: string,
+  excludePostId?: string
+): Promise<{ available: boolean }> {
+  const supabase = createClient()
+
+  let query = supabase
+    .from('posts')
+    .select('id')
+    .eq('slug', slug)
+
+  if (excludePostId) {
+    query = query.neq('id', excludePostId)
+  }
+
+  const { data } = await query.maybeSingle()
+
+  return { available: !data }
+}
+
+// ---------------------------------------------------------------------------
+// autoPublishScheduled
+// Finds all posts with status = 'scheduled' and scheduled_at <= NOW(),
+// updates them to status = 'published' and sets published_at = NOW().
+// No authentication required (called internally on page load).
+// ---------------------------------------------------------------------------
+
+export async function autoPublishScheduled(): Promise<void> {
+  const supabase = createClient()
+
+  const now = new Date().toISOString()
+
+  const { data: scheduledPosts, error: fetchError } = await supabase
+    .from('posts')
+    .select('id')
+    .eq('status', 'scheduled')
+    .lte('scheduled_at', now)
+
+  if (fetchError) {
+    console.error('[autoPublishScheduled] fetch error', fetchError.message)
+    return
+  }
+
+  if (!scheduledPosts || scheduledPosts.length === 0) {
+    return
+  }
+
+  const ids = scheduledPosts.map((p) => p.id)
+
+  const { error: updateError } = await supabase
+    .from('posts')
+    .update({ status: 'published', published_at: now })
+    .in('id', ids)
+
+  if (updateError) {
+    console.error('[autoPublishScheduled] update error', updateError.message)
+    return
+  }
+
+  revalidatePostPaths()
 }
