@@ -1,7 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { requireRoles, ROLES } from '@/lib/authz'
+import { requireRoles } from '@/lib/authz'
+import { ROLES } from '@/lib/roles'
 import { createClient } from '@/lib/supabase/server'
 
 export interface CmsPagePayload {

@@ -19,8 +19,8 @@ export default async function AdminDashboard() {
     recentPostsRes, recentSermonsRes, upcomingEventsRes,
     recentPrayerRes, recentContactRes,
   ] = await Promise.all([
-    supabase.from("posts").select("id", { count: "exact", head: true }).neq("status", "archived"),
-    supabase.from("sermons").select("id", { count: "exact", head: true }),
+    supabase.from("posts").select("id", { count: "exact", head: true }).not("status", "in", '("trash","archived")'),
+    supabase.from("sermons").select("id", { count: "exact", head: true }).not("status", "in", '("trash")'),
     supabase.from("events").select("id", { count: "exact", head: true }).eq("status", "upcoming"),
     supabase.from("profiles").select("id", { count: "exact", head: true }),
     supabase.from("ministries").select("id", { count: "exact", head: true }).eq("is_active", true),
@@ -28,8 +28,8 @@ export default async function AdminDashboard() {
     supabase.from("media").select("id", { count: "exact", head: true }),
     supabase.from("prayer_requests").select("id", { count: "exact", head: true }).eq("is_reviewed", false),
     supabase.from("contact_submissions").select("id", { count: "exact", head: true }).eq("is_read", false),
-    supabase.from("posts").select("id, title, status, published_at, type").neq("status", "archived").order("updated_at", { ascending: false }).limit(5),
-    supabase.from("sermons").select("id, title, preacher, date, video_url, status").order("date", { ascending: false }).limit(5),
+    supabase.from("posts").select("id, title, status, published_at, type").not("status", "in", '("trash","archived")').order("updated_at", { ascending: false }).limit(5),
+    supabase.from("sermons").select("id, title, preacher, date, video_url, status").neq("status", "trash").order("date", { ascending: false }).limit(5),
     supabase.from("events").select("id, title, date, location, status").eq("status", "upcoming").order("date", { ascending: true }).limit(5),
     supabase.from("prayer_requests").select("id, name, request, is_anonymous, created_at").eq("is_reviewed", false).order("created_at", { ascending: false }).limit(3),
     supabase.from("contact_submissions").select("id, name, email, subject, created_at").eq("is_read", false).order("created_at", { ascending: false }).limit(3),
@@ -315,10 +315,12 @@ function StatusPill({ status }: { status: string }) {
   const map: Record<string, string> = {
     published: "bg-green-100 text-green-700",
     draft: "bg-yellow-100 text-yellow-700",
+    scheduled: "bg-blue-100 text-blue-700",
+    trash: "bg-red-100 text-red-700",
     archived: "bg-gray-100 text-gray-500",
   }
   return (
-    <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${map[status] ?? "bg-gray-100 text-gray-500"}`}>
+    <span className={`shrink-0 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-bold ${map[status] ?? "bg-gray-100 text-gray-500"}`}>
       {status}
     </span>
   )

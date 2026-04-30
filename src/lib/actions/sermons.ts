@@ -2,7 +2,8 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { requireRoles, ROLES } from '@/lib/authz'
+import { requireRoles } from '@/lib/authz'
+import { ROLES } from '@/lib/roles'
 import type { SermonData } from '@/lib/types'
 
 // ---------------------------------------------------------------------------
@@ -242,17 +243,28 @@ export async function duplicateSermon(
   const { data: newSermon, error: insertError } = await supabase
     .from('sermons')
     .insert({
-      ...source,
-      id: undefined,
       title: newTitle,
       slug: candidateSlug,
+      description: source.description,
+      content: source.content,
+      video_url: source.video_url,
+      audio_url: source.audio_url,
+      thumbnail_url: source.thumbnail_url,
+      featured_image_alt: source.featured_image_alt,
+      preacher: source.preacher,
+      series: source.series,
+      series_id: source.series_id,
+      date: source.date,
+      duration_minutes: source.duration_minutes,
       status: 'draft',
+      meta_title: source.meta_title,
+      meta_description: source.meta_description,
+      focus_keyword: source.focus_keyword,
+      seo_score: source.seo_score ?? 0,
       published_at: null,
       scheduled_at: null,
       deleted_at: null,
       views: 0,
-      created_at: undefined,
-      updated_at: undefined,
     })
     .select('id')
     .single()
