@@ -14,6 +14,7 @@ import {
   Users,
   Settings,
   LogOut,
+  UserCircleIcon,
 } from 'lucide-react'
 import { useAdmin } from '@/lib/admin-context'
 import { createClient } from '@/lib/supabase/client'
@@ -30,6 +31,7 @@ const allNavLinks = [
   { href: '/admin/inbox', label: 'Inbox', icon: Inbox, adminOnly: false },
   { href: '/admin/users', label: 'Users', icon: Users, adminOnly: true },
   { href: '/admin/settings', label: 'Settings', icon: Settings, adminOnly: true },
+  { href: '/admin/profile', label: 'My Profile', icon: UserCircleIcon, adminOnly: false },
 ]
 
 export function AdminSidebar() {
