@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { PostEditorClient } from '@/components/admin/posts/post-editor-client'
+import { getAllTags, getPostTags } from '@/lib/actions/tags'
 import type { Post } from '@/lib/types'
 
 interface Props {
@@ -10,19 +11,16 @@ interface Props {
 export default async function EditPostPage({ params }: Props) {
   const supabase = createClient()
 
-  // Fetch the post by ID
   const { data: post, error } = await supabase
     .from('posts')
     .select('*, profiles(name, avatar_url)')
     .eq('id', params.id)
     .single()
 
-  // Redirect to posts list if post not found or invalid ID
   if (error || !post) {
     redirect('/admin/posts')
   }
 
-  // Get the current user's profile to display author name
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -37,5 +35,17 @@ export default async function EditPostPage({ params }: Props) {
     if (profile?.name) authorName = profile.name
   }
 
-  return <PostEditorClient post={post as Post} authorName={authorName} />
+  const [allTags, postTags] = await Promise.all([
+    getAllTags(),
+    getPostTags(params.id),
+  ])
+
+  return (
+    <PostEditorClient
+      post={post as Post}
+      authorName={authorName}
+      allTags={allTags}
+      initialTags={postTags}
+    />
+  )
 }

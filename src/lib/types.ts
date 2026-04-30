@@ -35,6 +35,7 @@ export interface Post {
   views: number
   // Joined relation
   profiles?: Pick<Profile, 'name' | 'avatar_url'>
+  tags?: Tag[]
 }
 
 export interface Sermon {
@@ -167,8 +168,16 @@ export interface PostData {
   focus_keyword?: string
   seo_score?: number
   scheduled_at?: string  // ISO string; only used when status = 'scheduled'
+  tag_ids?: string[]     // UUIDs of tags to associate with the post
 }
 
+
+export interface Tag {
+  id: string
+  name: string
+  slug: string
+  created_at: string
+}
 
 export interface ContactSubmission {
   id: string

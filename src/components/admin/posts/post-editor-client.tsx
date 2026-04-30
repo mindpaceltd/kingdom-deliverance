@@ -19,11 +19,13 @@ import { RichTextEditor } from '@/components/admin/rich-text-editor'
 import { PublishPanel } from './publish-panel'
 import { FeaturedImagePanel } from './featured-image-panel'
 import { SeoPanel } from './seo-panel'
+import { TagInput } from './tag-input'
 import { createPost, updatePost, checkSlugAvailability } from '@/lib/actions/posts'
+import { upsertTag, syncPostTags } from '@/lib/actions/tags'
 import { generatePostContent } from '@/lib/actions/ai'
 import { computeSeoScore } from '@/lib/seo-scorer'
 import { cn } from '@/lib/utils'
-import type { Post } from '@/lib/types'
+import type { Post, Tag } from '@/lib/types'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -32,6 +34,8 @@ import type { Post } from '@/lib/types'
 export interface PostEditorClientProps {
   post?: Post
   authorName: string
+  allTags: Tag[]
+  initialTags?: Tag[]
 }
 
 interface FormState {
@@ -52,7 +56,7 @@ interface FormState {
 // PostEditorClient
 // ---------------------------------------------------------------------------
 
-export function PostEditorClient({ post, authorName }: PostEditorClientProps) {
+export function PostEditorClient({ post, authorName, allTags, initialTags = [] }: PostEditorClientProps) {
   const router = useRouter()
   const isEditing = Boolean(post)
 
@@ -72,6 +76,10 @@ export function PostEditorClient({ post, authorName }: PostEditorClientProps) {
     meta_description: post?.meta_description ?? '',
     focus_keyword: post?.focus_keyword ?? '',
   })
+
+  // Tags state — keep a local copy of all known tags so newly created ones appear in autocomplete
+  const [selectedTags, setSelectedTags] = React.useState<Tag[]>(initialTags)
+  const [knownTags, setKnownTags] = React.useState<Tag[]>(allTags)
 
   const [submitting, setSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -156,6 +164,29 @@ export function PostEditorClient({ post, authorName }: PostEditorClientProps) {
   }
 
   // ---------------------------------------------------------------------------
+  // Tag helpers
+  // ---------------------------------------------------------------------------
+
+  async function handleCreateTag(name: string): Promise<Tag | null> {
+    const result = await upsertTag(name)
+    if ('error' in result) {
+      setAiError(result.error)
+      return null
+    }
+    const newTag: Tag = {
+      id: result.id,
+      name: name.trim(),
+      slug: name.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+      created_at: new Date().toISOString(),
+    }
+    // Add to known tags if not already there
+    setKnownTags((prev) =>
+      prev.some((t) => t.id === newTag.id) ? prev : [...prev, newTag]
+    )
+    return newTag
+  }
+
+  // ---------------------------------------------------------------------------
   // Save helpers
   // ---------------------------------------------------------------------------
 
@@ -201,6 +232,10 @@ export function PostEditorClient({ post, authorName }: PostEditorClientProps) {
       setError(result.error)
       return
     }
+
+    // Sync tags
+    const postId = isEditing ? post!.id : (result as { success: true; id: string }).id
+    await syncPostTags(postId, selectedTags.map((t) => t.id))
 
     return result
   }
@@ -459,6 +494,19 @@ export function PostEditorClient({ post, authorName }: PostEditorClientProps) {
             onChange={(url) => setField('featured_image', url)}
             disabled={submitting}
           />
+
+          {/* Tags Panel */}
+          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">Tags</h3>
+            <TagInput
+              value={selectedTags}
+              allTags={knownTags}
+              onChange={setSelectedTags}
+              onCreateTag={handleCreateTag}
+              disabled={submitting}
+            />
+          </div>
+
           <SeoPanel
             focusKeyword={form.focus_keyword}
             seoTitle={form.meta_title || form.title}
