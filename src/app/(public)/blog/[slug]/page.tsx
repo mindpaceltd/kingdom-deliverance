@@ -115,7 +115,7 @@ function ShareButtons({ url, title }: { url: string; title: string }) {
 function ShareRow({ url, title }: { url: string; title: string }) {
   return (
     <div className="flex items-center gap-3 flex-wrap">
-      <span className="text-sm font-semibold text-foreground">Share this post:</span>
+      <span className="text-sm text-gray-500">Share this post:</span>
       <ShareButtons url={url} title={title} />
     </div>
   );
@@ -223,23 +223,21 @@ export default async function BlogPostPage({ params }: Props) {
         {/* ================================================================ */}
         {/* HERO — dark bg, ~280px tall, left text + right image              */}
         {/* ================================================================ */}
-        <section className="relative bg-[#1a1a2e] text-white overflow-hidden" style={{ minHeight: 280 }}>
-          {/* Right-side featured image with gradient fade */}
+        <section className="relative bg-[#0a121f] text-white overflow-hidden" style={{ minHeight: 280 }}>
+          {/* Right-side featured image */}
           {post.featured_image && (
-            <>
-              <div className="absolute inset-y-0 right-0 w-[40%] hidden lg:block">
-                <Image
-                  src={post.featured_image}
-                  alt={post.meta_title || post.title}
-                  fill
-                  className="object-cover"
-                  sizes="40vw"
-                  priority
-                />
-              </div>
-              {/* Gradient fade from dark bg into image */}
-              <div className="absolute inset-y-0 right-[40%] w-32 hidden lg:block bg-gradient-to-r from-[#1a1a2e] to-transparent z-10" />
-            </>
+            <div className="absolute inset-y-0 right-0 w-[40%] hidden lg:block">
+              <Image
+                src={post.featured_image}
+                alt={post.meta_title || post.title}
+                fill
+                className="object-cover"
+                sizes="40vw"
+                priority
+              />
+              {/* Gradient fade from dark bg into image — sits on left edge of image area */}
+              <div className="absolute inset-y-0 left-0 w-40 bg-gradient-to-r from-[#0a121f] via-[#0a121f]/80 to-transparent" />
+            </div>
           )}
 
           {/* Left content — 60% wide on desktop */}
@@ -296,8 +294,8 @@ export default async function BlogPostPage({ params }: Props) {
         {/* ================================================================ */}
         {/* SHARE BAR — white, full-width                                     */}
         {/* ================================================================ */}
-        <div className="bg-white border-b border-border shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="bg-white border-b border-gray-100 py-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <ShareRow url={postUrl} title={post.title} />
           </div>
         </div>
@@ -363,7 +361,7 @@ export default async function BlogPostPage({ params }: Props) {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">About the Author</p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-amber-500 mb-1">About the Author</p>
                     <p className="font-bold text-primary text-lg leading-tight">{authorName || "Kingdom Deliverance Centre Uganda"}</p>
                     <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
                       {authorBio || "Spreading faith, transformation, and community impact across Uganda and the world through the power of the Gospel."}
@@ -394,47 +392,47 @@ export default async function BlogPostPage({ params }: Props) {
               <aside className="w-full lg:w-72 shrink-0">
                 <div className="lg:sticky lg:top-24 space-y-6">
 
-                  {/* Author card */}
-                  <div className="rounded-2xl border border-border bg-white shadow-sm p-6">
-                    <h3 className="font-bold text-primary text-base mb-4">
+                  <div className="rounded-xl border border-gray-200 bg-white p-5">
+                    <h3 className="font-bold text-gray-900 text-base mb-4">
                       About {authorName || "the Author"}
                     </h3>
-                    <div className="flex flex-col items-center text-center gap-3">
-                      <div className="w-20 h-20 rounded-full overflow-hidden bg-primary/10 border border-border shrink-0">
+                    <div className="flex items-start gap-3">
+                      {/* Image on LEFT */}
+                      <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
                         {authorAvatar ? (
                           <Image src={authorAvatar} alt={authorName ?? "Author"} width={80} height={80} className="object-cover w-full h-full" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <User className="w-10 h-10 text-primary/30" />
+                            <User className="w-8 h-8 text-gray-300" />
                           </div>
                         )}
                       </div>
-                      <div>
-                        <p className="font-bold text-primary text-sm">{authorName || "Kingdom Deliverance Centre Uganda"}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Global Prophetic Leader</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Kingdom Deliverance Centre Uganda</p>
+                      {/* Text on RIGHT */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 text-sm leading-tight">Global Prophetic Leader</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Founder, Kingdom Temple</p>
                         <p className="text-xs text-amber-600 font-medium mt-1">Visionary | Author | Mentor</p>
-                      </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <a href="https://facebook.com/kdcuganda" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white hover:bg-blue-700 transition-colors">
-                          <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-                        </a>
-                        <a href="https://youtube.com/@kdcuganda" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center text-white hover:bg-red-700 transition-colors">
-                          <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58zM9.75 15.02V8.98L15.5 12l-5.75 3.02z"/></svg>
-                        </a>
-                        <a href="https://instagram.com/kdcuganda" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center text-white hover:opacity-90 transition-opacity">
-                          <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path fill="none" stroke="white" strokeWidth="2" d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line fill="none" stroke="white" strokeWidth="2" x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                        </a>
-                        <a href="https://kdcuganda.org" target="_blank" rel="noopener noreferrer" aria-label="Website" className="w-7 h-7 rounded-full bg-[#1a1a2e] flex items-center justify-center text-white hover:bg-[#1a1a2e]/80 transition-colors">
-                          <Globe className="w-3.5 h-3.5" />
-                        </a>
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <a href="https://facebook.com/kdcuganda" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white hover:bg-blue-700 transition-colors">
+                            <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                          </a>
+                          <a href="https://youtube.com/@kdcuganda" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="w-6 h-6 rounded-full bg-red-600 flex items-center justify-center text-white hover:bg-red-700 transition-colors">
+                            <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58zM9.75 15.02V8.98L15.5 12l-5.75 3.02z"/></svg>
+                          </a>
+                          <a href="https://instagram.com/kdcuganda" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center text-white hover:opacity-90 transition-opacity">
+                            <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path fill="none" stroke="white" strokeWidth="2" d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line fill="none" stroke="white" strokeWidth="2" x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                          </a>
+                          <a href="https://kdcuganda.org" target="_blank" rel="noopener noreferrer" aria-label="Website" className="w-6 h-6 rounded-full bg-[#0a121f] flex items-center justify-center text-white hover:bg-[#0a121f]/80 transition-colors">
+                            <Globe className="w-3 h-3" />
+                          </a>
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   {/* Table of Contents — dark card */}
                   {headings.length > 1 && (
-                    <div className="rounded-2xl bg-[#1a1a2e] text-white p-6">
+                    <div className="rounded-xl bg-[#0a121f] text-white p-6">
                       <div className="mb-4">
                         <h3 className="font-bold text-white text-sm uppercase tracking-wider">Table of Contents</h3>
                         <div className="mt-1.5 h-0.5 w-10 bg-amber-400 rounded-full" />
@@ -461,7 +459,7 @@ export default async function BlogPostPage({ params }: Props) {
 
                   {/* Popular Tags */}
                   {tags.length > 0 && (
-                    <div className="rounded-2xl border border-border bg-white shadow-sm p-6">
+                    <div className="rounded-xl border border-gray-200 bg-white p-5">
                       <div className="flex items-center gap-2 mb-4">
                         <div className="w-1 h-5 rounded-full bg-amber-400" />
                         <h3 className="font-bold text-primary text-sm uppercase tracking-wider">Popular Tags</h3>
@@ -487,12 +485,21 @@ export default async function BlogPostPage({ params }: Props) {
         </section>
 
         {/* ================================================================ */}
+        {/* SHARE ROW — below main content                                    */}
+        {/* ================================================================ */}
+        <div className="bg-white border-t border-gray-100 py-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <ShareRow url={postUrl} title={post.title} />
+          </div>
+        </div>
+
+        {/* ================================================================ */}
         {/* RELATED POSTS — "You May Also Like" 4-column grid                 */}
         {/* ================================================================ */}
         {related.length > 0 && (
-          <section className="py-16 bg-white border-t border-border">
+          <section className="py-12 bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <h2 className="font-serif text-2xl md:text-3xl font-bold text-primary mb-8">You May Also Like</h2>
+          <h2 className="font-bold text-2xl md:text-3xl text-gray-900 mb-8">You May Also Like</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {related.map((p) => (
                   <article key={p.id} className="group bg-white rounded-2xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5">
@@ -544,7 +551,7 @@ export default async function BlogPostPage({ params }: Props) {
         {/* ================================================================ */}
         {/* NEWSLETTER CTA — dark bg, horizontal layout                       */}
         {/* ================================================================ */}
-        <section className="py-16 bg-[#1a1a2e] text-white">
+        <section className="py-12 bg-[#0a121f] text-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
               {/* Left: icon + text */}
