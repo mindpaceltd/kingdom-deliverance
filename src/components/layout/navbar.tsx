@@ -19,6 +19,7 @@ const links = [
   { name: "Gallery", href: "/gallery" },
   { name: "Live", href: "/live" },
   { name: "Prayer", href: "/prayer" },
+  { name: "Testimonies", href: "/testimonies" },
   { name: "Contact", href: "/contact" },
 ];
 

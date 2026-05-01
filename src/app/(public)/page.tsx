@@ -11,6 +11,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { PostCard } from "@/components/content/post-card";
 import { EventCard } from "@/components/content/event-card";
+import { TestimoniesSection } from "@/components/home/testimonies-section";
 import type { Post, Sermon, Event } from "@/lib/types";
 
 export const revalidate = 3600;
@@ -320,6 +321,9 @@ export default async function Home() {
           </div>
         </section>
       )}
+
+      {/* Testimonies Section */}
+      <TestimoniesSection />
 
       {/* CTA Banner */}
       <section className="py-20 bg-gradient-to-r from-accent via-yellow-400 to-accent">
