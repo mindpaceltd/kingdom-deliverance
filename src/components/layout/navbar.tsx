@@ -70,7 +70,7 @@ export function Navbar() {
               href={link.href}
               className={cn(
                 "relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:text-accent hover:bg-white/8",
-                pathname === link.href
+                (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href)))
                   ? "text-accent bg-white/8"
                   : "text-white/85"
               )}
@@ -146,8 +146,10 @@ export function Navbar() {
                     href={link.href}
                     onClick={() => setIsOpen(false)}
                     className={cn(
-                      "block px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 hover:text-accent hover:bg-white/8 hover:translate-x-1",
-                      pathname === link.href ? "text-accent bg-white/8" : "text-white/85"
+                      "block px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 hover:text-accent hover:bg-white/8",
+                      (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href)))
+                        ? "text-accent bg-white/8"
+                        : "text-white/85"
                     )}
                   >
                     {link.name}
