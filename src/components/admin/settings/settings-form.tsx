@@ -235,21 +235,51 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                    <Label>Tagline</Label>
                    <Input value={values.tagline} onChange={e => handleChange('tagline', e.target.value)} />
                 </div>
-                <div className="space-y-1.5">
-                   <Label>Contact Email</Label>
-                   <Input type="email" value={values.contact_email} onChange={e => handleChange('contact_email', e.target.value)} />
+
+                <div className="sm:col-span-2 pt-4 border-t border-border">
+                   <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">Church Information</h3>
+                   <div className="grid gap-4">
+                      <div className="space-y-1.5">
+                         <Label>Mission</Label>
+                         <Input value={values.mission} onChange={e => handleChange('mission', e.target.value)} placeholder="e.g. To set the captives free" />
+                      </div>
+                      <div className="space-y-1.5">
+                         <Label>Vision</Label>
+                         <Input value={values.vision} onChange={e => handleChange('vision', e.target.value)} placeholder="e.g. To cultivate a community that is wealthy healthy and wise" />
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                         <div className="space-y-1.5">
+                            <Label>Founder/Lead Name</Label>
+                            <Input value={values.founder_name} onChange={e => handleChange('founder_name', e.target.value)} />
+                         </div>
+                         <div className="space-y-1.5">
+                            <Label>Founder Bio/Title</Label>
+                            <Input value={values.founder_bio} onChange={e => handleChange('founder_bio', e.target.value)} />
+                         </div>
+                      </div>
+                   </div>
                 </div>
-                <div className="space-y-1.5">
-                   <Label>Contact Phone</Label>
-                   <Input type="tel" value={values.contact_phone} onChange={e => handleChange('contact_phone', e.target.value)} />
-                </div>
-                <div className="sm:col-span-2 space-y-1.5">
-                   <Label>Physical Address</Label>
-                   <Textarea value={values.address} onChange={e => handleChange('address', e.target.value)} rows={2} />
-                </div>
-                <div className="sm:col-span-2 space-y-1.5">
-                   <Label>Service Times</Label>
-                   <Textarea value={values.service_times} onChange={e => handleChange('service_times', e.target.value)} rows={3} />
+
+                <div className="sm:col-span-2 pt-4 border-t border-border space-y-4">
+                   <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Contact & Operations</h3>
+                   <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                         <Label>Contact Email</Label>
+                         <Input type="email" value={values.contact_email} onChange={e => handleChange('contact_email', e.target.value)} />
+                      </div>
+                      <div className="space-y-1.5">
+                         <Label>Contact Phone</Label>
+                         <Input type="tel" value={values.contact_phone} onChange={e => handleChange('contact_phone', e.target.value)} />
+                      </div>
+                      <div className="sm:col-span-2 space-y-1.5">
+                         <Label>Physical Address</Label>
+                         <Textarea value={values.address} onChange={e => handleChange('address', e.target.value)} rows={2} />
+                      </div>
+                      <div className="sm:col-span-2 space-y-1.5">
+                         <Label>Service Times</Label>
+                         <Textarea value={values.service_times} onChange={e => handleChange('service_times', e.target.value)} rows={3} />
+                      </div>
+                   </div>
                 </div>
              </div>
           </div>

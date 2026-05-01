@@ -10,24 +10,24 @@ export const metadata: Metadata = {
 
 const leaders = [
   {
-    name: "Bishop Climate Wiseman",
+    name: "Bishop Climate Wiseman Irungu",
     title: "Senior Pastor & Founder",
-    bio: "Bishop Climate Wiseman is the visionary leader and founder of Kingdom Deliverance Centre Uganda. With over 25 years of ministry experience, he has dedicated his life to seeing people set free through the power of the Holy Spirit. He is also the head of Kingdom Temple, with branches across East Africa.",
+    bio: "Bishop Climate Wiseman Irungu is the visionary leader and founder of Kingdom Deliverance Centre Uganda. With a heart for the people of Uganda, he leads with power and authority to set the captives free. He is also the head of Kingdom Temple network.",
     image: "/images/bishop.jpg",
     icon: <Award className="w-6 h-6" />,
   },
   {
-    name: "Pastor Grace Wiseman",
-    title: "Co-Pastor & Women's Ministry Lead",
-    bio: "An anointed minister and teacher of the Word, Pastor Grace leads the women's ministry and co-pastors the church alongside Bishop Climate. Her passion is seeing families restored and women walking in their God-given destiny.",
-    image: "/images/co-pastor.jpg",
+    name: "Pastor Clear",
+    title: "Co-Founder & Kingdom Temple UK",
+    bio: "Pastor Clear brings an anointed word from the UK and co-pioneered the work of Kingdom Deliverance alongside Bishop Climate. Together, they are building a community that is wealthy, healthy, and wise.",
+    image: "/images/pastor-clear.jpg",
     icon: <Heart className="w-6 h-6" />,
   },
   {
-    name: "Pastor James Okello",
-    title: "Youth Pastor",
-    bio: "Pastor James has a burning passion for the next generation. Through dynamic worship, relevant teaching, and mentorship, he leads hundreds of young people into a deep relationship with God.",
-    image: "/images/youth-pastor.jpg",
+    name: "Pastor Grace Wiseman",
+    title: "Lead Pastor",
+    bio: "An anointed minister and teacher of the Word, Pastor Grace leads the daily operations of the ministry in Uganda, seeing families restored and walking in their God-given destiny.",
+    image: "/images/co-pastor.jpg",
     icon: <Users className="w-6 h-6" />,
   },
 ];
@@ -88,12 +88,12 @@ export default function AboutPage() {
               {
                 label: "Our Mission",
                 icon: <Heart className="w-8 h-8 text-accent" />,
-                text: "To preach the Gospel of Jesus Christ with signs, wonders, and miracles following — bringing salvation, healing, and deliverance to every soul we encounter.",
+                text: "To set the captives free — bringing salvation, healing, and deliverance to every soul through the power of Jesus Christ.",
               },
               {
                 label: "Our Vision",
                 icon: <Users className="w-8 h-8 text-accent" />,
-                text: "To raise a generation of bold, Spirit-filled believers who transform families, communities, and nations through the power of God's Word.",
+                text: "To cultivate a community that is wealthy, healthy and wise, grounded in the Word of God and empowered for total transformation.",
               },
               {
                 label: "Our Values",

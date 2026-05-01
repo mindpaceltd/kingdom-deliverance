@@ -18,6 +18,7 @@ const links = [
   { name: "Blog", href: "/blog" },
   { name: "Gallery", href: "/gallery" },
   { name: "Live", href: "/live" },
+  { name: "Prayer", href: "/prayer" },
   { name: "Contact", href: "/contact" },
 ];
 

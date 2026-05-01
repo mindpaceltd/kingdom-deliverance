@@ -50,10 +50,10 @@ export default function DonationsPage() {
           <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-5 py-2 text-sm font-semibold text-accent mb-6">
             Partner With Us
           </div>
-          <h1 className="font-serif text-5xl md:text-6xl font-bold text-white leading-tight">Give &amp; Support</h1>
+          <h1 className="font-serif text-5xl md:text-6xl font-bold text-white leading-tight">Building the Church</h1>
           <div className="mx-auto mt-5 h-1 w-20 rounded-full bg-accent" />
           <p className="mt-6 text-white/90 text-lg md:text-xl max-w-2xl mx-auto">
-            Your generosity empowers the Gospel, supports our community programs, and helps us build the Kingdom of God in Uganda and beyond.
+            Join Bishop Climate Wiseman Irungu and Pastor Clear in our mission to set the captives free and build a house for God's glory in Uganda.
           </p>
         </div>
       </section>

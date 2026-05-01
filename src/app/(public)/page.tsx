@@ -74,17 +74,16 @@ export default async function Home() {
               Our Mission
             </div>
             <h2 className="text-4xl font-bold md:text-5xl font-serif text-primary leading-tight">
-              A Church Rooted in{" "}
+              To Set the{" "}
               <span className="bg-gradient-to-r from-accent to-yellow-500 bg-clip-text text-transparent">
-                Truth and Love
+                Captives Free
               </span>
             </h2>
             <div className="mx-auto h-1 w-20 rounded-full bg-gradient-to-r from-accent to-yellow-400" />
             <p className="text-base leading-relaxed text-primary/70 md:text-lg">
-              Kingdom Deliverance Centre Uganda exists to bring the message of salvation, healing, and
-              deliverance to our generation. Under the leadership of Bishop Climate Wiseman, we are a
-              family of believers committed to passionate worship, deep biblical teaching, and
-              transforming our community through the love of Jesus Christ.
+              Kingdom Deliverance Centre Uganda, led by Bishop Climate Wiseman Irungu and Pastor Clear, 
+              is a vibrant community dedicated to the total liberation of mankind. Our mandate is to 
+              deliver the oppressed and cultivate a community that is wealthy, healthy, and wise.
             </p>
           </div>
 
@@ -254,19 +253,19 @@ export default async function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <ValueCard
+              icon={<Sparkles className="w-10 h-10 text-accent" />}
+              title="Wealthy"
+              description="We believe in God's provision and financial breakthrough for His people, enabling us to be a blessing to others."
+            />
+            <ValueCard
               icon={<Heart className="w-10 h-10 text-accent" />}
-              title="Love & Compassion"
-              description="We believe in showing Christ's love through our actions, caring for one another and our community with genuine compassion."
+              title="Healthy"
+              description="God's desire is for His children to walk in total health — spirit, soul, and body, free from all infirmities."
             />
             <ValueCard
               icon={<BookOpen className="w-10 h-10 text-accent" />}
-              title="Biblical Truth"
-              description="We are committed to teaching and living by the Word of God, ensuring our faith is grounded in biblical truth and sound doctrine."
-            />
-            <ValueCard
-              icon={<Globe className="w-10 h-10 text-accent" />}
-              title="Global Impact"
-              description="We strive to make a difference not just locally but globally, spreading the Gospel and serving communities worldwide."
+              title="Wise"
+              description="Through the Word of God, we gain the wisdom needed to navigate life and build lasting generations."
             />
           </div>
         </div>

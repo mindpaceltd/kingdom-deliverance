@@ -22,6 +22,11 @@ const SETTINGS_KEYS = [
   'site_meta_title',
   'site_meta_description',
   'site_keywords',
+  // Church Specifics
+  'mission',
+  'vision',
+  'founder_name',
+  'founder_bio',
   // SMTP
   'smtp_host',
   'smtp_port',
