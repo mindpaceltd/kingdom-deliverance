@@ -1,9 +1,24 @@
 'use client'
 
 import * as React from 'react'
-import { UserXIcon } from 'lucide-react'
-
-import { DataTable, type ColumnDef } from '@/components/admin/data-table'
+import { 
+  UserXIcon, 
+  UserPlusIcon, 
+  MailIcon, 
+  ShieldIcon, 
+  CalendarIcon, 
+  PhoneIcon,
+  UserIcon,
+  SearchIcon,
+  FilterIcon,
+  MoreVerticalIcon,
+  Trash2Icon,
+  CheckCircleIcon
+} from 'lucide-react'
+import { 
+  DataTable, 
+  type ColumnDef 
+} from '@/components/admin/data-table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,8 +29,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { inviteUser, updateUserRole, deactivateUser } from '@/lib/actions/users'
 import type { Profile, UserRole } from '@/lib/types'
+import { cn } from '@/lib/utils'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -23,6 +51,11 @@ import type { Profile, UserRole } from '@/lib/types'
 
 export interface UserRow extends Profile {
   email: string | null
+}
+
+interface UsersManagerProps {
+  initialUsers: UserRow[]
+  currentUserId: string
 }
 
 // ---------------------------------------------------------------------------
@@ -40,257 +73,359 @@ function formatDate(dateStr: string): string {
 const ROLES: UserRole[] = ['admin', 'editor', 'author', 'member']
 
 const ROLE_LABELS: Record<UserRole, string> = {
-  admin: 'Admin',
+  admin: 'Administrator',
   editor: 'Editor',
   author: 'Author',
   member: 'Member',
+}
+
+const ROLE_COLORS: Record<UserRole, string> = {
+  admin: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  editor: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  author: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  member: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400',
 }
 
 // ---------------------------------------------------------------------------
 // UsersManager
 // ---------------------------------------------------------------------------
 
-interface UsersManagerProps {
-  initialUsers: UserRow[]
-  currentUserId: string
-}
-
 export function UsersManager({ initialUsers, currentUserId }: UsersManagerProps) {
   const [users, setUsers] = React.useState<UserRow[]>(initialUsers)
-
-  // Invite form state
-  const [inviteEmail, setInviteEmail] = React.useState('')
-  const [inviteRole, setInviteRole] = React.useState<UserRole>('member')
+  const [activeTab, setActiveTab] = React.useState<UserRole | 'all'>('all')
+  const [searchQuery, setSearchQuery] = React.useState('')
+  const [selectedUser, setSelectedUser] = React.useState<UserRow | null>(null)
+  
+  // Invite state
+  const [inviteOpen, setInviteOpen] = React.useState(false)
+  const [inviteForm, setInviteForm] = React.useState({ email: '', role: 'member' as UserRole })
   const [inviting, setInviting] = React.useState(false)
-  const [inviteError, setInviteError] = React.useState<string | null>(null)
-  const [inviteSuccess, setInviteSuccess] = React.useState(false)
 
-  // Pending role-change state (userId → loading)
+  // Role change loading state
   const [roleChanging, setRoleChanging] = React.useState<Record<string, boolean>>({})
-  // Pending deactivate state
-  const [deactivating, setDeactivating] = React.useState<Record<string, boolean>>({})
 
-  // -------------------------------------------------------------------------
   // Handlers
-  // -------------------------------------------------------------------------
-
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault()
-    if (!inviteEmail.trim()) return
-
+    if (!inviteForm.email.trim()) return
     setInviting(true)
-    setInviteError(null)
-    setInviteSuccess(false)
-
-    const result = await inviteUser(inviteEmail.trim(), inviteRole)
-
-    if ('error' in result) {
-      setInviteError(result.error)
-    } else {
-      setInviteSuccess(true)
-      setInviteEmail('')
-      setInviteRole('member')
-      // Optimistically add a placeholder row — a full refresh would require
-      // re-fetching auth users which is server-only; show a success message instead.
-    }
-
+    const result = await inviteUser(inviteForm.email.trim(), inviteForm.role)
     setInviting(false)
+    if ('success' in result) {
+      alert('Invitation sent successfully')
+      setInviteForm({ email: '', role: 'member' })
+      setInviteOpen(false)
+    } else {
+      alert(result.error)
+    }
   }
 
   async function handleRoleChange(userId: string, role: UserRole) {
-    setRoleChanging((prev) => ({ ...prev, [userId]: true }))
-
+    setRoleChanging(prev => ({ ...prev, [userId]: true }))
     const result = await updateUserRole(userId, role)
-
-    if ('error' in result) {
-      alert(`Failed to update role: ${result.error}`)
+    if ('success' in result) {
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u))
+      if (selectedUser?.id === userId) setSelectedUser(prev => prev ? { ...prev, role } : null)
     } else {
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, role } : u))
-      )
+      alert(result.error)
     }
-
-    setRoleChanging((prev) => ({ ...prev, [userId]: false }))
+    setRoleChanging(prev => ({ ...prev, [userId]: false }))
   }
 
   async function handleDeactivate(user: UserRow) {
-    if (
-      !window.confirm(
-        `Deactivate "${user.name ?? user.email ?? 'this user'}"? This will permanently delete their account.`
-      )
-    )
-      return
-
-    setDeactivating((prev) => ({ ...prev, [user.id]: true }))
-
+    if (!window.confirm(`Permanently deactivate "${user.name || user.email}"?`)) return
     const result = await deactivateUser(user.id)
-
-    if ('error' in result) {
-      alert(`Failed to deactivate user: ${result.error}`)
-      setDeactivating((prev) => ({ ...prev, [user.id]: false }))
+    if ('success' in result) {
+      setUsers(prev => prev.filter(u => u.id !== user.id))
+      setSelectedUser(null)
     } else {
-      setUsers((prev) => prev.filter((u) => u.id !== user.id))
-      setDeactivating((prev) => {
-        const next = { ...prev }
-        delete next[user.id]
-        return next
-      })
+      alert(result.error)
     }
   }
 
-  // -------------------------------------------------------------------------
-  // Columns
-  // -------------------------------------------------------------------------
+  const filteredUsers = React.useMemo(() => {
+    return users.filter(u => {
+      const matchesTab = activeTab === 'all' || u.role === activeTab
+      const matchesSearch = !searchQuery || 
+        u.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        u.email?.toLowerCase().includes(searchQuery.toLowerCase())
+      return matchesTab && matchesSearch
+    })
+  }, [users, activeTab, searchQuery])
+
+  const roleCounts = React.useMemo(() => {
+    const counts: Record<string, number> = { all: users.length }
+    ROLES.forEach(r => counts[r] = users.filter(u => u.role === r).length)
+    return counts
+  }, [users])
 
   const columns: ColumnDef<UserRow>[] = [
     {
-      key: 'name',
-      header: 'Name',
+      key: 'user',
+      header: 'User',
+      className: 'min-w-[200px]',
       cell: (user) => (
-        <span className="text-sm font-medium">{user.name ?? '—'}</span>
-      ),
-    },
-    {
-      key: 'email',
-      header: 'Email',
-      cell: (user) => (
-        <span className="text-sm text-muted-foreground">{user.email ?? '—'}</span>
-      ),
+        <div className="flex items-center gap-3">
+          <div className="size-8 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
+             {user.avatar_url ? (
+               <img src={user.avatar_url} alt="" className="size-full object-cover" />
+             ) : (
+               <UserIcon className="size-4 text-muted-foreground" />
+             )}
+          </div>
+          <div className="flex flex-col min-w-0">
+             <button 
+               onClick={() => setSelectedUser(user)}
+               className="text-sm font-semibold hover:underline text-left truncate"
+             >
+               {user.name || 'Untitled'}
+             </button>
+             <span className="text-xs text-muted-foreground truncate">{user.email}</span>
+          </div>
+        </div>
+      )
     },
     {
       key: 'role',
       header: 'Role',
-      cell: (user) => {
-        const isSelf = user.id === currentUserId
-        if (isSelf) {
-          return (
-            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-              {ROLE_LABELS[user.role]} (you)
-            </span>
-          )
-        }
-        return (
-          <Select
-            value={user.role}
-            onValueChange={(v) => {
-              if (v) handleRoleChange(user.id, v as UserRole)
-            }}
-            disabled={roleChanging[user.id]}
-          >
-            <SelectTrigger size="sm" className="w-[110px]" aria-label={`Role for ${user.name ?? user.email}`}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {ROLES.map((r) => (
-                <SelectItem key={r} value={r}>
-                  {ROLE_LABELS[r]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )
-      },
+      cell: (user) => (
+        <span className={cn(
+          "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+          ROLE_COLORS[user.role]
+        )}>
+          {ROLE_LABELS[user.role]}
+        </span>
+      )
     },
     {
-      key: 'created_at',
-      header: 'Joined',
+      key: 'joined',
+      header: 'Date Joined',
       cell: (user) => (
-        <span className="text-sm text-muted-foreground">{formatDate(user.created_at)}</span>
-      ),
+        <span className="text-xs text-muted-foreground">{formatDate(user.created_at)}</span>
+      )
     },
     {
       key: 'actions',
       header: '',
-      className: 'w-[80px]',
-      cell: (user) => {
-        const isSelf = user.id === currentUserId
-        if (isSelf) return null
-        return (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => handleDeactivate(user)}
-            disabled={deactivating[user.id]}
-            aria-label={`Deactivate ${user.name ?? user.email}`}
-            className="text-destructive hover:text-destructive"
-          >
-            <UserXIcon className="size-3.5" />
-          </Button>
-        )
-      },
-    },
+      className: 'w-[60px]',
+      cell: (user) => (
+        <div className="flex justify-end">
+           <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                 <Button variant="ghost" size="icon-sm">
+                    <MoreVerticalIcon className="size-4" />
+                 </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                 <DropdownMenuItem onClick={() => setSelectedUser(user)}>
+                    <UserIcon className="size-4 mr-2" /> View Profile
+                 </DropdownMenuItem>
+                 {user.id !== currentUserId && (
+                   <DropdownMenuItem onClick={() => handleDeactivate(user)} className="text-destructive">
+                      <Trash2Icon className="size-4 mr-2" /> Deactivate
+                   </DropdownMenuItem>
+                 )}
+              </DropdownMenuContent>
+           </DropdownMenu>
+        </div>
+      )
+    }
   ]
 
-  // -------------------------------------------------------------------------
-  // Render
-  // -------------------------------------------------------------------------
-
   return (
-    <div className="space-y-6 p-6">
-      {/* Page header */}
-      <div>
-        <h1 className="text-xl font-semibold">Users</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage CMS users, assign roles, and control platform access.
-        </p>
-      </div>
+    <div className="flex flex-col h-screen overflow-hidden -m-6 bg-background">
+      <header className="shrink-0 border-b border-border bg-background/95 px-6 py-4 backdrop-blur">
+         <div className="flex items-center justify-between">
+            <div>
+               <h1 className="text-xl font-bold">Users</h1>
+               <p className="text-xs text-muted-foreground">Manage your church staff and portal administrators.</p>
+            </div>
+            <Button onClick={() => setInviteOpen(true)} size="sm">
+               <UserPlusIcon className="mr-2 size-4" /> Add New User
+            </Button>
+         </div>
+      </header>
 
-      {/* Invite form */}
-      <div className="rounded-xl border bg-card p-4 space-y-3">
-        <h2 className="text-sm font-semibold">Invite a New User</h2>
-        <form onSubmit={handleInvite} className="flex flex-wrap items-end gap-3">
-          <div className="flex flex-col gap-1.5 min-w-[220px] flex-1">
-            <Label htmlFor="invite-email">Email address</Label>
+      {/* Tabs & Search */}
+      <div className="shrink-0 border-b border-border bg-muted/20 px-6 py-2 flex flex-wrap items-center justify-between gap-4">
+         <div className="flex gap-1">
+            {(['all', ...ROLES] as const).map((tab) => (
+               <button
+                 key={tab}
+                 onClick={() => setActiveTab(tab)}
+                 className={cn(
+                   "px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap",
+                   activeTab === tab ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
+                 )}
+               >
+                 {tab === 'all' ? 'All' : ROLE_LABELS[tab]}
+                 <span className="ml-1.5 opacity-50">({roleCounts[tab]})</span>
+               </button>
+            ))}
+         </div>
+         <div className="relative w-64">
+            <SearchIcon className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
             <Input
-              id="invite-email"
-              type="email"
-              placeholder="user@example.com"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              required
-              disabled={inviting}
+              placeholder="Search by name or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-9 text-xs"
             />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="invite-role">Role</Label>
-            <Select
-              value={inviteRole}
-              onValueChange={(v) => { if (v) setInviteRole(v as UserRole) }}
-              disabled={inviting}
-            >
-              <SelectTrigger id="invite-role" className="w-[130px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ROLES.map((r) => (
-                  <SelectItem key={r} value={r}>
-                    {ROLE_LABELS[r]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button type="submit" size="sm" disabled={inviting}>
-            {inviting ? 'Sending…' : 'Invite'}
-          </Button>
-        </form>
-
-        {inviteError && (
-          <p className="text-sm text-destructive">{inviteError}</p>
-        )}
-        {inviteSuccess && (
-          <p className="text-sm text-green-600 dark:text-green-400">
-            Invitation sent successfully.
-          </p>
-        )}
+         </div>
       </div>
 
-      {/* Users table */}
-      <DataTable
-        columns={columns}
-        data={users}
-        searchPlaceholder="Search users…"
-      />
+      {/* Data Table */}
+      <main className="flex-1 overflow-y-auto">
+         <DataTable
+           columns={columns}
+           data={filteredUsers}
+           searchPlaceholder=""
+           className="border-0 rounded-none shadow-none"
+         />
+      </main>
+
+      {/* Invite Modal */}
+      <Sheet open={inviteOpen} onOpenChange={setInviteOpen}>
+        <SheetContent className="sm:max-w-md">
+           <SheetHeader>
+              <SheetTitle>Invite New User</SheetTitle>
+           </SheetHeader>
+           <form onSubmit={handleInvite} className="space-y-6 mt-8">
+              <div className="space-y-1.5">
+                 <Label>Email Address</Label>
+                 <Input
+                   type="email"
+                   placeholder="e.g. staff@kdcuganda.org"
+                   value={inviteForm.email}
+                   onChange={e => setInviteForm(prev => ({ ...prev, email: e.target.value }))}
+                   required
+                 />
+                 <p className="text-[10px] text-muted-foreground">The user will receive an invitation link via email.</p>
+              </div>
+
+              <div className="space-y-1.5">
+                 <Label>Assigned Role</Label>
+                 <Select
+                   value={inviteForm.role}
+                   onValueChange={v => setInviteForm(prev => ({ ...prev, role: v as UserRole }))}
+                 >
+                    <SelectTrigger>
+                       <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                       {ROLES.map(r => (
+                         <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                       ))}
+                    </SelectContent>
+                 </Select>
+                 <p className="text-[10px] text-muted-foreground italic mt-2 border-l-2 border-primary/20 pl-2">
+                    {inviteForm.role === 'admin' && 'Full access to all settings and user management.'}
+                    {inviteForm.role === 'editor' && 'Can manage and publish all content types.'}
+                    {inviteForm.role === 'author' && 'Can create and manage their own content.'}
+                    {inviteForm.role === 'member' && 'Read-only access to the admin dashboard.'}
+                 </p>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={inviting}>
+                 {inviting ? 'Sending Invitation...' : 'Send Invite'}
+              </Button>
+           </form>
+        </SheetContent>
+      </Sheet>
+
+      {/* User Details Sidebar */}
+      <Sheet open={!!selectedUser} onOpenChange={open => !open && setSelectedUser(null)}>
+        <SheetContent className="w-full sm:max-w-md px-0">
+           <SheetHeader className="px-6 border-b border-border pb-4 flex flex-row items-center justify-between">
+              <SheetTitle>User Profile</SheetTitle>
+              {selectedUser?.id !== currentUserId && (
+                 <Button variant="ghost" size="icon-sm" className="text-destructive" onClick={() => handleDeactivate(selectedUser!)}>
+                    <Trash2Icon className="size-4" />
+                 </Button>
+              )}
+           </SheetHeader>
+
+           {selectedUser && (
+              <div className="flex flex-col">
+                 <div className="p-8 flex flex-col items-center justify-center text-center bg-muted/20 border-b border-border gap-3">
+                    <div className="size-20 rounded-full bg-muted border-4 border-background shadow-md overflow-hidden flex items-center justify-center">
+                       {selectedUser.avatar_url ? (
+                         <img src={selectedUser.avatar_url} alt="" className="size-full object-cover" />
+                       ) : (
+                         <UserIcon className="size-10 text-muted-foreground/50" />
+                       )}
+                    </div>
+                    <div>
+                       <h3 className="text-lg font-bold">{selectedUser.name || 'Untitled'}</h3>
+                       <p className="text-xs text-muted-foreground">{selectedUser.email}</p>
+                    </div>
+                    <span className={cn(
+                      "mt-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
+                      ROLE_COLORS[selectedUser.role]
+                    )}>
+                       {ROLE_LABELS[selectedUser.role]}
+                    </span>
+                 </div>
+
+                 <div className="p-6 space-y-6">
+                    <div className="grid grid-cols-1 gap-6">
+                       <div className="space-y-1.5">
+                          <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">User ID</Label>
+                          <p className="text-xs font-mono bg-muted p-2 rounded truncate">{selectedUser.id}</p>
+                       </div>
+
+                       <div className="space-y-1.5">
+                          <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Role Management</Label>
+                          <Select
+                            disabled={selectedUser.id === currentUserId || roleChanging[selectedUser.id]}
+                            value={selectedUser.role}
+                            onValueChange={v => handleRoleChange(selectedUser.id, v as UserRole)}
+                          >
+                             <SelectTrigger>
+                                <SelectValue />
+                             </SelectTrigger>
+                             <SelectContent>
+                                {ROLES.map(r => (
+                                  <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                                ))}
+                             </SelectContent>
+                          </Select>
+                          {selectedUser.id === currentUserId && <p className="text-[10px] text-muted-foreground italic">You cannot change your own role.</p>}
+                       </div>
+
+                       <div className="space-y-4 pt-4 border-t border-border">
+                          <div className="flex items-center gap-3 text-sm">
+                             <MailIcon className="size-4 text-muted-foreground" />
+                             <span>{selectedUser.email}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm">
+                             <PhoneIcon className="size-4 text-muted-foreground" />
+                             <span>{selectedUser.phone || 'No phone provided'}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm">
+                             <CalendarIcon className="size-4 text-muted-foreground" />
+                             <span>Joined {formatDate(selectedUser.created_at)}</span>
+                          </div>
+                       </div>
+
+                       <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Biography</Label>
+                          <p className="text-sm text-muted-foreground leading-relaxed italic">
+                             {selectedUser.bio || 'This user hasn\'t provided a bio yet.'}
+                          </p>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="sticky bottom-0 bg-background p-6 border-t border-border">
+                    <Button variant="outline" className="w-full" onClick={() => setSelectedUser(null)}>
+                       Close Profile
+                    </Button>
+                 </div>
+              </div>
+           )}
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
