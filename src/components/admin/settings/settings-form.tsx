@@ -26,6 +26,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { saveSettings } from '@/lib/actions/settings'
+import { createMediaRecord } from '@/lib/actions/media'
+import { createClient } from '@/lib/supabase/client'
 import type { SiteSetting } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -42,6 +44,113 @@ const CATEGORIES: { id: Category; label: string; icon: any }[] = [
   { id: 'email', label: 'Email (SMTP)', icon: MailIcon },
   { id: 'payments', label: 'Payments', icon: CreditCardIcon },
 ]
+
+// ---------------------------------------------------------------------------
+// Branding Image Field
+// ---------------------------------------------------------------------------
+
+interface BrandingImageFieldProps {
+  label: string
+  description: string
+  value: string
+  onUpload: (url: string) => void
+  onClear: () => void
+  aspectRatio?: 'video' | 'square'
+}
+
+function BrandingImageField({ label, description, value, onUpload, onClear, aspectRatio = 'video' }: BrandingImageFieldProps) {
+  const [uploading, setUploading] = React.useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploading(true)
+    try {
+      const supabase = createClient()
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
+      const filePath = `branding/${fileName}`
+
+      // 1. Upload to storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      // 2. Get Public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('media')
+        .getPublicUrl(filePath)
+
+      // 3. Create Media Record
+      await createMediaRecord({
+        filename: file.name,
+        url: publicUrl,
+        type: 'image',
+        mime_type: file.type,
+        size_bytes: file.size,
+        bucket: 'media'
+      })
+
+      onUpload(publicUrl)
+    } catch (error: any) {
+      alert(`Upload failed: ${error.message}`)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="grid gap-6 sm:grid-cols-2 items-start">
+      <div className="space-y-3">
+        <Label className="text-base font-bold">{label}</Label>
+        <p className="text-xs text-muted-foreground">{description}</p>
+        <div className="flex gap-2">
+           <Button 
+             type="button" 
+             variant="outline" 
+             size="sm" 
+             disabled={uploading}
+             onClick={() => fileInputRef.current?.click()}
+           >
+             {uploading ? 'Uploading...' : (value ? 'Change Image' : 'Upload Image')}
+           </Button>
+           {value && (
+             <Button type="button" variant="ghost" size="sm" onClick={onClear} className="text-destructive">
+                Remove
+             </Button>
+           )}
+        </div>
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          className="hidden" 
+          accept="image/*" 
+          onChange={handleFileChange}
+        />
+        {value && <p className="text-[10px] text-muted-foreground truncate max-w-full italic">{value}</p>}
+      </div>
+      <div className={cn(
+        "relative rounded-lg border border-dashed border-border flex items-center justify-center bg-muted/20 overflow-hidden shadow-inner",
+        aspectRatio === 'video' ? "aspect-video" : "size-24"
+      )}>
+        {value ? (
+          <img src={value} alt={label} className="max-h-full object-contain" />
+        ) : (
+          <ImageIcon className={cn("opacity-20", aspectRatio === 'video' ? "size-8" : "size-6")} />
+        )}
+        {uploading && (
+          <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+             <div className="size-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 // ---------------------------------------------------------------------------
 // SettingsForm
@@ -154,27 +263,22 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
              </div>
 
              <div className="space-y-8">
-                <div className="grid gap-6 sm:grid-cols-2 items-start">
-                   <div className="space-y-3">
-                      <Label className="text-base font-bold">Site Logo</Label>
-                      <p className="text-xs text-muted-foreground">The main logo displayed in the header.</p>
-                      <Input placeholder="URL to your logo image" value={values.site_logo} onChange={e => handleChange('site_logo', e.target.value)} />
-                   </div>
-                   <div className="aspect-video relative rounded-lg border border-dashed border-border flex items-center justify-center bg-muted/20 overflow-hidden">
-                      {values.site_logo ? <img src={values.site_logo} alt="Logo Preview" className="max-h-full object-contain" /> : <ImageIcon className="size-8 opacity-20" />}
-                   </div>
-                </div>
+                <BrandingImageField 
+                  label="Site Logo"
+                  description="The main logo displayed in the header."
+                  value={values.site_logo}
+                  onUpload={(url) => handleChange('site_logo', url)}
+                  onClear={() => handleChange('site_logo', '')}
+                />
 
-                <div className="grid gap-6 sm:grid-cols-2 items-start">
-                   <div className="space-y-3">
-                      <Label className="text-base font-bold">Site Icon (Favicon)</Label>
-                      <p className="text-xs text-muted-foreground">Displayed in browser tabs. Best at 512x512px.</p>
-                      <Input placeholder="URL to your site icon" value={values.site_icon} onChange={e => handleChange('site_icon', e.target.value)} />
-                   </div>
-                   <div className="size-24 relative rounded-lg border border-dashed border-border flex items-center justify-center bg-muted/20 overflow-hidden">
-                      {values.site_icon ? <img src={values.site_icon} alt="Icon Preview" className="size-full object-contain" /> : <ImageIcon className="size-6 opacity-20" />}
-                   </div>
-                </div>
+                <BrandingImageField 
+                  label="Site Icon (Favicon)"
+                  description="Displayed in browser tabs. Best at 512x512px."
+                  value={values.site_icon}
+                  onUpload={(url) => handleChange('site_icon', url)}
+                  onClear={() => handleChange('site_icon', '')}
+                  aspectRatio="square"
+                />
              </div>
           </div>
         )}
