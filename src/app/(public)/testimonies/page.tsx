@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle2, Loader2, MessageCircle, UploadCloud, Video } from "lucide-react";
 import { FadeInSection } from "@/components/ui/page-transition";
+import { TestimoniesSection } from "@/components/home/testimonies-section";
 
 export default function TestimoniesPage() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", message: "" });
@@ -230,6 +231,9 @@ export default function TestimoniesPage() {
           </div>
         </div>
       </section>
+
+      {/* Testimonies Carousel */}
+      <TestimoniesSection />
     </div>
   );
 }

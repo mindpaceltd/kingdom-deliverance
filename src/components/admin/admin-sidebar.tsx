@@ -16,6 +16,7 @@ import {
   LogOut,
   UserCircleIcon,
   BarChart,
+  MessageCircle,
 } from 'lucide-react'
 import { useAdmin } from '@/lib/admin-context'
 import { createClient } from '@/lib/supabase/client'
@@ -32,6 +33,7 @@ const allNavLinks = [
   { href: '/admin/media', label: 'Media Library', icon: Images, adminOnly: false },
   { href: '/admin/gallery', label: 'Gallery', icon: GalleryHorizontal, adminOnly: false },
   { href: '/admin/inbox', label: 'Inbox', icon: Inbox, adminOnly: false },
+  { href: '/admin/testimonies', label: 'Testimonies', icon: MessageCircle, adminOnly: false },
   { href: '/admin/users', label: 'Users', icon: Users, adminOnly: true },
   { href: '/admin/settings', label: 'Settings', icon: Settings, adminOnly: true },
   { href: '/admin/profile', label: 'My Profile', icon: UserCircleIcon, adminOnly: false },

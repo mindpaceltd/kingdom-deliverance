@@ -72,26 +72,9 @@ export function TestimoniesSection() {
 
       {/* Auto-scrolling Carousel container */}
       <div className="relative flex overflow-x-hidden group pb-10">
-        <div className="animate-marquee flex gap-6 px-3">
-          {[...testimonies, ...testimonies].map((testimony, i) => (
-            <Card key={`${testimony.id}-${i}`} className="w-80 md:w-96 shrink-0 bg-white border-none shadow-md hover:shadow-xl transition-shadow duration-300">
-              <CardContent className="p-8 space-y-6">
-                <Quote className="w-10 h-10 text-accent/20" />
-                <p className="text-primary/75 leading-relaxed text-sm italic line-clamp-4">
-                  "{testimony.message}"
-                </p>
-                <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
-                  <p className="font-bold font-serif text-primary">{testimony.name}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        
-        {/* Clone for seamless scrolling */}
-        <div className="animate-marquee flex gap-6 px-3 absolute top-0 left-full">
-          {[...testimonies, ...testimonies].map((testimony, i) => (
-            <Card key={`clone-${testimony.id}-${i}`} className="w-80 md:w-96 shrink-0 bg-white border-none shadow-md hover:shadow-xl transition-shadow duration-300">
+        <div className="flex w-max animate-marquee gap-6 px-3">
+          {[...testimonies, ...testimonies, ...testimonies, ...testimonies].map((testimony, i) => (
+            <Card key={`card-${testimony.id}-${i}`} className="w-80 md:w-96 shrink-0 bg-white border-none shadow-md hover:shadow-xl transition-shadow duration-300">
               <CardContent className="p-8 space-y-6">
                 <Quote className="w-10 h-10 text-accent/20" />
                 <p className="text-primary/75 leading-relaxed text-sm italic line-clamp-4">
@@ -109,14 +92,14 @@ export function TestimoniesSection() {
       {/* CSS Animation injected safely */}
       <style dangerouslySetInnerHTML={{__html: `
         .animate-marquee {
-          animation: marquee 35s linear infinite;
+          animation: marquee 15s linear infinite;
         }
         .group:hover .animate-marquee {
           animation-play-state: paused;
         }
         @keyframes marquee {
           0% { transform: translateX(0%); }
-          100% { transform: translateX(-100%); }
+          100% { transform: translateX(-50%); }
         }
       `}} />
 
