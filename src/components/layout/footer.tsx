@@ -102,9 +102,9 @@ export function Footer() {
               <p className="text-xs font-bold uppercase tracking-widest text-accent">Service Times</p>
               <div className="grid grid-cols-1 gap-2">
                 {[
-                  { day: "Sunday", time: "9:00 AM – 12:00 PM" },
-                  { day: "Wednesday", time: "6:30 PM (Bible Study)" },
-                  { day: "Friday", time: "6:30 PM (Prayer)" },
+                  { day: "Sunday", time: "10:00 AM Onwards" },
+                  { day: "Wednesday", time: "6:00 PM – 10:00 PM" },
+                  { day: "Friday", time: "6:00 PM – 10:00 PM" },
                 ].map((s) => (
                   <div key={s.day} className="flex items-center justify-between text-sm border-b border-white/8 pb-2">
                     <span className="text-white/70 font-medium">{s.day}</span>
@@ -121,9 +121,15 @@ export function Footer() {
       <div className="border-t border-white/8 py-5">
         <div className="container px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/35">
           <p>&copy; {new Date().getFullYear()} Kingdom Deliverance Centre Uganda. All rights reserved.</p>
-          <p className="flex items-center gap-1">
-            Made with <Heart className="w-3 h-3 text-accent mx-0.5" fill="currentColor" /> for the Kingdom
-          </p>
+          <div className="flex items-center gap-4">
+            <p className="flex items-center gap-1">
+              Made with <Heart className="w-3 h-3 text-accent mx-0.5" fill="currentColor" /> for the Kingdom
+            </p>
+            <span className="w-px h-3 bg-white/10 hidden sm:block" />
+            <Link href="https://kdcuganda.org/" className="hover:text-accent transition-colors duration-200">
+              Developed by bclimax technologies
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
