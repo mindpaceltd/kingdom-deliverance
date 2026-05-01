@@ -149,6 +149,15 @@ export function InboxClient({ initialContacts, initialPrayers }: InboxClientProp
     setProcessing(null)
   }
 
+  function handleSelect(item: InboxItem) {
+    setSelectedItem(item)
+    // Automatically mark as read if it's currently unread
+    const isRead = item._type === 'contact' ? (item as ContactSubmission).is_read : (item as PrayerRequest).is_reviewed
+    if (!isRead) {
+      handleMarkRead(item)
+    }
+  }
+
   return (
     <div className="flex h-screen flex-col bg-background overflow-hidden -m-6">
       {/* Top Header */}
@@ -235,7 +244,7 @@ export function InboxClient({ initialContacts, initialPrayers }: InboxClientProp
                   return (
                     <button
                       key={item.id}
-                      onClick={() => setSelectedItem(item)}
+                      onClick={() => handleSelect(item)}
                       className={cn(
                         "w-full flex items-start gap-4 px-6 py-4 text-left transition-all hover:bg-muted/40",
                         !isRead && "bg-primary/[0.03] border-l-4 border-l-primary px-[20px]",
