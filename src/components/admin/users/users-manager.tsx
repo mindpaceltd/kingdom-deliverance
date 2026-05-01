@@ -234,52 +234,48 @@ export function UsersManager({ initialUsers, currentUserId }: UsersManagerProps)
 
   return (
     <div className="flex flex-col h-screen overflow-hidden -m-6 bg-background">
+      {/* Header with Search & Tabs combined for a cleaner look */}
       <header className="shrink-0 border-b border-border bg-background/95 px-6 py-4 backdrop-blur">
-         <div className="flex items-center justify-between">
-            <div>
-               <h1 className="text-xl font-bold">Users</h1>
-               <p className="text-xs text-muted-foreground">Manage your church staff and portal administrators.</p>
+         <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex gap-1">
+               {(['all', ...ROLES] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={cn(
+                      "px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap",
+                      activeTab === tab ? "bg-background shadow-sm text-primary border border-border/50" : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {tab === 'all' ? 'All' : ROLE_LABELS[tab]}
+                    <span className="ml-1.5 opacity-50">({roleCounts[tab]})</span>
+                  </button>
+               ))}
             </div>
-            <Button onClick={() => setInviteOpen(true)} size="sm">
-               <UserPlusIcon className="mr-2 size-4" /> Add New User
-            </Button>
+
+            <div className="flex items-center gap-3">
+               <div className="relative w-64">
+                  <SearchIcon className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search users..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 h-9 text-xs"
+                  />
+               </div>
+               <Button onClick={() => setInviteOpen(true)} size="sm">
+                  <UserPlusIcon className="mr-2 size-4" /> Add New
+               </Button>
+            </div>
          </div>
       </header>
-
-      {/* Tabs & Search */}
-      <div className="shrink-0 border-b border-border bg-muted/20 px-6 py-2 flex flex-wrap items-center justify-between gap-4">
-         <div className="flex gap-1">
-            {(['all', ...ROLES] as const).map((tab) => (
-               <button
-                 key={tab}
-                 onClick={() => setActiveTab(tab)}
-                 className={cn(
-                   "px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap",
-                   activeTab === tab ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
-                 )}
-               >
-                 {tab === 'all' ? 'All' : ROLE_LABELS[tab]}
-                 <span className="ml-1.5 opacity-50">({roleCounts[tab]})</span>
-               </button>
-            ))}
-         </div>
-         <div className="relative w-64">
-            <SearchIcon className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name or email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-9 text-xs"
-            />
-         </div>
-      </div>
 
       {/* Data Table */}
       <main className="flex-1 overflow-y-auto">
          <DataTable
            columns={columns}
            data={filteredUsers}
-           searchPlaceholder=""
+           hideSearch={true}
            className="border-0 rounded-none shadow-none"
          />
       </main>

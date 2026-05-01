@@ -27,6 +27,7 @@ interface DataTableProps<T> {
   pageSize?: number
   onSearch?: (query: string) => void
   searchValue?: string
+  hideSearch?: boolean
 }
 
 const DEFAULT_PAGE_SIZE = 10
@@ -40,6 +41,7 @@ export function DataTable<T>({
   pageSize = DEFAULT_PAGE_SIZE,
   onSearch,
   searchValue,
+  hideSearch = false,
 }: DataTableProps<T>) {
   const [internalSearch, setInternalSearch] = React.useState('')
   const [currentPage, setCurrentPage] = React.useState(1)
@@ -89,16 +91,17 @@ export function DataTable<T>({
 
   return (
     <div className="space-y-4">
-      {/* Search and filter bar */}
-      <div className="flex items-center gap-2">
-        <Input
-          placeholder={searchPlaceholder}
-          value={searchQuery}
-          onChange={handleSearchChange}
-          className="max-w-sm"
-        />
-        {filterSlot && <div className="flex items-center gap-2">{filterSlot}</div>}
-      </div>
+      {!hideSearch && (
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder={searchPlaceholder}
+            value={searchQuery}
+            onChange={handleSearchChange}
+            className="max-w-sm"
+          />
+          {filterSlot && <div className="flex items-center gap-2">{filterSlot}</div>}
+        </div>
+      )}
 
       {/* Table */}
       <div className="rounded-md border">
