@@ -32,7 +32,7 @@ export default function ContactPage() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="relative py-40 text-white overflow-hidden">
+      <section className="relative pt-48 pb-32 lg:pt-56 lg:pb-40 text-white overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1423666639041-f56000c27a9a?q=80&w=2074&auto=format&fit=crop')" }} />
         <div className="absolute inset-0 bg-black/70" />
         <div className="container relative z-10 text-center px-4">

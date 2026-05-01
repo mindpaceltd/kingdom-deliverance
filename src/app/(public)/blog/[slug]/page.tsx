@@ -241,7 +241,7 @@ export default async function BlogPostPage({ params }: Props) {
           )}
 
           {/* Content Container */}
-          <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+          <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-16 lg:pt-40 lg:pb-24">
             <div className="w-full lg:w-3/5 flex flex-col items-start gap-5 lg:gap-6">
               
               {/* Breadcrumbs */}

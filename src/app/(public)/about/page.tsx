@@ -47,7 +47,7 @@ export default function AboutPage() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="relative py-40 text-white overflow-hidden">
+      <section className="relative pt-48 pb-32 lg:pt-56 lg:pb-40 text-white overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: "url('https://images.unsplash.com/photo-1493397212122-2b85dda8106b?q=80&w=2071&auto=format&fit=crop')" }}

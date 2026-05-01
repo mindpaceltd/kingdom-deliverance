@@ -57,7 +57,7 @@ export default function PrayerPage() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="relative py-32 text-white overflow-hidden bg-[#0d1b3e]">
+      <section className="relative pt-48 pb-32 lg:pt-56 lg:pb-32 text-white overflow-hidden bg-[#0d1b3e]">
         <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1445053023192-8d45cb66099d?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center" />
         <div className="absolute inset-0 bg-gradient-to-b from-primary/80 to-primary" />
         
