@@ -15,6 +15,7 @@ import {
   Settings,
   LogOut,
   UserCircleIcon,
+  BarChart,
 } from 'lucide-react'
 import { useAdmin } from '@/lib/admin-context'
 import { createClient } from '@/lib/supabase/client'
@@ -22,6 +23,7 @@ import { cn } from '@/lib/utils'
 
 const allNavLinks = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, adminOnly: false },
+  { href: '/admin/analytics', label: 'Analytics', icon: BarChart, adminOnly: true },
   { href: '/admin/posts', label: 'Posts & Blogs', icon: FileText, adminOnly: false },
   { href: '/admin/sermons', label: 'Sermons', icon: Video, adminOnly: false },
   { href: '/admin/sermons/series', label: 'Sermon Series', icon: GalleryHorizontal, adminOnly: false },
