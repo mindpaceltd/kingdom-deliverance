@@ -5,21 +5,41 @@ import { ArrowLeft, Users, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Metadata } from "next";
 
+import { incrementMinistryViews } from "@/lib/actions/ministries";
+
 interface Props { params: { slug: string } }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = createClient();
-  const { data } = await supabase.from("ministries").select("name,description").eq("slug", params.slug).single();
+  const { data } = await supabase
+    .from("ministries")
+    .select("name, description, meta_title, meta_description")
+    .eq("slug", params.slug)
+    .single();
+
   if (!data) return { title: "Ministry Not Found" };
-  return { title: `${data.name} | KDC Uganda Ministries`, description: data.description ?? undefined };
+
+  return { 
+    title: data.meta_title || `${data.name} | KDC Uganda Ministries`, 
+    description: data.meta_description || data.description || undefined 
+  };
 }
 
 export const revalidate = 3600;
 
 export default async function MinistryDetailPage({ params }: Props) {
   const supabase = createClient();
-  const { data: ministry } = await supabase.from("ministries").select("*").eq("slug", params.slug).eq("is_active", true).single();
+  const { data: ministry } = await supabase
+    .from("ministries")
+    .select("*")
+    .eq("slug", params.slug)
+    .eq("is_active", true)
+    .single();
+
   if (!ministry) notFound();
+
+  // Background increment views
+  incrementMinistryViews(ministry.id).catch(console.error);
 
   return (
     <div className="flex flex-col">

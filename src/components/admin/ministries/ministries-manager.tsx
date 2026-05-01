@@ -1,18 +1,19 @@
 'use client'
 
 import * as React from 'react'
-import { PlusIcon, PencilIcon, Trash2Icon, GripVerticalIcon } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { PlusIcon, PencilIcon, Trash2Icon, GripVerticalIcon, CopyIcon, RotateCcw, TrashIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
-import { reorderMinistries } from '@/lib/actions/ministries'
+import { 
+  reorderMinistries, 
+  trashMinistry, 
+  restoreMinistry, 
+  duplicateMinistry, 
+  deleteMinistry 
+} from '@/lib/actions/ministries'
 import { createClient } from '@/lib/supabase/client'
+import { StatusBadge } from '@/components/admin/status-badge'
 import type { Ministry } from '@/lib/types'
-import { MinistryForm } from './ministry-form'
 import { cn } from '@/lib/utils'
 
 interface MinistriesManagerProps {
@@ -20,10 +21,10 @@ interface MinistriesManagerProps {
 }
 
 export function MinistriesManager({ initialMinistries }: MinistriesManagerProps) {
+  const router = useRouter()
   const [ministries, setMinistries] = React.useState<Ministry[]>(initialMinistries)
-  const [sheetOpen, setSheetOpen] = React.useState(false)
-  const [editingMinistry, setEditingMinistry] = React.useState<Ministry | null>(null)
   const [reordering, setReordering] = React.useState(false)
+  const [filterStatus, setFilterStatus] = React.useState<string>('all')
 
   // Drag-and-drop state
   const dragIndexRef = React.useRef<number | null>(null)
@@ -39,25 +40,37 @@ export function MinistriesManager({ initialMinistries }: MinistriesManagerProps)
   }, [])
 
   function openNew() {
-    setEditingMinistry(null)
-    setSheetOpen(true)
+    router.push('/admin/ministries/new')
   }
 
   function openEdit(ministry: Ministry) {
-    setEditingMinistry(ministry)
-    setSheetOpen(true)
+    router.push(`/admin/ministries/${ministry.id}`)
   }
 
-  async function handleDelete(ministry: Ministry) {
-    if (!window.confirm(`Delete "${ministry.name}"? This cannot be undone.`)) return
-    const supabase = createClient()
-    await supabase.from('ministries').delete().eq('id', ministry.id)
-    await refreshMinistries()
+  async function handleDuplicate(ministry: Ministry) {
+    const result = await duplicateMinistry(ministry.id)
+    if ('success' in result) await refreshMinistries()
+    else alert(result.error)
   }
 
-  function handleFormSuccess() {
-    setSheetOpen(false)
-    refreshMinistries()
+  async function handleTrash(ministry: Ministry) {
+    if (!window.confirm(`Move "${ministry.name}" to trash?`)) return
+    const result = await trashMinistry(ministry.id)
+    if ('success' in result) await refreshMinistries()
+    else alert(result.error)
+  }
+
+  async function handleRestore(ministry: Ministry) {
+    const result = await restoreMinistry(ministry.id)
+    if ('success' in result) await refreshMinistries()
+    else alert(result.error)
+  }
+
+  async function handlePermanentDelete(ministry: Ministry) {
+    if (!window.confirm(`Permanently delete "${ministry.name}"? This cannot be undone.`)) return
+    const result = await deleteMinistry(ministry.id)
+    if ('success' in result) await refreshMinistries()
+    else alert(result.error)
   }
 
   // ── Drag-and-drop handlers ──────────────────────────────────────────────
@@ -98,10 +111,9 @@ export function MinistriesManager({ initialMinistries }: MinistriesManagerProps)
     setReordering(false)
   }
 
-  function handleDragEnd() {
-    dragIndexRef.current = null
-    setDragOverIndex(null)
-  }
+  const filteredMinistries = React.useMemo(() => {
+    return ministries.filter((m) => filterStatus === 'all' || m.status === filterStatus)
+  }, [ministries, filterStatus])
 
   return (
     <div className="space-y-4 p-6">
@@ -112,130 +124,135 @@ export function MinistriesManager({ initialMinistries }: MinistriesManagerProps)
             Manage ministry departments. Drag rows to reorder.
           </p>
         </div>
-        <Button onClick={openNew} size="sm">
-          <PlusIcon />
-          New Ministry
-        </Button>
+        <div className="flex items-center gap-3">
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-[140px] h-9">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="published">Published</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="trash">Trash</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={openNew} size="sm">
+            <PlusIcon className="mr-2 h-4 w-4" />
+            New Ministry
+          </Button>
+        </div>
       </div>
 
       {reordering && (
-        <p className="text-xs text-muted-foreground">Saving order…</p>
+        <p className="text-xs text-primary animate-pulse font-medium">Saving display order…</p>
       )}
 
-      <div className="rounded-lg border border-border overflow-hidden">
-        {/* Table header */}
-        <div className="grid grid-cols-[32px_1fr_160px_100px_80px_80px] gap-x-3 bg-muted/50 px-3 py-2 text-xs font-medium text-muted-foreground">
+      <div className="rounded-lg border border-border overflow-hidden bg-background shadow-sm">
+        <div className="grid grid-cols-[32px_1fr_160px_100px_80px_120px] gap-x-3 bg-muted/50 px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           <span />
           <span>Name</span>
           <span>Leader</span>
-          <span>Active</span>
-          <span>Order</span>
+          <span>Status</span>
+          <span className="text-center">SEO</span>
           <span />
         </div>
 
-        {ministries.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
-            <p className="text-sm">No ministries yet.</p>
-            <Button variant="outline" size="sm" onClick={openNew}>
-              <PlusIcon />
-              Add your first ministry
-            </Button>
+        {filteredMinistries.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground bg-background">
+            <p className="text-sm">No ministries found.</p>
           </div>
         ) : (
           <ul role="list" className="divide-y divide-border">
-            {ministries.map((ministry, index) => (
+            {filteredMinistries.map((ministry, index) => (
               <li
                 key={ministry.id}
-                draggable
+                draggable={filterStatus === 'all'}
                 onDragStart={() => handleDragStart(index)}
                 onDragOver={(e) => handleDragOver(e, index)}
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, index)}
-                onDragEnd={handleDragEnd}
                 className={cn(
-                  'grid grid-cols-[32px_1fr_160px_100px_80px_80px] gap-x-3 items-center px-3 py-2.5 transition-colors',
-                  dragOverIndex === index
-                    ? 'bg-primary/10 border-t-2 border-primary'
-                    : 'hover:bg-muted/30'
+                  'grid grid-cols-[32px_1fr_160px_100px_80px_120px] gap-x-3 items-center px-3 py-3 transition-colors',
+                  dragOverIndex === index ? 'bg-primary/5 border-t-2 border-primary' : 'hover:bg-muted/30',
+                  ministry.status === 'trash' && 'opacity-70'
                 )}
               >
                 {/* Drag handle */}
-                <span className="flex items-center justify-center cursor-grab text-muted-foreground">
+                <span className={cn(
+                  "flex items-center justify-center text-muted-foreground",
+                  filterStatus === 'all' ? "cursor-grab" : "opacity-20 cursor-not-allowed"
+                )}>
                   <GripVerticalIcon className="size-4" />
                 </span>
 
                 {/* Name */}
-                <button
-                  type="button"
-                  onClick={() => openEdit(ministry)}
-                  className="truncate text-left text-sm font-medium text-foreground underline-offset-2 hover:underline"
-                  title={ministry.name}
-                >
-                  {ministry.name}
-                </button>
+                <div className="flex flex-col">
+                  <button
+                    type="button"
+                    onClick={() => openEdit(ministry)}
+                    className="truncate text-left text-sm font-medium text-foreground underline-offset-2 hover:underline"
+                  >
+                    {ministry.name}
+                  </button>
+                  <span className="text-[11px] text-muted-foreground mt-0.5">/{ministry.slug}</span>
+                </div>
 
                 {/* Leader */}
                 <span className="truncate text-sm text-muted-foreground">
                   {ministry.leader ?? '—'}
                 </span>
 
-                {/* Active */}
-                <span
-                  className={cn(
-                    'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium w-fit',
-                    ministry.is_active
-                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                      : 'bg-muted text-muted-foreground'
-                  )}
-                >
-                  {ministry.is_active ? 'Active' : 'Inactive'}
-                </span>
+                {/* Status */}
+                <StatusBadge status={ministry.status} />
 
-                {/* Display order */}
-                <span className="text-sm text-muted-foreground text-center">
-                  {ministry.display_order}
-                </span>
+                {/* SEO Score */}
+                <div className="flex items-center justify-center gap-1.5">
+                  <div className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    (ministry.seo_score ?? 0) >= 80 ? 'bg-green-600' : (ministry.seo_score ?? 0) >= 50 ? 'bg-yellow-600' : 'bg-red-600'
+                  )} />
+                  <span className="text-xs font-medium">{ministry.seo_score ?? 0}</span>
+                </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => openEdit(ministry)}
-                    aria-label={`Edit ${ministry.name}`}
-                  >
-                    <PencilIcon className="size-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => handleDelete(ministry)}
-                    aria-label={`Delete ${ministry.name}`}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2Icon className="size-3.5" />
-                  </Button>
+                <div className="flex items-center gap-1 justify-end">
+                  {ministry.status === 'trash' ? (
+                    <>
+                      <Button variant="ghost" size="icon-sm" onClick={() => handleRestore(ministry)} title="Restore">
+                        <RotateCcw className="size-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon-sm" onClick={() => handlePermanentDelete(ministry)} title="Delete Permanently" className="text-destructive hover:text-destructive">
+                        <TrashIcon className="size-3.5" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button variant="ghost" size="icon-sm" onClick={() => handleDuplicate(ministry)} title="Duplicate">
+                        <CopyIcon className="size-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon-sm" onClick={() => openEdit(ministry)} title="Edit">
+                        <PencilIcon className="size-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon-sm" onClick={() => handleTrash(ministry)} title="Trash" className="text-destructive hover:text-destructive">
+                        <Trash2Icon className="size-3.5" />
+                      </Button>
+                    </>
+                  )}
                 </div>
               </li>
             ))}
           </ul>
         )}
       </div>
-
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>{editingMinistry ? 'Edit Ministry' : 'New Ministry'}</SheetTitle>
-          </SheetHeader>
-          <div className="px-4 pb-6">
-            <MinistryForm
-              ministry={editingMinistry ?? undefined}
-              onSuccess={handleFormSuccess}
-              onCancel={() => setSheetOpen(false)}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
     </div>
   )
 }
+
+// Minimal select components for brevity if they weren't imported
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select'

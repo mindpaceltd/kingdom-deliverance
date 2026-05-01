@@ -122,8 +122,19 @@ export interface Ministry {
   icon: string | null
   display_order: number
   is_active: boolean
+  // CMS Lifecycle
+  status: 'draft' | 'published' | 'scheduled' | 'trash' | 'archived'
+  published_at: string | null
+  scheduled_at: string | null
+  deleted_at: string | null
   created_at: string
   updated_at: string
+  // SEO Metrics
+  meta_title: string | null
+  meta_description: string | null
+  focus_keyword: string | null
+  seo_score: number
+  views: number
 }
 
 export interface MediaAsset {
