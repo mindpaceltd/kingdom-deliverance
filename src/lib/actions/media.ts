@@ -4,7 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { requireRole } from '@/lib/actions/auth-helpers'
-import { requireAdmin } from '@/lib/authz'
+import { requireAdmin, requireRoles } from '@/lib/authz'
+import { ROLES } from '@/lib/roles'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -19,30 +20,30 @@ export interface CreateMediaPayload {
   bucket?: string
 }
 
+export interface UpdateMediaPayload {
+  filename?: string
+  alt_text?: string
+  caption?: string
+}
+
 // ---------------------------------------------------------------------------
 // createMediaRecord
-// Inserts a new row into the `media` table.
-// Requires at minimum the `author` role.
 // ---------------------------------------------------------------------------
 
 export async function createMediaRecord(
   payload: CreateMediaPayload
 ): Promise<{ success: true; id: string } | { error: string }> {
   try {
-    // Get the user ID if available, but don't block on auth failure
     let uploadedBy: string | null = null
     try {
       const auth = await requireRole('author')
       if (!('error' in auth)) {
         uploadedBy = auth.userId
-      } else {
-        console.warn('[createMediaRecord] auth warning:', auth.error)
       }
     } catch (e) {
       console.warn('[createMediaRecord] auth exception:', e)
     }
 
-    // Use admin client to bypass RLS
     const supabase = createAdminClient()
 
     const { data, error } = await supabase
@@ -60,7 +61,7 @@ export async function createMediaRecord(
       .single()
 
     if (error) {
-      console.error('[createMediaRecord] db error:', error.message, error.code, error.details)
+      console.error('[createMediaRecord] db error:', error.message)
       return { error: error.message }
     }
 
@@ -74,9 +75,39 @@ export async function createMediaRecord(
 }
 
 // ---------------------------------------------------------------------------
+// updateMedia
+// Updates media metadata (alt, caption, filename).
+// Requires `content` role.
+// ---------------------------------------------------------------------------
+
+export async function updateMedia(
+  id: string,
+  payload: UpdateMediaPayload
+): Promise<{ success: true } | { error: string }> {
+  const result = await requireRoles(ROLES.CONTENT)
+  if ('error' in result) return result
+
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('media')
+    .update({
+      filename: payload.filename,
+      alt_text: payload.alt_text,
+      caption: payload.caption,
+    })
+    .eq('id', id)
+
+  if (error) {
+    console.error('[updateMedia] db error:', error.message)
+    return { error: error.message }
+  }
+
+  revalidatePath('/admin/media')
+  return { success: true }
+}
+
+// ---------------------------------------------------------------------------
 // deleteMedia
-// Removes the file from Supabase Storage and deletes the `media` row.
-// Requires `admin` role.
 // ---------------------------------------------------------------------------
 
 export async function deleteMedia(
@@ -87,7 +118,6 @@ export async function deleteMedia(
 
   const supabase = createClient()
 
-  // 1. Fetch the media record to get url and bucket
   const { data: media, error: fetchError } = await supabase
     .from('media')
     .select('url, bucket')
@@ -101,27 +131,21 @@ export async function deleteMedia(
 
   const bucket = media.bucket ?? 'media'
 
-  // 2. Extract the storage path from the public URL
-  //    URL format: https://<project>.supabase.co/storage/v1/object/public/<bucket>/<path>
   const marker = `/storage/v1/object/public/${bucket}/`
   const markerIndex = media.url.indexOf(marker)
 
   if (markerIndex !== -1) {
     const storagePath = media.url.slice(markerIndex + marker.length)
 
-    // 3. Remove the file from Storage
     const { error: storageError } = await supabase.storage
       .from(bucket)
       .remove([storagePath])
 
     if (storageError) {
       console.error('[deleteMedia] storage remove error', storageError.message)
-      // Continue to delete the DB row even if storage removal fails
-      // (the file may have already been deleted or the URL may be external)
     }
   }
 
-  // 4. Delete the media row from the database
   const { error: deleteError } = await supabase
     .from('media')
     .delete()
@@ -132,7 +156,6 @@ export async function deleteMedia(
     return { error: deleteError.message }
   }
 
-  // 5. Revalidate the media admin page
   revalidatePath('/admin/media')
   return { success: true }
 }
