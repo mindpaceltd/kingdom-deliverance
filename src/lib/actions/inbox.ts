@@ -1,7 +1,8 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { requireRoles, ROLES } from '@/lib/authz'
+import { requireRoles } from '@/lib/authz'
+import { ROLES } from '@/lib/roles'
 
 export async function markContactRead(
   id: string

@@ -1,7 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import { PlusIcon, PencilIcon, Trash2Icon } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { PlusIcon, PencilIcon, Trash2Icon, CopyIcon, RotateCcw, TrashIcon } from 'lucide-react'
 import { DataTable, type ColumnDef } from '@/components/admin/data-table'
 import { StatusBadge } from '@/components/admin/status-badge'
 import { Button } from '@/components/ui/button'
@@ -12,18 +13,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
-import { deleteEvent } from '@/lib/actions/events'
+import { 
+  trashEvent, 
+  restoreEvent, 
+  duplicateEvent, 
+  deleteEvent 
+} from '@/lib/actions/events'
 import { createClient } from '@/lib/supabase/client'
 import type { Event } from '@/lib/types'
-import { EventForm } from './event-form'
 
 function formatDate(dateStr: string): string {
+  if (!dateStr) return '—'
   return new Intl.DateTimeFormat('en-GB', {
     day: '2-digit',
     month: 'short',
@@ -36,39 +36,66 @@ interface EventsManagerProps {
 }
 
 export function EventsManager({ initialEvents }: EventsManagerProps) {
+  const router = useRouter()
   const [events, setEvents] = React.useState<Event[]>(initialEvents)
-  const [sheetOpen, setSheetOpen] = React.useState(false)
-  const [editingEvent, setEditingEvent] = React.useState<Event | null>(null)
+  const [isRefreshing, setIsRefreshing] = React.useState(false)
   const [filterStatus, setFilterStatus] = React.useState<string>('all')
 
   const refreshEvents = React.useCallback(async () => {
+    setIsRefreshing(true)
     const supabase = createClient()
     const { data } = await supabase
       .from('events')
       .select('*')
       .order('date', { ascending: false })
     if (data) setEvents(data as Event[])
+    setIsRefreshing(false)
   }, [])
 
   function openNew() {
-    setEditingEvent(null)
-    setSheetOpen(true)
+    router.push('/admin/events/new')
   }
 
   function openEdit(event: Event) {
-    setEditingEvent(event)
-    setSheetOpen(true)
+    router.push(`/admin/events/${event.id}`)
   }
 
-  async function handleDelete(event: Event) {
-    if (!window.confirm(`Delete "${event.title}"? This cannot be undone.`)) return
-    await deleteEvent(event.id)
-    await refreshEvents()
+  async function handleDuplicate(event: Event) {
+    const result = await duplicateEvent(event.id)
+    if ('success' in result) {
+      await refreshEvents()
+    } else {
+      alert(result.error)
+    }
   }
 
-  function handleFormSuccess() {
-    setSheetOpen(false)
-    refreshEvents()
+  async function handleTrash(event: Event) {
+    if (!window.confirm(`Move "${event.title}" to trash?`)) return
+    const result = await trashEvent(event.id)
+    if ('success' in result) {
+      await refreshEvents()
+    } else {
+      alert(result.error)
+    }
+  }
+
+  async function handleRestore(event: Event) {
+    const result = await restoreEvent(event.id)
+    if ('success' in result) {
+      await refreshEvents()
+    } else {
+      alert(result.error)
+    }
+  }
+
+  async function handlePermanentDelete(event: Event) {
+    if (!window.confirm(`Permanently delete "${event.title}"? This cannot be undone.`)) return
+    const result = await deleteEvent(event.id)
+    if ('success' in result) {
+      await refreshEvents()
+    } else {
+      alert(result.error)
+    }
   }
 
   const filteredEvents = React.useMemo(() => {
@@ -79,38 +106,36 @@ export function EventsManager({ initialEvents }: EventsManagerProps) {
     {
       key: 'title',
       header: 'Title',
-      className: 'max-w-[220px]',
+      className: 'max-w-[250px]',
       cell: (event) => (
-        <button
-          type="button"
-          onClick={() => openEdit(event)}
-          className="truncate text-left text-sm font-medium text-foreground underline-offset-2 hover:underline max-w-[200px] block"
-          title={event.title}
-        >
-          {event.title}
-        </button>
+        <div className="flex flex-col">
+          <button
+            type="button"
+            onClick={() => openEdit(event)}
+            className="truncate text-left text-sm font-medium text-foreground underline-offset-2 hover:underline block"
+            title={event.title}
+          >
+            {event.title}
+          </button>
+          <span className="text-[11px] text-muted-foreground mt-0.5">
+            {event.location || 'No location'}
+          </span>
+        </div>
       ),
     },
     {
       key: 'date',
-      header: 'Date',
+      header: 'Event Date',
       cell: (event) => (
         <span className="text-sm text-muted-foreground">{formatDate(event.date)}</span>
       ),
     },
     {
-      key: 'location',
-      header: 'Location',
+      key: 'views',
+      header: 'Views',
       cell: (event) => (
-        <span className="text-sm text-muted-foreground">{event.location ?? '—'}</span>
-      ),
-    },
-    {
-      key: 'is_featured',
-      header: 'Featured',
-      cell: (event) => (
-        <span className="text-sm text-muted-foreground">{event.is_featured ? '✓' : '—'}</span>
-      ),
+        <span className="text-sm text-muted-foreground">{event.views?.toLocaleString() ?? 0}</span>
+      )
     },
     {
       key: 'status',
@@ -118,28 +143,73 @@ export function EventsManager({ initialEvents }: EventsManagerProps) {
       cell: (event) => <StatusBadge status={event.status} />,
     },
     {
+      key: 'seo_score',
+      header: 'SEO',
+      cell: (event) => {
+        const score = event.seo_score ?? 0
+        return (
+          <div className="flex items-center gap-1.5">
+            <div className={`h-1.5 w-1.5 rounded-full ${score >= 80 ? 'bg-green-600' : score >= 50 ? 'bg-yellow-600' : 'bg-red-600'}`} />
+            <span className={`text-sm font-medium ${score >= 80 ? 'text-green-600' : score >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>{score}</span>
+          </div>
+        )
+      },
+    },
+    {
       key: 'actions',
       header: '',
-      className: 'w-[80px]',
+      className: 'w-[120px]',
       cell: (event) => (
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => openEdit(event)}
-            aria-label={`Edit ${event.title}`}
-          >
-            <PencilIcon className="size-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => handleDelete(event)}
-            aria-label={`Delete ${event.title}`}
-            className="text-destructive hover:text-destructive"
-          >
-            <Trash2Icon className="size-3.5" />
-          </Button>
+        <div className="flex items-center gap-1 justify-end">
+          {event.status === 'trash' ? (
+            <>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => handleRestore(event)}
+                title="Restore"
+              >
+                <RotateCcw className="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => handlePermanentDelete(event)}
+                title="Delete Permanently"
+                className="text-destructive hover:text-destructive"
+              >
+                <TrashIcon className="size-3.5" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => handleDuplicate(event)}
+                title="Duplicate"
+              >
+                <CopyIcon className="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => openEdit(event)}
+                title="Edit"
+              >
+                <PencilIcon className="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => handleTrash(event)}
+                title="Trash"
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2Icon className="size-3.5" />
+              </Button>
+            </>
+          )}
         </div>
       ),
     },
@@ -152,10 +222,12 @@ export function EventsManager({ initialEvents }: EventsManagerProps) {
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="all">All statuses</SelectItem>
-        <SelectItem value="upcoming">Upcoming</SelectItem>
-        <SelectItem value="ongoing">Ongoing</SelectItem>
-        <SelectItem value="past">Past</SelectItem>
-        <SelectItem value="cancelled">Cancelled</SelectItem>
+        <SelectItem value="draft">Draft</SelectItem>
+        <SelectItem value="published">Published</SelectItem>
+        <SelectItem value="scheduled">Scheduled</SelectItem>
+        <SelectItem value="trash">Trash</SelectItem>
+        <SelectItem value="upcoming">Upcoming (Legacy)</SelectItem>
+        <SelectItem value="past">Past (Legacy)</SelectItem>
       </SelectContent>
     </Select>
   )
@@ -170,7 +242,7 @@ export function EventsManager({ initialEvents }: EventsManagerProps) {
           </p>
         </div>
         <Button onClick={openNew} size="sm">
-          <PlusIcon />
+          <PlusIcon className="mr-2 h-4 w-4" />
           New Event
         </Button>
       </div>
@@ -180,22 +252,8 @@ export function EventsManager({ initialEvents }: EventsManagerProps) {
         data={filteredEvents}
         searchPlaceholder="Search events…"
         filterSlot={filterSlot}
+        isLoading={isRefreshing}
       />
-
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>{editingEvent ? 'Edit Event' : 'New Event'}</SheetTitle>
-          </SheetHeader>
-          <div className="px-4 pb-6">
-            <EventForm
-              event={editingEvent ?? undefined}
-              onSuccess={handleFormSuccess}
-              onCancel={() => setSheetOpen(false)}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
     </div>
   )
 }

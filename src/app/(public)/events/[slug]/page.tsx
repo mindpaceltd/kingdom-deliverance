@@ -6,13 +6,24 @@ import { Calendar, MapPin, ArrowLeft, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Metadata } from "next";
 
+import { incrementEventViews } from "@/lib/actions/events";
+
 interface Props { params: { slug: string } }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = createClient();
-  const { data: event } = await supabase.from("events").select("title,description").eq("slug", params.slug).single();
+  const { data: event } = await supabase
+    .from("events")
+    .select("title, description, meta_title, meta_description")
+    .eq("slug", params.slug)
+    .single();
+    
   if (!event) return { title: "Event Not Found" };
-  return { title: `${event.title} | KDC Uganda Events`, description: event.description ?? undefined };
+  
+  return { 
+    title: event.meta_title || `${event.title} | KDC Uganda Events`, 
+    description: event.meta_description || event.description || undefined 
+  };
 }
 
 export const revalidate = 3600;
@@ -22,6 +33,9 @@ export default async function EventDetailPage({ params }: Props) {
   const { data: event } = await supabase.from("events").select("*").eq("slug", params.slug).single();
   if (!event) notFound();
 
+  // Background increment views
+  incrementEventViews(event.id).catch(console.error);
+
   return (
     <div className="flex flex-col">
       <section className="py-28 bg-primary text-white relative overflow-hidden">
@@ -30,7 +44,9 @@ export default async function EventDetailPage({ params }: Props) {
             <ArrowLeft className="w-4 h-4" /> Back to Events
           </Link>
           <div className="inline-block mb-4 text-xs font-bold tracking-widest uppercase text-accent border border-accent/50 rounded-full px-3 py-1">
-            {event.status === "upcoming" ? "Upcoming" : event.status === "ongoing" ? "Happening Now" : "Past Event"}
+            {event.status === 'trash' ? 'Unavailable' :
+             new Date(event.date) > new Date() ? 'Upcoming' :
+             event.end_date && new Date(event.end_date) > new Date() ? 'Ongoing' : 'Past Event'}
           </div>
           <h1 className="font-serif text-4xl md:text-5xl font-bold leading-tight">{event.title}</h1>
           <div className="flex flex-wrap gap-6 mt-6 text-white/70 text-sm">

@@ -95,9 +95,19 @@ export interface Event {
   image_url: string | null
   is_featured: boolean
   registration_url: string | null
-  status: 'upcoming' | 'ongoing' | 'past' | 'cancelled'
+  // CMS Lifecycle + Event Status
+  status: 'draft' | 'published' | 'scheduled' | 'trash' | 'archived' | 'upcoming' | 'ongoing' | 'past' | 'cancelled'
+  published_at: string | null
+  scheduled_at: string | null
+  deleted_at: string | null
   created_at: string
   updated_at: string
+  // SEO Metrics
+  meta_title: string | null
+  meta_description: string | null
+  focus_keyword: string | null
+  seo_score: number
+  views: number
 }
 
 export interface Ministry {
