@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const { data: settings } = await supabase
     .from('site_settings')
     .select('key, value')
-    .in('key', ['site_name', 'tagline', 'site_meta_title', 'site_meta_description', 'site_icon']);
+    .in('key', ['site_name', 'tagline', 'site_meta_title', 'site_meta_description', 'site_icon', 'site_og_image']);
 
   const s = new Map(settings?.map(i => [i.key, i.value]) || []);
 
@@ -30,6 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const metaTitle = s.get('site_meta_title') || siteName;
   const metaDesc = s.get('site_meta_description') || "Experience God's love, healing, and deliverance in our vibrant church community in Uganda.";
   const siteIcon = s.get('site_icon') || "/favicon.ico";
+  const siteOgImage = s.get('site_og_image') || "https://images.unsplash.com/photo-1493397212122-2b85dda8106b?q=80&w=2071&auto=format&fit=crop";
 
   return {
     title: {
@@ -49,11 +50,20 @@ export async function generateMetadata(): Promise<Metadata> {
       title: metaTitle,
       description: metaDesc,
       siteName: siteName,
+      images: [
+        {
+          url: siteOgImage,
+          width: 1200,
+          height: 630,
+          alt: siteName,
+        }
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: metaTitle,
       description: metaDesc,
+      images: [siteOgImage],
     },
   };
 }

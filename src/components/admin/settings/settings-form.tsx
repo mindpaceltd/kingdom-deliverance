@@ -320,19 +320,31 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                 <p className="text-sm text-muted-foreground">Default search engine optimization settings.</p>
              </div>
 
-             <div className="space-y-4">
-                <div className="space-y-1.5">
-                   <Label>Default Meta Title</Label>
-                   <Input value={values.site_meta_title} onChange={e => handleChange('site_meta_title', e.target.value)} />
-                   <p className="text-[10px] text-muted-foreground">Used as the base title for all pages.</p>
+             <div className="space-y-8">
+                <div className="space-y-4">
+                   <div className="space-y-1.5">
+                      <Label>Default Meta Title</Label>
+                      <Input value={values.site_meta_title} onChange={e => handleChange('site_meta_title', e.target.value)} />
+                      <p className="text-[10px] text-muted-foreground">Used as the base title for all pages.</p>
+                   </div>
+                   <div className="space-y-1.5">
+                      <Label>Default Meta Description</Label>
+                      <Textarea value={values.site_meta_description} onChange={e => handleChange('site_meta_description', e.target.value)} rows={3} />
+                   </div>
+                   <div className="space-y-1.5">
+                      <Label>Site Keywords</Label>
+                      <Input value={values.site_keywords} onChange={e => handleChange('site_keywords', e.target.value)} placeholder="church, uganda, kingdom deliverance, kampala" />
+                   </div>
                 </div>
-                <div className="space-y-1.5">
-                   <Label>Default Meta Description</Label>
-                   <Textarea value={values.site_meta_description} onChange={e => handleChange('site_meta_description', e.target.value)} rows={3} />
-                </div>
-                <div className="space-y-1.5">
-                   <Label>Site Keywords</Label>
-                   <Input value={values.site_keywords} onChange={e => handleChange('site_keywords', e.target.value)} placeholder="church, uganda, kingdom deliverance, kampala" />
+
+                <div className="pt-4 border-t border-border">
+                  <BrandingImageField 
+                    label="Default Share Image (OpenGraph)"
+                    description="The default image shown when links are shared on Facebook, WhatsApp, Twitter, etc. Best at 1200x630px."
+                    value={values.site_og_image}
+                    onUpload={(url) => handleChange('site_og_image', url)}
+                    onClear={() => handleChange('site_og_image', '')}
+                  />
                 </div>
              </div>
           </div>
