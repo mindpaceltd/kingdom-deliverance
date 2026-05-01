@@ -162,7 +162,7 @@ export default async function Home() {
                 <Play className="w-3.5 h-3.5 fill-current" />
                 Latest Message
               </div>
-                <h2 className="text-4xl font-bold font-serif md:text-5xl">Recent Message</h2>
+                <h2 className="text-4xl font-bold font-serif md:text-5xl text-white">Recent Message</h2>
               <p className="text-white/60 text-base">The latest word from our leadership.</p>
             </div>
             <Button
@@ -204,7 +204,7 @@ export default async function Home() {
                 <Quote className="w-3.5 h-3.5" />
                 Featured Sermon
               </div>
-              <h3 className="text-3xl font-bold font-serif md:text-4xl leading-tight">
+              <h3 className="text-3xl font-bold font-serif md:text-4xl leading-tight text-white">
                 {featuredSermon?.title ?? "The Power of Faith in Troubled Times"}
               </h3>
               <p className="text-white/75 leading-relaxed text-base md:text-lg">
