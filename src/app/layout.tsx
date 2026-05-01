@@ -58,6 +58,8 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+import { ScrollToTop } from "@/components/ui/scroll-to-top";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -71,6 +73,7 @@ export default function RootLayout({
       </head>
       <body className="flex flex-col min-h-screen">
         {children}
+        <ScrollToTop />
       </body>
     </html>
   );
