@@ -18,6 +18,12 @@ export interface CreateGalleryItemPayload {
   display_order: number
 }
 
+export interface UpdateGalleryItemPayload {
+  title?: string | null
+  description?: string | null
+  album?: string
+}
+
 export async function createGalleryItem(
   payload: CreateGalleryItemPayload
 ): Promise<{ success: true; id: string } | { error: string }> {
@@ -41,6 +47,29 @@ export async function createGalleryItem(
   }
   revalidateGalleryPaths()
   return { success: true, id: data.id }
+}
+
+export async function updateGalleryItem(
+  id: string,
+  payload: UpdateGalleryItemPayload
+): Promise<{ success: true } | { error: string }> {
+  const result = await requireRoles(ROLES.CONTENT)
+  if ('error' in result) return result
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('gallery')
+    .update({
+      title: payload.title,
+      description: payload.description,
+      album: payload.album,
+    })
+    .eq('id', id)
+  if (error) {
+    console.error('[updateGalleryItem]', error.message)
+    return { error: error.message }
+  }
+  revalidateGalleryPaths()
+  return { success: true }
 }
 
 export async function deleteGalleryItem(

@@ -2,10 +2,24 @@
 
 import * as React from 'react'
 import Image from 'next/image'
-import { Trash2Icon, GripVerticalIcon, UploadIcon, XIcon } from 'lucide-react'
+import { Trash2Icon, GripVerticalIcon, UploadIcon, XIcon, Check, Copy, MoreVertical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { UploadZone } from '@/components/admin/upload-zone'
-import { createGalleryItem, deleteGalleryItem, reorderGallery } from '@/lib/actions/gallery'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
+import { 
+  createGalleryItem, 
+  deleteGalleryItem, 
+  reorderGallery, 
+  updateGalleryItem 
+} from '@/lib/actions/gallery'
 import { createClient } from '@/lib/supabase/client'
 import type { GalleryItem } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -19,9 +33,28 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
   const [showUpload, setShowUpload] = React.useState(false)
   const [reordering, setReordering] = React.useState(false)
   const [saving, setSaving] = React.useState(false)
+  const [selectedItem, setSelectedItem] = React.useState<GalleryItem | null>(null)
+  
+  // Edit state
+  const [editForm, setEditForm] = React.useState({
+    title: '',
+    description: '',
+    album: '',
+  })
+  const [editSaving, setEditSaving] = React.useState(false)
 
   const dragIndexRef = React.useRef<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = React.useState<number | null>(null)
+
+  React.useEffect(() => {
+    if (selectedItem) {
+      setEditForm({
+        title: selectedItem.title || '',
+        description: selectedItem.description || '',
+        album: selectedItem.album || 'General',
+      })
+    }
+  }, [selectedItem])
 
   const refreshItems = React.useCallback(async () => {
     const supabase = createClient()
@@ -33,27 +66,39 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
   }, [])
 
   async function handleUploadComplete(url: string) {
-    const nextOrder =
-      items.length > 0 ? Math.max(...items.map((i) => i.display_order)) + 1 : 1
+    const nextOrder = items.length > 0 ? Math.max(...items.map((i) => i.display_order)) + 1 : 1
     setSaving(true)
     const result = await createGalleryItem({ image_url: url, album: 'General', display_order: nextOrder })
     setSaving(false)
     if ('error' in result) {
-      console.error('[GalleryManager] createGalleryItem error:', result.error)
+      alert(result.error)
       return
     }
     await refreshItems()
   }
 
-  async function handleDelete(item: GalleryItem) {
-    const label = item.title ? `"${item.title}"` : 'this image'
-    if (!window.confirm(`Delete ${label}? This cannot be undone.`)) return
-    const result = await deleteGalleryItem(item.id)
+  async function handleDelete() {
+    if (!selectedItem || !window.confirm(`Permanently delete this gallery image?`)) return
+    const result = await deleteGalleryItem(selectedItem.id)
     if ('error' in result) {
-      console.error('[GalleryManager] deleteGalleryItem error:', result.error)
+      alert(result.error)
       return
     }
-    await refreshItems()
+    setItems(prev => prev.filter(i => i.id !== selectedItem.id))
+    setSelectedItem(null)
+  }
+
+  async function handleUpdate() {
+    if (!selectedItem) return
+    setEditSaving(true)
+    const result = await updateGalleryItem(selectedItem.id, editForm)
+    setEditSaving(false)
+    if ('success' in result) {
+      setItems(prev => prev.map(i => i.id === selectedItem.id ? { ...i, ...editForm } : i))
+      setSelectedItem(prev => prev ? { ...prev, ...editForm } : null)
+    } else {
+      alert(result.error)
+    }
   }
 
   function handleDragStart(index: number) { dragIndexRef.current = index }
@@ -82,32 +127,32 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">Gallery</h1>
-          <p className="text-sm text-muted-foreground">Manage gallery images. Drag cards to reorder.</p>
+          <p className="text-sm text-muted-foreground">Manage gallery images and albums. Drag cards to reorder.</p>
         </div>
         <Button onClick={() => setShowUpload((v) => !v)} size="sm" variant={showUpload ? 'secondary' : 'default'}>
-          {showUpload ? <><XIcon className="size-4" /> Cancel</> : <><UploadIcon className="size-4" /> Upload</>}
+          {showUpload ? <><XIcon className="mr-2 size-4" /> Cancel</> : <><UploadIcon className="mr-2 size-4" /> Add Images</>}
         </Button>
       </div>
 
       {showUpload && (
-        <div className="rounded-lg border border-border p-4">
-          <p className="mb-3 text-sm font-medium">Upload images — added to &quot;General&quot; album automatically.</p>
-          <UploadZone accept="image/jpeg,image/png,image/webp,image/gif" onUploadComplete={handleUploadComplete} />
-          {saving && <p className="mt-2 text-xs text-muted-foreground">Saving gallery item…</p>}
+        <div className="rounded-xl border-2 border-dashed border-border p-8 bg-muted/20">
+          <p className="mb-4 text-sm font-medium">Upload images — they will be added to the &quot;General&quot; album by default.</p>
+          <UploadZone accept="image/*" onUploadComplete={handleUploadComplete} />
+          {saving && <p className="mt-3 text-xs text-primary animate-pulse font-medium">Processing upload…</p>}
         </div>
       )}
 
-      {reordering && <p className="text-xs text-muted-foreground">Saving order…</p>}
+      {reordering && <p className="text-xs text-primary font-medium">Saving order…</p>}
 
       {items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border py-16 text-muted-foreground">
-          <p className="text-sm">No gallery images yet.</p>
+        <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border py-24 text-muted-foreground">
+          <p className="text-sm font-medium">Your gallery is empty.</p>
           <Button variant="outline" size="sm" onClick={() => setShowUpload(true)}>
-            <UploadIcon className="size-4" /> Upload your first image
+            <UploadIcon className="mr-2 size-4" /> Upload first image
           </Button>
         </div>
       ) : (
-        <ul role="list" className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        <ul role="list" className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {items.map((item, index) => (
             <li
               key={item.id}
@@ -118,44 +163,114 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
               onDrop={(e) => handleDrop(e, index)}
               onDragEnd={handleDragEnd}
               className={cn(
-                'group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-shadow',
-                dragOverIndex === index ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'
+                'group relative flex flex-col aspect-square overflow-hidden rounded-lg border-2 bg-card transition-all cursor-pointer',
+                dragOverIndex === index ? 'ring-2 ring-primary border-primary' : 'border-transparent hover:border-primary/20',
+                selectedItem?.id === item.id ? 'ring-2 ring-primary border-primary' : ''
               )}
+              onClick={() => setSelectedItem(item)}
             >
-              <div className="absolute left-1.5 top-1.5 z-10 cursor-grab rounded bg-black/40 p-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                <GripVerticalIcon className="size-3.5 text-white" />
+              <div className="absolute left-1.5 top-1.5 z-10 cursor-grab rounded-full bg-black/50 p-1 opacity-0 transition-opacity group-hover:opacity-100 shadow-sm">
+                <GripVerticalIcon className="size-3 text-white" />
               </div>
-              <button
-                type="button"
-                onClick={() => handleDelete(item)}
-                aria-label={`Delete ${item.title ?? 'image'}`}
-                className="absolute right-1.5 top-1.5 z-10 rounded bg-black/40 p-0.5 text-white opacity-0 transition-opacity hover:bg-destructive group-hover:opacity-100"
-              >
-                <Trash2Icon className="size-3.5" />
-              </button>
-              <div className="relative aspect-square w-full overflow-hidden bg-muted">
+              
+              <div className="relative h-full w-full overflow-hidden bg-muted">
                 <Image
                   src={item.image_url}
                   alt={item.title ?? 'Gallery image'}
                   fill
-                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
-                  className="object-cover"
+                  sizes="(max-width: 640px) 50vw, 20vw"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
                   unoptimized
                 />
               </div>
-              <div className="flex flex-col gap-0.5 p-2">
-                <p className="truncate text-xs font-medium text-foreground" title={item.title ?? undefined}>
-                  {item.title ?? <span className="italic text-muted-foreground">Untitled</span>}
-                </p>
-                <div className="flex items-center justify-between gap-1">
-                  <span className="truncate text-xs text-muted-foreground">{item.album}</span>
-                  <span className="shrink-0 text-xs text-muted-foreground">#{item.display_order}</span>
-                </div>
+
+              {/* Album badge */}
+              <div className="absolute bottom-2 left-2 z-10">
+                 <span className="text-[10px] font-bold uppercase tracking-wider text-white bg-black/60 px-1.5 py-0.5 rounded shadow-sm">
+                    {item.album}
+                 </span>
+              </div>
+              
+              <div className="absolute inset-0 bg-black/20 opacity-0 transition-opacity group-hover:opacity-100 flex items-center justify-center">
+                 <span className="text-[10px] font-medium text-white px-2 py-1 bg-black/60 rounded-full">Edit Details</span>
               </div>
             </li>
           ))}
         </ul>
       )}
+
+      {/* Details Sheet */}
+      <Sheet open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto px-0">
+          <SheetHeader className="px-6 pb-4 border-b border-border">
+            <SheetTitle>Image Details</SheetTitle>
+          </SheetHeader>
+
+          {selectedItem && (
+            <div className="flex flex-col">
+              <div className="p-6 bg-muted/30 flex items-center justify-center border-b border-border">
+                <div className="relative w-full aspect-square rounded-lg overflow-hidden border border-border shadow-sm bg-white">
+                  <Image
+                    src={selectedItem.image_url}
+                    alt={selectedItem.title ?? 'Preview'}
+                    fill
+                    className="object-contain"
+                    unoptimized
+                  />
+                </div>
+              </div>
+
+              <div className="p-6 space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Title</Label>
+                    <Input
+                      value={editForm.title}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="Display title (optional)"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Album</Label>
+                    <Input
+                      value={editForm.album}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, album: e.target.value }))}
+                      placeholder="e.g. Easter 2024"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Caption / Description</Label>
+                    <Textarea
+                      value={editForm.description}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Detailed caption for the gallery..."
+                      rows={4}
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-border flex flex-col gap-2">
+                   <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+                      <span>Order: #{selectedItem.display_order}</span>
+                      <span>Added: {new Date(selectedItem.created_at).toLocaleDateString()}</span>
+                   </div>
+                </div>
+              </div>
+
+              <div className="sticky bottom-0 bg-background p-6 border-t border-border flex items-center justify-between gap-3">
+                 <Button variant="destructive" size="sm" onClick={handleDelete} disabled={editSaving}>
+                   <Trash2Icon className="mr-2 size-4" /> Delete Permanently
+                 </Button>
+                 <Button size="sm" onClick={handleUpdate} disabled={editSaving}>
+                   {editSaving ? 'Saving...' : 'Save Changes'}
+                 </Button>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
