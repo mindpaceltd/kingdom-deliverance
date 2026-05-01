@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Poppins } from "next/font/google";
+import { createClient } from '@/lib/supabase/server';
 import "./globals.css";
 
 const inter = Inter({ 
@@ -15,42 +16,47 @@ const poppins = Poppins({
   display: "swap"
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "Kingdom Deliverance Centre Uganda",
-    template: "%s | Kingdom Deliverance Centre Uganda"
-  },
-  description: "A branch of Kingdom Temple led by Bishop Climate Wiseman. Experience God's love, healing, and deliverance in our vibrant church community in Uganda.",
-  keywords: ["church", "Uganda", "Kingdom Deliverance", "Bishop Climate Wiseman", "worship", "sermons", "faith", "community"],
-  authors: [{ name: "Kingdom Deliverance Centre Uganda" }],
-  creator: "Kingdom Deliverance Centre Uganda",
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: "https://kdcuganda.org",
-    title: "Kingdom Deliverance Centre Uganda",
-    description: "Experience God's love, healing, and deliverance in our vibrant church community.",
-    siteName: "Kingdom Deliverance Centre Uganda",
-    images: [
-      {
-        url: "https://kdcuganda.org/og?title=Kingdom+Deliverance+Centre+Uganda",
-        width: 1200,
-        height: 630,
-        alt: "Kingdom Deliverance Centre Uganda",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Kingdom Deliverance Centre Uganda",
-    description: "Experience God's love, healing, and deliverance in our vibrant church community.",
-    images: ["https://kdcuganda.org/og?title=Kingdom+Deliverance+Centre+Uganda"],
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const supabase = createClient();
+  
+  const { data: settings } = await supabase
+    .from('site_settings')
+    .select('key, value')
+    .in('key', ['site_name', 'tagline', 'site_meta_title', 'site_meta_description', 'site_icon']);
+
+  const s = new Map(settings?.map(i => [i.key, i.value]) || []);
+
+  const siteName = s.get('site_name') || "Kingdom Deliverance Centre Uganda";
+  const metaTitle = s.get('site_meta_title') || siteName;
+  const metaDesc = s.get('site_meta_description') || "Experience God's love, healing, and deliverance in our vibrant church community in Uganda.";
+  const siteIcon = s.get('site_icon') || "/favicon.ico";
+
+  return {
+    title: {
+      default: metaTitle,
+      template: `%s | ${siteName}`
+    },
+    description: metaDesc,
+    icons: {
+      icon: siteIcon,
+      shortcut: siteIcon,
+      apple: siteIcon,
+    },
+    openGraph: {
+      type: "website",
+      locale: "en_US",
+      url: "https://kdcuganda.org",
+      title: metaTitle,
+      description: metaDesc,
+      siteName: siteName,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: metaTitle,
+      description: metaDesc,
+    },
+  };
+}
 
 export default function RootLayout({
   children,
