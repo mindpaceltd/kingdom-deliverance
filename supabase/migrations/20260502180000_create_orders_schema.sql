@@ -40,7 +40,7 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON public.order_items(order_id)
 CREATE TABLE IF NOT EXISTS public.transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
-  gateway TEXT NOT NULL CHECK (gateway IN ('pesapal', 'stripe', 'paypal')),
+  gateway TEXT NOT NULL CHECK (gateway IN ('pesapal', 'paypal')),
   reference TEXT NOT NULL,
   amount NUMERIC(12, 2) NOT NULL,
   currency TEXT NOT NULL,

@@ -208,6 +208,24 @@ CREATE TABLE IF NOT EXISTS public.donations (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- DONATION TRANSACTIONS
+CREATE TABLE IF NOT EXISTS public.donation_transactions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  donation_id UUID NOT NULL REFERENCES public.donations(id) ON DELETE CASCADE,
+  gateway TEXT NOT NULL CHECK (gateway IN ('pesapal', 'paypal')),
+  reference TEXT NOT NULL,
+  amount NUMERIC(12,2) NOT NULL,
+  currency TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'success', 'failed', 'cancelled')),
+  raw_response JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_donation_transactions_donation ON public.donation_transactions(donation_id);
+CREATE INDEX IF NOT EXISTS idx_donation_transactions_gateway ON public.donation_transactions(gateway);
+CREATE INDEX IF NOT EXISTS idx_donation_transactions_reference ON public.donation_transactions(reference);
+
 -- ============================================================
 -- PRAYER REQUESTS
 -- ============================================================
@@ -338,6 +356,11 @@ ALTER TABLE public.donations ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Only admins can view donations" ON public.donations FOR SELECT USING (public.is_admin());
 CREATE POLICY "Anyone can submit donation" ON public.donations FOR INSERT WITH CHECK (TRUE);
 CREATE POLICY "Admins can update donations" ON public.donations FOR UPDATE USING (public.is_admin());
+
+-- DONATION TRANSACTIONS
+ALTER TABLE public.donation_transactions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Only admins can view donation transactions" ON public.donation_transactions FOR SELECT USING (public.is_admin());
+CREATE POLICY "Admins can update donation transactions" ON public.donation_transactions FOR UPDATE USING (public.is_admin());
 
 -- PRAYER REQUESTS
 ALTER TABLE public.prayer_requests ENABLE ROW LEVEL SECURITY;

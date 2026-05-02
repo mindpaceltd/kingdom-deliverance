@@ -3,10 +3,11 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { Settings, CreditCard, Percent, Mail, Globe } from 'lucide-react'
+import { Settings, CreditCard, Percent, Mail, Globe, Truck } from 'lucide-react'
 
 const SETTINGS_TABS = [
   { href: '/admin/settings', label: 'General', icon: Globe },
+  { href: '/admin/settings/shipping', label: 'Shipping Settings', icon: Truck },
   { href: '/admin/settings/taxes', label: 'Tax Settings', icon: Percent },
   { href: '/admin/settings/payments', label: 'Payment Systems', icon: CreditCard },
   { href: '/admin/settings/emails', label: 'Email Templates', icon: Mail },

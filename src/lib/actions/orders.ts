@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { getPesapalAuthToken, initiatePesapalPayment } from '@/lib/payments/pesapal'
+import { initiatePayPalPayment } from '@/lib/payments/paypal'
 
 export async function createOrder(data: {
   email: string
@@ -14,7 +15,7 @@ export async function createOrder(data: {
   subtotal: number
   shippingMethod?: 'standard' | 'express'
   currency: string
-  gateway: 'pesapal' | 'stripe' | 'paypal'
+  gateway: 'pesapal' | 'paypal'
 }) {
   const supabase = createClient()
   const adminClient = createAdminClient()
@@ -149,28 +150,29 @@ export async function createOrder(data: {
       }
 
       return { error: psaResponse.message || 'Pesapal initiation failed' }
-    } else if (gateway === 'stripe') {
-      // Stripe integration placeholder
-      await adminClient.from('transactions').insert({
-        order_id: order.id,
-        gateway: 'stripe',
-        reference: tx_ref,
-        amount: totalInCurrency,
-        currency: data.currency,
-        status: 'pending'
-      })
-      return { error: 'Stripe payment coming soon' }
     } else if (gateway === 'paypal') {
-      // PayPal integration placeholder
-      await adminClient.from('transactions').insert({
-        order_id: order.id,
-        gateway: 'paypal',
-        reference: tx_ref,
+      const paypalResponse = await initiatePayPalPayment({
+        orderId: order.id,
         amount: totalInCurrency,
         currency: data.currency,
-        status: 'pending'
+        description: `Order #${order.id.split('-')[0]} from Kingdom Deliverance Store`,
+        returnUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/api/payments/verify?gateway=paypal`,
+        cancelUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout`
       })
-      return { error: 'PayPal payment coming soon' }
+
+      if (paypalResponse.success && paypalResponse.paymentUrl) {
+        await adminClient.from('transactions').insert({
+          order_id: order.id,
+          gateway: 'paypal',
+          reference: paypalResponse.orderId,
+          amount: totalInCurrency,
+          currency: data.currency,
+          status: 'pending'
+        })
+        return { success: true, paymentUrl: paypalResponse.paymentUrl }
+      }
+
+      return { error: paypalResponse.error || 'PayPal initiation failed' }
     }
 
     return { error: 'Unsupported payment gateway' }

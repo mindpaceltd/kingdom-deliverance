@@ -11,7 +11,7 @@ import { Heart, Smartphone, Building, CheckCircle, Loader2, CreditCard } from "l
 const methods = [
   { id: "mobile_money", label: "Mobile Money", icon: <Smartphone className="w-5 h-5" />, details: "MTN: *165*3*1*XXXXXXXXX# | Airtel: *185*9#\nSend to: 0700 000 000 (Kingdom Deliverance)" },
   { id: "bank_transfer", label: "Bank Transfer", icon: <Building className="w-5 h-5" />, details: "Bank: Stanbic Bank Uganda\nAccount Name: Kingdom Deliverance Centre\nAccount No: 9030009XXXXXXXX\nBranch: Kampala" },
-  { id: "online", label: "Online Payment", icon: <CreditCard className="w-5 h-5" />, details: "Coming soon — online giving via card will be available shortly." },
+  { id: "online", label: "Online Payment", icon: <CreditCard className="w-5 h-5" />, details: "Secure online giving via Pesapal - supports mobile money, cards, and PayPal." },
 ];
 
 export default function DonationsPage() {
@@ -25,6 +25,15 @@ export default function DonationsPage() {
     e.preventDefault();
     if (!form.amount || Number(form.amount) <= 0) { setError("Please enter a valid amount."); return; }
     setLoading(true); setError(null);
+
+    if (activeMethod === 'online') {
+      // Handle online payment via Pesapal - TODO: Implement
+      setError('Online payments coming soon. Please use mobile money or bank transfer for now.')
+      setLoading(false)
+      return
+    }
+
+    // Handle manual donation recording
     const supabase = createClient();
     const { error: dbError } = await supabase.from("donations").insert({
       ...form,

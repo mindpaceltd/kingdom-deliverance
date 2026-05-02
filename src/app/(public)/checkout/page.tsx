@@ -43,19 +43,13 @@ const SHIPPING_OPTIONS = [
 const PAYMENT_METHODS = [
   {
     id: 'pesapal',
-    name: 'Pesapal',
+    name: 'Mobile Money Payment',
     icon: '📱',
-    description: 'Mobile money and card checkout',
-  },
-  {
-    id: 'stripe',
-    name: 'Stripe',
-    icon: '💳',
-    description: 'Debit and credit cards',
+    description: 'Pay with mobile money or card',
   },
   {
     id: 'paypal',
-    name: 'PayPal',
+    name: 'Pay with PayPal',
     icon: '🅿️',
     description: 'PayPal account or card',
   },
@@ -65,7 +59,7 @@ export default function CheckoutPage() {
   const { items, subtotal, totalItems } = useCart()
   const [loading, setLoading] = useState(false)
   const [currency, setCurrency] = useState('UGX')
-  const [gateway, setGateway] = useState<'pesapal' | 'stripe' | 'paypal'>('pesapal')
+  const [gateway, setGateway] = useState<'pesapal' | 'paypal'>('pesapal')
   const [shippingMethod, setShippingMethod] = useState<'standard' | 'express'>('standard')
   const [formData, setFormData] = useState({
     email: '',
@@ -116,7 +110,7 @@ export default function CheckoutPage() {
       subtotal: convertedTotal,
       shippingMethod: allDigital ? undefined : shippingMethod,
       currency,
-      gateway: gateway as 'pesapal' | 'stripe' | 'paypal',
+      gateway: gateway as 'pesapal' | 'paypal',
     })
 
     if (result.success && result.paymentUrl) {
@@ -290,7 +284,7 @@ export default function CheckoutPage() {
                   <button
                     key={method.id}
                     type="button"
-                    onClick={() => setGateway(method.id as 'pesapal' | 'stripe' | 'paypal')}
+                    onClick={() => setGateway(method.id as 'pesapal' | 'paypal')}
                     className={`rounded-2xl border p-4 transition-all text-left ${
                       gateway === method.id
                         ? 'border-[#1e3a5f] bg-[#1e3a5f]/5'

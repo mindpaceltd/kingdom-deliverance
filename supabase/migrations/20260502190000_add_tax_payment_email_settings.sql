@@ -2,6 +2,23 @@
 -- Tax Settings, Payment Gateways, and Email Templates
 -- ============================================================
 
+-- Shipping Settings Table
+CREATE TABLE IF NOT EXISTS public.shipping_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  rate_usd NUMERIC(8, 2) NOT NULL CHECK (rate_usd >= 0),
+  description TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  countries TEXT[] DEFAULT ARRAY[]::TEXT[],
+  min_order_value_usd NUMERIC(8, 2) DEFAULT 0,
+  max_order_value_usd NUMERIC(8, 2),
+  estimated_days TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_shipping_settings_active ON public.shipping_settings(is_active);
+
 -- Tax Settings Table
 CREATE TABLE IF NOT EXISTS public.tax_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -20,7 +37,7 @@ CREATE INDEX IF NOT EXISTS idx_tax_settings_active ON public.tax_settings(is_act
 -- Payment Gateways Table
 CREATE TABLE IF NOT EXISTS public.payment_gateways (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  gateway_name TEXT NOT NULL UNIQUE CHECK (gateway_name IN ('pesapal', 'stripe', 'paypal')),
+  gateway_name TEXT NOT NULL UNIQUE CHECK (gateway_name IN ('pesapal', 'paypal')),
   display_name TEXT NOT NULL,
   description TEXT,
   is_active BOOLEAN NOT NULL DEFAULT FALSE,
@@ -68,10 +85,18 @@ CREATE INDEX IF NOT EXISTS idx_email_templates_type ON public.email_templates(te
 -- Insert default payment gateways
 INSERT INTO public.payment_gateways (gateway_name, display_name, description, is_active, display_order)
 VALUES
-  ('pesapal', 'Pesapal', 'Mobile money and card checkout', FALSE, 1),
-  ('stripe', 'Stripe', 'Debit and credit cards worldwide', FALSE, 2),
-  ('paypal', 'PayPal', 'PayPal account or card', FALSE, 3)
+  ('pesapal', 'Mobile Money Payment', 'Pay with mobile money or card', FALSE, 1),
+  ('paypal', 'Pay with PayPal', 'PayPal account or card', FALSE, 2)
 ON CONFLICT (gateway_name) DO NOTHING;
+
+-- Insert default shipping rates
+INSERT INTO public.shipping_settings (name, rate_usd, description, is_active, countries, estimated_days)
+VALUES
+  ('Standard Shipping - Uganda', 5.00, 'Standard delivery within Uganda', TRUE, ARRAY['Uganda'], '3-5 days'),
+  ('Express Shipping - Uganda', 12.00, 'Express delivery within Uganda', TRUE, ARRAY['Uganda'], '1-2 days'),
+  ('International Standard', 15.00, 'Standard international shipping', TRUE, ARRAY[]::TEXT[], '7-14 days'),
+  ('International Express', 35.00, 'Express international shipping', TRUE, ARRAY[]::TEXT[], '3-7 days')
+ON CONFLICT DO NOTHING;
 
 -- Insert default email templates
 INSERT INTO public.email_templates (template_name, display_name, subject, html_content, text_content, template_type, variables)
