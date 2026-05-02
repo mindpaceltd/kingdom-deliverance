@@ -26,6 +26,7 @@ interface ProductCarouselProps {
 export function ProductCarousel({ products, title = "Featured Products", subtitle = "Discover resources to enrich your spiritual journey" }: ProductCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const trackRef = useRef<HTMLDivElement | null>(null)
+  const [isPaused, setIsPaused] = useState(false)
   const visibleCount = 5
 
   const maxIndex = Math.max(products.length - visibleCount, 0)
@@ -37,24 +38,50 @@ export function ProductCarousel({ products, title = "Featured Products", subtitl
     }
   }, [products])
 
+  // Auto-scroll logic
+  useEffect(() => {
+    if (isPaused || products.length <= visibleCount) return
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => {
+        const nextIndex = prev >= maxIndex ? 0 : prev + 1
+        if (trackRef.current) {
+          const step = (trackRef.current.scrollWidth - trackRef.current.clientWidth) / maxIndex
+          trackRef.current.scrollTo({ left: nextIndex * step, behavior: 'smooth' })
+        }
+        return nextIndex
+      })
+    }, 4000)
+
+    return () => clearInterval(interval)
+  }, [isPaused, maxIndex, products.length, visibleCount])
+
   const goToPrevious = () => {
-    setCurrentIndex((prev) => Math.max(prev - 1, 0))
-    if (!trackRef.current) return
-    const step = trackRef.current.clientWidth / visibleCount
-    trackRef.current.scrollBy({ left: -step, behavior: 'smooth' })
+    setCurrentIndex((prev) => {
+      const nextIndex = Math.max(prev - 1, 0)
+      if (trackRef.current) {
+        const step = (trackRef.current.scrollWidth - trackRef.current.clientWidth) / maxIndex
+        trackRef.current.scrollTo({ left: nextIndex * step, behavior: 'smooth' })
+      }
+      return nextIndex
+    })
   }
 
   const goToNext = () => {
-    setCurrentIndex((prev) => Math.min(prev + 1, maxIndex))
-    if (!trackRef.current) return
-    const step = trackRef.current.clientWidth / visibleCount
-    trackRef.current.scrollBy({ left: step, behavior: 'smooth' })
+    setCurrentIndex((prev) => {
+      const nextIndex = Math.min(prev + 1, maxIndex)
+      if (trackRef.current) {
+        const step = (trackRef.current.scrollWidth - trackRef.current.clientWidth) / maxIndex
+        trackRef.current.scrollTo({ left: nextIndex * step, behavior: 'smooth' })
+      }
+      return nextIndex
+    })
   }
 
   const goToSlide = (index: number) => {
     setCurrentIndex(index)
     if (!trackRef.current) return
-    const step = trackRef.current.clientWidth / visibleCount
+    const step = (trackRef.current.scrollWidth - trackRef.current.clientWidth) / maxIndex
     trackRef.current.scrollTo({ left: index * step, behavior: 'smooth' })
   }
 
@@ -76,11 +103,15 @@ export function ProductCarousel({ products, title = "Featured Products", subtitl
         </div>
 
         {/* Carousel */}
-        <div className="relative">
+        <div 
+          className="relative"
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+        >
           <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-xl">
             <div
               ref={trackRef}
-              className="flex gap-4 px-4 py-6 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-none"
+              className="flex gap-4 px-4 py-8 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-none"
             >
               {products.map((product, index) => {
                 const hasDiscount = product.sale_price_usd > 0 && product.sale_price_usd < product.regular_price_usd
@@ -90,9 +121,9 @@ export function ProductCarousel({ products, title = "Featured Products", subtitl
                 return (
                   <div
                     key={product.id}
-                    className="snap-start min-w-[calc((100%-4rem)/5)] sm:min-w-[280px] rounded-3xl border border-gray-200 bg-white shadow-sm"
+                    className="snap-start min-w-[85%] sm:min-w-[45%] lg:min-w-[calc((100%-4rem)/5)] rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow duration-300"
                   >
-                    <div className="relative overflow-hidden rounded-t-3xl bg-gray-100 h-72">
+                    <div className="relative overflow-hidden rounded-t-2xl bg-gray-50 h-56">
                       <img
                         src={product.image_url}
                         alt={product.name}
