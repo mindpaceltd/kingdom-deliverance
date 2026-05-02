@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PostCard } from "@/components/content/post-card";
 import { EventCard } from "@/components/content/event-card";
 import { TestimoniesSection } from "@/components/home/testimonies-section";
+import { ProductCarousel } from "@/components/home/product-carousel";
 import type { Post, Sermon, Event } from "@/lib/types";
 
 export const revalidate = 3600;
@@ -24,8 +25,8 @@ export const metadata: Metadata = {
 export default async function Home() {
   const supabase = createClient();
 
-  // Fetch: latest published sermon, featured upcoming events (fallback to next 3 upcoming), latest 3 posts
-  const [sermonRes, featuredEventsRes, postsRes] = await Promise.all([
+  // Fetch: latest published sermon, featured upcoming events (fallback to next 3 upcoming), latest 3 posts, featured products
+  const [sermonRes, featuredEventsRes, postsRes, productsRes] = await Promise.all([
     supabase
       .from("sermons")
       .select("*")
@@ -46,6 +47,12 @@ export default async function Home() {
       .eq("status", "published")
       .order("published_at", { ascending: false })
       .limit(3),
+    supabase
+      .from("products")
+      .select("*")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(10),
   ]);
 
   const featuredSermon: Sermon | null = sermonRes.data ?? null;
@@ -63,6 +70,8 @@ export default async function Home() {
   }
 
   const latestPosts: Post[] = (postsRes.data as Post[]) ?? [];
+  const featuredProducts = productsRes.data ?? [];
+
   return (
     <div className="flex min-h-screen flex-col">
       <HeroSection />
@@ -149,6 +158,11 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* Product Carousel */}
+      {featuredProducts.length > 0 && (
+        <ProductCarousel products={featuredProducts} />
+      )}
 
       {/* Featured Sermon */}
       <section className="py-24 bg-[#0d1b3e] text-white relative overflow-hidden">

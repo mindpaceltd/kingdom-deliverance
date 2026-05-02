@@ -20,7 +20,7 @@ export function CartSheet() {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <button className="relative p-2 text-primary hover:text-accent transition-colors group">
+        <button className="relative p-2 text-white hover:text-accent transition-colors group">
           <ShoppingCart className="w-6 h-6" />
           {totalItems > 0 && (
             <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-white shadow-lg shadow-accent/30 animate-in zoom-in duration-300">

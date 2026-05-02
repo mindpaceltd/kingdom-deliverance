@@ -34,7 +34,7 @@ export function ProductMediaGallery({
   const active = images[activeIndex] || images[0]
 
   return (
-    <div className={cn('space-y-4', className)}>
+    <div className={cn('space-y-4 p-2', className)}>
       <div className="relative rounded-2xl overflow-hidden bg-white border border-gray-200">
         {hasDiscount && (
           <span className="absolute top-3 left-3 z-10 bg-red-500 text-white text-[11px] font-black uppercase px-2.5 py-1 rounded">
