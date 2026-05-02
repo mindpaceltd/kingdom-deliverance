@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { initiateFlutterwavePayment } from '@/lib/payments/flutterwave'
+import { getPesapalAuthToken, initiatePesapalPayment } from '@/lib/payments/pesapal'
 
 export async function createOrder(data: {
   email: string
@@ -13,8 +14,10 @@ export async function createOrder(data: {
   items: any[]
   subtotal: number
   currency: string
+  gateway?: 'flutterwave' | 'pesapal'
 }) {
   const supabase = createClient()
+  const gateway = data.gateway || 'pesapal' // Default to Pesapal as per user request
   
   const { data: { user } } = await supabase.auth.getUser()
   
@@ -52,31 +55,71 @@ export async function createOrder(data: {
   const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
   if (itemsError) return { error: itemsError.message }
 
-  // 3. Initiate Flutterwave
   const tx_ref = `KDC-${order.id.split('-')[0]}-${Date.now()}`
-  
-  const flwResponse = await initiateFlutterwavePayment({
-    amount: data.subtotal,
-    currency: data.currency,
-    email: data.email,
-    name: data.name,
-    tx_ref,
-    redirect_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/payments/verify`
-  })
 
-  if (flwResponse.status === 'success') {
-    // 4. Create Pending Transaction record
-    await supabase.from('transactions').insert({
-      order_id: order.id,
-      gateway: 'flutterwave',
-      reference: tx_ref,
+  // 3. Initiate Payment based on gateway
+  if (gateway === 'flutterwave') {
+    const flwResponse = await initiateFlutterwavePayment({
       amount: data.subtotal,
       currency: data.currency,
-      status: 'pending'
+      email: data.email,
+      name: data.name,
+      tx_ref,
+      redirect_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/payments/verify?gateway=flutterwave`
     })
 
-    return { success: true, paymentUrl: flwResponse.data.link }
-  } else {
-    return { error: 'Failed to initiate payment. Please try again.' }
+    if (flwResponse.status === 'success') {
+      await supabase.from('transactions').insert({
+        order_id: order.id,
+        gateway: 'flutterwave',
+        reference: tx_ref,
+        amount: data.subtotal,
+        currency: data.currency,
+        status: 'pending'
+      })
+      return { success: true, paymentUrl: flwResponse.data.link }
+    }
+  } else if (gateway === 'pesapal') {
+    try {
+      const token = await getPesapalAuthToken()
+      const names = data.name.split(' ')
+      const firstName = names[0]
+      const lastName = names.slice(1).join(' ') || names[0]
+
+      const psaResponse = await initiatePesapalPayment({
+        id: tx_ref,
+        amount: data.subtotal,
+        currency: data.currency,
+        description: `Order #${order.id.split('-')[0]} from Kingdom Deliverance Store`,
+        callback_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/payments/verify?gateway=pesapal`,
+        notification_id: process.env.PESAPAL_IPN_ID!, // User must provide this
+        billing_address: {
+          email_address: data.email,
+          phone_number: data.phone,
+          first_name: firstName,
+          last_name: lastName
+        }
+      }, token)
+
+      if (psaResponse.status === '200' || psaResponse.order_tracking_id) {
+        await supabase.from('transactions').insert({
+          order_id: order.id,
+          gateway: 'pesapal',
+          reference: psaResponse.order_tracking_id, // Pesapal uses tracking ID for verification
+          amount: data.subtotal,
+          currency: data.currency,
+          status: 'pending'
+        })
+        return { success: true, paymentUrl: psaResponse.redirect_url }
+      } else {
+        console.error('Pesapal Error:', psaResponse)
+        return { error: psaResponse.message || 'Pesapal initiation failed' }
+      }
+    } catch (err: any) {
+      console.error('Pesapal Exception:', err)
+      return { error: 'Failed to connect to Pesapal' }
+    }
   }
+
+  return { error: 'Payment initiation failed. Please try again.' }
 }
