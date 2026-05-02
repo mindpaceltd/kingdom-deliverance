@@ -35,6 +35,7 @@ const allNavLinks = [
   { href: '/admin/gallery', label: 'Gallery', icon: GalleryHorizontal, adminOnly: false },
   { href: '/admin/products', label: 'Products', icon: GalleryHorizontal, adminOnly: false },
   { href: '/admin/products/categories', label: 'Categories', icon: FolderOpen, adminOnly: false },
+  { href: '/admin/products/attributes', label: 'Attributes', icon: Settings, adminOnly: false },
   { href: '/admin/orders', label: 'Orders', icon: Inbox, adminOnly: false },
   { href: '/admin/inbox', label: 'Inbox', icon: Inbox, adminOnly: false },
   { href: '/admin/testimonies', label: 'Testimonies', icon: MessageCircle, adminOnly: false },
