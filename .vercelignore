@@ -1,9 +1,25 @@
-.next
-node_modules
-.git
+# Ignore build artifacts
+.next/
+node_modules/
+out/
+build/
+dist/
+
+# Ignore local config and git
+.git/
+.vercel/
 .env
 .env.local
-out
-build
-dist
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Ignore logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
