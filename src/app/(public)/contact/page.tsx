@@ -18,10 +18,13 @@ export default function ContactPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const supabase = createClient();
-    const { error: dbError } = await supabase.from("contact_submissions").insert(form);
-    if (dbError) {
-      setError("Failed to send message. Please try again.");
+    
+    // Use the server action to submit and trigger the email
+    const { submitContactForm } = await import("@/lib/actions/forms");
+    const result = await submitContactForm(form);
+    
+    if (result.error) {
+      setError(result.error);
     } else {
       setSuccess(true);
       setForm({ name: "", email: "", phone: "", subject: "", message: "" });

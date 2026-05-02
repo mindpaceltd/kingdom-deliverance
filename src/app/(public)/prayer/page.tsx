@@ -34,18 +34,15 @@ export default function PrayerPage() {
     setError(null)
 
     try {
-      const supabase = createClient()
-      const { error: dbError } = await supabase
-        .from('prayer_requests')
-        .insert({
-          name: form.name,
-          email: form.email,
-          phone: form.phone,
-          request: form.request,
-          is_reviewed: false
-        })
+      const { submitPrayerRequest } = await import("@/lib/actions/forms")
+      const result = await submitPrayerRequest({
+        name: form.name,
+        email: form.email,
+        request: form.request,
+        is_anonymous: false
+      })
 
-      if (dbError) throw dbError
+      if (result.error) throw new Error(result.error)
       setSuccess(true)
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.')
