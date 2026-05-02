@@ -28,14 +28,14 @@ const navigation = [
     ]
   },
   { 
-    name: "Media & Shop", 
+    name: "Media", 
     children: [
       { name: "Sermons", href: "/sermons" },
       { name: "Live Broadcast", href: "/live" },
-      { name: "Online Shop", href: "/shop" },
       { name: "Blog", href: "/blog" },
     ]
   },
+  { name: "Shop", href: "/shop" },
   { 
     name: "Get Involved", 
     children: [
