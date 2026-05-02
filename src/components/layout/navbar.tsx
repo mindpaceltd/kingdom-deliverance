@@ -4,24 +4,46 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Search } from "lucide-react";
+import { Menu, X, Search, ChevronDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SearchModal } from "@/components/search/search-modal";
 import { CartSheet } from "@/components/shop/cart-sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-const links = [
+const navigation = [
   { name: "Home", href: "/" },
-  { name: "About Us", href: "/about" },
-  { name: "Ministries", href: "/ministries" },
-  { name: "Sermons", href: "/sermons" },
-  { name: "Events", href: "/events" },
-  { name: "Shop", href: "/shop" },
-  { name: "Blog", href: "/blog" },
-  { name: "Gallery", href: "/gallery" },
-  { name: "Live", href: "/live" },
-  { name: "Prayer", href: "/prayer" },
-  { name: "Contact", href: "/contact" },
+  { 
+    name: "About Us", 
+    children: [
+      { name: "Our Story", href: "/about" },
+      { name: "Ministries", href: "/ministries" },
+      { name: "Gallery", href: "/gallery" },
+      { name: "Contact Us", href: "/contact" },
+    ]
+  },
+  { 
+    name: "Media & Shop", 
+    children: [
+      { name: "Sermons", href: "/sermons" },
+      { name: "Live Broadcast", href: "/live" },
+      { name: "Online Shop", href: "/shop" },
+      { name: "Blog", href: "/blog" },
+    ]
+  },
+  { 
+    name: "Get Involved", 
+    children: [
+      { name: "Events", href: "/events" },
+      { name: "Prayer Request", href: "/prayer" },
+      { name: "Partner With Us", href: "/donations" },
+    ]
+  },
 ];
 
 export function Navbar() {
@@ -65,32 +87,46 @@ export function Navbar() {
         </Link>
 
         {/* Desktop Nav */}
-        <div className="hidden lg:flex items-center gap-1">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:text-accent hover:bg-white/8",
-                (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href)))
-                  ? "text-accent bg-white/8"
-                  : "text-white/85"
-              )}
-            >
-              {link.name}
-              {pathname === link.href && (
-                <motion.span
-                  layoutId="nav-indicator"
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-accent rounded-full"
-                />
-              )}
-            </Link>
+        <div className="hidden lg:flex items-center gap-2">
+          {navigation.map((item) => (
+            item.children ? (
+              <DropdownMenu key={item.name}>
+                <DropdownMenuTrigger className={cn(
+                  "flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 outline-none",
+                  item.children.some(child => pathname === child.href)
+                    ? "text-accent bg-white/8"
+                    : "text-white/85 hover:text-accent hover:bg-white/8"
+                )}>
+                  {item.name}
+                  <ChevronDown className="w-3 h-3 opacity-50" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="bg-[#0d1b3e] border-white/10 text-white min-w-[180px] p-2 rounded-xl backdrop-blur-xl">
+                  {item.children.map((child) => (
+                    <DropdownMenuItem key={child.href} asChild className="focus:bg-white/10 focus:text-accent rounded-lg cursor-pointer">
+                      <Link href={child.href} className="w-full px-3 py-2 text-sm">
+                        {child.name}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "relative px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:text-accent hover:bg-white/8",
+                  pathname === item.href ? "text-accent bg-white/8" : "text-white/85"
+                )}
+              >
+                {item.name}
+              </Link>
+            )
           ))}
         </div>
 
-        {/* Donate Button + Search + Mobile Toggle */}
+        {/* Right Actions */}
         <div className="flex items-center gap-3">
-          {/* Search button */}
           <button
             className="text-white p-2 rounded-lg hover:bg-white/10 transition-colors duration-200"
             onClick={() => setSearchOpen(true)}
@@ -99,7 +135,6 @@ export function Navbar() {
             <Search className="w-5 h-5" />
           </button>
 
-          {/* Cart Toggle */}
           <CartSheet />
 
           <Button
@@ -115,15 +150,7 @@ export function Navbar() {
             aria-label="Toggle menu"
           >
             <AnimatePresence mode="wait">
-              {isOpen ? (
-                <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
-                  <X className="w-6 h-6" />
-                </motion.div>
-              ) : (
-                <motion.div key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }}>
-                  <Menu className="w-6 h-6" />
-                </motion.div>
-              )}
+              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </AnimatePresence>
           </button>
         </div>
@@ -136,39 +163,49 @@ export function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
             className="lg:hidden bg-[#0d1b3e]/98 backdrop-blur-xl border-t border-white/10 overflow-hidden"
           >
-            <div className="container px-4 py-6 space-y-1">
-              {links.map((link, i) => (
-                <motion.div
-                  key={link.href}
-                  initial={{ opacity: 0, x: -16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.2, delay: i * 0.04 }}
-                >
-                  <Link
-                    href={link.href}
-                    onClick={() => setIsOpen(false)}
-                    className={cn(
-                      "block px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 hover:text-accent hover:bg-white/8",
-                      (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href)))
-                        ? "text-accent bg-white/8"
-                        : "text-white/85"
-                    )}
-                  >
-                    {link.name}
-                  </Link>
-                </motion.div>
+            <div className="container px-4 py-6 space-y-4">
+              {navigation.map((item) => (
+                <div key={item.name} className="space-y-2">
+                  {item.children ? (
+                    <>
+                      <div className="px-4 text-[10px] font-bold text-accent uppercase tracking-widest opacity-50">
+                        {item.name}
+                      </div>
+                      <div className="space-y-1">
+                        {item.children.map((child) => (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            onClick={() => setIsOpen(false)}
+                            className={cn(
+                              "block px-4 py-2 rounded-lg text-sm transition-all duration-200",
+                              pathname === child.href ? "text-accent bg-white/8" : "text-white/70 hover:text-white"
+                            )}
+                          >
+                            {child.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      onClick={() => setIsOpen(false)}
+                      className={cn(
+                        "block px-4 py-3 rounded-xl text-base font-medium transition-all duration-200",
+                        pathname === item.href ? "text-accent bg-white/8" : "text-white/85"
+                      )}
+                    >
+                      {item.name}
+                    </Link>
+                  )}
+                </div>
               ))}
               <div className="pt-4">
-                <Button
-                  asChild
-                  className="w-full bg-accent hover:bg-accent/90 text-primary font-bold rounded-full py-6 transition-all duration-300"
-                >
-                  <Link href="/donations" onClick={() => setIsOpen(false)}>
-                    Donate
-                  </Link>
+                <Button asChild className="w-full bg-accent text-primary font-bold rounded-full py-6">
+                  <Link href="/donations" onClick={() => setIsOpen(false)}>Donate</Link>
                 </Button>
               </div>
             </div>
@@ -176,7 +213,6 @@ export function Navbar() {
         )}
       </AnimatePresence>
 
-      {/* Search modal */}
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </motion.nav>
   );
