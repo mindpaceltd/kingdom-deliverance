@@ -40,11 +40,32 @@ const SHIPPING_OPTIONS = [
   },
 ]
 
+const PAYMENT_METHODS = [
+  {
+    id: 'pesapal',
+    name: 'Pesapal',
+    icon: '📱',
+    description: 'Mobile money and card checkout',
+  },
+  {
+    id: 'stripe',
+    name: 'Stripe',
+    icon: '💳',
+    description: 'Debit and credit cards',
+  },
+  {
+    id: 'paypal',
+    name: 'PayPal',
+    icon: '🅿️',
+    description: 'PayPal account or card',
+  },
+]
+
 export default function CheckoutPage() {
   const { items, subtotal, totalItems } = useCart()
   const [loading, setLoading] = useState(false)
   const [currency, setCurrency] = useState('UGX')
-  const gateway = 'pesapal'
+  const [gateway, setGateway] = useState<'pesapal' | 'stripe' | 'paypal'>('pesapal')
   const [shippingMethod, setShippingMethod] = useState<'standard' | 'express'>('standard')
   const [formData, setFormData] = useState({
     email: '',
@@ -95,7 +116,7 @@ export default function CheckoutPage() {
       subtotal: convertedTotal,
       shippingMethod: allDigital ? undefined : shippingMethod,
       currency,
-      gateway,
+      gateway: gateway as 'pesapal' | 'stripe' | 'paypal',
     })
 
     if (result.success && result.paymentUrl) {
@@ -264,9 +285,27 @@ export default function CheckoutPage() {
 
             <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
               <h3 className="text-lg font-bold mb-4 text-gray-900">Payment Method</h3>
-              <div className="rounded-2xl border border-[#1e3a5f] bg-[#1e3a5f]/5 p-4 text-sm text-gray-900">
-                <p className="font-semibold">Pesapal</p>
-                <p className="text-xs text-gray-600 mt-1">Secure payment via Pesapal for mobile money and card checkout.</p>
+              <div className="grid grid-cols-1 gap-3">
+                {PAYMENT_METHODS.map((method) => (
+                  <button
+                    key={method.id}
+                    type="button"
+                    onClick={() => setGateway(method.id as 'pesapal' | 'stripe' | 'paypal')}
+                    className={`rounded-2xl border p-4 transition-all text-left ${
+                      gateway === method.id
+                        ? 'border-[#1e3a5f] bg-[#1e3a5f]/5'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">{method.icon}</span>
+                      <div>
+                        <p className="font-semibold text-sm text-gray-900">{method.name}</p>
+                        <p className="text-xs text-gray-600 mt-0.5">{method.description}</p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -324,7 +363,7 @@ export default function CheckoutPage() {
                 ) : (
                   <>
                     <Wallet className="w-4 h-4" />
-                    Pay with Pesapal
+                    Continue to Payment
                   </>
                 )}
               </Button>

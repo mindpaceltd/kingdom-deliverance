@@ -14,7 +14,7 @@ export async function createOrder(data: {
   subtotal: number
   shippingMethod?: 'standard' | 'express'
   currency: string
-  gateway?: 'pesapal'
+  gateway: 'pesapal' | 'stripe' | 'paypal'
 }) {
   const supabase = createClient()
   const adminClient = createAdminClient()
@@ -111,51 +111,71 @@ export async function createOrder(data: {
 
   const tx_ref = `KDC-${order.id.split('-')[0]}-${Date.now()}`
 
-  if (gateway !== 'pesapal') {
-    return { error: 'Unsupported payment gateway' }
-  }
-
   try {
-    const token = await getPesapalAuthToken()
-    const names = data.name.trim().split(' ')
-    const firstName = names[0] || 'Customer'
-    const lastName = names.slice(1).join(' ') || firstName
+    if (gateway === 'pesapal') {
+      const token = await getPesapalAuthToken()
+      const names = data.name.trim().split(' ')
+      const firstName = names[0] || 'Customer'
+      const lastName = names.slice(1).join(' ') || firstName
 
-    const psaResponse = await initiatePesapalPayment({
-      id: tx_ref,
-      amount: totalInCurrency,
-      currency: data.currency,
-      description: `Order #${order.id.split('-')[0]} from Kingdom Deliverance Store`,
-      callback_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/payments/verify?gateway=pesapal`,
-      notification_id: process.env.PESAPAL_IPN_ID!,
-      billing_address: {
-        email_address: data.email,
-        phone_number: data.phone,
-        first_name: firstName,
-        last_name: lastName
+      const psaResponse = await initiatePesapalPayment({
+        id: tx_ref,
+        amount: totalInCurrency,
+        currency: data.currency,
+        description: `Order #${order.id.split('-')[0]} from Kingdom Deliverance Store`,
+        callback_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/payments/verify?gateway=pesapal`,
+        notification_id: process.env.PESAPAL_IPN_ID!,
+        billing_address: {
+          email_address: data.email,
+          phone_number: data.phone,
+          first_name: firstName,
+          last_name: lastName
+        }
+      }, token)
+
+      const reference = psaResponse.order_tracking_id || tx_ref
+      const paymentUrl = psaResponse.redirect_url || psaResponse.payment_url || psaResponse.url
+
+      if (reference && paymentUrl) {
+        await adminClient.from('transactions').insert({
+          order_id: order.id,
+          gateway: 'pesapal',
+          reference,
+          amount: totalInCurrency,
+          currency: data.currency,
+          status: 'pending'
+        })
+        return { success: true, paymentUrl }
       }
-    }, token)
 
-    const reference = psaResponse.order_tracking_id || tx_ref
-    const paymentUrl = psaResponse.redirect_url || psaResponse.payment_url || psaResponse.url
-
-    if (reference && paymentUrl) {
+      return { error: psaResponse.message || 'Pesapal initiation failed' }
+    } else if (gateway === 'stripe') {
+      // Stripe integration placeholder
       await adminClient.from('transactions').insert({
         order_id: order.id,
-        gateway: 'pesapal',
-        reference,
+        gateway: 'stripe',
+        reference: tx_ref,
         amount: totalInCurrency,
         currency: data.currency,
         status: 'pending'
       })
-      return { success: true, paymentUrl }
+      return { error: 'Stripe payment coming soon' }
+    } else if (gateway === 'paypal') {
+      // PayPal integration placeholder
+      await adminClient.from('transactions').insert({
+        order_id: order.id,
+        gateway: 'paypal',
+        reference: tx_ref,
+        amount: totalInCurrency,
+        currency: data.currency,
+        status: 'pending'
+      })
+      return { error: 'PayPal payment coming soon' }
     }
 
-    return { error: psaResponse.message || 'Pesapal initiation failed' }
+    return { error: 'Unsupported payment gateway' }
   } catch (err: any) {
-    console.error('Pesapal Exception:', err)
-    return { error: 'Failed to connect to Pesapal' }
+    console.error('Payment Exception:', err)
+    return { error: 'Failed to initiate payment. Please try again.' }
   }
-
-  return { error: 'Payment initiation failed. Please try again.' }
 }
