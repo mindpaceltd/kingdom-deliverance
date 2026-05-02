@@ -58,6 +58,7 @@ export function Footer() {
                 { name: "Gallery", href: "/gallery" },
                 { name: "Watch Live", href: "/live" },
                 { name: "Give Online", href: "/donations" },
+                { name: "Privacy Policy", href: "/privacy" },
                 { name: "Contact", href: "/contact" },
               ].map((link) => (
                 <li key={link.href}>
