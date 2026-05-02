@@ -2,9 +2,7 @@
 
 import * as React from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { motion } from 'framer-motion'
-import { FileText, Info, Star, HelpCircle } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { FileText, Info, Star } from 'lucide-react'
 
 interface ProductTabsProps {
   description: string

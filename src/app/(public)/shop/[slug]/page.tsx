@@ -5,6 +5,8 @@ import { Star, Download, ShieldCheck, HeartHandshake, MessageCircle, Mail, Chevr
 import { AddToCartButton } from '@/components/shop/add-to-cart-button'
 import { ProductMediaGallery } from '@/components/shop/product-media-gallery'
 import { ProductTabs } from '@/components/shop/product-tabs'
+import { QuantitySelector } from '@/components/shop/quantity-selector'
+import { FormatSelector } from '@/components/shop/format-selector'
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   try {
@@ -184,25 +186,7 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
               )}
 
               {/* Format selector (only for digital/variable products) */}
-              {hasFormats && (
-                <div className="mb-5">
-                  <p className="text-sm font-bold text-gray-700 mb-2">Format</p>
-                  <div className="flex gap-2 flex-wrap">
-                    {['eBook (PDF)', 'Audiobook (MP3)', 'Paperback'].map((fmt, i) => (
-                      <button
-                        key={fmt}
-                        className={`px-4 py-1.5 rounded border text-sm font-medium transition-colors ${
-                          i === 0
-                            ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]'
-                            : 'bg-white text-gray-700 border-gray-300 hover:border-[#1e3a5f]'
-                        }`}
-                      >
-                        {fmt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {hasFormats && <FormatSelector />}
 
               {/* Quantity */}
               <div className="mb-5">
@@ -314,13 +298,3 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
   )
 }
 
-// Client component for quantity selector
-function QuantitySelector() {
-  return (
-    <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden">
-      <button className="px-4 py-2 text-gray-600 hover:bg-gray-100 font-bold text-lg border-r border-gray-300 transition-colors">−</button>
-      <span className="px-5 py-2 text-sm font-bold text-gray-900 min-w-[40px] text-center">1</span>
-      <button className="px-4 py-2 text-gray-600 hover:bg-gray-100 font-bold text-lg border-l border-gray-300 transition-colors">+</button>
-    </div>
-  )
-}

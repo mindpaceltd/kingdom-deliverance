@@ -17,7 +17,7 @@ export function ShopFilters({ categories, productCounts = {}, totalCount = 0 }: 
   const searchQuery = searchParams.get('search') || ''
   const [search, setSearch] = React.useState(searchQuery)
 
-  const updateFilters = (key: string, value: string | null) => {
+  const updateFilters = React.useCallback((key: string, value: string | null) => {
     const params = new URLSearchParams(searchParams.toString())
     if (value) {
       params.set(key, value)
@@ -25,14 +25,14 @@ export function ShopFilters({ categories, productCounts = {}, totalCount = 0 }: 
       params.delete(key)
     }
     router.push(`/shop?${params.toString()}`)
-  }
+  }, [searchParams, router])
 
   React.useEffect(() => {
     const timeout = setTimeout(() => {
       updateFilters('search', search || null)
     }, 500)
     return () => clearTimeout(timeout)
-  }, [search])
+  }, [search, updateFilters])
 
   return (
     <div className="space-y-6">

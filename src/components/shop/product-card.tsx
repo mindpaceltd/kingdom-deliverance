@@ -2,7 +2,6 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { formatPrice } from '@/lib/utils'
 import { ShoppingCart, Star, Package } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 
@@ -82,7 +81,7 @@ export function ProductCard({ product }: ProductCardProps) {
           {[...Array(5)].map((_, i) => (
             <Star key={i} className="w-3 h-3 fill-[#f5a623] text-[#f5a623]" />
           ))}
-          <span className="text-[11px] text-gray-400 ml-1">({product.review_count || Math.floor(Math.random() * 30) + 5})</span>
+          <span className="text-[11px] text-gray-400 ml-1">({product.review_count || 0})</span>
         </div>
 
         {/* Price */}

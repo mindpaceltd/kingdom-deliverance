@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { ProductCard } from '@/components/shop/product-card'
 import { ShopFilters } from '@/components/shop/shop-filters'
+import { SortSelect } from '@/components/shop/sort-select'
 import { ShoppingBag, Zap, Lock, HeartHandshake, BookOpen } from 'lucide-react'
 
 export async function generateMetadata() {
@@ -148,24 +149,7 @@ export default async function ShopPage({
                 <p className="text-sm text-gray-500">
                   Showing <span className="font-bold text-gray-800">{products.length}</span> products
                 </p>
-                <form>
-                  <input type="hidden" name="category" value={searchParams.category || ''} />
-                  <input type="hidden" name="search" value={searchParams.search || ''} />
-                  <select
-                    name="sort"
-                    defaultValue={searchParams.sort || 'latest'}
-                    onChange={(e) => {
-                      const form = e.target.closest('form') as HTMLFormElement
-                      if (form) form.submit()
-                    }}
-                    className="text-sm border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:border-[#d4a017] cursor-pointer"
-                  >
-                    <option value="latest">Latest First</option>
-                    <option value="price-asc">Price: Low to High</option>
-                    <option value="price-desc">Price: High to Low</option>
-                    <option value="name">Name A-Z</option>
-                  </select>
-                </form>
+                <SortSelect />
               </div>
 
               {products.length > 0 ? (
