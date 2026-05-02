@@ -114,7 +114,7 @@ export default async function ShopPage({
 
       {/* ── SHOP AREA ── */}
       <section className="py-10 flex-1">
-        <div className="container px-4 mx-auto">
+        <div className="container px-4 mx-auto max-w-6xl">
           <div className="flex flex-col lg:flex-row gap-8">
 
             {/* Sidebar */}
@@ -129,7 +129,7 @@ export default async function ShopPage({
             {/* Products */}
             <div className="flex-1">
               {/* Toolbar */}
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-6 bg-white rounded-2xl border border-gray-200 px-4 py-3 shadow-sm">
                 <p className="text-sm text-gray-500">
                   Showing <span className="font-bold text-gray-800">{products.length}</span> products
                 </p>
@@ -143,7 +143,7 @@ export default async function ShopPage({
                       const form = e.target.closest('form') as HTMLFormElement
                       if (form) form.submit()
                     }}
-                    className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-[#d4a017] cursor-pointer"
+                    className="text-sm border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:border-[#d4a017] cursor-pointer"
                   >
                     <option value="latest">Latest First</option>
                     <option value="price-asc">Price: Low to High</option>

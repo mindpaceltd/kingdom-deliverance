@@ -37,13 +37,13 @@ export function ShopFilters({ categories, productCounts = {}, totalCount = 0 }: 
   return (
     <div className="space-y-6">
       {/* Search */}
-      <div className="space-y-2">
+      <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-2 shadow-sm">
         <h4 className="text-sm font-bold text-gray-800">Search Products</h4>
         <div className="relative">
           <input
             type="text"
             placeholder="Find a book or item..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-gray-200 text-sm focus:outline-none focus:border-[#d4a017] focus:ring-1 focus:ring-[#d4a017]/30"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none focus:border-[#d4a017] focus:ring-1 focus:ring-[#d4a017]/30"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -52,7 +52,7 @@ export function ShopFilters({ categories, productCounts = {}, totalCount = 0 }: 
       </div>
 
       {/* Categories */}
-      <div className="space-y-2">
+      <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-2 shadow-sm">
         <h4 className="text-sm font-bold text-gray-800">Categories</h4>
         <div className="flex flex-col gap-0.5">
           {/* All Products */}
@@ -85,7 +85,7 @@ export function ShopFilters({ categories, productCounts = {}, totalCount = 0 }: 
       </div>
 
       {/* Need Help Box */}
-      <div className="bg-[#f8f4eb] rounded-xl p-5 space-y-3 border border-[#e8d9b5]">
+      <div className="bg-[#f8f4eb] rounded-2xl p-5 space-y-3 border border-[#e8d9b5] shadow-sm">
         <h4 className="font-bold text-sm text-gray-800">Need Help Choosing?</h4>
         <p className="text-xs text-gray-500 leading-relaxed">We're here to help you find the right resource.</p>
         <a

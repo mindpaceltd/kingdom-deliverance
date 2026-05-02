@@ -1,9 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { Star, Download, ShieldCheck, HeartHandshake, Share2, Facebook, Twitter, MessageCircle, Mail, ChevronRight } from 'lucide-react'
+import { Star, Download, ShieldCheck, HeartHandshake, Facebook, Twitter, MessageCircle, Mail, ChevronRight } from 'lucide-react'
 import { AddToCartButton } from '@/components/shop/add-to-cart-button'
-import { ProductGallery } from '@/components/shop/product-gallery'
+import { ProductMediaGallery } from '@/components/shop/product-media-gallery'
 import { ProductTabs } from '@/components/shop/product-tabs'
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
@@ -96,35 +96,17 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
           </nav>
 
           {/* ── PRODUCT HERO: 2-col grid ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 pb-16">
+          <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-5 sm:p-7 lg:p-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
 
             {/* LEFT: Gallery */}
-            <div className="space-y-4">
-              {/* Main image with badges */}
-              <div className="relative rounded-lg overflow-hidden bg-white border border-gray-200">
-                {hasDiscount && (
-                  <span className="absolute top-3 left-3 z-10 bg-red-500 text-white text-[11px] font-black uppercase px-2.5 py-1 rounded">
-                    SALE!
-                  </span>
-                )}
-                <span className="absolute top-3 right-3 z-10 bg-[#1e3a5f] text-white text-[10px] font-bold uppercase px-2.5 py-1 rounded">
-                  {product.type === 'digital' ? 'DIGITAL' : 'PHYSICAL'}
-                </span>
-                <img
-                  src={product.image_url}
-                  alt={product.image_alt || product.name}
-                  className="w-full aspect-[4/3] object-cover"
-                />
-              </div>
-
-              {/* Thumbnail strip */}
-              <ProductGallery
-                mainImage={product.image_url}
-                gallery={product.product_gallery}
-                name={product.name}
-                thumbnailOnly
-              />
-            </div>
+            <ProductMediaGallery
+              mainImage={product.image_url}
+              gallery={product.product_gallery}
+              name={product.name}
+              hasDiscount={hasDiscount}
+              typeLabel={product.type === 'digital' ? 'DIGITAL' : 'PHYSICAL'}
+            />
 
             {/* RIGHT: Purchase info */}
             <div className="flex flex-col">
@@ -253,10 +235,11 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
                 </div>
               </div>
             </div>
+            </div>
           </div>
 
           {/* ── PRODUCT TABS ── */}
-          <div className="mb-16 bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="mt-10 mb-16 bg-white rounded-3xl border border-gray-200 overflow-hidden">
             <ProductTabs
               description={product.description}
               additionalInfo={additionalInfo}
