@@ -26,8 +26,10 @@ export function GoogleConnectionCard({ isConnected, userEmail, onDisconnect }: G
         </div>
         <div>
           <p className="font-semibold text-sm">Google Account</p>
-          {isConnected && userEmail ? (
-            <p className="text-xs text-muted-foreground">{userEmail}</p>
+          {isConnected ? (
+            <p className="text-xs text-muted-foreground">
+              {userEmail ? userEmail : 'Connected'}
+            </p>
           ) : (
             <p className="text-xs text-muted-foreground">Not connected</p>
           )}

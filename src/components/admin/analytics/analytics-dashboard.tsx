@@ -20,6 +20,7 @@ export function AnalyticsDashboard() {
   const [loading, setLoading] = React.useState(true)
   const [userId, setUserId] = React.useState<string | null>(null)
   const [googleUserEmail, setGoogleUserEmail] = React.useState<string | null>(null)
+  const [googleProfileFetched, setGoogleProfileFetched] = React.useState(false)
   const [topPosts, setTopPosts] = React.useState<any[]>([])
   const [dbStats, setDbStats] = React.useState({ users: 0, messages: 0, testimonies: 0, totalViews: 0 })
   const [isGoogleConnected, setIsGoogleConnected] = React.useState(false)
@@ -36,7 +37,6 @@ export function AnalyticsDashboard() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUserId(user.id)
-        setGoogleUserEmail(user.email || null)
       }
 
       const [
@@ -87,6 +87,12 @@ export function AnalyticsDashboard() {
     }
   }, [userId, isGoogleConnected, scConfigured, scData])
 
+  React.useEffect(() => {
+    if (userId && isGoogleConnected && !googleProfileFetched) {
+      fetchGoogleProfile()
+    }
+  }, [userId, isGoogleConnected, googleProfileFetched])
+
   async function fetchGaData() {
     if (!userId || !isGoogleConnected || !gaConfigured) return
     setGaLoading(true)
@@ -123,6 +129,23 @@ export function AnalyticsDashboard() {
     }
   }
 
+  async function fetchGoogleProfile() {
+    if (!userId || !isGoogleConnected) return
+    try {
+      const res = await fetch('/api/google/info')
+      if (res.ok) {
+        const data = await res.json()
+        setGoogleUserEmail(data.email || null)
+      } else {
+        console.error('Failed to fetch Google profile:', res.status, res.statusText)
+      }
+    } catch (error) {
+      console.error('Error fetching Google profile:', error)
+    } finally {
+      setGoogleProfileFetched(true)
+    }
+  }
+
   async function handleDisconnect() {
     const supabase = createClient()
     if (userId) {
@@ -131,6 +154,8 @@ export function AnalyticsDashboard() {
       await supabase.from('search_console_config').delete().eq('user_id', userId)
     }
     setIsGoogleConnected(false)
+    setGoogleUserEmail(null)
+    setGoogleProfileFetched(false)
     setGaData(null)
     setScData(null)
   }
