@@ -74,20 +74,53 @@ export function AnalyticsDashboard() {
     fetchData()
   }, [])
 
+  // Auto-fetch Google data when connected and configured
+  React.useEffect(() => {
+    if (userId && isGoogleConnected && gaConfigured && !gaData) {
+      fetchGaData()
+    }
+  }, [userId, isGoogleConnected, gaConfigured, gaData])
+
+  React.useEffect(() => {
+    if (userId && isGoogleConnected && scConfigured && !scData) {
+      fetchScData()
+    }
+  }, [userId, isGoogleConnected, scConfigured, scData])
+
   async function fetchGaData() {
+    if (!userId || !isGoogleConnected || !gaConfigured) return
     setGaLoading(true)
-    const res = await fetch('/api/google/data/analytics')
-    const data = await res.json()
-    if (!data.error) setGaData(data)
-    setGaLoading(false)
+    try {
+      const res = await fetch('/api/google/data/analytics')
+      if (res.ok) {
+        const data = await res.json()
+        setGaData(data)
+      } else {
+        console.error('Failed to fetch GA data:', res.status, res.statusText)
+      }
+    } catch (error) {
+      console.error('Error fetching GA data:', error)
+    } finally {
+      setGaLoading(false)
+    }
   }
 
   async function fetchScData() {
+    if (!userId || !isGoogleConnected || !scConfigured) return
     setScLoading(true)
-    const res = await fetch('/api/google/data/search-console')
-    const data = await res.json()
-    if (!data.error) setScData(data)
-    setScLoading(false)
+    try {
+      const res = await fetch('/api/google/data/search-console')
+      if (res.ok) {
+        const data = await res.json()
+        setScData(data)
+      } else {
+        console.error('Failed to fetch SC data:', res.status, res.statusText)
+      }
+    } catch (error) {
+      console.error('Error fetching SC data:', error)
+    } finally {
+      setScLoading(false)
+    }
   }
 
   async function handleDisconnect() {
@@ -129,8 +162,8 @@ export function AnalyticsDashboard() {
     <Tabs defaultValue="overview" className="space-y-6">
       <TabsList className="bg-muted/50 p-1 border">
         <TabsTrigger value="overview" className="gap-2 px-4"><TrendingUp className="size-4" /> Overview</TabsTrigger>
-        <TabsTrigger value="search-console" className="gap-2 px-4" onClick={fetchScData}><Search className="size-4" /> Search Console</TabsTrigger>
-        <TabsTrigger value="google-analytics" className="gap-2 px-4" onClick={fetchGaData}><MousePointer2 className="size-4" /> Analytics</TabsTrigger>
+        <TabsTrigger value="search-console" className="gap-2 px-4" onClick={() => userId && isGoogleConnected && scConfigured && fetchScData()}><Search className="size-4" /> Search Console</TabsTrigger>
+        <TabsTrigger value="google-analytics" className="gap-2 px-4" onClick={() => userId && isGoogleConnected && gaConfigured && fetchGaData()}><MousePointer2 className="size-4" /> Analytics</TabsTrigger>
         <TabsTrigger value="settings" className="gap-2 px-4"><Settings className="size-4" /> Settings</TabsTrigger>
       </TabsList>
 

@@ -20,6 +20,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Analytics property not configured.' }, { status: 404 });
     }
 
+    // Validate property ID format
+    if (!config.property_id.startsWith('properties/')) {
+      return NextResponse.json({ error: 'Invalid analytics property ID format.' }, { status: 400 });
+    }
+
     const auth = await getAuthedGoogleClient(user.id);
     const analyticsData = google.analyticsdata({ version: 'v1beta', auth });
 
@@ -53,6 +58,10 @@ export async function GET() {
 
     return NextResponse.json({ report: data, topPages });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('Analytics API error:', err);
+    return NextResponse.json({ 
+      error: err.message || 'Failed to fetch analytics data',
+      details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    }, { status: 500 });
   }
 }

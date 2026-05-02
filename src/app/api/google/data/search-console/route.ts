@@ -20,6 +20,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Search Console site not configured.' }, { status: 404 });
     }
 
+    // Validate site URL format
+    try {
+      new URL(config.site_url);
+    } catch {
+      return NextResponse.json({ error: 'Invalid site URL format.' }, { status: 400 });
+    }
+
     const auth = await getAuthedGoogleClient(user.id);
     const searchconsole = google.searchconsole({ version: 'v1', auth });
 
@@ -62,6 +69,10 @@ export async function GET() {
 
     return NextResponse.json({ summary, topQueries, topPages });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('Search Console API error:', err);
+    return NextResponse.json({ 
+      error: err.message || 'Failed to fetch search console data',
+      details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    }, { status: 500 });
   }
 }
