@@ -73,23 +73,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
-
-// POST /api/google/search-console/sites
-export async function POST(request: Request) {
-  try {
-    const { siteUrl } = await request.json();
-    if (!siteUrl) return NextResponse.json({ error: 'siteUrl is required' }, { status: 400 });
-
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    const auth = await getAuthedGoogleClient(user.id);
-    const searchconsole = google.searchconsole({ version: 'v1', auth });
-
-    const { data } = await searchconsole.sites.add({ siteUrl });
-    return NextResponse.json({ site: data });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
-  }
-}
