@@ -31,16 +31,21 @@ export async function GET(request: Request) {
     
     const supabase = createClient();
     
-    // Save to DB
-    // We do an upsert so if they reconnect, it updates their tokens
-    const { error } = await supabase.from('users_google_integrations').upsert({
+    const payload: any = {
       user_id: state,
       access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token, // Only provided on first consent or if prompt=consent
       expiry_date: tokens.expiry_date,
       scope: tokens.scope,
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'user_id' });
+      updated_at: new Date().toISOString(),
+    }
+
+    if (tokens.refresh_token) {
+      payload.refresh_token = tokens.refresh_token
+    }
+
+    // Save to DB
+    // We do an upsert so if they reconnect, it updates their tokens
+    const { error } = await supabase.from('users_google_integrations').upsert(payload, { onConflict: 'user_id' });
 
     if (error) {
       console.error('Supabase Google Integration Save Error:', error);

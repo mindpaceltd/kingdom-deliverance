@@ -42,11 +42,20 @@ export async function getAuthedGoogleClient(userId: string) {
         .update({
           access_token: tokens.access_token,
           expiry_date: tokens.expiry_date,
+          refresh_token: tokens.refresh_token ?? integration.refresh_token,
           updated_at: new Date().toISOString(),
         })
         .eq('user_id', userId);
     }
   });
+
+  if (integration.expiry_date && integration.expiry_date < Date.now() && integration.refresh_token) {
+    try {
+      await oauth2Client.getAccessToken();
+    } catch (refreshError: any) {
+      console.error('Google token refresh failed:', refreshError);
+    }
+  }
 
   return oauth2Client;
 }
