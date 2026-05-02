@@ -113,18 +113,26 @@ export function InboxClient({ initialContacts, initialPrayers }: InboxClientProp
 
   // Handlers
   async function handleMarkRead(item: InboxItem) {
+    const newState = item._type === 'contact' 
+      ? !('is_read' in item && item.is_read)
+      : !('is_reviewed' in item && item.is_reviewed)
+
     setProcessing(item.id)
     if (item._type === 'contact') {
-      const result = await markContactRead(item.id, !('is_read' in item && item.is_read))
+      const result = await markContactRead(item.id, newState)
       if ('success' in result) {
-         setContacts(prev => prev.map(c => c.id === item.id ? { ...c, is_read: true } : c))
-         if (selectedItem?.id === item.id) setSelectedItem(prev => prev ? { ...prev, is_read: true } : null)
+         setContacts(prev => prev.map(c => c.id === item.id ? { ...c, is_read: newState } : c))
+         if (selectedItem?.id === item.id) {
+           setSelectedItem(prev => prev ? { ...prev, is_read: newState } : null)
+         }
       }
     } else {
-      const result = await markPrayerReviewed(item.id, !('is_reviewed' in item && item.is_reviewed))
+      const result = await markPrayerReviewed(item.id, newState)
       if ('success' in result) {
-         setPrayers(prev => prev.map(p => p.id === item.id ? { ...p, is_reviewed: true } : p))
-         if (selectedItem?.id === item.id) setSelectedItem(prev => prev ? { ...prev, is_reviewed: true } : null)
+         setPrayers(prev => prev.map(p => p.id === item.id ? { ...p, is_reviewed: newState } : p))
+         if (selectedItem?.id === item.id) {
+           setSelectedItem(prev => prev ? { ...prev, is_reviewed: newState } : null)
+         }
       }
     }
     setProcessing(null)

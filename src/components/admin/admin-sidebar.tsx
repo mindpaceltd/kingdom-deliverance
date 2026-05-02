@@ -55,15 +55,15 @@ export function AdminSidebar() {
   }
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 min-h-screen bg-[#1a1a2e] text-white shrink-0">
+    <aside className="hidden lg:flex flex-col w-64 h-screen bg-[#1a1a2e] text-white shrink-0 sticky top-0 overflow-y-auto border-r border-white/5">
       {/* Brand */}
-      <div className="px-6 py-5 border-b border-white/10">
+      <div className="px-6 py-5 border-b border-white/10 shrink-0">
         <span className="text-lg font-bold tracking-tight">KDC Uganda</span>
         <p className="text-xs text-white/50 mt-0.5">Admin Panel</p>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navLinks.map(({ href, label, icon: Icon }) => {
           const isActive =
             href === '/admin'
@@ -89,7 +89,7 @@ export function AdminSidebar() {
       </nav>
 
       {/* Logout */}
-      <div className="px-3 py-4 border-t border-white/10">
+      <div className="px-3 py-4 border-t border-white/10 shrink-0 mt-auto">
         <button
           onClick={handleLogout}
           className="flex w-full items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors"
