@@ -4,7 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { formatPrice } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { ShoppingCart, ArrowRight, FileText, Package } from 'lucide-react'
+import { ShoppingCart, Package, Tag } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 
 interface ProductCardProps {
@@ -14,12 +14,15 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCart()
 
+  const hasDiscount = product.sale_price_usd > 0 && product.sale_price_usd < product.regular_price_usd
+  const displayPrice = hasDiscount ? product.sale_price_usd : (product.regular_price_usd || product.price_usd)
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
     addItem({
       id: product.id,
       name: product.name,
-      price: product.price_usd,
+      price: displayPrice,
       quantity: 1,
       image: product.image_url,
       type: product.type
@@ -33,7 +36,7 @@ export function ProductCard({ product }: ProductCardProps) {
         {product.image_url ? (
           <img
             src={product.image_url}
-            alt={product.name}
+            alt={product.image_alt || product.name}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
         ) : (
@@ -42,8 +45,8 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         )}
         
-        {/* Badge */}
-        <div className="absolute top-4 left-4">
+        {/* Type Badge */}
+        <div className="absolute top-4 left-4 flex flex-col gap-2">
           <span className={cn(
             "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md border",
             product.type === 'digital' 
@@ -52,6 +55,12 @@ export function ProductCard({ product }: ProductCardProps) {
           )}>
             {product.type === 'digital' ? 'Digital' : 'Physical'}
           </span>
+          
+          {hasDiscount && (
+            <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500 text-white shadow-lg animate-pulse">
+              Sale
+            </span>
+          )}
         </div>
       </Link>
 
@@ -69,13 +78,20 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         <p className="text-sm text-muted-foreground line-clamp-2 mb-6 flex-1">
-          {product.description}
+          {product.short_description || product.description?.replace(/<[^>]*>?/gm, '').slice(0, 100)}
         </p>
 
         <div className="flex items-center justify-between gap-4 pt-4 border-t border-border mt-auto">
-          <span className="text-2xl font-bold text-primary">
-            {formatPrice(product.price_usd)}
-          </span>
+          <div className="flex flex-col">
+            {hasDiscount && (
+              <span className="text-sm text-muted-foreground line-through decoration-red-400">
+                {formatPrice(product.regular_price_usd)}
+              </span>
+            )}
+            <span className="text-2xl font-bold text-primary">
+              {formatPrice(displayPrice)}
+            </span>
+          </div>
           <Button 
             onClick={handleAddToCart}
             size="icon" 
@@ -89,7 +105,6 @@ export function ProductCard({ product }: ProductCardProps) {
   )
 }
 
-// Helper function for class names
 function cn(...classes: any[]) {
   return classes.filter(Boolean).join(' ')
 }
