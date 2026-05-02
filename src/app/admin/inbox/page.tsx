@@ -8,13 +8,11 @@ export default async function AdminInboxPage() {
   const { data: contacts } = await supabase
     .from('contact_submissions')
     .select('*')
-    .eq('is_read', false)
     .order('created_at', { ascending: false })
 
   const { data: prayers } = await supabase
     .from('prayer_requests')
     .select('*')
-    .eq('is_reviewed', false)
     .order('created_at', { ascending: false })
 
   return (

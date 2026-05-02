@@ -32,7 +32,7 @@ export default async function AdminLayout({
 
   return (
     <AdminProvider value={{ user, profile, role: profile.role }}>
-      <div className="flex min-h-screen bg-muted">
+      <div className="flex h-screen overflow-hidden bg-muted">
         <AdminSidebar />
         <main className="flex-1 flex flex-col min-w-0">
           <AdminHeader />
