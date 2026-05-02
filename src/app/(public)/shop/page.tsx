@@ -15,42 +15,51 @@ export default async function ShopPage({
 }: {
   searchParams: { category?: string; search?: string; sort?: string }
 }) {
-  const supabase = createClient()
+  let products: any[] = []
+  let categories: any[] = []
+  let loadError = false
 
-  let query = supabase
-    .from('products')
-    .select(`*, category:product_categories(id, name, slug)`)
-    .eq('is_active', true)
+  try {
+    const supabase = createClient()
 
-  if (searchParams.category) {
-    const { data: cat } = await supabase
-      .from('product_categories')
-      .select('id')
-      .eq('slug', searchParams.category)
-      .single()
-    if (cat) query = query.eq('category_id', cat.id)
+    let query = supabase
+      .from('products')
+      .select(`*, category:product_categories(id, name, slug)`)
+      .eq('is_active', true)
+
+    if (searchParams.category) {
+      const { data: cat } = await supabase
+        .from('product_categories')
+        .select('id')
+        .eq('slug', searchParams.category)
+        .single()
+      if (cat) query = query.eq('category_id', cat.id)
+    }
+
+    if (searchParams.search) {
+      query = query.ilike('name', `%${searchParams.search}%`)
+    }
+
+    const sortMap: Record<string, { column: string; ascending: boolean }> = {
+      'latest': { column: 'created_at', ascending: false },
+      'price-asc': { column: 'price_usd', ascending: true },
+      'price-desc': { column: 'price_usd', ascending: false },
+      'name': { column: 'name', ascending: true },
+    }
+    const sort = sortMap[searchParams.sort || 'latest'] || sortMap['latest']
+    query = query.order(sort.column, { ascending: sort.ascending })
+
+    const [productsRes, categoriesRes] = await Promise.all([
+      query,
+      supabase.from('product_categories').select('*').order('name')
+    ])
+
+    products = productsRes.data || []
+    categories = categoriesRes.data || []
+    loadError = Boolean(productsRes.error || categoriesRes.error)
+  } catch {
+    loadError = true
   }
-
-  if (searchParams.search) {
-    query = query.ilike('name', `%${searchParams.search}%`)
-  }
-
-  const sortMap: Record<string, { column: string; ascending: boolean }> = {
-    'latest': { column: 'created_at', ascending: false },
-    'price-asc': { column: 'price_usd', ascending: true },
-    'price-desc': { column: 'price_usd', ascending: false },
-    'name': { column: 'name', ascending: true },
-  }
-  const sort = sortMap[searchParams.sort || 'latest'] || sortMap['latest']
-  query = query.order(sort.column, { ascending: sort.ascending })
-
-  const [productsRes, categoriesRes] = await Promise.all([
-    query,
-    supabase.from('product_categories').select('*').order('name')
-  ])
-
-  const products = productsRes.data || []
-  const categories = categoriesRes.data || []
 
   // Build per-category counts
   const productCounts: Record<string, number> = {}
@@ -128,6 +137,12 @@ export default async function ShopPage({
 
             {/* Products */}
             <div className="flex-1">
+              {loadError && (
+                <div className="mb-6 bg-white rounded-2xl border border-red-200 px-4 py-3 shadow-sm">
+                  <p className="text-sm text-red-700 font-semibold">Shop is temporarily unavailable.</p>
+                  <p className="text-xs text-red-600/80">We couldn’t load products right now. Please try again shortly.</p>
+                </div>
+              )}
               {/* Toolbar */}
               <div className="flex items-center justify-between mb-6 bg-white rounded-2xl border border-gray-200 px-4 py-3 shadow-sm">
                 <p className="text-sm text-gray-500">

@@ -7,23 +7,27 @@ import { ProductMediaGallery } from '@/components/shop/product-media-gallery'
 import { ProductTabs } from '@/components/shop/product-tabs'
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const supabase = createClient()
-  const { data: product } = await supabase
-    .from('products')
-    .select('*')
-    .eq('slug', params.slug)
-    .single()
+  try {
+    const supabase = createClient()
+    const { data: product } = await supabase
+      .from('products')
+      .select('*')
+      .eq('slug', params.slug)
+      .single()
 
-  if (!product) return {}
+    if (!product) return {}
 
-  const title = product.meta_title || `${product.name} | KDC Uganda Store`
-  const description = product.meta_description || product.short_description || product.description?.replace(/<[^>]*>?/gm, '').substring(0, 160)
-  const ogImage = product.image_url
+    const title = product.meta_title || `${product.name} | KDC Uganda Store`
+    const description = product.meta_description || product.short_description || product.description?.replace(/<[^>]*>?/gm, '').substring(0, 160)
+    const ogImage = product.image_url
 
-  return {
-    title,
-    description,
-    openGraph: { title, description, images: ogImage ? [{ url: ogImage }] : [] },
+    return {
+      title,
+      description,
+      openGraph: { title, description, images: ogImage ? [{ url: ogImage }] : [] },
+    }
+  } catch {
+    return {}
   }
 }
 
@@ -34,21 +38,49 @@ function ugx(usd: number) {
 }
 
 export default async function ProductDetailsPage({ params }: { params: { slug: string } }) {
-  const supabase = createClient()
-  const { data: product } = await supabase
-    .from('products')
-    .select(`*, category:product_categories(*), product_gallery(*)`)
-    .eq('slug', params.slug)
-    .single()
+  let product: any | null = null
+  let relatedProducts: any[] = []
+  let loadError = false
 
-  if (!product) notFound()
+  try {
+    const supabase = createClient()
+    const productRes = await supabase
+      .from('products')
+      .select(`*, category:product_categories(*), product_gallery(*)`)
+      .eq('slug', params.slug)
+      .single()
 
-  const { data: relatedProducts } = await supabase
-    .from('products')
-    .select('*, category:product_categories(name)')
-    .eq('category_id', product.category_id)
-    .neq('id', product.id)
-    .limit(4)
+    product = productRes.data
+    if (!product) notFound()
+
+    const relatedRes = await supabase
+      .from('products')
+      .select('*, category:product_categories(name)')
+      .eq('category_id', product.category_id)
+      .neq('id', product.id)
+      .limit(4)
+
+    relatedProducts = relatedRes.data || []
+    loadError = Boolean(productRes.error || relatedRes.error)
+  } catch {
+    loadError = true
+  }
+
+  if (loadError || !product) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-24">
+        <div className="container px-4 mx-auto max-w-3xl">
+          <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-8 text-center">
+            <h1 className="text-xl font-black text-gray-900 mb-2">Something went wrong</h1>
+            <p className="text-sm text-gray-500 mb-6">We couldn’t load this product right now. Please try again.</p>
+            <Link href="/shop" className="inline-flex items-center justify-center bg-[#1e3a5f] hover:bg-[#162d4a] text-white font-bold py-3 px-6 rounded-lg text-sm uppercase tracking-wide">
+              Back to Shop
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const hasDiscount = product.sale_price_usd > 0 && product.sale_price_usd < product.regular_price_usd
   const displayPrice = hasDiscount ? product.sale_price_usd : (product.regular_price_usd || product.price_usd)
