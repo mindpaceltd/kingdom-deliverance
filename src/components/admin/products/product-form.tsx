@@ -37,6 +37,8 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
     file_url: initialData?.file_url || '',
     weight_kg: initialData?.weight_kg || 0,
     is_active: initialData?.is_active ?? true,
+    meta_title: initialData?.meta_title || '',
+    meta_description: initialData?.meta_description || '',
   })
 
   async function onSubmit(e: React.FormEvent) {
@@ -142,6 +144,31 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
               <p className="text-[10px] text-muted-foreground italic">This link will be sent to customers after purchase.</p>
             </div>
           )}
+        </div>
+
+        {/* SEO SECTION */}
+        <div className="bg-card border rounded-xl p-6 shadow-sm space-y-4">
+          <h3 className="font-bold text-lg">SEO Settings</h3>
+          <div className="space-y-2">
+            <Label htmlFor="meta_title">Meta Title</Label>
+            <Input
+              id="meta_title"
+              value={formData.meta_title}
+              onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
+              placeholder="Google search title"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="meta_description">Meta Description</Label>
+            <Textarea
+              id="meta_description"
+              value={formData.meta_description}
+              onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
+              placeholder="Search engine summary..."
+              rows={3}
+            />
+          </div>
+          <p className="text-[10px] text-muted-foreground italic">Note: The featured image will be used as the social share (OG) image automatically.</p>
         </div>
       </div>
 
