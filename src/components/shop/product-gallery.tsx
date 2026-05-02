@@ -1,56 +1,79 @@
 'use client'
 
 import * as React from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 interface ProductGalleryProps {
   mainImage: string
-  gallery: { image_url: string; alt_text?: string }[]
+  gallery?: { image_url: string; alt_text?: string }[]
   name: string
+  thumbnailOnly?: boolean
 }
 
-export function ProductGallery({ mainImage, gallery, name }: ProductGalleryProps) {
+export function ProductGallery({ mainImage, gallery, name, thumbnailOnly = false }: ProductGalleryProps) {
   const allImages = React.useMemo(() => [
     { image_url: mainImage, alt_text: name },
-    ...(gallery || [])
+    ...(gallery || []).filter(g => g.image_url && g.image_url !== mainImage)
   ], [mainImage, gallery, name])
 
   const [activeIndex, setActiveIndex] = React.useState(0)
 
+  // Thumbnail-only mode: just show the strip of thumbnails (used on product page where main image is above)
+  if (thumbnailOnly) {
+    if (allImages.length <= 1) return null
+    return (
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {allImages.map((image, index) => (
+          <button
+            key={index}
+            onClick={() => setActiveIndex(index)}
+            className={cn(
+              'relative shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all duration-200',
+              activeIndex === index
+                ? 'border-[#d4a017] shadow-md'
+                : 'border-gray-200 opacity-70 hover:opacity-100'
+            )}
+          >
+            <img
+              src={image.image_url}
+              alt={image.alt_text || `${name} ${index + 1}`}
+              className="w-full h-full object-cover"
+            />
+          </button>
+        ))}
+      </div>
+    )
+  }
+
+  // Full gallery mode (with main image + thumbnails below)
   return (
-    <div className="space-y-6">
-      <div className="relative aspect-square rounded-[2rem] sm:rounded-[3rem] overflow-hidden bg-muted border border-border shadow-2xl shadow-primary/5 group">
-        <AnimatePresence mode="wait">
-          <motion.img
-            key={activeIndex}
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            src={allImages[activeIndex]?.image_url}
-            alt={allImages[activeIndex]?.alt_text || name}
-            className="w-full h-full object-cover"
-          />
-        </AnimatePresence>
+    <div className="space-y-3">
+      {/* Main active image */}
+      <div className="relative rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+        <img
+          src={allImages[activeIndex]?.image_url}
+          alt={allImages[activeIndex]?.alt_text || name}
+          className="w-full aspect-[4/3] object-cover transition-opacity duration-300"
+        />
       </div>
 
+      {/* Thumbnails */}
       {allImages.length > 1 && (
-        <div className="grid grid-cols-4 sm:grid-cols-6 gap-3 sm:gap-4 px-2">
+        <div className="flex gap-2 overflow-x-auto pb-1">
           {allImages.map((image, index) => (
             <button
               key={index}
               onClick={() => setActiveIndex(index)}
               className={cn(
-                "relative aspect-square rounded-2xl overflow-hidden border-2 transition-all duration-300",
-                activeIndex === index 
-                  ? "border-accent scale-105 shadow-lg ring-4 ring-accent/10" 
-                  : "border-transparent opacity-60 hover:opacity-100 grayscale hover:grayscale-0 hover:scale-105"
+                'relative shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all duration-200',
+                activeIndex === index
+                  ? 'border-[#d4a017] shadow-md'
+                  : 'border-gray-200 opacity-70 hover:opacity-100'
               )}
             >
               <img
                 src={image.image_url}
-                alt={`${name} gallery ${index}`}
+                alt={image.alt_text || `${name} ${index + 1}`}
                 className="w-full h-full object-cover"
               />
             </button>

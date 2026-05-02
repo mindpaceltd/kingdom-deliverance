@@ -2,20 +2,20 @@
 
 import React from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Search, Filter, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Search, MessageCircle } from 'lucide-react'
 
 interface ShopFiltersProps {
   categories: any[]
+  productCounts?: Record<string, number>
+  totalCount?: number
 }
 
-export function ShopFilters({ categories }: ShopFiltersProps) {
+export function ShopFilters({ categories, productCounts = {}, totalCount = 0 }: ShopFiltersProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const activeCategory = searchParams.get('category')
   const searchQuery = searchParams.get('search') || ''
+  const [search, setSearch] = React.useState(searchQuery)
 
   const updateFilters = (key: string, value: string | null) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -27,63 +27,74 @@ export function ShopFilters({ categories }: ShopFiltersProps) {
     router.push(`/shop?${params.toString()}`)
   }
 
+  React.useEffect(() => {
+    const timeout = setTimeout(() => {
+      updateFilters('search', search || null)
+    }, 500)
+    return () => clearTimeout(timeout)
+  }, [search])
+
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       {/* Search */}
-      <div className="space-y-4">
-        <h4 className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-          <Search className="w-3 h-3 text-accent" /> Search Products
-        </h4>
+      <div className="space-y-2">
+        <h4 className="text-sm font-bold text-gray-800">Search Products</h4>
         <div className="relative">
-          <Input
+          <input
+            type="text"
             placeholder="Find a book or item..."
-            className="pl-10 h-12 rounded-xl bg-muted/30 border-none focus-visible:ring-accent/30"
-            defaultValue={searchQuery}
-            onChange={(e) => {
-              const val = e.target.value
-              const timeout = setTimeout(() => updateFilters('search', val), 500)
-              return () => clearTimeout(timeout)
-            }}
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white border border-gray-200 text-sm focus:outline-none focus:border-[#d4a017] focus:ring-1 focus:ring-[#d4a017]/30"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         </div>
       </div>
 
       {/* Categories */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h4 className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-            <Filter className="w-3 h-3 text-accent" /> Categories
-          </h4>
-          {activeCategory && (
-            <button 
-              onClick={() => updateFilters('category', null)}
-              className="text-[10px] text-muted-foreground hover:text-accent flex items-center gap-1 transition-colors"
-            >
-              <X className="w-3 h-3" /> Clear
-            </button>
-          )}
-        </div>
-        <div className="flex flex-col gap-1">
+      <div className="space-y-2">
+        <h4 className="text-sm font-bold text-gray-800">Categories</h4>
+        <div className="flex flex-col gap-0.5">
+          {/* All Products */}
+          <button
+            onClick={() => updateFilters('category', null)}
+            className={`flex items-center justify-between px-3 py-2 rounded text-sm transition-colors ${
+              !activeCategory
+                ? 'bg-gray-100 text-gray-900 font-semibold'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+          >
+            <span>All Products</span>
+            <span className="text-xs text-gray-400">{totalCount}</span>
+          </button>
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => updateFilters('category', cat.slug)}
-              className={cn(
-                "group flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300",
+              className={`flex items-center justify-between px-3 py-2 rounded text-sm transition-colors ${
                 activeCategory === cat.slug
-                  ? "bg-primary text-white shadow-lg shadow-primary/20"
-                  : "text-primary/70 hover:bg-muted/50 hover:text-primary"
-              )}
+                  ? 'bg-gray-100 text-gray-900 font-semibold'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`}
             >
               <span>{cat.name}</span>
-              <div className={cn(
-                "w-1.5 h-1.5 rounded-full transition-all duration-300",
-                activeCategory === cat.slug ? "bg-accent scale-125" : "bg-muted-foreground/20 group-hover:bg-accent"
-              )} />
+              <span className="text-xs text-gray-400">{productCounts[cat.id] || ''}</span>
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Need Help Box */}
+      <div className="bg-[#f8f4eb] rounded-xl p-5 space-y-3 border border-[#e8d9b5]">
+        <h4 className="font-bold text-sm text-gray-800">Need Help Choosing?</h4>
+        <p className="text-xs text-gray-500 leading-relaxed">We're here to help you find the right resource.</p>
+        <a
+          href="/contact"
+          className="flex items-center justify-center gap-2 w-full bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-xs font-bold uppercase tracking-wide py-2.5 rounded-lg transition-colors"
+        >
+          <MessageCircle className="w-3.5 h-3.5" />
+          Contact Us
+        </a>
       </div>
     </div>
   )

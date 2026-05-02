@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import { Button } from '@/components/ui/button'
 import { ShoppingCart, Check } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { cn } from '@/lib/utils'
@@ -9,9 +8,11 @@ import { cn } from '@/lib/utils'
 interface AddToCartButtonProps {
   product: any
   className?: string
+  iconClassName?: string
+  label?: string
 }
 
-export function AddToCartButton({ product, className }: AddToCartButtonProps) {
+export function AddToCartButton({ product, className, iconClassName, label = 'Add to Cart' }: AddToCartButtonProps) {
   const { addItem } = useCart()
   const [added, setAdded] = React.useState(false)
 
@@ -29,25 +30,25 @@ export function AddToCartButton({ product, className }: AddToCartButtonProps) {
   }
 
   return (
-    <Button 
+    <button
       onClick={handleAdd}
       className={cn(
-        "gap-2 transition-all duration-300 shadow-xl shadow-primary/20",
-        added ? "bg-green-600 hover:bg-green-700" : "",
+        'flex items-center justify-center gap-2 font-bold transition-all duration-300',
+        added ? 'bg-green-600 hover:bg-green-700 text-white' : '',
         className
       )}
     >
       {added ? (
         <>
-          <Check className="w-5 h-5" />
-          Added to Cart
+          <Check className={cn('w-4 h-4', iconClassName)} />
+          Added!
         </>
       ) : (
         <>
-          <ShoppingCart className="w-5 h-5" />
-          Add to Cart
+          <ShoppingCart className={cn('w-4 h-4', iconClassName)} />
+          {label}
         </>
       )}
-    </Button>
+    </button>
   )
 }
