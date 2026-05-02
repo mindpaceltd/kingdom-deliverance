@@ -205,11 +205,6 @@ export async function deleteMinistry(
   return { success: true }
 }
 
-export async function incrementMinistryViews(id: string): Promise<void> {
-  const supabase = createClient()
-  await supabase.rpc('increment_ministry_views', { p_ministry_id: id })
-}
-
 export async function checkSlugAvailability(
   slug: string,
   excludeId?: string

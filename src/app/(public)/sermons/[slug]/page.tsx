@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Headphones, Calendar, User, ArrowLeft, Clock, Eye } from "lucide-react";
 import type { Metadata } from "next";
-import { incrementSermonViews } from "@/lib/actions/sermons";
+import { incrementSermonViews } from "@/lib/actions/event-views";
 
 interface Props { params: { slug: string } }
 

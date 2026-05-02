@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { requireRoles } from '@/lib/authz'
 import { ROLES } from '@/lib/roles'
 
-export interface EventData {
+interface EventData {
   title: string
   slug: string
   description?: string
@@ -199,11 +199,6 @@ export async function deleteEvent(
   }
   revalidateEventPaths()
   return { success: true }
-}
-
-export async function incrementEventViews(id: string): Promise<void> {
-  const supabase = createClient()
-  await supabase.rpc('increment_event_views', { p_event_id: id })
 }
 
 export async function checkSlugAvailability(

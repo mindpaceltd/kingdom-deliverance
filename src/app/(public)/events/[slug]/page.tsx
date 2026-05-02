@@ -6,7 +6,7 @@ import { Calendar, MapPin, ArrowLeft, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Metadata } from "next";
 
-import { incrementEventViews } from "@/lib/actions/events";
+import { incrementEventViews } from "@/lib/actions/event-views";
 
 interface Props { params: { slug: string } }
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { incrementPostViews } from '@/lib/actions/posts'
+import { incrementPostViews } from '@/lib/actions/post-views'
 
 interface ViewTrackerProps {
   slug: string

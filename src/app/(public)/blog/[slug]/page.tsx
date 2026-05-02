@@ -6,7 +6,8 @@ import { notFound } from "next/navigation";
 import { Calendar, User, Clock, Eye, ChevronRight, Download, Globe, Mail } from "lucide-react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { incrementPostViews, autoPublishScheduled } from "@/lib/actions/posts";
+import { incrementPostViews } from "@/lib/actions/post-views";
+import { autoPublishScheduled } from "@/lib/actions/post-utils";
 
 interface Props { params: { slug: string } }
 

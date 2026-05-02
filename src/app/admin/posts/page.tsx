@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { PostsManager } from '@/components/admin/posts/posts-manager'
-import { autoPublishScheduled } from '@/lib/actions/posts'
+import { autoPublishScheduled } from '@/lib/actions/post-utils'
 import type { Post } from '@/lib/types'
 
 interface Props {

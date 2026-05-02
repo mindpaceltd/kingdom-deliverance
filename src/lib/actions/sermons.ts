@@ -307,14 +307,6 @@ export async function deleteSermon(
 }
 
 // ---------------------------------------------------------------------------
-// incrementSermonViews
-// ---------------------------------------------------------------------------
-
-export async function incrementSermonViews(id: string): Promise<void> {
-  const supabase = createClient()
-  await supabase.rpc('increment_sermon_views', { p_sermon_id: id })
-}
-
 // ---------------------------------------------------------------------------
 // checkSlugAvailability
 // ---------------------------------------------------------------------------
