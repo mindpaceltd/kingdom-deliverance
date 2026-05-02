@@ -32,7 +32,12 @@ import {
   X,
   Copy,
   Download,
-  Upload
+  Upload,
+  CheckCircle2,
+  Circle,
+  Search,
+  Check,
+  AlertCircle
 } from 'lucide-react'
 import { cn, formatPrice } from '@/lib/utils'
 
@@ -70,14 +75,18 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
     gallery: initialData?.product_gallery?.map((g: any) => g.image_url) || []
   })
 
+  const seoChecklist = React.useMemo(() => [
+    { label: 'Meta title length (30-60 chars)', pass: formData.meta_title.length >= 30 && formData.meta_title.length <= 60 },
+    { label: 'Meta description length (120-160 chars)', pass: formData.meta_description.length >= 120 && formData.meta_description.length <= 160 },
+    { label: 'Featured image alt text present', pass: !!formData.image_alt },
+    { label: 'Product description > 300 chars', pass: formData.description.replace(/<[^>]*>?/gm, '').length > 300 },
+    { label: 'Short description present', pass: !!formData.short_description }
+  ], [formData])
+
   const seoScore = React.useMemo(() => {
-    let score = 0
-    if (formData.meta_title.length >= 30 && formData.meta_title.length <= 60) score += 30
-    if (formData.meta_description.length >= 120 && formData.meta_description.length <= 160) score += 40
-    if (formData.image_alt) score += 15
-    if (formData.description.length > 200) score += 15
-    return score
-  }, [formData])
+    const passed = seoChecklist.filter(c => c.pass).length
+    return Math.round((passed / seoChecklist.length) * 100)
+  }, [seoChecklist])
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -430,46 +439,107 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
           </Select>
         </div>
 
-        {/* SEO Score - ENHANCED VISIBILITY */}
-        <div className="bg-card border-2 border-primary/20 rounded-xl p-6 shadow-lg space-y-4 bg-primary/5">
-          <div className="flex items-center justify-between">
-            <h3 className="font-black text-lg tracking-tighter uppercase">Overall SEO Score</h3>
-            <span className={cn(
-              "text-3xl font-black",
-              seoScore > 80 ? "text-green-500" : seoScore > 50 ? "text-yellow-500" : "text-red-500"
-            )}>{seoScore}</span>
+        {/* SEO MANAGEMENT - ENTERPRISE LEVEL */}
+        <div className="bg-card border-2 border-primary/20 rounded-2xl p-6 shadow-2xl space-y-6 bg-primary/5">
+          <div className="flex items-center justify-between border-b border-primary/10 pb-4">
+            <div>
+              <h3 className="font-black text-xl tracking-tight uppercase">Search Engine Optimization</h3>
+              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Visibility & Search Ranking</p>
+            </div>
+            <div className="flex flex-col items-end">
+              <span className={cn(
+                "text-4xl font-black",
+                seoScore >= 80 ? "text-green-500" : seoScore >= 50 ? "text-yellow-500" : "text-red-500"
+              )}>{seoScore}%</span>
+              <p className="text-[9px] font-bold uppercase tracking-tighter opacity-50">Overall SEO Strength</p>
+            </div>
           </div>
-          <div className="w-full bg-muted rounded-full h-3 overflow-hidden border">
+
+          {/* Google Snippet Preview */}
+          <div className="space-y-3">
+            <Label className="text-[11px] font-black uppercase tracking-widest text-primary/60">Search Result Preview</Label>
+            <div className="bg-white rounded-xl p-5 border shadow-sm space-y-1 font-sans">
+              <div className="flex items-center gap-2 text-[14px] text-[#202124]">
+                <div className="size-6 rounded-full bg-[#f1f3f4] flex items-center justify-center text-[10px]">K</div>
+                <div className="flex flex-col">
+                  <span className="leading-none">kdcuganda.org</span>
+                  <span className="text-[12px] text-[#5f6368] leading-none">https://kdcuganda.org › shop › {formData.slug || '...'}</span>
+                </div>
+              </div>
+              <h4 className="text-[20px] text-[#1a0dab] hover:underline cursor-pointer leading-tight line-clamp-1">
+                {formData.meta_title || formData.name || 'Product Title Appears Here'}
+              </h4>
+              <p className="text-[14px] text-[#4d5156] leading-snug line-clamp-2">
+                {formData.meta_description || 'Please provide a search engine description to see how your product will look in Google search results...'}
+              </p>
+            </div>
+          </div>
+
+          <div className="w-full bg-muted rounded-full h-3 overflow-hidden border p-[1px]">
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${seoScore}%` }}
               className={cn(
-                "h-full transition-all duration-1000",
-                seoScore > 80 ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" : 
-                seoScore > 50 ? "bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.5)]" : 
-                "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]"
+                "h-full rounded-full transition-all duration-1000",
+                seoScore >= 80 ? "bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.6)]" : 
+                seoScore >= 50 ? "bg-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.6)]" : 
+                "bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.6)]"
               )}
             />
           </div>
-          <div className="space-y-4 pt-2">
-            <div className="space-y-1">
-              <Label className="text-[10px] font-bold uppercase text-muted-foreground">Search Engine Title</Label>
-              <Input
-                value={formData.meta_title}
-                onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
-                placeholder="Google Title..."
-                className="bg-white"
-              />
+
+          {/* Checklist */}
+          <div className="grid grid-cols-1 gap-3 p-4 rounded-xl bg-white/50 border border-white">
+            {seoChecklist.map((item, i) => (
+              <div key={i} className="flex items-center gap-3 text-xs">
+                {item.pass ? (
+                  <CheckCircle2 className="size-4 text-green-500 shrink-0" />
+                ) : (
+                  <Circle className="size-4 text-muted-foreground/30 shrink-0" />
+                )}
+                <span className={cn(
+                  "font-medium",
+                  item.pass ? "text-primary" : "text-muted-foreground"
+                )}>{item.label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-primary tracking-widest">SEO Meta Title</Label>
+              <div className="relative">
+                <Input
+                  value={formData.meta_title}
+                  onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
+                  placeholder="Focus keyword + Branding..."
+                  className="bg-white border-2 focus:border-primary pr-12 h-11"
+                />
+                <span className={cn(
+                  "absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold",
+                  formData.meta_title.length >= 30 && formData.meta_title.length <= 60 ? "text-green-500" : "text-muted-foreground"
+                )}>
+                  {formData.meta_title.length}/60
+                </span>
+              </div>
             </div>
-            <div className="space-y-1">
-              <Label className="text-[10px] font-bold uppercase text-muted-foreground">Search Engine Description</Label>
-              <Textarea
-                value={formData.meta_description}
-                onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
-                placeholder="Search engine summary..."
-                rows={3}
-                className="bg-white"
-              />
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-primary tracking-widest">SEO Meta Description</Label>
+              <div className="relative">
+                <Textarea
+                  value={formData.meta_description}
+                  onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
+                  placeholder="Summarize your product for potential buyers..."
+                  rows={4}
+                  className="bg-white border-2 focus:border-primary resize-none p-4"
+                />
+                <span className={cn(
+                  "absolute right-3 bottom-3 text-[10px] font-bold bg-white/80 px-1 rounded",
+                  formData.meta_description.length >= 120 && formData.meta_description.length <= 160 ? "text-green-500" : "text-muted-foreground"
+                )}>
+                  {formData.meta_description.length}/160
+                </span>
+              </div>
             </div>
           </div>
         </div>
