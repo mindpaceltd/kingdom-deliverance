@@ -25,3 +25,11 @@ export function validateVideoUrl(url: string): 'valid' | 'invalid' {
 export function validateFileSize(bytes: number): boolean {
   return bytes <= 52_428_800
 }
+
+export function formatPrice(price: number | string, currency: string = 'USD') {
+  const numericPrice = typeof price === 'string' ? parseFloat(price) : price
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+  }).format(numericPrice || 0)
+}

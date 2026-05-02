@@ -32,6 +32,8 @@ const allNavLinks = [
   { href: '/admin/ministries', label: 'Ministries', icon: Users2, adminOnly: false },
   { href: '/admin/media', label: 'Media Library', icon: Images, adminOnly: false },
   { href: '/admin/gallery', label: 'Gallery', icon: GalleryHorizontal, adminOnly: false },
+  { href: '/admin/products', label: 'Products', icon: GalleryHorizontal, adminOnly: false },
+  { href: '/admin/orders', label: 'Orders', icon: Inbox, adminOnly: false },
   { href: '/admin/inbox', label: 'Inbox', icon: Inbox, adminOnly: false },
   { href: '/admin/testimonies', label: 'Testimonies', icon: MessageCircle, adminOnly: false },
   { href: '/admin/users', label: 'Users', icon: Users, adminOnly: true },
