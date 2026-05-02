@@ -152,6 +152,29 @@ export function GooglePropertySetup({ isConnected, userId, onConfigSaved }: Prop
     onConfigSaved()
   }
 
+  function extractVerificationToken(value: any): string | null {
+    if (!value) return null
+    if (typeof value === 'string') {
+      const match = value.match(/content=["']([^"']+)["']/)
+      return match?.[1] ?? value
+    }
+    if (typeof value.token === 'string') {
+      return extractVerificationToken(value.token)
+    }
+    if (typeof value.token === 'object') {
+      return extractVerificationToken(value.token?.token)
+    }
+    return null
+  }
+
+  function formatVerificationMetaTag(token: string) {
+    const trimmed = token.trim()
+    if (trimmed.startsWith('<meta')) {
+      return trimmed
+    }
+    return `<meta name="google-site-verification" content="${trimmed}" />`
+  }
+
   async function addSite() {
     if (!newSiteUrl.trim()) {
       setCreateError('Enter a Search Console site URL to add.')
@@ -175,6 +198,7 @@ export function GooglePropertySetup({ isConnected, userId, onConfigSaved }: Prop
 
       const site = result.site
       const verification = result.verificationResult
+      const token = extractVerificationToken(verification?.token)
 
       setSites((prev) => [site, ...prev])
       setSelectedSite(site.siteUrl)
@@ -185,11 +209,11 @@ export function GooglePropertySetup({ isConnected, userId, onConfigSaved }: Prop
         setVerificationStatus('verified')
         setVerificationToken(null)
         await saveScConfig()
-      } else if (verification?.token) {
+      } else if (token) {
         setVerificationStatus('failed')
-        setVerificationToken(verification.token?.token || null)
+        setVerificationToken(token)
         setCreateError(
-          `Site added, but verification requires a meta tag. Add this token to your site and try again: ${verification.token?.token}`
+          `Site added, but verification requires a meta tag. Add this tag to your site and try again: ${formatVerificationMetaTag(token)}`
         )
       } else {
         setVerificationStatus('failed')
@@ -230,16 +254,19 @@ export function GooglePropertySetup({ isConnected, userId, onConfigSaved }: Prop
         setVerificationToken(null)
         setCreateError('Site verified successfully.')
         await saveScConfig()
-      } else if (result.token) {
-        setVerificationStatus('failed')
-        setVerificationToken(result.token?.token || null)
-        setCreateError(
-          `Verification still pending. Add this token to your site and try again: ${result.token?.token}`
-        )
       } else {
-        setVerificationStatus('failed')
-        setVerificationToken(null)
-        setCreateError('Verification still pending. Please add the meta tag and retry.')
+        const token = extractVerificationToken(result.token)
+        if (token) {
+          setVerificationStatus('failed')
+          setVerificationToken(token)
+          setCreateError(
+            `Verification still pending. Add this tag to your site and try again: ${formatVerificationMetaTag(token)}`
+          )
+        } else {
+          setVerificationStatus('failed')
+          setVerificationToken(null)
+          setCreateError('Verification still pending. Please add the meta tag and retry.')
+        }
       }
     } catch (error: any) {
       setVerificationStatus('failed')
