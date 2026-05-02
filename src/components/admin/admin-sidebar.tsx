@@ -55,11 +55,11 @@ const allNavLinks: NavLink[] = [
   { href: '/admin/gallery', label: 'Gallery', icon: GalleryHorizontal, adminOnly: false },
   { 
     href: '/admin/products', 
-    label: 'Products (Shop)', 
+    label: 'KDC Store', 
     icon: ShoppingBag, 
     adminOnly: false,
     subLinks: [
-      { href: '/admin/products', label: 'All Products', icon: ShoppingBag },
+      { href: '/admin/products', label: 'Products', icon: ShoppingBag },
       { href: '/admin/products/categories', label: 'Categories', icon: FolderOpen },
       { href: '/admin/products/attributes', label: 'Attributes', icon: Settings },
       { href: '/admin/orders', label: 'Orders', icon: ListOrdered },
