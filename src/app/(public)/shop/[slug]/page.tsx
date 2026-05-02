@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { Star, Download, ShieldCheck, HeartHandshake, Facebook, Twitter, MessageCircle, Mail, ChevronRight } from 'lucide-react'
+import { Star, Download, ShieldCheck, HeartHandshake, MessageCircle, Mail, ChevronRight, X } from 'lucide-react'
 import { AddToCartButton } from '@/components/shop/add-to-cart-button'
 import { ProductMediaGallery } from '@/components/shop/product-media-gallery'
 import { ProductTabs } from '@/components/shop/product-tabs'
@@ -219,11 +219,8 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
                 <div className="flex items-center gap-2 pt-1">
                   <span className="font-semibold text-gray-700">Share:</span>
                   <div className="flex gap-2">
-                    <a href={`https://www.facebook.com/sharer/sharer.php?u=https://kdcuganda.org/shop/${product.slug}`} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-600 transition-colors">
-                      <Facebook className="w-4 h-4" />
-                    </a>
                     <a href={`https://twitter.com/intent/tweet?url=https://kdcuganda.org/shop/${product.slug}`} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-sky-500 transition-colors">
-                      <Twitter className="w-4 h-4" />
+                      <X className="w-4 h-4" />
                     </a>
                     <a href={`https://wa.me/?text=https://kdcuganda.org/shop/${product.slug}`} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-green-500 transition-colors">
                       <MessageCircle className="w-4 h-4" />
