@@ -2,19 +2,20 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { ShoppingCart, Star, Package } from 'lucide-react'
+import { ShoppingCart, Star, Package, ArrowRight } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
+import { Button } from '@/components/ui/button'
 
 interface ProductCardProps {
   product: any
+  view?: 'grid' | 'list'
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, view = 'grid' }: ProductCardProps) {
   const { addItem } = useCart()
 
   const hasDiscount = product.sale_price_usd > 0 && product.sale_price_usd < product.regular_price_usd
   const displayPrice = hasDiscount ? product.sale_price_usd : (product.regular_price_usd || product.price_usd)
-  // Convert USD to UGX for display (1 USD = 3800 UGX)
   const RATE = 3800
   const priceUGX = Math.round(displayPrice * RATE)
   const regularUGX = Math.round((product.regular_price_usd || product.price_usd) * RATE)
@@ -31,79 +32,122 @@ export function ProductCard({ product }: ProductCardProps) {
     })
   }
 
-  const typeLabel = product.type === 'digital' ? 'DIGITAL' : 'AUDIO'
+  if (view === 'list') {
+    return (
+      <div className="group flex bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 h-40 md:h-48">
+        <Link href={`/shop/${product.slug}`} className="relative w-32 md:w-48 shrink-0 overflow-hidden bg-gray-50">
+          <img
+            src={product.image_url || '/placeholder.png'}
+            alt={product.name}
+            className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+          />
+          {hasDiscount && (
+            <div className="absolute top-2 left-2 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+              SALE
+            </div>
+          )}
+        </Link>
+        <div className="p-4 flex flex-col justify-between flex-1">
+          <div>
+            <div className="flex items-center justify-between gap-4 mb-1">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider">{product.category?.name || 'Store'}</p>
+              <span className="text-[9px] font-bold text-primary/50 border border-primary/10 px-1.5 rounded uppercase">
+                {product.type}
+              </span>
+            </div>
+            <h3 className="text-sm md:text-base font-bold text-primary group-hover:text-accent transition-colors line-clamp-1">
+              {product.name}
+            </h3>
+            <p className="text-xs text-gray-500 line-clamp-2 mt-1 hidden md:block">
+              {product.short_description}
+            </p>
+          </div>
+          <div className="flex items-center justify-between mt-auto">
+            <div className="flex flex-col">
+              <div className="flex items-baseline gap-2">
+                <span className="text-base md:text-lg font-black text-primary">
+                  UGX {priceUGX.toLocaleString()}
+                </span>
+                {hasDiscount && (
+                  <span className="text-[10px] text-gray-400 line-through">
+                    {regularUGX.toLocaleString()}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2">
+               <Button asChild variant="outline" size="sm" className="h-8 text-[10px] hidden sm:flex">
+                <Link href={`/shop/${product.slug}`}>Details</Link>
+              </Button>
+              <Button onClick={handleAddToCart} size="sm" className="h-8 bg-accent hover:bg-accent/90 text-primary text-[10px] font-bold">
+                <ShoppingCart className="w-3 h-3 mr-1.5" />
+                Add to Cart
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="group flex flex-col bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300">
-      {/* Image Container */}
-      <Link href={`/shop/${product.slug}`} className="relative aspect-[4/3] overflow-hidden bg-gray-100 block">
-        {product.image_url ? (
-          <img
-            src={product.image_url}
-            alt={product.image_alt || product.name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Package className="w-12 h-12 text-gray-300" />
-          </div>
-        )}
-
-        {/* Badges - top left, exactly as in design */}
-        <div className="absolute top-0 left-0 flex flex-col gap-0">
+    <div className="group flex flex-col bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300">
+      <Link href={`/shop/${product.slug}`} className="relative aspect-[4/5] overflow-hidden bg-gray-50 block">
+        <img
+          src={product.image_url || '/placeholder.png'}
+          alt={product.name}
+          className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+        />
+        <div className="absolute top-2 left-2 flex flex-col gap-1">
           {hasDiscount && (
-            <span className="bg-red-500 text-white text-[10px] font-black uppercase px-2 py-1 leading-none">
-              SALE!
+            <span className="bg-red-500 text-white text-[9px] font-bold uppercase px-2 py-0.5 rounded-full shadow-sm">
+              SALE
             </span>
           )}
         </div>
-        <div className="absolute top-0 right-0">
-          <span className="bg-[#1e3a5f] text-white text-[9px] font-bold uppercase px-2 py-1 leading-none block">
-            {typeLabel}
+        <div className="absolute top-2 right-2">
+          <span className="bg-primary/90 backdrop-blur-sm text-white text-[8px] font-bold uppercase px-1.5 py-0.5 rounded shadow-sm">
+            {product.type === 'digital' ? 'DIGITAL' : 'PHYSICAL'}
           </span>
         </div>
       </Link>
 
-      {/* Content */}
-      <div className="p-4 flex flex-col flex-1">
-        {/* Category */}
-        <p className="text-[11px] text-gray-400 mb-1">{product.category?.name || '30 Days Series'}</p>
-
-        {/* Title */}
-        <Link href={`/shop/${product.slug}`}>
-          <h3 className="text-sm font-bold text-gray-900 group-hover:text-[#d4a017] transition-colors line-clamp-2 leading-snug mb-2">
-            {product.name}
-          </h3>
-        </Link>
-
-        {/* Star Rating */}
-        <div className="flex items-center gap-1 mb-3">
-          {[...Array(5)].map((_, i) => (
-            <Star key={i} className="w-3 h-3 fill-[#f5a623] text-[#f5a623]" />
-          ))}
-          <span className="text-[11px] text-gray-400 ml-1">({product.review_count || 0})</span>
+      <div className="p-2.5 sm:p-4 flex flex-col flex-1">
+        <div className="mb-2">
+          <p className="text-[9px] text-gray-400 uppercase tracking-tighter mb-0.5">{product.category?.name || 'General'}</p>
+          <Link href={`/shop/${product.slug}`}>
+            <h3 className="text-[12px] sm:text-sm font-bold text-primary group-hover:text-accent transition-colors line-clamp-2 leading-tight">
+              {product.name}
+            </h3>
+          </Link>
         </div>
 
-        {/* Price */}
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-base font-black text-gray-900">
-            UGX {priceUGX.toLocaleString()}
-          </span>
-          {hasDiscount && (
-            <span className="text-sm text-gray-400 line-through">
-              UGX {regularUGX.toLocaleString()}
+        <div className="mt-auto pt-2">
+          <div className="flex flex-col gap-0.5 mb-3">
+            <span className="text-sm sm:text-base font-black text-primary">
+              UGX {priceUGX.toLocaleString()}
             </span>
-          )}
-        </div>
+            {hasDiscount && (
+              <span className="text-[10px] text-gray-400 line-through leading-none">
+                {regularUGX.toLocaleString()}
+              </span>
+            )}
+          </div>
 
-        {/* Add to Cart Button - full width, gold/yellow, exactly as in design */}
-        <button
-          onClick={handleAddToCart}
-          className="w-full flex items-center justify-center gap-2 bg-[#d4a017] hover:bg-[#b88a12] text-white text-[12px] font-bold uppercase tracking-wide py-2.5 rounded transition-colors duration-200 mt-auto"
-        >
-          <ShoppingCart className="w-3.5 h-3.5" />
-          Add to Cart
-        </button>
+          <div className="flex gap-1">
+            <Button 
+              onClick={handleAddToCart}
+              size="sm" 
+              className="flex-1 h-7 sm:h-8 bg-accent hover:bg-accent/90 text-primary text-[9px] sm:text-[10px] font-bold px-1"
+            >
+              <ShoppingCart className="w-3 h-3 mr-1 hidden sm:block" />
+              Add
+            </Button>
+            <Button asChild variant="outline" size="sm" className="h-7 sm:h-8 flex-1 border-primary/10 text-primary text-[9px] sm:text-[10px] px-1">
+              <Link href={`/shop/${product.slug}`}>View</Link>
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   )

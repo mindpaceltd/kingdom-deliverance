@@ -90,16 +90,16 @@ export function ProductCarousel({ products, title = "Featured Products", subtitl
   }
 
   return (
-    <section className="py-24 bg-gradient-to-br from-gray-50 to-white">
+    <section className="py-12 bg-gradient-to-br from-gray-50 to-white">
       <div className="container px-4">
         {/* Header */}
-        <div className="mb-14 text-center space-y-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/8 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
-            <ShoppingCart className="h-3.5 w-3.5" />
+        <div className="mb-8 text-center space-y-3">
+          <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/8 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-accent">
+            <ShoppingCart className="h-3 w-3" />
             KDC Store
           </div>
-          <h2 className="text-4xl font-bold md:text-5xl font-serif text-primary">{title}</h2>
-          <p className="text-base text-primary/60 max-w-xl mx-auto md:text-lg">{subtitle}</p>
+          <h2 className="text-3xl font-bold md:text-4xl font-serif text-primary">{title}</h2>
+          <p className="text-sm text-primary/60 max-w-xl mx-auto">{subtitle}</p>
         </div>
 
         {/* Carousel */}
@@ -121,9 +121,9 @@ export function ProductCarousel({ products, title = "Featured Products", subtitl
                 return (
                   <div
                     key={product.id}
-                    className="snap-start min-w-[85%] sm:min-w-[45%] lg:min-w-[calc((100%-4rem)/5)] rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col"
+                    className="snap-start min-w-[calc((100%-1rem)/2)] sm:min-w-[calc((100%-1rem)/2)] md:min-w-[calc((100%-3rem)/4)] lg:min-w-[calc((100%-4rem)/5)] rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col"
                   >
-                    <div className="relative overflow-hidden rounded-t-2xl bg-gray-50 aspect-[3/4] w-full">
+                    <div className="relative overflow-hidden rounded-t-2xl bg-gray-50 aspect-[4/5] w-full">
                       <img
                         src={product.image_url}
                         alt={product.name}
@@ -138,12 +138,12 @@ export function ProductCarousel({ products, title = "Featured Products", subtitl
                         {product.type === 'digital' ? 'DIGITAL' : 'PHYSICAL'}
                       </div>
                     </div>
-                    <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-bold text-primary line-clamp-2 leading-snug">
+                    <div className="p-3 flex-1 flex flex-col justify-between space-y-2">
+                      <div className="space-y-0.5">
+                        <h3 className="text-[13px] font-bold text-primary line-clamp-2 leading-tight">
                           {product.name}
                         </h3>
-                        <p className="text-[11px] text-gray-500 line-clamp-2 leading-relaxed">
+                        <p className="text-[10px] text-gray-500 line-clamp-2 leading-tight">
                           {product.short_description}
                         </p>
                       </div>
@@ -221,8 +221,8 @@ export function ProductCarousel({ products, title = "Featured Products", subtitl
         </div>
 
         {/* View All Button */}
-        <div className="text-center mt-12">
-          <Button asChild size="lg" className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white px-8">
+        <div className="text-center mt-8">
+          <Button asChild size="sm" className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white px-6">
             <Link href="/shop">
               View All Products
             </Link>

@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { ProductCard } from '@/components/shop/product-card'
 import { ShopFilters } from '@/components/shop/shop-filters'
-import { SortSelect } from '@/components/shop/sort-select'
+import { ShopContent } from '@/components/shop/shop-content'
 import { ShoppingBag, Zap, Lock, HeartHandshake, BookOpen } from 'lucide-react'
 
 export async function generateMetadata() {
@@ -137,36 +136,7 @@ export default async function ShopPage({
             </aside>
 
             {/* Products */}
-            <div className="flex-1">
-              {loadError && (
-                <div className="mb-6 bg-white rounded-2xl border border-red-200 px-4 py-3 shadow-sm">
-                  <p className="text-sm text-red-700 font-semibold">Shop is temporarily unavailable.</p>
-                  <p className="text-xs text-red-600/80">We couldn’t load products right now. Please try again shortly.</p>
-                </div>
-              )}
-              {/* Toolbar */}
-              <div className="flex items-center justify-between mb-6 bg-white rounded-2xl border border-gray-200 px-4 py-3 shadow-sm">
-                <p className="text-sm text-gray-500">
-                  Showing <span className="font-bold text-gray-800">{products.length}</span> products
-                </p>
-                <SortSelect />
-              </div>
-
-              {products.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                  {products.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
-              ) : (
-                <div className="py-20 text-center rounded-2xl border-2 border-dashed border-gray-200 bg-white">
-                  <ShoppingBag className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                  <h3 className="text-lg font-bold text-gray-700 mb-1">No products found</h3>
-                  <p className="text-sm text-gray-400">Try adjusting your filters or search query.</p>
-                </div>
-              )}
-            </div>
-
+            <ShopContent products={products} />
           </div>
         </div>
       </section>
