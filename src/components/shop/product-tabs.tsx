@@ -40,7 +40,7 @@ export function ProductTabs({ description, additionalInfo, reviews, faqs }: Prod
       <div className="py-10 px-6 lg:px-10">
         <TabsContent value="description" className="mt-0">
           <div 
-            className="prose prose-lg prose-slate max-w-none prose-p:leading-loose prose-p:text-primary/70"
+            className="prose prose-base prose-slate max-w-none prose-p:leading-loose prose-p:text-primary/70"
             dangerouslySetInnerHTML={{ __html: description }}
           />
         </TabsContent>

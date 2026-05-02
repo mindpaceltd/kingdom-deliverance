@@ -218,6 +218,14 @@ const HEADING_OPTIONS = [
   { label: 'Heading 4', value: 4 },
 ] as const
 
+const FONT_SIZE_OPTIONS = [
+  { label: 'Default', value: '' },
+  { label: 'Small', value: '14px' },
+  { label: 'Normal', value: '16px' },
+  { label: 'Large', value: '18px' },
+  { label: 'XL', value: '20px' },
+] as const
+
 // ---------------------------------------------------------------------------
 // RichTextEditor
 // ---------------------------------------------------------------------------
@@ -336,7 +344,24 @@ export function RichTextEditor({
     }
   }
 
+  function getActiveFontSize(): string {
+    if (!editor) return ''
+    return editor.getAttributes('textStyle').fontSize ?? ''
+  }
+
+  function setFontSize(size: string) {
+    if (!editor) return
+
+    if (!size) {
+      editor.chain().focus().setTextStyle({ fontSize: '16px' }).run()
+      return
+    }
+
+    editor.chain().focus().setTextStyle({ fontSize: size }).run()
+  }
+
   const activeHeading = getActiveHeading()
+  const activeFontSize = getActiveFontSize()
 
   // ---------------------------------------------------------------------------
   // Render
@@ -364,6 +389,20 @@ export function RichTextEditor({
           aria-label="Text style"
         >
           {HEADING_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={activeFontSize}
+          onChange={(e) => setFontSize(e.target.value)}
+          disabled={disabled}
+          className="h-7 rounded border border-input bg-background px-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-40"
+          aria-label="Font size"
+        >
+          {FONT_SIZE_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>

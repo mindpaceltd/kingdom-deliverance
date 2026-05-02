@@ -19,9 +19,12 @@ import { GooglePropertySetup } from "./google-property-setup"
 export function AnalyticsDashboard() {
   const [loading, setLoading] = React.useState(true)
   const [userId, setUserId] = React.useState<string | null>(null)
+  const [googleUserEmail, setGoogleUserEmail] = React.useState<string | null>(null)
   const [topPosts, setTopPosts] = React.useState<any[]>([])
   const [dbStats, setDbStats] = React.useState({ users: 0, messages: 0, testimonies: 0, totalViews: 0 })
   const [isGoogleConnected, setIsGoogleConnected] = React.useState(false)
+  const [gaConfigured, setGaConfigured] = React.useState(false)
+  const [scConfigured, setScConfigured] = React.useState(false)
   const [gaData, setGaData] = React.useState<any>(null)
   const [scData, setScData] = React.useState<any>(null)
   const [gaLoading, setGaLoading] = React.useState(false)
@@ -31,7 +34,10 @@ export function AnalyticsDashboard() {
     async function fetchData() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) setUserId(user.id)
+      if (user) {
+        setUserId(user.id)
+        setGoogleUserEmail(user.email || null)
+      }
 
       const [
         { data: posts },
@@ -39,14 +45,18 @@ export function AnalyticsDashboard() {
         { count: msgCount },
         { count: testCount },
         { data: allPosts },
-        { data: googleIntegration }
+        { data: googleIntegration },
+        { data: analyticsConfig },
+        { data: searchConsoleConfig }
       ] = await Promise.all([
         supabase.from('posts').select('title, views, slug').order('views', { ascending: false }).limit(5),
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('contact_submissions').select('*', { count: 'exact', head: true }),
         supabase.from('testimonies').select('*', { count: 'exact', head: true }),
         supabase.from('posts').select('views'),
-        user ? supabase.from('users_google_integrations').select('user_id').eq('user_id', user.id).single() : { data: null }
+        user ? supabase.from('users_google_integrations').select('user_id').eq('user_id', user.id).single() : { data: null },
+        user ? supabase.from('analytics_config').select('property_id').eq('user_id', user.id).single() : { data: null },
+        user ? supabase.from('search_console_config').select('site_url').eq('user_id', user.id).single() : { data: null }
       ])
 
       if (posts) setTopPosts(posts)
@@ -57,6 +67,8 @@ export function AnalyticsDashboard() {
         totalViews: allPosts?.reduce((a, p) => a + (p.views || 0), 0) || 0
       })
       setIsGoogleConnected(!!googleIntegration)
+      setGaConfigured(!!analyticsConfig?.property_id)
+      setScConfigured(!!searchConsoleConfig?.site_url)
       setLoading(false)
     }
     fetchData()
@@ -314,8 +326,19 @@ export function AnalyticsDashboard() {
           <CardContent className="space-y-6">
             <GoogleConnectionCard
               isConnected={isGoogleConnected}
+              userEmail={googleUserEmail}
               onDisconnect={handleDisconnect}
             />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-border p-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-[0.2em] mb-2">GA4 Status</p>
+                <p className="text-sm font-semibold">{gaConfigured ? 'Property configured' : 'Property not configured'}</p>
+              </div>
+              <div className="rounded-xl border border-border p-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-[0.2em] mb-2">Search Console</p>
+                <p className="text-sm font-semibold">{scConfigured ? 'Site configured' : 'Site not configured'}</p>
+              </div>
+            </div>
             {isGoogleConnected && userId && (
               <GooglePropertySetup
                 isConnected={isGoogleConnected}

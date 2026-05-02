@@ -61,6 +61,9 @@ export default function CheckoutPage() {
   const [currency, setCurrency] = useState('UGX')
   const [gateway, setGateway] = useState<'pesapal' | 'paypal'>('pesapal')
   const [shippingMethod, setShippingMethod] = useState<'standard' | 'express'>('standard')
+  const [createAccount, setCreateAccount] = useState(false)
+  const [authError, setAuthError] = useState('')
+  const [currentUser, setCurrentUser] = useState<any>(null)
   const [formData, setFormData] = useState({
     email: '',
     name: '',
@@ -68,6 +71,7 @@ export default function CheckoutPage() {
     address: '',
     city: '',
     country: 'Uganda',
+    password: '',
   })
 
   const allDigital = items.every(item => item.type === 'digital')
@@ -89,6 +93,7 @@ export default function CheckoutPage() {
     )
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
+        setCurrentUser(user)
         setFormData(prev => ({
           ...prev,
           email: user.email || prev.email,
@@ -104,8 +109,45 @@ export default function CheckoutPage() {
     if (items.length === 0) return
 
     setLoading(true)
+    setAuthError('')
+
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    if (createAccount && !currentUser) {
+      if (!formData.password || formData.password.length < 6) {
+        setAuthError('Please choose a password with at least 6 characters.')
+        setLoading(false)
+        return
+      }
+
+      const { error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.name,
+            phone: formData.phone,
+          },
+        },
+      })
+
+      if (error) {
+        setAuthError(error.message)
+        setLoading(false)
+        return
+      }
+    }
+
     const result = await createOrder({
-      ...formData,
+      email: formData.email,
+      name: formData.name,
+      phone: formData.phone,
+      address: formData.address,
+      city: formData.city,
+      country: formData.country,
       items,
       subtotal: convertedTotal,
       shippingMethod: allDigital ? undefined : shippingMethod,
@@ -145,7 +187,11 @@ export default function CheckoutPage() {
               <h3 className="text-lg font-bold mb-5 flex items-center gap-2 text-gray-900">
                 <ShieldCheck className="w-5 h-5 text-[#d4a017]" /> Customer Information
               </h3>
-              <p className="text-xs text-gray-500 mb-4">No account required — checkout as a guest.</p>
+              {currentUser ? (
+                <p className="text-xs text-gray-500 mb-4">You are signed in as <span className="font-semibold">{currentUser.email}</span>. Your order will use this account.</p>
+              ) : (
+                <p className="text-xs text-gray-500 mb-4">Checkout as a guest or create an account to track orders and downloads.</p>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="name" className="text-sm font-semibold">Full Name *</Label>
@@ -178,6 +224,32 @@ export default function CheckoutPage() {
                     value={formData.phone}
                     onChange={e => setFormData({...formData, phone: e.target.value})}
                   />
+                </div>
+                <div className="space-y-4">
+                  <label className="flex items-center gap-2 text-sm font-semibold">
+                    <input
+                      type="checkbox"
+                      checked={createAccount}
+                      disabled={!!currentUser}
+                      onChange={e => setCreateAccount(e.target.checked)}
+                      className="h-4 w-4 rounded border-muted-foreground text-primary focus:ring-primary"
+                    />
+                    Create an account with this email
+                  </label>
+                  {createAccount && !currentUser && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="password" className="text-sm font-semibold">Password *</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        required
+                        placeholder="••••••••"
+                        value={formData.password}
+                        onChange={e => setFormData({...formData, password: e.target.value})}
+                      />
+                      <p className="text-xs text-muted-foreground">An account will be created so you can track orders and downloads.</p>
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="currency" className="text-sm font-semibold">Payment Currency</Label>
@@ -244,6 +316,11 @@ export default function CheckoutPage() {
                     <p className="text-xs text-blue-700">No delivery address needed. You&apos;ll receive download links via email after payment.</p>
                   </div>
                 </div>
+              </div>
+            )}
+            {authError && (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                {authError}
               </div>
             )}
 

@@ -45,8 +45,10 @@ export default async function AdminOrdersPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
-                        <span className="font-medium text-primary">{order.customer_name}</span>
-                        <span className="text-xs text-muted-foreground">{order.customer_email}</span>
+                        <span className="font-medium text-primary">
+                          {order.customer_name || order.shipping_address?.name || order.email}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{order.email}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-primary font-bold">

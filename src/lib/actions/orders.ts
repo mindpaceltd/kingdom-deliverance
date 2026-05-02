@@ -68,22 +68,17 @@ export async function createOrder(data: {
   const orderPayload: any = {
     user_id: user?.id || null,
     email: data.email,
-    customer_name: data.name,
-    customer_phone: data.phone,
     total_amount: totalInCurrency,
     currency: data.currency,
     status: 'pending',
-    payment_status: 'pending'
-  }
-
-  if (hasPhysicalItems) {
-    orderPayload.shipping_address = {
+    payment_status: 'pending',
+    shipping_address: {
       name: data.name,
       phone: data.phone,
-      address: data.address,
-      city: data.city,
-      country: data.country
-    }
+      address: data.address || null,
+      city: data.city || null,
+      country: data.country || null,
+    },
   }
 
   const { data: order, error: orderError } = await adminClient

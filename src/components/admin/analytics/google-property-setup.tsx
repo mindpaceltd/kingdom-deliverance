@@ -30,12 +30,38 @@ export function GooglePropertySetup({ isConnected, userId, onConfigSaved }: Prop
 
   const [analyticsConfig, setAnalyticsConfig] = React.useState<any>(null)
   const [scConfig, setScConfig] = React.useState<any>(null)
+  const [newPropertyName, setNewPropertyName] = React.useState('')
+  const [newSiteUrl, setNewSiteUrl] = React.useState('')
+  const [createPropertyLoading, setCreatePropertyLoading] = React.useState(false)
+  const [createSiteLoading, setCreateSiteLoading] = React.useState(false)
+  const [verifyLoading, setVerifyLoading] = React.useState(false)
+  const [createError, setCreateError] = React.useState('')
+  const [verificationToken, setVerificationToken] = React.useState<string | null>(null)
+  const [verificationStatus, setVerificationStatus] = React.useState<'idle' | 'pending' | 'failed' | 'verified'>('idle')
 
   React.useEffect(() => {
     if (!isConnected) return
     const supabase = createClient()
-    supabase.from('analytics_config').select('*').eq('user_id', userId).single().then(({ data }) => setAnalyticsConfig(data))
-    supabase.from('search_console_config').select('*').eq('user_id', userId).single().then(({ data }) => setScConfig(data))
+
+    fetchAccounts()
+
+    supabase.from('analytics_config').select('*').eq('user_id', userId).single().then(({ data }) => {
+      setAnalyticsConfig(data)
+      if (data?.account_id) {
+        setSelectedAccount(data.account_id)
+        fetchProperties(data.account_id)
+      }
+      if (data?.property_id) {
+        setSelectedProperty(data.property_id)
+      }
+    })
+
+    supabase.from('search_console_config').select('*').eq('user_id', userId).single().then(({ data }) => {
+      setScConfig(data)
+      if (data?.site_url) {
+        setSelectedSite(data.site_url)
+      }
+    })
   }, [isConnected, userId])
 
   async function fetchAccounts() {
@@ -77,6 +103,43 @@ export function GooglePropertySetup({ isConnected, userId, onConfigSaved }: Prop
     fetchSites()
   }
 
+  async function createProperty() {
+    if (!selectedAccount || !newPropertyName.trim()) {
+      setCreateError('Choose an account and enter a property name.')
+      return
+    }
+
+    setCreatePropertyLoading(true)
+    setCreateError('')
+
+    try {
+      const res = await fetch('/api/google/analytics/properties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accountId: selectedAccount,
+          displayName: newPropertyName.trim(),
+        }),
+      })
+      const result = await res.json()
+
+      if (!res.ok || result.error) {
+        throw new Error(result.error || 'Failed to create GA4 property.')
+      }
+
+      const property = result.property
+      setProperties((prev) => [property, ...prev])
+      setSelectedProperty(property.name)
+      setAnalyticsConfig({ ...analyticsConfig, account_id: selectedAccount, property_id: property.name })
+      setNewPropertyName('')
+      await saveAnalyticsConfig()
+    } catch (error: any) {
+      setCreateError(error?.message || 'Could not create property.')
+    } finally {
+      setCreatePropertyLoading(false)
+    }
+  }
+
   async function saveScConfig() {
     setSaving(true)
     const supabase = createClient()
@@ -87,6 +150,103 @@ export function GooglePropertySetup({ isConnected, userId, onConfigSaved }: Prop
     }, { onConflict: 'user_id' })
     setSaving(false)
     onConfigSaved()
+  }
+
+  async function addSite() {
+    if (!newSiteUrl.trim()) {
+      setCreateError('Enter a Search Console site URL to add.')
+      return
+    }
+
+    setCreateSiteLoading(true)
+    setCreateError('')
+
+    try {
+      const res = await fetch('/api/google/search-console/sites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ siteUrl: newSiteUrl.trim(), autoVerify: true }),
+      })
+      const result = await res.json()
+
+      if (!res.ok || result.error) {
+        throw new Error(result.error || 'Failed to add and verify Search Console site.')
+      }
+
+      const site = result.site
+      const verification = result.verificationResult
+
+      setSites((prev) => [site, ...prev])
+      setSelectedSite(site.siteUrl)
+      setScConfig({ ...scConfig, site_url: site.siteUrl })
+      setNewSiteUrl('')
+
+      if (verification?.verified) {
+        setVerificationStatus('verified')
+        setVerificationToken(null)
+        await saveScConfig()
+      } else if (verification?.token) {
+        setVerificationStatus('failed')
+        setVerificationToken(verification.token?.token || null)
+        setCreateError(
+          `Site added, but verification requires a meta tag. Add this token to your site and try again: ${verification.token?.token}`
+        )
+      } else {
+        setVerificationStatus('failed')
+        setVerificationToken(null)
+        setCreateError(verification?.error || 'Site added, but verification failed.')
+      }
+    } catch (error: any) {
+      setCreateError(error?.message || 'Could not add site.')
+    } finally {
+      setCreateSiteLoading(false)
+    }
+  }
+
+  async function retryVerification() {
+    if (!selectedSite) {
+      setCreateError('Select a site to verify.')
+      return
+    }
+
+    setVerifyLoading(true)
+    setCreateError('')
+    setVerificationStatus('pending')
+
+    try {
+      const res = await fetch('/api/google/search-console/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ siteUrl: selectedSite }),
+      })
+      const result = await res.json()
+
+      if (!res.ok || result.error) {
+        throw new Error(result.error || 'Verification retry failed.')
+      }
+
+      if (result.verified) {
+        setVerificationStatus('verified')
+        setVerificationToken(null)
+        setCreateError('Site verified successfully.')
+        await saveScConfig()
+      } else if (result.token) {
+        setVerificationStatus('failed')
+        setVerificationToken(result.token?.token || null)
+        setCreateError(
+          `Verification still pending. Add this token to your site and try again: ${result.token?.token}`
+        )
+      } else {
+        setVerificationStatus('failed')
+        setVerificationToken(null)
+        setCreateError('Verification still pending. Please add the meta tag and retry.')
+      }
+    } catch (error: any) {
+      setVerificationStatus('failed')
+      setCreateError(error?.message || 'Could not verify site.')
+    } finally {
+      setVerifyLoading(false)
+    }
   }
 
   if (!isConnected) {
@@ -144,6 +304,24 @@ export function GooglePropertySetup({ isConnected, userId, onConfigSaved }: Prop
                     </div>
                   </div>
                 )}
+
+                <div className="rounded-xl border border-border p-4 bg-muted/5">
+                  <Label className="text-xs font-bold uppercase text-muted-foreground">Create New GA4 Property</Label>
+                  <div className="mt-3 space-y-3">
+                    <input
+                      value={newPropertyName}
+                      onChange={(e) => setNewPropertyName(e.target.value)}
+                      placeholder="My Church Website"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                    />
+                    <Button size="sm" onClick={createProperty} disabled={createPropertyLoading || !selectedAccount} className="gap-2">
+                      {createPropertyLoading ? <Loader2 className="size-4 animate-spin" /> : <ChevronRight className="size-4" />}
+                      Create Property
+                    </Button>
+                    <p className="text-xs text-muted-foreground">Creates a new GA4 property under the selected Google Analytics account.</p>
+                    {createError && <p className="text-xs text-destructive">{createError}</p>}
+                  </div>
+                </div>
                 {selectedProperty && (
                   <Button size="sm" onClick={saveAnalyticsConfig} disabled={saving} className="gap-2">
                     {saving ? <Loader2 className="size-4 animate-spin" /> : <ChevronRight className="size-4" />}
@@ -195,6 +373,44 @@ export function GooglePropertySetup({ isConnected, userId, onConfigSaved }: Prop
                     Finish Setup
                   </Button>
                 )}
+              </div>
+            )}
+
+            <div className="rounded-xl border border-border p-4 bg-muted/5">
+              <Label className="text-xs font-bold uppercase text-muted-foreground">Add New Search Console Site</Label>
+              <div className="mt-3 space-y-3">
+                <input
+                  value={newSiteUrl}
+                  onChange={(e) => setNewSiteUrl(e.target.value)}
+                  placeholder="https://kdcuganda.org"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                />
+                <Button size="sm" onClick={addSite} disabled={createSiteLoading} className="gap-2">
+                  {createSiteLoading ? <Loader2 className="size-4 animate-spin" /> : <ChevronRight className="size-4" />}
+                  Add Site and Verify
+                </Button>
+                <p className="text-xs text-muted-foreground">Adds the site and attempts automatic Search Console ownership verification.</p>
+                {createError && <p className="text-xs text-destructive">{createError}</p>}
+              </div>
+              {(verificationStatus === 'failed' || verificationStatus === 'pending') && verificationToken && (
+                <div className="mt-4 rounded-xl border border-border p-4 bg-muted/10">
+                  <p className="text-sm font-semibold">Retry Site Verification</p>
+                  <p className="text-xs text-muted-foreground">
+                    Add this meta tag to the site&apos;s homepage and click retry.
+                  </p>
+                  <div className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-mono text-muted-foreground break-words">
+                    {`<meta name="google-site-verification" content="${verificationToken}" />`}
+                  </div>
+                  <Button size="sm" onClick={retryVerification} disabled={verifyLoading} className="gap-2 mt-3">
+                    {verifyLoading ? <Loader2 className="size-4 animate-spin" /> : <ChevronRight className="size-4" />}
+                    Retry Verification
+                  </Button>
+                </div>
+              )}
+            </div>
+            {verificationStatus === 'verified' && (
+              <div className="rounded-xl border border-border p-4 bg-muted/10 text-sm text-foreground">
+                Site verified successfully. Finish setup by selecting the site above if needed.
               </div>
             )}
           </div>

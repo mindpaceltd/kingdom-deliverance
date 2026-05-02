@@ -26,7 +26,11 @@ export async function GET(request: Request) {
 
   const scopes = [
     'https://www.googleapis.com/auth/analytics.readonly',
+    'https://www.googleapis.com/auth/analytics.edit',
     'https://www.googleapis.com/auth/webmasters.readonly',
+    'https://www.googleapis.com/auth/webmasters',
+    'https://www.googleapis.com/auth/siteverification',
+    'https://www.googleapis.com/auth/siteverification.verify_only',
     'openid',
     'profile',
     'email'

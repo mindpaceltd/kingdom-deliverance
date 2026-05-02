@@ -233,52 +233,55 @@ export function UsersManager({ initialUsers, currentUserId }: UsersManagerProps)
   ]
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden -m-6 bg-background">
-      {/* Header with Search & Tabs combined for a cleaner look */}
-      <header className="shrink-0 border-b border-border bg-background/95 px-6 py-4 backdrop-blur">
-         <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex gap-1">
-               {(['all', ...ROLES] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={cn(
-                      "px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap",
-                      activeTab === tab ? "bg-background shadow-sm text-primary border border-border/50" : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {tab === 'all' ? 'All' : ROLE_LABELS[tab]}
-                    <span className="ml-1.5 opacity-50">({roleCounts[tab]})</span>
-                  </button>
-               ))}
-            </div>
+    <div className="space-y-6">
+      <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+        <header className="px-6 py-5 bg-background/95 border-b border-border">
+           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap gap-2">
+                 {(['all', ...ROLES] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={cn(
+                        "px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap",
+                        activeTab === tab ? "bg-background shadow-sm text-primary border border-border/50" : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {tab === 'all' ? 'All' : ROLE_LABELS[tab]}
+                      <span className="ml-1.5 opacity-50">({roleCounts[tab]})</span>
+                    </button>
+                 ))}
+              </div>
 
-            <div className="flex items-center gap-3">
-               <div className="relative w-64">
-                  <SearchIcon className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search users..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 h-9 text-xs"
-                  />
-               </div>
-               <Button onClick={() => setInviteOpen(true)} size="sm">
-                  <UserPlusIcon className="mr-2 size-4" /> Add New
-               </Button>
-            </div>
-         </div>
-      </header>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                 <div className="relative w-full sm:w-72">
+                    <SearchIcon className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search users..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 h-9 text-xs"
+                    />
+                 </div>
+                 <Button onClick={() => setInviteOpen(true)} size="sm">
+                    <UserPlusIcon className="mr-2 size-4" /> Add New
+                 </Button>
+              </div>
+           </div>
+        </header>
 
-      {/* Data Table */}
-      <main className="flex-1 overflow-y-auto">
-         <DataTable
-           columns={columns}
-           data={filteredUsers}
-           hideSearch={true}
-           className="border-0 rounded-none shadow-none"
-         />
-      </main>
+        {/* Data Table */}
+        <main className="overflow-x-auto">
+          <div className="min-w-full">
+            <DataTable
+              columns={columns}
+              data={filteredUsers}
+              hideSearch={true}
+              className="border-0 rounded-none shadow-none"
+            />
+          </div>
+        </main>
+      </div>
 
       {/* Invite Modal */}
       <Sheet open={inviteOpen} onOpenChange={setInviteOpen}>
