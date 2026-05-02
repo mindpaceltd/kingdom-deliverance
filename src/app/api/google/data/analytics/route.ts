@@ -59,9 +59,12 @@ export async function GET() {
     return NextResponse.json({ report: data, topPages });
   } catch (err: any) {
     console.error('Analytics API error:', err);
+    const status = err.message?.includes('Google account not connected') || err.message?.includes('Unauthorized')
+      ? 401
+      : 500;
     return NextResponse.json({ 
       error: err.message || 'Failed to fetch analytics data',
       details: process.env.NODE_ENV === 'development' ? err.stack : undefined
-    }, { status: 500 });
+    }, { status });
   }
 }

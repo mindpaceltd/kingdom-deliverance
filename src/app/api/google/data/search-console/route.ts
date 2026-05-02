@@ -70,9 +70,12 @@ export async function GET() {
     return NextResponse.json({ summary, topQueries, topPages });
   } catch (err: any) {
     console.error('Search Console API error:', err);
+    const status = err.message?.includes('Google account not connected') || err.message?.includes('Unauthorized')
+      ? 401
+      : 500;
     return NextResponse.json({ 
       error: err.message || 'Failed to fetch search console data',
       details: process.env.NODE_ENV === 'development' ? err.stack : undefined
-    }, { status: 500 });
+    }, { status });
   }
 }

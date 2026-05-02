@@ -16,6 +16,9 @@ export async function GET() {
     const { data } = await analyticsAdmin.accounts.list();
     return NextResponse.json({ accounts: data.accounts || [] });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const status = err.message?.includes('Google account not connected') || err.message?.includes('Unauthorized')
+      ? 401
+      : 500;
+    return NextResponse.json({ error: err.message }, { status });
   }
 }

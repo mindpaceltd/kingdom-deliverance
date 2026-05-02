@@ -52,6 +52,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ property: data });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const status = err.message?.includes('Google account not connected') || err.message?.includes('Unauthorized')
+      ? 401
+      : 500;
+    return NextResponse.json({ error: err.message }, { status });
   }
 }

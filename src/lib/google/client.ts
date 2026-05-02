@@ -14,7 +14,11 @@ export async function getAuthedGoogleClient(userId: string) {
     .eq('user_id', userId)
     .single();
 
-  if (error || !integration) {
+  if (error) {
+    throw new Error('Failed to load Google integration.');
+  }
+
+  if (!integration || (!integration.access_token && !integration.refresh_token)) {
     throw new Error('Google account not connected.');
   }
 
