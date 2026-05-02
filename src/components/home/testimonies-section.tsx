@@ -78,7 +78,7 @@ export function TestimoniesSection() {
               <CardContent className="p-8 space-y-6">
                 <Quote className="w-10 h-10 text-accent/20" />
                 <p className="text-primary/75 leading-relaxed text-sm italic line-clamp-4">
-                  "{testimony.message}"
+                  "{testimony.testimony || testimony.message}"
                 </p>
                 <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
                   <p className="font-bold font-serif text-primary">{testimony.name}</p>

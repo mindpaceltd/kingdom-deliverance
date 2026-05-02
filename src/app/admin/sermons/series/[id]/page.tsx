@@ -1,4 +1,4 @@
-import { notFound } from 'next'
+import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SeriesEditorClient } from '@/components/admin/sermons/series-editor-client'
 import type { SermonSeries } from '@/lib/types'

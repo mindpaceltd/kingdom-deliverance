@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { Toggle } from '@/components/ui/toggle'
 import { Edit2 } from 'lucide-react'
 import { SettingsTabs } from '@/components/admin/settings/settings-tabs'
 

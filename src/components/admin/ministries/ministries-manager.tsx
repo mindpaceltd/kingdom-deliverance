@@ -125,7 +125,7 @@ export function MinistriesManager({ initialMinistries }: MinistriesManagerProps)
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value ?? 'all')}>
             <SelectTrigger className="w-[140px] h-9">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>

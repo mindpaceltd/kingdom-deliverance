@@ -371,7 +371,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                 </div>
                 <div className="space-y-1.5">
                    <Label>Encryption</Label>
-                   <Select value={values.smtp_encryption || 'tls'} onValueChange={v => handleChange('smtp_encryption', v)}>
+                   <Select value={values.smtp_encryption || 'tls'} onValueChange={v => handleChange('smtp_encryption', v ?? 'tls')}>
                       <SelectTrigger>
                          <SelectValue />
                       </SelectTrigger>
@@ -459,7 +459,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                       </div>
                       <div className="space-y-1.5">
                          <Label className="text-xs">Environment</Label>
-                         <Select value={values.paypal_mode || 'sandbox'} onValueChange={v => handleChange('paypal_mode', v)}>
+                         <Select value={values.paypal_mode || 'sandbox'} onValueChange={v => handleChange('paypal_mode', v ?? 'sandbox')}>
                             <SelectTrigger>
                                <SelectValue />
                             </SelectTrigger>
@@ -497,7 +497,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                       </div>
                       <div className="space-y-1.5">
                          <Label className="text-xs">Environment</Label>
-                         <Select value={values.pesapal_mode || 'sandbox'} onValueChange={v => handleChange('pesapal_mode', v)}>
+                         <Select value={values.pesapal_mode || 'sandbox'} onValueChange={v => handleChange('pesapal_mode', v ?? 'sandbox')}>
                             <SelectTrigger>
                                <SelectValue />
                             </SelectTrigger>

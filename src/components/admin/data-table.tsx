@@ -11,6 +11,7 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table'
+import { cn } from '@/lib/utils'
 
 export interface ColumnDef<T> {
   key: string
@@ -28,6 +29,8 @@ interface DataTableProps<T> {
   onSearch?: (query: string) => void
   searchValue?: string
   hideSearch?: boolean
+  className?: string
+  isLoading?: boolean
 }
 
 const DEFAULT_PAGE_SIZE = 10
@@ -42,7 +45,19 @@ export function DataTable<T>({
   onSearch,
   searchValue,
   hideSearch = false,
+  className,
+  isLoading = false,
 }: DataTableProps<T>) {
+  if (isLoading) {
+    return (
+      <div className={cn('space-y-4', className)}>
+        <div className="rounded-md border bg-background p-6 text-center text-sm text-muted-foreground">
+          Loading…
+        </div>
+      </div>
+    )
+  }
+
   const [internalSearch, setInternalSearch] = React.useState('')
   const [currentPage, setCurrentPage] = React.useState(1)
 
@@ -90,7 +105,7 @@ export function DataTable<T>({
   const pageNumbers = getPageNumbers(safePage, totalPages)
 
   return (
-    <div className="space-y-4">
+    <div className={cn('space-y-4', className)}>
       {!hideSearch && (
         <div className="flex items-center gap-2">
           <Input

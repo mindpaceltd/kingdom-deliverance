@@ -69,6 +69,7 @@ export function MinistryForm({ ministry, onSuccess, onCancel }: MinistryFormProp
       icon: form.icon.trim() || undefined,
       display_order: form.display_order,
       is_active: form.is_active,
+      status: ministry?.status ?? 'draft',
     }
 
     const result = isEditing

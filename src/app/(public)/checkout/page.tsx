@@ -253,7 +253,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="currency" className="text-sm font-semibold">Payment Currency</Label>
-                  <Select value={currency} onValueChange={setCurrency}>
+                  <Select value={currency} onValueChange={(value) => setCurrency(value ?? currency)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>

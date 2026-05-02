@@ -35,7 +35,7 @@ interface FormState {
   image_url: string
   is_featured: boolean
   registration_url: string
-  status: 'upcoming' | 'ongoing' | 'past' | 'cancelled'
+  status: Event['status']
 }
 
 function toDatetimeLocal(iso: string | null | undefined): string {
@@ -218,9 +218,7 @@ export function EventForm({ event, onSuccess, onCancel }: EventFormProps) {
         <Label htmlFor="event-status">Status</Label>
         <Select
           value={form.status}
-          onValueChange={(v) =>
-            setField('status', v as 'upcoming' | 'ongoing' | 'past' | 'cancelled')
-          }
+          onValueChange={(v) => setField('status', v as Event['status'])}
           disabled={submitting}
         >
           <SelectTrigger id="event-status">

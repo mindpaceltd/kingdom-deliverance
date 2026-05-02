@@ -26,7 +26,16 @@ export function SeriesSelect({ value, allSeries, onChange, disabled }: SeriesSel
     setCreating(true)
     setCreateError(null)
     const slug = newName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-    const result = await createSermonSeries({ name: newName.trim(), slug, description: null, image_url: null })
+    const result = await createSermonSeries({
+      name: newName.trim(),
+      slug,
+      description: null,
+      image_url: null,
+      meta_title: null,
+      meta_description: null,
+      focus_keyword: null,
+      seo_score: 0,
+    })
     setCreating(false)
     if ('success' in result) {
       onChange(result.id)

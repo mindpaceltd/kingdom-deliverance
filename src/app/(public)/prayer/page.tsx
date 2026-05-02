@@ -11,8 +11,7 @@ import {
   CheckCircle2Icon, 
   Loader2Icon, 
   MessageSquareIcon,
-  ShieldCheckIcon,
-  PrayingHandIcon
+  ShieldCheckIcon
 } from 'lucide-react'
 import { FadeInSection } from '@/components/ui/page-transition'
 

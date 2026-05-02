@@ -59,9 +59,10 @@ export default function TestimoniesPage() {
           name: form.name,
           email: form.email,
           phone: form.phone,
-          address: form.address,
-          message: form.message,
+          location: form.address,
+          testimony: form.message,
           media_url: mediaUrl,
+          media_type: file?.type || null,
           status: "pending"
         });
 

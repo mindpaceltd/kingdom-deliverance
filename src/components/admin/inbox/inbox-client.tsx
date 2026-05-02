@@ -75,6 +75,8 @@ export function InboxClient({ initialContacts, initialPrayers }: InboxClientProp
   const [contacts, setContacts] = React.useState<ContactSubmission[]>(initialContacts)
   const [prayers, setPrayers] = React.useState<PrayerRequest[]>(initialPrayers)
   const [selectedItem, setSelectedItem] = React.useState<InboxItem | null>(null)
+  const selectedContact = selectedItem?._type === 'contact' ? (selectedItem as ContactSubmission) : null
+  const selectedPrayer = selectedItem?._type === 'prayer' ? (selectedItem as PrayerRequest) : null
   
   const [processing, setProcessing] = React.useState<string | null>(null)
 
@@ -306,9 +308,9 @@ export function InboxClient({ initialContacts, initialPrayers }: InboxClientProp
                 variant="ghost" 
                 size="icon-sm" 
                 onClick={() => selectedItem && handleMarkRead(selectedItem)}
-                title={selectedItem?._type === 'contact' ? (selectedItem.is_read ? 'Mark Unread' : 'Mark Read') : (selectedItem?.is_reviewed ? 'Mark Unreviewed' : 'Mark Reviewed')}
+                title={selectedItem?._type === 'contact' ? (selectedContact?.is_read ? 'Mark Unread' : 'Mark Read') : (selectedPrayer?.is_reviewed ? 'Mark Unreviewed' : 'Mark Reviewed')}
                >
-                 <CheckCircleIcon className={cn("size-4", (selectedItem?._type === 'contact' ? selectedItem.is_read : selectedItem?.is_reviewed) ? "text-green-600" : "text-muted-foreground")} />
+                 <CheckCircleIcon className={cn("size-4", (selectedItem?._type === 'contact' ? selectedContact?.is_read : selectedPrayer?.is_reviewed) ? "text-green-600" : "text-muted-foreground")} />
                </Button>
                <Button 
                 variant="ghost" 
@@ -372,7 +374,7 @@ export function InboxClient({ initialContacts, initialPrayers }: InboxClientProp
                     </Button>
                   )}
                   <Button variant="outline" className="flex-1 gap-2" onClick={() => handleMarkRead(selectedItem)}>
-                     { (selectedItem?._type === 'contact' ? selectedItem.is_read : selectedItem?.is_reviewed) ? <><RotateCcw className="size-4" /> Mark as New</> : <><CheckCircleIcon className="size-4" /> Mark Done</> }
+                     { (selectedItem?._type === 'contact' ? selectedContact?.is_read : selectedPrayer?.is_reviewed) ? <><RotateCcw className="size-4" /> Mark as New</> : <><CheckCircleIcon className="size-4" /> Mark Done</> }
                   </Button>
                </div>
             </div>

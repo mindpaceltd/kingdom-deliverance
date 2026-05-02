@@ -1,4 +1,4 @@
-import { notFound } from 'next'
+import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { EventEditorClient } from '@/components/admin/events/event-editor-client'
 import type { Event } from '@/lib/types'

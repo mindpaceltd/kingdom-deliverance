@@ -353,11 +353,11 @@ export function RichTextEditor({
     if (!editor) return
 
     if (!size) {
-      editor.chain().focus().setTextStyle({ fontSize: '16px' }).run()
+      editor.chain().focus().setMark('textStyle', { fontSize: '16px' }).run()
       return
     }
 
-    editor.chain().focus().setTextStyle({ fontSize: size }).run()
+    editor.chain().focus().setMark('textStyle', { fontSize: size }).run()
   }
 
   const activeHeading = getActiveHeading()

@@ -229,17 +229,17 @@ export async function searchContent(query: string): Promise<{
   const [postsResult, sermonsResult, eventsResult] = await Promise.all([
     supabase
       .from('posts')
-      .select('id,title,slug,excerpt,type,status,featured_image,published_at,created_at,updated_at,author_id,content')
+      .select('*')
       .eq('status', 'published')
       .or(`title.ilike.%${q}%,excerpt.ilike.%${q}%`),
     supabase
       .from('sermons')
-      .select('id,title,slug,description,preacher,series,date,status,video_url,audio_url,thumbnail_url,duration_minutes,content,created_at,updated_at')
+      .select('*')
       .eq('status', 'published')
       .or(`title.ilike.%${q}%,description.ilike.%${q}%`),
     supabase
       .from('events')
-      .select('id,title,slug,description,date,end_date,location,image_url,is_featured,registration_url,status,content,created_at,updated_at')
+      .select('*')
       .or(`title.ilike.%${q}%,description.ilike.%${q}%`),
   ])
 

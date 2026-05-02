@@ -42,7 +42,7 @@ interface FormState {
   series: string
   date: string
   duration_minutes: string
-  status: 'draft' | 'published'
+  status: 'draft' | 'published' | 'scheduled'
 }
 
 // ---------------------------------------------------------------------------
@@ -64,7 +64,10 @@ export function SermonForm({ sermon, onSuccess, onCancel }: SermonFormProps) {
     series: sermon?.series ?? '',
     date: sermon?.date ?? '',
     duration_minutes: sermon?.duration_minutes != null ? String(sermon.duration_minutes) : '',
-    status: sermon?.status ?? 'draft',
+    status:
+      sermon && (sermon.status === 'published' || sermon.status === 'scheduled' || sermon.status === 'draft')
+        ? sermon.status
+        : 'draft',
   })
 
   const [submitting, setSubmitting] = React.useState(false)
@@ -271,7 +274,7 @@ export function SermonForm({ sermon, onSuccess, onCancel }: SermonFormProps) {
         <Label htmlFor="sermon-status">Status</Label>
         <Select
           value={form.status}
-          onValueChange={(v) => setField('status', v as 'draft' | 'published')}
+          onValueChange={(v) => setField('status', v as 'draft' | 'published' | 'scheduled')}
           disabled={submitting}
         >
           <SelectTrigger id="sermon-status">

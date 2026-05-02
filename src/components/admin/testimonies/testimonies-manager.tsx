@@ -109,8 +109,8 @@ export function TestimoniesManager() {
                     {t.email && <div className="text-xs text-muted-foreground">{t.email}</div>}
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm line-clamp-3 text-muted-foreground" title={t.message}>
-                      {t.message}
+                    <div className="text-sm line-clamp-3 text-muted-foreground" title={t.testimony || t.message}>
+                      {t.testimony || t.message}
                     </div>
                   </TableCell>
                   <TableCell>

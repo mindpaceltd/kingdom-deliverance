@@ -40,9 +40,9 @@ export async function POST(request: Request) {
     const auth = await getAuthedGoogleClient(user.id);
     const analyticsAdmin = google.analyticsadmin({ version: 'v1beta', auth });
 
-    const { data } = await analyticsAdmin.properties.create({
-      parent: accountId,
+    const response = await analyticsAdmin.properties.create({
       requestBody: {
+        parent: accountId,
         displayName,
         industryCategory: 'OTHER',
         timeZone,
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({ property: data });
+    return NextResponse.json({ property: response.data });
   } catch (err: any) {
     const status = err.message?.includes('Google account not connected') || err.message?.includes('Unauthorized')
       ? 401
