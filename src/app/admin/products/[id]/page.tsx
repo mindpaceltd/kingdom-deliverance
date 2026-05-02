@@ -9,7 +9,7 @@ export default async function EditProductPage({ params }: { params: { id: string
   const supabase = createClient()
   
   const [productRes, categoriesRes] = await Promise.all([
-    supabase.from('products').select('*').eq('id', params.id).single(),
+    supabase.from('products').select('*, product_gallery(*)').eq('id', params.id).single(),
     supabase.from('product_categories').select('id, name').order('name')
   ])
 

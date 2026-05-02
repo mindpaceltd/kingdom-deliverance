@@ -65,7 +65,7 @@ export function Navbar() {
       transition={{ duration: 0.6, ease: "easeOut" }}
       className={cn(
         "fixed top-0 z-50 w-full transition-all duration-500",
-        scrolled
+        (scrolled || pathname !== '/')
           ? "bg-[#0d1b3e]/95 backdrop-blur-xl shadow-2xl border-b border-white/10"
           : "bg-transparent"
       )}

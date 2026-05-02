@@ -2,6 +2,8 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,6 +18,7 @@ import {
 } from '@/components/ui/select'
 import { saveProduct } from '@/lib/actions/products'
 import { RichTextEditor } from '@/components/admin/rich-text-editor'
+import { MediaPicker } from '@/components/admin/media-picker'
 import { 
   Loader2, 
   Save, 
@@ -23,9 +26,13 @@ import {
   FileCode, 
   ImageIcon, 
   ExternalLink, 
-  TrendingUp,
   DollarSign,
-  Tag
+  Tag,
+  Plus,
+  X,
+  Copy,
+  Download,
+  Upload
 } from 'lucide-react'
 import { cn, formatPrice } from '@/lib/utils'
 
@@ -48,7 +55,7 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
     description: initialData?.description || '',
     regular_price_usd: initialData?.regular_price_usd || 0,
     sale_price_usd: initialData?.sale_price_usd || 0,
-    price_usd: initialData?.price_usd || 0, // Legacy fallback
+    price_usd: initialData?.price_usd || 0,
     type: initialData?.type || 'physical',
     category_id: initialData?.category_id || '',
     image_url: initialData?.image_url || '',
@@ -59,6 +66,8 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
     is_featured: initialData?.is_featured ?? false,
     meta_title: initialData?.meta_title || '',
     meta_description: initialData?.meta_description || '',
+    status: initialData?.status || 'published',
+    gallery: initialData?.product_gallery?.map((g: any) => g.image_url) || []
   })
 
   const seoScore = React.useMemo(() => {
@@ -74,7 +83,6 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
     e.preventDefault()
     setLoading(true)
 
-    // Ensure price_usd is set correctly (use sale price if available, otherwise regular)
     const finalData = {
       ...formData,
       price_usd: formData.sale_price_usd > 0 ? formData.sale_price_usd : formData.regular_price_usd
@@ -91,6 +99,27 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
     }
   }
 
+  const handleDuplicate = () => {
+    const { id, slug, ...rest } = formData
+    setFormData({
+      ...rest,
+      id: undefined,
+      name: `${formData.name} (Copy)`,
+      slug: `${formData.slug}-copy`,
+      status: 'draft'
+    })
+    alert("Product details copied. Click Publish to save as a new product.")
+  }
+
+  const addGalleryImage = (url: string) => {
+    setFormData({ ...formData, gallery: [...formData.gallery, url] })
+  }
+
+  const removeGalleryImage = (index: number) => {
+    const newGallery = formData.gallery.filter((_: any, i: number) => i !== index)
+    setFormData({ ...formData, gallery: newGallery })
+  }
+
   const convertPrice = (val: number) => {
     if (currency === 'UGX') return val * EXCHANGE_RATE
     return val
@@ -105,6 +134,24 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
   return (
     <form onSubmit={onSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-20">
       <div className="lg:col-span-8 space-y-6">
+        {/* Bulk Tools Toolbar */}
+        <div className="flex items-center justify-between bg-card border rounded-xl p-4 shadow-sm">
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" className="gap-2" onClick={handleDuplicate}>
+              <Copy className="h-4 w-4" /> Duplicate
+            </Button>
+            <Button type="button" variant="outline" size="sm" className="gap-2">
+              <Download className="h-4 w-4" /> Export CSV
+            </Button>
+            <Button type="button" variant="outline" size="sm" className="gap-2">
+              <Upload className="h-4 w-4" /> Import CSV
+            </Button>
+          </div>
+          <div className="text-xs text-muted-foreground italic">
+            WordPress-style Bulk Management
+          </div>
+        </div>
+
         {/* Title & Short Description */}
         <div className="bg-card border rounded-xl p-6 shadow-sm space-y-4">
           <div className="space-y-2">
@@ -114,7 +161,7 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g. Deliverance E-book"
-              className="h-12 text-lg"
+              className="h-12 text-lg font-medium"
               required
             />
           </div>
@@ -139,6 +186,40 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
             onChange={(content) => setFormData({ ...formData, description: content })}
             placeholder="Write the full product details here..."
           />
+        </div>
+
+        {/* Product Gallery */}
+        <div className="bg-card border rounded-xl p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-lg flex items-center gap-2">
+              <ImageIcon className="h-5 w-5 text-primary" /> Product Gallery
+            </h3>
+            <MediaPicker
+              onSelect={addGalleryImage}
+              label="Add Images"
+              accept="image"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
+            {formData.gallery.map((url: string, index: number) => (
+              <div key={index} className="relative aspect-square rounded-lg border overflow-hidden group bg-muted">
+                <img src={url} alt={`Gallery ${index}`} className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => removeGalleryImage(index)}
+                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+            {formData.gallery.length === 0 && (
+              <div className="col-span-full py-8 text-center border-2 border-dashed rounded-xl text-muted-foreground text-sm">
+                No gallery images added. Multiple images help sales!
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Pricing Section */}
@@ -186,80 +267,40 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
                 value={convertPrice(formData.sale_price_usd)}
                 onChange={(e) => handlePriceChange('sale_price_usd', e.target.value)}
               />
-              <p className="text-[10px] text-muted-foreground italic">Leave at 0 if no discount.</p>
             </div>
-          </div>
-          
-          {formData.sale_price_usd > 0 && (
-            <div className="p-3 bg-green-50 border border-green-100 rounded-lg text-green-700 text-sm flex items-center gap-2">
-              <Tag className="h-4 w-4" />
-              You are offering a <strong>{Math.round((1 - formData.sale_price_usd / formData.regular_price_usd) * 100)}% discount</strong>.
-            </div>
-          )}
-        </div>
-
-        {/* Digital/Physical Settings */}
-        <div className="bg-card border rounded-xl p-6 shadow-sm space-y-4">
-          <h3 className="font-bold text-lg flex items-center gap-2">
-            <Package className="h-5 w-5 text-primary" /> Fulfillment Options
-          </h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-xl bg-muted/20">
-              <div className="space-y-1">
-                <Label>Product Type</Label>
-                <p className="text-xs text-muted-foreground">Digital products send a download link after payment.</p>
-              </div>
-              <Select
-                value={formData.type}
-                onValueChange={(v) => setFormData({ ...formData, type: v as any })}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="physical">Physical Product</SelectItem>
-                  <SelectItem value="digital">Digital Download</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {formData.type === 'digital' && (
-              <div className="space-y-4 p-4 border rounded-xl border-accent/20 bg-accent/5 animate-in slide-in-from-top-2">
-                <div className="space-y-2">
-                  <Label htmlFor="file_url" className="flex items-center gap-2">
-                    <FileCode className="h-4 w-4 text-accent" /> Secure Download URL
-                  </Label>
-                  <Input
-                    id="file_url"
-                    value={formData.file_url}
-                    onChange={(e) => setFormData({ ...formData, file_url: e.target.value })}
-                    placeholder="Link to file from Book system"
-                  />
-                  <p className="text-[10px] text-muted-foreground italic">Like WooCommerce, this file is ONLY accessible after successful payment.</p>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
 
       <div className="lg:col-span-4 space-y-6">
-        {/* Status & Preview */}
-        <div className="bg-card border rounded-xl p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <Label className="font-bold">Featured Product</Label>
-            <Switch
-              checked={formData.is_featured}
-              onCheckedChange={(checked) => setFormData({ ...formData, is_featured: checked })}
-            />
+        {/* Status & Visibility */}
+        <div className="bg-card border rounded-xl p-6 shadow-sm space-y-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="font-bold">Product Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(v) => setFormData({ ...formData, status: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="published">Published</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="private">Private</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="font-bold">Featured Product</Label>
+              <Switch
+                checked={formData.is_featured}
+                onCheckedChange={(checked) => setFormData({ ...formData, is_featured: checked })}
+              />
+            </div>
           </div>
-          <div className="flex items-center justify-between">
-            <Label className="font-bold">Active Store Status</Label>
-            <Switch
-              checked={formData.is_active}
-              onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-            />
-          </div>
+          
           <Button asChild variant="outline" className="w-full gap-2 mt-2">
             <Link href={`/shop/${formData.slug}`} target="_blank">
               <ExternalLink className="h-4 w-4" /> Preview Product
@@ -273,28 +314,20 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
             <ImageIcon className="h-5 w-5 text-primary" /> Featured Image
           </h3>
           <div className="space-y-4">
+            <MediaPicker
+              value={formData.image_url}
+              onSelect={(url) => setFormData({ ...formData, image_url: url })}
+              label={formData.image_url ? 'Replace Image' : 'Select Featured Image'}
+              accept="image"
+            />
             <div className="space-y-2">
-              <Label>Image URL (Featured/Org Image)</Label>
-              <Input
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                placeholder="https://..."
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Image Alt Text (for SEO)</Label>
+              <Label>Image Alt Text (SEO)</Label>
               <Input
                 value={formData.image_alt}
                 onChange={(e) => setFormData({ ...formData, image_alt: e.target.value })}
-                placeholder="Describe image for search engines"
+                placeholder="Describe image..."
               />
             </div>
-            {formData.image_url && (
-              <div className="rounded-lg border overflow-hidden aspect-square bg-muted relative">
-                <img src={formData.image_url} alt="Preview" className="w-full h-full object-cover" />
-                <div className="absolute top-2 right-2 bg-black/60 text-white px-2 py-1 rounded text-[10px] font-bold">Featured</div>
-              </div>
-            )}
           </div>
         </div>
 
@@ -306,7 +339,9 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
             onValueChange={(v) => setFormData({ ...formData, category_id: v })}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select Category" />
+              <SelectValue>
+                {categories.find(c => c.id === formData.category_id)?.name || "Select Category"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {categories.map((cat) => (
@@ -318,58 +353,54 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
           </Select>
         </div>
 
-        {/* SEO Score */}
-        <div className="bg-card border rounded-xl p-6 shadow-sm space-y-4">
+        {/* SEO Score - ENHANCED VISIBILITY */}
+        <div className="bg-card border-2 border-primary/20 rounded-xl p-6 shadow-lg space-y-4 bg-primary/5">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-lg">SEO Calculation</h3>
+            <h3 className="font-black text-lg tracking-tighter uppercase">Overall SEO Score</h3>
             <span className={cn(
-              "text-xl font-black",
+              "text-3xl font-black",
               seoScore > 80 ? "text-green-500" : seoScore > 50 ? "text-yellow-500" : "text-red-500"
             )}>{seoScore}</span>
           </div>
-          <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-muted rounded-full h-3 overflow-hidden border">
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${seoScore}%` }}
               className={cn(
                 "h-full transition-all duration-1000",
-                seoScore > 80 ? "bg-green-500" : seoScore > 50 ? "bg-yellow-500" : "bg-red-500"
+                seoScore > 80 ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" : 
+                seoScore > 50 ? "bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.5)]" : 
+                "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]"
               )}
             />
           </div>
           <div className="space-y-4 pt-2">
             <div className="space-y-1">
-              <Label className="text-xs">Meta Title</Label>
+              <Label className="text-[10px] font-bold uppercase text-muted-foreground">Search Engine Title</Label>
               <Input
                 value={formData.meta_title}
                 onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
                 placeholder="Google Title..."
+                className="bg-white"
               />
-              <div className="flex justify-between text-[10px] px-1">
-                <span className={formData.meta_title.length > 60 ? "text-red-500" : "text-muted-foreground"}>{formData.meta_title.length} / 60</span>
-                <span>Ideal: 30-60 chars</span>
-              </div>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Meta Description</Label>
+              <Label className="text-[10px] font-bold uppercase text-muted-foreground">Search Engine Description</Label>
               <Textarea
                 value={formData.meta_description}
                 onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
                 placeholder="Search engine summary..."
                 rows={3}
+                className="bg-white"
               />
-              <div className="flex justify-between text-[10px] px-1">
-                <span className={formData.meta_description.length > 160 ? "text-red-500" : "text-muted-foreground"}>{formData.meta_description.length} / 160</span>
-                <span>Ideal: 120-160 chars</span>
-              </div>
             </div>
           </div>
         </div>
 
         <div className="sticky bottom-6">
-          <Button type="submit" disabled={loading} className="w-full h-14 gap-2 text-lg font-bold shadow-xl shadow-primary/20">
-            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
-            {initialData ? 'Update WooCommerce Product' : 'Publish Product'}
+          <Button type="submit" disabled={loading} className="w-full h-16 gap-2 text-xl font-black shadow-2xl shadow-primary/40 bg-primary hover:bg-primary/90 transition-all active:scale-95">
+            {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Save className="h-6 w-6" />}
+            {formData.status === 'draft' ? 'Save as Draft' : (initialData ? 'Update Product' : 'Publish Product')}
           </Button>
         </div>
       </div>
