@@ -182,7 +182,7 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
         <div className="bg-card border rounded-xl p-6 shadow-sm space-y-4">
           <Label className="text-base font-bold">Product Full Description</Label>
           <RichTextEditor
-            content={formData.description}
+            value={formData.description}
             onChange={(content) => setFormData({ ...formData, description: content })}
             placeholder="Write the full product details here..."
           />
@@ -220,6 +220,83 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Digital Product Section */}
+        <div className="bg-card border-2 border-accent/20 rounded-xl p-6 shadow-sm space-y-4 bg-accent/5">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-lg flex items-center gap-2">
+              <FileCode className="h-5 w-5 text-accent" /> Product Type & Digital Assets
+            </h3>
+            <Select
+              value={formData.type}
+              onValueChange={(v: any) => setFormData({ ...formData, type: v })}
+            >
+              <SelectTrigger className="w-[180px] bg-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="physical">Physical Product</SelectItem>
+                <SelectItem value="digital">Digital Product</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {formData.type === 'digital' && (
+            <div className="p-4 rounded-xl bg-white border border-accent/20 space-y-4 animate-in fade-in slide-in-from-top-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <Label className="font-bold">Downloadable File</Label>
+                  <p className="text-xs text-muted-foreground">This file will be available to customers after purchase.</p>
+                </div>
+                <MediaPicker
+                  onSelect={(url) => setFormData({ ...formData, file_url: url })}
+                  label={formData.file_url ? "Change File" : "Select/Upload File"}
+                  accept="all"
+                />
+              </div>
+              
+              {formData.file_url ? (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted border overflow-hidden">
+                  <div className="size-10 rounded bg-accent/10 flex items-center justify-center shrink-0">
+                    <FileCode className="h-5 w-5 text-accent" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{formData.file_url.split('/').pop()}</p>
+                    <p className="text-[10px] text-muted-foreground">Digital asset ready for delivery</p>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => setFormData({ ...formData, file_url: '' })}
+                    className="text-red-500 hover:text-red-600 p-1"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="py-6 text-center border-2 border-dashed rounded-xl text-muted-foreground text-sm flex flex-col items-center gap-2">
+                  <Upload className="h-8 w-8 opacity-20" />
+                  <span>No file attached. Digital products MUST have a download file.</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {formData.type === 'physical' && (
+            <div className="p-4 rounded-xl bg-white border space-y-4 animate-in fade-in slide-in-from-top-2">
+              <div className="space-y-2">
+                <Label htmlFor="weight">Shipping Weight (kg)</Label>
+                <Input
+                  id="weight"
+                  type="number"
+                  step="any"
+                  value={formData.weight_kg}
+                  onChange={(e) => setFormData({ ...formData, weight_kg: parseFloat(e.target.value) || 0 })}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Pricing Section */}
