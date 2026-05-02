@@ -9,6 +9,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   experimental: {
+    webpackBuildWorker: false, // Disabling this saves significant RAM
     optimizePackageImports: [],
   },
   images: {
