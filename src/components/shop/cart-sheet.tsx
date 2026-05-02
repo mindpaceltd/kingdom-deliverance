@@ -113,7 +113,7 @@ export function CartSheet() {
               </Link>
             </Button>
             <p className="text-[10px] text-center text-muted-foreground mt-4 uppercase tracking-widest font-bold">
-              Secure Checkout via Flutterwave & Stripe
+              Secure Checkout via Pesapal
             </p>
           </div>
         )}
