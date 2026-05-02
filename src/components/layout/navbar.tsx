@@ -8,6 +8,7 @@ import { Menu, X, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SearchModal } from "@/components/search/search-modal";
+import { CartSheet } from "@/components/shop/cart-sheet";
 
 const links = [
   { name: "Home", href: "/" },
@@ -15,6 +16,7 @@ const links = [
   { name: "Ministries", href: "/ministries" },
   { name: "Sermons", href: "/sermons" },
   { name: "Events", href: "/events" },
+  { name: "Shop", href: "/shop" },
   { name: "Blog", href: "/blog" },
   { name: "Gallery", href: "/gallery" },
   { name: "Live", href: "/live" },
@@ -96,6 +98,9 @@ export function Navbar() {
           >
             <Search className="w-5 h-5" />
           </button>
+
+          {/* Cart Toggle */}
+          <CartSheet />
 
           <Button
             asChild
