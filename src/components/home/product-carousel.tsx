@@ -121,56 +121,56 @@ export function ProductCarousel({ products, title = "Featured Products", subtitl
                 return (
                   <div
                     key={product.id}
-                    className="snap-start min-w-[85%] sm:min-w-[45%] lg:min-w-[calc((100%-4rem)/5)] rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow duration-300"
+                    className="snap-start min-w-[85%] sm:min-w-[45%] lg:min-w-[calc((100%-4rem)/5)] rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col"
                   >
-                    <div className="relative overflow-hidden rounded-t-2xl bg-gray-50 h-56">
+                    <div className="relative overflow-hidden rounded-t-2xl bg-gray-50 aspect-[3/4] w-full">
                       <img
                         src={product.image_url}
                         alt={product.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover object-top"
                       />
                       {hasDiscount && (
-                        <div className="absolute top-4 left-4 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                        <div className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                           SALE
                         </div>
                       )}
-                      <div className="absolute top-4 right-4 bg-[#1e3a5f] text-white text-[10px] font-semibold px-2 py-1 rounded">
+                      <div className="absolute top-3 right-3 bg-primary/90 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-sm">
                         {product.type === 'digital' ? 'DIGITAL' : 'PHYSICAL'}
                       </div>
                     </div>
-                    <div className="p-5 space-y-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-primary line-clamp-2">
+                    <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                      <div className="space-y-1">
+                        <h3 className="text-sm font-bold text-primary line-clamp-2 leading-snug">
                           {product.name}
                         </h3>
-                        <p className="text-sm text-gray-500 mt-1 line-clamp-3">
+                        <p className="text-[11px] text-gray-500 line-clamp-2 leading-relaxed">
                           {product.short_description}
                         </p>
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-baseline gap-2">
-                          <span className="text-xl font-bold text-primary">
+                          <span className="text-base font-bold text-primary">
                             UGX {ugxPrice.toLocaleString()}
                           </span>
                           {hasDiscount && (
-                            <span className="text-sm text-gray-400 line-through">
-                              UGX {Math.round(product.regular_price_usd * 3800).toLocaleString()}
+                            <span className="text-[10px] text-gray-400 line-through">
+                              {Math.round(product.regular_price_usd * 3800).toLocaleString()}
                             </span>
                           )}
                         </div>
                         {hasDiscount && (
-                          <p className="text-xs text-green-600 font-semibold">
+                          <p className="text-[10px] text-green-600 font-bold">
                             Save {Math.round((1 - product.sale_price_usd / product.regular_price_usd) * 100)}%
                           </p>
                         )}
                       </div>
-                      <div className="flex gap-2">
-                        <Button asChild size="sm" className="flex-1 bg-[#d4a017] hover:bg-[#b88a12] text-white">
+                      <div className="flex gap-1.5 pt-1">
+                        <Button asChild size="sm" className="h-8 flex-1 bg-accent hover:bg-accent/90 text-primary text-[10px] font-bold px-0">
                           <Link href={`/shop/${product.slug}`}>
                             View
                           </Link>
                         </Button>
-                        <Button asChild variant="outline" size="sm" className="flex-1">
+                        <Button asChild variant="outline" size="sm" className="h-8 flex-1 border-primary/20 text-primary text-[10px] font-bold px-0 hover:bg-primary/5">
                           <Link href="/shop">
                             Shop
                           </Link>
