@@ -288,7 +288,7 @@ export default async function Home() {
 
       {/* Upcoming Events Section */}
       {upcomingEvents.length > 0 && (
-        <section className="py-20 bg-white">
+        <section className="py-12 bg-white">
           <div className="container px-4">
             <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div className="space-y-2">
@@ -313,9 +313,9 @@ export default async function Home() {
 
       {/* Latest Posts Section */}
       {latestPosts.length > 0 && (
-        <section className="py-20 bg-gray-50/80">
+        <section className="py-12 bg-gray-50/80">
           <div className="container px-4">
-            <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div className="space-y-2">
                 <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-accent">
                   <BookOpen className="h-3.5 w-3.5" />
@@ -340,7 +340,7 @@ export default async function Home() {
       <TestimoniesSection />
 
       {/* CTA Banner */}
-      <section className="py-20 bg-gradient-to-r from-accent via-yellow-400 to-accent">
+      <section className="py-12 bg-gradient-to-r from-accent via-yellow-400 to-accent">
         <div className="container px-4 text-center space-y-6">
           <h2 className="text-3xl md:text-4xl font-bold font-serif text-primary">
             Ready to Experience God&apos;s Presence?

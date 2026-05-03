@@ -52,8 +52,8 @@ export function ProductBulkActions() {
   }
 
   const downloadTemplate = () => {
-    const headers = 'Name,Slug,Regular Price (USD),Sale Price (USD),Type,Category,Stock Status,Featured Image URL,Short Description,Status'
-    const example = 'Prayer Book,prayer-book,15,10,digital,Books,instock,https://...,"A powerful book for prayer",published'
+    const headers = 'Name,Slug,Regular Price (USD),Sale Price (USD),Type,Category,Stock Status,Featured Image URL,Featured Image Alt Text,Short Description,Description,File URL,Download Limit,Download Expiry Days,Is Featured,Status'
+    const example = 'Deliverance Book,deliverance-book,15,10,digital,Books,instock,https://.../cover.jpg,Deliverance book cover,A short summary of the book,Full HTML or text description,https://.../book.pdf,-1,-1,yes,published'
     const blob = new Blob([`${headers}\n${example}`], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)

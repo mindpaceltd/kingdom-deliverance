@@ -8,6 +8,7 @@
     "start": "next start -p 3005",
     "lint": "next lint",
     "smoke": "node scripts/smoke.mjs",
+    "convert:woocommerce": "node scripts/woocommerce-to-kdc-import.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },

@@ -38,7 +38,7 @@ export function PostCard({ post }: PostCardProps) {
       </div>
 
       {/* Content */}
-      <div className="p-5 space-y-3">
+      <div className="p-4 space-y-3">
         <span className="text-xs text-accent font-semibold uppercase tracking-wider">
           {post.type}
         </span>
