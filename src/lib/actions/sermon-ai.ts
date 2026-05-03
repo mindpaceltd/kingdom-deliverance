@@ -67,7 +67,7 @@ export async function analyzeSermonVideo(
     if (!apiKey) return { success: false, error: 'Gemini AI is not configured.' }
 
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' })
 
     let prompt = ''
     
