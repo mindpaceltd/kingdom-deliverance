@@ -3,6 +3,8 @@ import { google } from 'googleapis'
 import { createClient } from '@/lib/supabase/server'
 import { getAuthedGoogleClient } from '@/lib/google/client'
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   const supabase = createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()

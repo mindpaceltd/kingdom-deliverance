@@ -3,6 +3,8 @@ import { google } from 'googleapis';
 import { createClient } from '@/lib/supabase/server';
 import { getAuthedGoogleClient } from '@/lib/google/client';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/google/search-console/sites
 export async function GET() {
   try {

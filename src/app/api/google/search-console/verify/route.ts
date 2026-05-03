@@ -3,6 +3,8 @@ import { google } from 'googleapis'
 import { createClient } from '@/lib/supabase/server'
 import { getAuthedGoogleClient } from '@/lib/google/client'
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
   try {
     const { siteUrl } = await request.json()
