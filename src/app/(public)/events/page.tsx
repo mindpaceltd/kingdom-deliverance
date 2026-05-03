@@ -14,18 +14,23 @@ export const revalidate = 3600;
 
 export default async function EventsPage() {
   const supabase = createClient();
+  const now = new Date().toISOString();
+
+  // Fetch upcoming/current events
   const { data: events } = await supabase
     .from("events")
     .select("*")
-    .in("status", ["upcoming", "ongoing"])
+    .in("status", ["upcoming", "ongoing", "published"])
+    .gte("date", now)
     .order("date", { ascending: true });
 
+  // Fetch past events
   const { data: pastEvents } = await supabase
     .from("events")
     .select("*")
-    .eq("status", "past")
+    .or(`status.eq.past,and(status.eq.published,date.lt.${now})`)
     .order("date", { ascending: false })
-    .limit(4);
+    .limit(8);
 
   const featured = events?.find((e) => e.is_featured);
   const upcoming = events?.filter((e) => !e.is_featured) ?? [];

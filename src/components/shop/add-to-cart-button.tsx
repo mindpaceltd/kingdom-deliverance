@@ -40,7 +40,7 @@ export function AddToCartButton({
     })
 
     if (isBuyNow) {
-      router.push('/checkout')
+      router.push('/cart')
     } else {
       setAdded(true)
       setTimeout(() => setAdded(false), 2000)

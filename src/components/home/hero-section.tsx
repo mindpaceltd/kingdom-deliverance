@@ -52,7 +52,7 @@ export function HeroSection() {
             transition={{ duration: 0.9, delay: 0.35 }}
             className="font-serif text-5xl font-bold leading-[1.1] tracking-tight md:text-6xl lg:text-7xl drop-shadow-sm"
           >
-            <span className="text-white">Encounter God,</span>{" "}
+            <span className="text-accent">Encounter God,</span>{" "}
             <br className="hidden sm:block" />
             <span className="bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent">
               Experience Deliverance.

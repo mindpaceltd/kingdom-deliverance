@@ -24,7 +24,7 @@ export default function LivePage() {
           <h1 className="font-serif text-5xl md:text-6xl font-bold text-white leading-tight">Watch Live</h1>
           <div className="mx-auto mt-5 h-1 w-20 rounded-full bg-accent" />
           <p className="mt-6 text-white/90 text-lg md:text-xl max-w-xl mx-auto">
-            Join us for live worship, powerful messages, and encounter God from wherever you are.
+            Join us for live worship, powerful messages, and <span className="text-accent font-bold">encounter God</span> from wherever you are.
           </p>
         </div>
       </section>

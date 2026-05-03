@@ -17,18 +17,30 @@ import { UserIcon, GlobeIcon, SaveIcon, SendIcon } from 'lucide-react'
 // Types
 // ---------------------------------------------------------------------------
 
+export interface StatusOption {
+  value: string
+  label: string
+}
+
 export interface PublishPanelProps {
-  status: 'draft' | 'published' | 'scheduled'
+  status: string
   scheduledAt: string  // ISO string or ''
   authorName: string
   isEditing: boolean
   submitting: boolean
   error: string | null
-  onStatusChange: (status: 'draft' | 'published' | 'scheduled') => void
+  onStatusChange: (status: any) => void
   onScheduledAtChange: (value: string) => void
   onPublish: () => void
   onSaveDraft: () => void
+  customStatuses?: StatusOption[]
 }
+
+const DEFAULT_STATUSES: StatusOption[] = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'published', label: 'Published' },
+  { value: 'scheduled', label: 'Scheduled' },
+]
 
 // ---------------------------------------------------------------------------
 // PublishPanel
@@ -45,7 +57,10 @@ export function PublishPanel({
   onScheduledAtChange,
   onPublish,
   onSaveDraft,
+  customStatuses
 }: PublishPanelProps) {
+  const statuses = customStatuses || DEFAULT_STATUSES
+
   return (
     <div className="rounded-lg border border-border bg-card p-4 space-y-4">
       <h3 className="text-sm font-semibold text-foreground">Publish</h3>
@@ -56,7 +71,7 @@ export function PublishPanel({
           <UserIcon className="size-3.5 shrink-0" />
           <span>
             <span className="font-medium text-foreground">Author:</span>{' '}
-            {authorName || '—'}
+            {authorName || 'Admin'}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -77,16 +92,18 @@ export function PublishPanel({
         </Label>
         <Select
           value={status}
-          onValueChange={(v) => onStatusChange(v as 'draft' | 'published' | 'scheduled')}
+          onValueChange={(v) => onStatusChange(v)}
           disabled={submitting}
         >
           <SelectTrigger id="publish-status" className="h-8 text-sm">
             <SelectValue placeholder="Select status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="published">Published</SelectItem>
-            <SelectItem value="scheduled">Scheduled</SelectItem>
+            {statuses.map((s) => (
+              <SelectItem key={s.value} value={s.value}>
+                {s.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -148,3 +165,4 @@ export function PublishPanel({
     </div>
   )
 }
+

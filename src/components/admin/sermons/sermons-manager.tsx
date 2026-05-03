@@ -2,12 +2,21 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { PlusIcon, PencilIcon, Trash2Icon, CopyIcon, RotateCcw, TrashIcon } from 'lucide-react'
+import { 
+  PlusIcon, 
+  PencilIcon, 
+  Trash2Icon, 
+  CopyIcon, 
+  RotateCcw, 
+  TrashIcon,
+  SparklesIcon
+} from 'lucide-react'
 
 import { DataTable, type ColumnDef } from '@/components/admin/data-table'
 import { StatusBadge } from '@/components/admin/status-badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -15,12 +24,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { 
   trashSermon, 
   restoreSermon, 
   duplicateSermon, 
   deleteSermon 
 } from '@/lib/actions/sermons'
+import { analyzeSermonVideo } from '@/lib/actions/sermon-ai'
 import { createClient } from '@/lib/supabase/client'
 import type { Sermon } from '@/lib/types'
 
@@ -58,6 +77,11 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
   const router = useRouter()
   const [sermons, setSermons] = React.useState<Sermon[]>(initialSermons)
   const [isRefreshing, setIsRefreshing] = React.useState(false)
+
+  // Magic AI state
+  const [magicUrl, setMagicUrl] = React.useState('')
+  const [magicLoading, setMagicLoading] = React.useState(false)
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false)
 
   // Filter state
   const [filterPreacher, setFilterPreacher] = React.useState<string>('all')
@@ -123,6 +147,26 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
       await refreshSermons()
     } else {
       alert(result.error)
+    }
+  }
+
+  async function handleMagicAI() {
+    if (!magicUrl.trim()) return
+    setMagicLoading(true)
+    try {
+      const result = await analyzeSermonVideo({ videoUrl: magicUrl })
+      if (result.success) {
+        setMagicUrl('')
+        setIsDialogOpen(false)
+        await refreshSermons()
+        // Optional: redirect to the new draft if result.id is present
+      } else {
+        alert(result.error || 'AI Analysis failed')
+      }
+    } catch (e: any) {
+      alert(e.message || 'An unexpected error occurred')
+    } finally {
+      setMagicLoading(false)
     }
   }
 
@@ -299,10 +343,60 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
             Manage sermon recordings, notes, and publication status.
           </p>
         </div>
-        <Button onClick={openNew} size="sm">
-          <PlusIcon className="mr-2 h-4 w-4" />
-          New Sermon
-        </Button>
+        <div className="flex items-center gap-2">
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2 text-violet-600 border-violet-200 hover:bg-violet-50 hover:text-violet-700">
+                <SparklesIcon className="h-4 w-4" />
+                Sermon Magic AI
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Sermon Magic AI</DialogTitle>
+                <DialogDescription>
+                  Paste a YouTube link below and we'll automatically generate sermon notes, title, and a featured image for you.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="video-url">YouTube Video URL</Label>
+                  <Input 
+                    id="video-url" 
+                    placeholder="https://www.youtube.com/watch?v=..." 
+                    value={magicUrl}
+                    onChange={(e) => setMagicUrl(e.target.value)}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  onClick={handleMagicAI} 
+                  disabled={magicLoading || !magicUrl.trim()}
+                  className="w-full bg-violet-600 hover:bg-violet-700"
+                >
+                  {magicLoading ? (
+                    <>
+                      <RotateCcw className="mr-2 h-4 w-4 animate-spin" />
+                      Analyzing Video...
+                    </>
+                  ) : (
+                    <>
+                      <SparklesIcon className="mr-2 h-4 w-4" />
+                      Analyze & Generate Draft
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Button onClick={openNew} size="sm">
+            <PlusIcon className="mr-2 h-4 w-4" />
+            New Sermon
+          </Button>
+        </div>
       </div>
 
       <DataTable

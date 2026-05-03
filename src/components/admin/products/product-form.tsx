@@ -63,6 +63,7 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
   const router = useRouter()
   const [loading, setLoading] = React.useState(false)
   const [currency, setCurrency] = React.useState<'USD' | 'UGX'>('USD')
+  const [manuallyEdited, setManuallyEdited] = React.useState(false)
   const [formData, setFormData] = React.useState({
     id: initialData?.id || undefined,
     name: initialData?.name || '',
@@ -85,6 +86,13 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
     status: initialData?.status || 'published',
     gallery: initialData?.product_gallery?.map((g: any) => g.image_url) || []
   })
+
+  // Auto-update slug from name when not manually edited
+  React.useEffect(() => {
+    if (!manuallyEdited && formData.name) {
+      setFormData(prev => ({ ...prev, slug: slugify(prev.name) }))
+    }
+  }, [formData.name, manuallyEdited])
 
   const seoChecklist = React.useMemo(() => [
     { label: 'Meta title length (30-60 chars)', pass: formData.meta_title.length >= 30 && formData.meta_title.length <= 60 },
@@ -122,6 +130,7 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
   const handleDuplicate = () => {
     const { id, slug, ...rest } = formData
     const newName = `${formData.name} (Copy)`
+    setManuallyEdited(false)
     setFormData({
       ...rest,
       id: undefined,
@@ -133,6 +142,7 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
   }
 
   const regenerateSlug = () => {
+    setManuallyEdited(false)
     setFormData({ ...formData, slug: slugify(formData.name) })
   }
 
@@ -207,7 +217,10 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
               <Input
                 id="slug"
                 value={formData.slug}
-                onChange={(e) => setFormData({ ...formData, slug: slugify(e.target.value) })}
+                onChange={(e) => {
+                  setManuallyEdited(true)
+                  setFormData({ ...formData, slug: slugify(e.target.value) })
+                }}
                 placeholder="product-url-slug"
                 className="pl-16 h-10 text-sm font-mono"
                 required
