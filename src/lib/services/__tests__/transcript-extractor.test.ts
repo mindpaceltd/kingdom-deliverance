@@ -20,6 +20,18 @@ describe('extractYouTubeVideoId', () => {
     expect(videoId).toBe('dQw4w9WgXcQ')
   })
 
+  it('should extract video ID from youtube.com/shorts/ URL', () => {
+    const url = 'https://www.youtube.com/shorts/NCMNt1HscZk'
+    const videoId = extractYouTubeVideoId(url)
+    expect(videoId).toBe('NCMNt1HscZk')
+  })
+
+  it('should extract video ID from youtube.com/shorts/ URL without protocol', () => {
+    const url = 'youtube.com/shorts/NCMNt1HscZk'
+    const videoId = extractYouTubeVideoId(url)
+    expect(videoId).toBe('NCMNt1HscZk')
+  })
+
   it('should extract video ID from URL with query parameters', () => {
     const url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=10s'
     const videoId = extractYouTubeVideoId(url)

@@ -6,6 +6,7 @@ import { YoutubeTranscript } from 'youtube-transcript'
  * - youtube.com/watch?v=VIDEO_ID
  * - youtu.be/VIDEO_ID
  * - youtube.com/embed/VIDEO_ID
+ * - youtube.com/shorts/VIDEO_ID
  * 
  * @param url - YouTube video URL
  * @returns Video ID or null if not found
@@ -13,7 +14,8 @@ import { YoutubeTranscript } from 'youtube-transcript'
 export function extractYouTubeVideoId(url: string): string | null {
   const patterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
-    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/
   ]
   
   for (const pattern of patterns) {
@@ -74,8 +76,8 @@ export async function extractTranscript(url: string): Promise<string> {
       if (error.message.includes('timed out')) {
         throw error
       }
-      if (error.message.includes('disabled')) {
-        throw new Error('Transcripts are disabled for this video')
+      if (error.message.includes('disabled') || error.message.includes('Transcript is disabled')) {
+        throw new Error('Failed to fetch transcript from this video. Ensure it has captions enabled.')
       }
       if (error.message.includes('private')) {
         throw new Error('Video is private or unavailable')
@@ -83,9 +85,12 @@ export async function extractTranscript(url: string): Promise<string> {
       if (error.message.includes('Transcript too short')) {
         throw error
       }
+      if (error.message.includes('Could not retrieve') || error.message.includes('No transcripts')) {
+        throw new Error('Failed to fetch transcript from this video. Ensure it has captions enabled.')
+      }
     }
     
     // Generic error for other cases
-    throw new Error('Failed to extract transcript. The video may be private or unavailable.')
+    throw new Error('Failed to fetch transcript from this video. Ensure it has captions enabled.')
   }
 }
