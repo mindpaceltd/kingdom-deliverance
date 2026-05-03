@@ -11,7 +11,10 @@ import {
   CheckCircleIcon,
   ShieldCheckIcon,
   ImageIcon,
-  AlertTriangleIcon
+  AlertTriangleIcon,
+  PlusIcon,
+  Trash2Icon,
+  Share2Icon
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,6 +46,7 @@ const CATEGORIES: { id: Category; label: string; icon: any }[] = [
   { id: 'seo', label: 'SEO Settings', icon: SearchIcon },
   { id: 'email', label: 'Email (SMTP)', icon: MailIcon },
   { id: 'payments', label: 'Payments', icon: CreditCardIcon },
+  { id: 'social', label: 'Social & Links', icon: Share2Icon },
 ]
 
 // ---------------------------------------------------------------------------
@@ -509,6 +513,132 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                       </div>
                    </div>
                 )}
+             </div>
+          </div>
+        )}
+
+        {activeCategory === 'social' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+             <div className="border-b border-border pb-4">
+                <h2 className="text-lg font-bold">Social Media & Communication</h2>
+                <p className="text-sm text-muted-foreground">Manage your online presence and contact numbers.</p>
+             </div>
+ 
+             <div className="space-y-8">
+                {/* Phone Numbers */}
+                <div className="space-y-4">
+                   <div className="flex items-center justify-between">
+                      <Label className="text-base font-bold">Additional Phone Numbers</Label>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          const current = values.contact_phones_json ? JSON.parse(values.contact_phones_json) : []
+                          handleChange('contact_phones_json', JSON.stringify([...current, '']))
+                        }}
+                      >
+                         <PlusIcon className="size-3 mr-1" /> Add Phone
+                      </Button>
+                   </div>
+                   <div className="grid gap-3">
+                      {(values.contact_phones_json ? JSON.parse(values.contact_phones_json) : []).map((phone: string, idx: number) => (
+                         <div key={idx} className="flex gap-2">
+                            <Input 
+                              value={phone} 
+                              onChange={e => {
+                                 const current = JSON.parse(values.contact_phones_json)
+                                 current[idx] = e.target.value
+                                 handleChange('contact_phones_json', JSON.stringify(current))
+                              }}
+                              placeholder="+256 ..."
+                            />
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => {
+                                 const current = JSON.parse(values.contact_phones_json)
+                                 current.splice(idx, 1)
+                                 handleChange('contact_phones_json', JSON.stringify(current))
+                              }}
+                              className="text-destructive shrink-0"
+                            >
+                               <Trash2Icon className="size-4" />
+                            </Button>
+                         </div>
+                      ))}
+                      {(!values.contact_phones_json || JSON.parse(values.contact_phones_json).length === 0) && (
+                         <p className="text-xs text-muted-foreground italic">No additional phone numbers added.</p>
+                      )}
+                   </div>
+                </div>
+ 
+                {/* Social Links */}
+                <div className="space-y-4 pt-6 border-t border-border">
+                   <div className="flex items-center justify-between">
+                      <Label className="text-base font-bold">Social Media Platforms</Label>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          const current = values.social_links_json ? JSON.parse(values.social_links_json) : []
+                          handleChange('social_links_json', JSON.stringify([...current, { platform: 'Facebook', url: '' }]))
+                        }}
+                      >
+                         <PlusIcon className="size-3 mr-1" /> Add Platform
+                      </Button>
+                   </div>
+                   <div className="grid gap-4">
+                      {(values.social_links_json ? JSON.parse(values.social_links_json) : []).map((link: any, idx: number) => (
+                         <div key={idx} className="grid sm:grid-cols-12 gap-2 items-start p-4 rounded-xl border border-border bg-muted/20">
+                            <div className="sm:col-span-4">
+                               <Label className="text-[10px] uppercase font-bold text-muted-foreground mb-1 block">Platform</Label>
+                               <Input 
+                                 value={link.platform} 
+                                 onChange={e => {
+                                    const current = JSON.parse(values.social_links_json)
+                                    current[idx].platform = e.target.value
+                                    handleChange('social_links_json', JSON.stringify(current))
+                                 }}
+                                 placeholder="e.g. TikTok, Telegram"
+                               />
+                            </div>
+                            <div className="sm:col-span-7">
+                               <Label className="text-[10px] uppercase font-bold text-muted-foreground mb-1 block">URL</Label>
+                               <Input 
+                                 value={link.url} 
+                                 onChange={e => {
+                                    const current = JSON.parse(values.social_links_json)
+                                    current[idx].url = e.target.value
+                                    handleChange('social_links_json', JSON.stringify(current))
+                                 }}
+                                 placeholder="https://..."
+                               />
+                            </div>
+                            <div className="sm:col-span-1 pt-6 flex justify-end">
+                               <Button 
+                                 type="button" 
+                                 variant="ghost" 
+                                 size="icon" 
+                                 onClick={() => {
+                                    const current = JSON.parse(values.social_links_json)
+                                    current.splice(idx, 1)
+                                    handleChange('social_links_json', JSON.stringify(current))
+                                 }}
+                                 className="text-destructive"
+                               >
+                                  <Trash2Icon className="size-4" />
+                               </Button>
+                            </div>
+                         </div>
+                      ))}
+                      {(!values.social_links_json || JSON.parse(values.social_links_json).length === 0) && (
+                         <p className="text-xs text-muted-foreground italic">No social media platforms added yet.</p>
+                      )}
+                   </div>
+                </div>
              </div>
           </div>
         )}

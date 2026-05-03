@@ -40,6 +40,17 @@ import {
   AlertCircle
 } from 'lucide-react'
 import { cn, formatPrice } from '@/lib/utils'
+import { RefreshCw } from 'lucide-react'
+
+function slugify(text: string) {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')     // Replace spaces with -
+    .replace(/[^\w-]+/g, '')    // Remove all non-word chars
+    .replace(/--+/g, '-')       // Replace multiple - with single -
+}
 
 interface ProductFormProps {
   initialData?: any
@@ -110,14 +121,19 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
 
   const handleDuplicate = () => {
     const { id, slug, ...rest } = formData
+    const newName = `${formData.name} (Copy)`
     setFormData({
       ...rest,
       id: undefined,
-      name: `${formData.name} (Copy)`,
-      slug: `${formData.slug}-copy`,
+      name: newName,
+      slug: slugify(newName),
       status: 'draft'
     })
     alert("Product details copied. Click Publish to save as a new product.")
+  }
+
+  const regenerateSlug = () => {
+    setFormData({ ...formData, slug: slugify(formData.name) })
   }
 
   const addGalleryImage = (url: string) => {
@@ -173,6 +189,30 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
               className="h-12 text-lg font-medium"
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="slug" className="text-sm font-bold flex items-center justify-between">
+              URL Slug
+              <button
+                type="button"
+                onClick={regenerateSlug}
+                className="text-[10px] uppercase font-bold text-accent flex items-center gap-1 hover:underline"
+              >
+                <RefreshCw className="h-3 w-3" /> Regenerate from title
+              </button>
+            </Label>
+            <div className="relative">
+              <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-muted-foreground text-[10px] font-mono opacity-50 px-2">/shop/</span>
+              <Input
+                id="slug"
+                value={formData.slug}
+                onChange={(e) => setFormData({ ...formData, slug: slugify(e.target.value) })}
+                placeholder="product-url-slug"
+                className="pl-16 h-10 text-sm font-mono"
+                required
+              />
+            </div>
           </div>
 
           <div className="space-y-2">

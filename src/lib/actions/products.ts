@@ -93,10 +93,24 @@ export async function duplicateProduct(id: string) {
   
   // 2. Create copy
   const { id: _, created_at: __, updated_at: ___, product_gallery, ...rest } = original
+  const newName = `${rest.name} (Copy)`
+  let newSlug = generateSlug(newName)
+  
+  // Basic uniqueness check for products
+  const { data: existing } = await supabase
+    .from('products')
+    .select('id')
+    .eq('slug', newSlug)
+    .maybeSingle()
+  
+  if (existing) {
+    newSlug = `${newSlug}-${Math.floor(Math.random() * 1000)}`
+  }
+
   const copyData = {
     ...rest,
-    name: `${rest.name} (Copy)`,
-    slug: `${rest.slug}-copy-${Math.floor(Math.random() * 1000)}`,
+    name: newName,
+    slug: newSlug,
     status: 'draft'
   }
   

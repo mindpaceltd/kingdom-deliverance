@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { requireRole } from '@/lib/actions/auth-helpers'
+import { generateSlug } from '@/lib/utils'
 import type { PostData } from '@/lib/types'
 
 // ---------------------------------------------------------------------------
@@ -221,10 +222,10 @@ export async function duplicatePost(
     ? source.title
     : `Copy of ${source.title}`
 
-  // Generate a unique slug
-  const baseSlug = source.slug
-  let candidateSlug = `${baseSlug}-copy`
+  // Generate a unique slug from the new title
+  let candidateSlug = generateSlug(newTitle)
   let attempt = 1
+  const baseSlug = candidateSlug
 
   while (attempt <= 99) {
     const { data: existing } = await supabase
@@ -236,7 +237,7 @@ export async function duplicatePost(
     if (!existing) break
 
     attempt++
-    candidateSlug = `${baseSlug}-copy-${attempt}`
+    candidateSlug = `${baseSlug}-${attempt}`
   }
 
   if (attempt > 99) {

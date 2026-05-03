@@ -202,12 +202,12 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
                   iconClassName="w-4 h-4"
                   label="Add to Cart"
                 />
-                <a
-                  href={`/checkout?product=${product.id}`}
-                  className="w-full bg-[#1e3a5f] hover:bg-[#162d4a] text-white font-bold py-3.5 rounded-lg text-sm uppercase tracking-wide flex items-center justify-center gap-2 transition-colors"
-                >
-                  Buy Now
-                </a>
+                <AddToCartButton
+                  product={{ ...product, price_usd: displayPrice }}
+                  className="w-full bg-[#1e3a5f] hover:bg-[#162d4a] text-white font-bold py-3.5 rounded-lg text-sm uppercase tracking-wide transition-colors"
+                  label="Buy Now"
+                  isBuyNow={true}
+                />
               </div>
 
               {/* Trust badges */}

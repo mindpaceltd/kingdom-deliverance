@@ -52,9 +52,9 @@ export default function LivePage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
-              { day: "Sunday", time: "9:00 AM", label: "Morning Service" },
-              { day: "Sunday", time: "11:30 AM", label: "2nd Service" },
-              { day: "Wednesday", time: "6:30 PM", label: "Bible Study" },
+              { day: "Sunday", time: "10:00 AM (EAT)", label: "Celebration Service" },
+              { day: "Wednesday", time: "6:00 PM (EAT)", label: "Bible Study" },
+              { day: "Friday", time: "6:00 PM (EAT)", label: "Prayer Meeting" },
             ].map((s) => (
               <div key={`${s.day}-${s.time}`} className="bg-muted rounded-2xl p-6 space-y-2">
                 <div className="w-10 h-10 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-3">

@@ -13,6 +13,8 @@ const SETTINGS_KEYS = [
   'twitter_url',
   'instagram_url',
   'service_times',
+  'social_links_json',
+  'contact_phones_json',
   'live_stream_url',
   'donation_instructions',
   // Branding
@@ -22,6 +24,7 @@ const SETTINGS_KEYS = [
   'site_meta_title',
   'site_meta_description',
   'site_keywords',
+  'site_og_image',
   // Church Specifics
   'mission',
   'vision',

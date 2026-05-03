@@ -50,9 +50,9 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.35 }}
-            className="font-serif text-5xl font-bold leading-[1.1] tracking-tight md:text-6xl lg:text-7xl"
+            className="font-serif text-5xl font-bold leading-[1.1] tracking-tight md:text-6xl lg:text-7xl drop-shadow-sm"
           >
-            Encounter God,{" "}
+            <span className="text-white">Encounter God,</span>{" "}
             <br className="hidden sm:block" />
             <span className="bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent">
               Experience Deliverance.
@@ -119,17 +119,17 @@ export function HeroSection() {
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div className="text-center space-y-1">
                   <div className="font-semibold text-white">Sunday Service</div>
-                  <div className="text-white/60 text-xs">9:00 AM – 12:00 PM</div>
+                  <div className="text-white/60 text-[10px]">10:00 AM (EAT)</div>
                 </div>
                 <div className="relative text-center space-y-1">
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-px h-8 bg-white/15" />
                   <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-8 bg-white/15" />
                   <div className="font-semibold text-white">Bible Study</div>
-                  <div className="text-white/60 text-xs">Wednesday 6:00 PM</div>
+                  <div className="text-white/60 text-[10px]">Wed 6:00 PM (EAT)</div>
                 </div>
                 <div className="text-center space-y-1">
                   <div className="font-semibold text-white">Prayer Meeting</div>
-                  <div className="text-white/60 text-xs">Friday 6:00 PM</div>
+                  <div className="text-white/60 text-[10px]">Fri 6:00 PM (EAT)</div>
                 </div>
               </div>
             </div>

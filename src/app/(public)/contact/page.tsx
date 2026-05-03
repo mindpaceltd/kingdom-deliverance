@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,20 @@ export default function ContactPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [settings, setSettings] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const supabase = createClient();
+      const { data } = await supabase.from('site_settings').select('key, value');
+      if (data) {
+        setSettings(Object.fromEntries(data.map(s => [s.key, s.value])));
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const additionalPhones = settings.contact_phones_json ? JSON.parse(settings.contact_phones_json) : [];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,10 +74,14 @@ export default function ContactPage() {
                 <h2 className="font-serif text-3xl font-bold text-primary mb-6">Find Us</h2>
                 <div className="space-y-6">
                   {[
-                    { icon: <MapPin className="w-5 h-5 text-accent" />, label: "Address", value: "Kingdom Deliverance Centre Uganda\nKampala, Uganda" },
-                    { icon: <Phone className="w-5 h-5 text-accent" />, label: "Phone", value: "+256 700 000 000" },
-                    { icon: <Mail className="w-5 h-5 text-accent" />, label: "Email", value: "info@kdcuganda.org" },
-                    { icon: <Clock className="w-5 h-5 text-accent" />, label: "Service Times", value: "Sunday: 9:00 AM & 11:30 AM\nWednesday: 6:30 PM\nFriday: 6:30 PM" },
+                    { icon: <MapPin className="w-5 h-5 text-accent" />, label: "Address", value: settings.address || "Kingdom Deliverance Centre Uganda\nKampala, Uganda" },
+                    { 
+                      icon: <Phone className="w-5 h-5 text-accent" />, 
+                      label: "Phone", 
+                      value: [settings.contact_phone || "+256 700 000 000", ...additionalPhones].join("\n") 
+                    },
+                    { icon: <Mail className="w-5 h-5 text-accent" />, label: "Email", value: settings.contact_email || "info@kdcuganda.org" },
+                    { icon: <Clock className="w-5 h-5 text-accent" />, label: "Service Times", value: "Sunday: 10:00 AM (EAT)\nWednesday: 6:00 PM (EAT)\nFriday: 6:00 PM (EAT)" },
                   ].map((item) => (
                     <div key={item.label} className="flex gap-4">
                       <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0">{item.icon}</div>

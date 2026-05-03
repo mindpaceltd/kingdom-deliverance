@@ -5,18 +5,31 @@ import { ShoppingCart, Check } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { cn } from '@/lib/utils'
 
+import { useRouter } from 'next/navigation'
+
 interface AddToCartButtonProps {
   product: any
   className?: string
   iconClassName?: string
   label?: string
+  isBuyNow?: boolean
 }
 
-export function AddToCartButton({ product, className, iconClassName, label = 'Add to Cart' }: AddToCartButtonProps) {
+export function AddToCartButton({ 
+  product, 
+  className, 
+  iconClassName, 
+  label = 'Add to Cart',
+  isBuyNow = false
+}: AddToCartButtonProps) {
   const { addItem } = useCart()
+  const router = useRouter()
   const [added, setAdded] = React.useState(false)
 
-  const handleAdd = () => {
+  const handleAdd = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
     addItem({
       id: product.id,
       name: product.name,
@@ -25,8 +38,13 @@ export function AddToCartButton({ product, className, iconClassName, label = 'Ad
       image: product.image_url,
       type: product.type
     })
-    setAdded(true)
-    setTimeout(() => setAdded(false), 2000)
+
+    if (isBuyNow) {
+      router.push('/checkout')
+    } else {
+      setAdded(true)
+      setTimeout(() => setAdded(false), 2000)
+    }
   }
 
   return (
@@ -45,7 +63,7 @@ export function AddToCartButton({ product, className, iconClassName, label = 'Ad
         </>
       ) : (
         <>
-          <ShoppingCart className={cn('w-4 h-4', iconClassName)} />
+          {isBuyNow ? null : <ShoppingCart className={cn('w-4 h-4', iconClassName)} />}
           {label}
         </>
       )}

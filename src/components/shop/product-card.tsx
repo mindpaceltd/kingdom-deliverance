@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ShoppingCart, Star, Package, ArrowRight } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { Button } from '@/components/ui/button'
+import { useRouter } from 'next/navigation'
 
 interface ProductCardProps {
   product: any
@@ -20,8 +21,11 @@ export function ProductCard({ product, view = 'grid' }: ProductCardProps) {
   const priceUGX = Math.round(displayPrice * RATE)
   const regularUGX = Math.round((product.regular_price_usd || product.price_usd) * RATE)
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const router = useRouter()
+  const handleAddToCart = (e: React.MouseEvent, isBuy: boolean = false) => {
     e.preventDefault()
+    e.stopPropagation()
+    
     addItem({
       id: product.id,
       name: product.name,
@@ -30,6 +34,10 @@ export function ProductCard({ product, view = 'grid' }: ProductCardProps) {
       image: product.image_url,
       type: product.type
     })
+
+    if (isBuy) {
+      router.push('/checkout')
+    }
   }
 
   if (view === 'list') {
@@ -79,9 +87,12 @@ export function ProductCard({ product, view = 'grid' }: ProductCardProps) {
                <Button asChild variant="outline" size="sm" className="h-8 text-[10px] hidden sm:flex">
                 <Link href={`/shop/${product.slug}`}>Details</Link>
               </Button>
-              <Button onClick={handleAddToCart} size="sm" className="h-8 bg-accent hover:bg-accent/90 text-primary text-[10px] font-bold">
+              <Button onClick={(e) => handleAddToCart(e, false)} size="sm" className="h-8 bg-gray-100 hover:bg-gray-200 text-primary text-[10px] font-bold">
                 <ShoppingCart className="w-3 h-3 mr-1.5" />
-                Add to Cart
+                Add
+              </Button>
+              <Button onClick={(e) => handleAddToCart(e, true)} size="sm" className="h-8 bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-[10px] font-bold">
+                Buy Now
               </Button>
             </div>
           </div>
@@ -136,15 +147,19 @@ export function ProductCard({ product, view = 'grid' }: ProductCardProps) {
 
           <div className="flex gap-1">
             <Button 
-              onClick={handleAddToCart}
+              onClick={(e) => handleAddToCart(e, false)}
               size="sm" 
-              className="flex-1 h-7 sm:h-8 bg-accent hover:bg-accent/90 text-primary text-[9px] sm:text-[10px] font-bold px-1"
+              variant="outline"
+              className="flex-1 h-7 sm:h-8 border-primary/10 text-primary text-[9px] sm:text-[10px] font-bold px-1"
             >
-              <ShoppingCart className="w-3 h-3 mr-1 hidden sm:block" />
               Add
             </Button>
-            <Button asChild variant="outline" size="sm" className="h-7 sm:h-8 flex-1 border-primary/10 text-primary text-[9px] sm:text-[10px] px-1">
-              <Link href={`/shop/${product.slug}`}>View</Link>
+            <Button 
+              onClick={(e) => handleAddToCart(e, true)}
+              size="sm" 
+              className="flex-[1.5] h-7 sm:h-8 bg-[#1e3a5f] hover:bg-[#162d4a] text-white text-[9px] sm:text-[10px] font-bold px-1"
+            >
+              Buy Now
             </Button>
           </div>
         </div>
