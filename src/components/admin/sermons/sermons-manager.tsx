@@ -20,8 +20,11 @@ import {
   FileEditIcon,
   ClockIcon,
   TrendingUpIcon,
-  VideoIcon
+  VideoIcon,
+  UserIcon
 } from 'lucide-react'
+
+import { cn } from '@/lib/utils'
 
 import { DataTable, type ColumnDef } from '@/components/admin/data-table'
 import { StatusBadge } from '@/components/admin/status-badge'
