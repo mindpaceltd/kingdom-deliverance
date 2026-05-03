@@ -35,6 +35,8 @@ export function AnalyticsDashboard() {
   const [scData, setScData] = React.useState<any>(null)
   const [gaLoading, setGaLoading] = React.useState(false)
   const [scLoading, setScLoading] = React.useState(false)
+  const [gaError, setGaError] = React.useState<string | null>(null)
+  const [scError, setScError] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     async function fetchData() {
@@ -100,14 +102,18 @@ export function AnalyticsDashboard() {
 
   async function fetchGaData() {
     setGaLoading(true)
+    setGaError(null)
     try {
       const res = await fetch('/api/google/data/analytics')
+      const data = await res.json()
       if (res.ok) {
-        const data = await res.json()
         setGaData(data)
+      } else {
+        setGaError(data.error || 'Failed to fetch GA data')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching GA data:', error)
+      setGaError(error.message || 'Connection error')
     } finally {
       setGaLoading(false)
     }
@@ -115,14 +121,18 @@ export function AnalyticsDashboard() {
 
   async function fetchScData() {
     setScLoading(true)
+    setScError(null)
     try {
       const res = await fetch('/api/google/data/search-console')
+      const data = await res.json()
       if (res.ok) {
-        const data = await res.json()
         setScData(data)
+      } else {
+        setScError(data.error || 'Failed to fetch Search Console data')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching SC data:', error)
+      setScError(error.message || 'Connection error')
     } finally {
       setScLoading(false)
     }
@@ -337,6 +347,8 @@ export function AnalyticsDashboard() {
             <EmptyState icon={<Globe className="size-12 text-primary/20 mb-4" />} title="Google Not Connected" desc="Link your Google account in Settings to unlock deep search insights." />
           ) : !scConfigured ? (
             <EmptyState icon={<Search className="size-12 text-primary/20 mb-4" />} title="Search Console Pending" desc="Select your website property in the Settings tab to start tracking keywords." />
+          ) : scError ? (
+            <EmptyState icon={<ShieldCheck className="size-12 text-destructive/20 mb-4" />} title="Search Console Error" desc={scError} />
           ) : !scData ? (
             <EmptyState icon={<Activity className="size-12 text-primary/20 mb-4" />} title="No Search Data Found" desc="Your site is connected, but Google hasn't reported any search traffic for the selected period yet." />
           ) : (
@@ -425,6 +437,8 @@ export function AnalyticsDashboard() {
             <EmptyState icon={<MousePointer2 className="size-12 text-primary/20 mb-4" />} title="Analytics Not Connected" desc="Sign in with Google to enable official GA4 measurement." />
           ) : !gaConfigured ? (
             <EmptyState icon={<Activity className="size-12 text-primary/20 mb-4" />} title="GA4 Not Configured" desc="Go to Settings and select a Google Analytics 4 property to see visitor data." />
+          ) : gaError ? (
+            <EmptyState icon={<BarChart3 className="size-12 text-destructive/20 mb-4" />} title="Analytics Sync Error" desc={gaError} />
           ) : !gaData ? (
              <EmptyState icon={<BarChart3 className="size-12 text-primary/20 mb-4" />} title="No Analytics Data" desc="Your GA4 property is linked, but no visitor data was found for the last 28 days." />
           ) : (

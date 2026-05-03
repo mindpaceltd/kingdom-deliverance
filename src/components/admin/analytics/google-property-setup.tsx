@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Loader2, ChevronRight } from 'lucide-react'
+import { Loader2, ChevronRight, CheckCircle2 as CheckCircleIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
