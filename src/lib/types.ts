@@ -259,3 +259,65 @@ export interface ContactSubmission {
   is_read: boolean
   created_at: string
 }
+
+// ============================================
+// Sermon AI Link Processor Types
+// ============================================
+
+/**
+ * AI-generated sermon content before user review
+ * Used to populate the draft review modal
+ */
+export interface SermonDraft {
+  title: string
+  description: string
+  content: string
+  keywords: string[]
+  video_url: string
+  transcript: string
+}
+
+/**
+ * Database record for rate limiting and monitoring
+ * Tracks all AI processing requests
+ */
+export interface ProcessingLog {
+  id: string
+  user_id: string
+  link_url: string
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  error_message: string | null
+  duration_ms: number | null
+  created_at: string
+  updated_at: string
+}
+
+/**
+ * Return type from processSermonLink server action
+ * Contains either success with draft data or error message
+ */
+export interface ProcessingResult {
+  success?: boolean
+  draft?: SermonDraft
+  error?: string
+}
+
+/**
+ * UI status indicators for processing steps
+ * Shows user progress through the AI pipeline
+ */
+export type ProcessingStep = 
+  | { step: 1; label: 'Validating link...' }
+  | { step: 2; label: 'Extracting transcript...'; progress?: number }
+  | { step: 3; label: 'Generating summary...'; progress?: number }
+  | { step: 4; label: 'Optimizing for SEO...'; progress?: number }
+
+/**
+ * Result of URL validation with error messages
+ * Used for client-side and server-side link validation
+ */
+export interface LinkValidation {
+  valid: boolean
+  type?: 'youtube' | 'vimeo' | 'direct'
+  error?: string
+}

@@ -15,9 +15,12 @@ import {
 import { SlugInput } from '@/components/admin/slug-input'
 import { RichTextEditor } from '@/components/admin/rich-text-editor'
 import { MediaPicker } from '@/components/admin/media-picker'
+import { AILinkProcessor } from '@/components/admin/sermons/ai-link-processor'
+import { DraftReviewModal, type SermonFormData } from '@/components/admin/sermons/draft-review-modal'
 import { createSermon, updateSermon } from '@/lib/actions/sermons'
 import { validateVideoUrl } from '@/lib/utils'
-import type { Sermon } from '@/lib/types'
+import { isAIProcessorEnabled } from '@/lib/env'
+import type { Sermon, SermonDraft } from '@/lib/types'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -73,9 +76,68 @@ export function SermonForm({ sermon, onSuccess, onCancel }: SermonFormProps) {
   const [submitting, setSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [videoUrlError, setVideoUrlError] = React.useState<string | null>(null)
+  
+  // Draft Review Modal state
+  const [draftReviewOpen, setDraftReviewOpen] = React.useState(false)
+  const [currentDraft, setCurrentDraft] = React.useState<SermonDraft | null>(null)
 
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
+  }
+
+  /**
+   * Handle draft generated from AI Link Processor
+   * Opens the Draft Review Modal with the generated content
+   */
+  function handleDraftGenerated(draft: SermonDraft) {
+    setCurrentDraft(draft)
+    setDraftReviewOpen(true)
+  }
+
+  /**
+   * Handle save from Draft Review Modal
+   * Creates a new sermon with the reviewed data
+   */
+  async function handleDraftSave(data: SermonFormData, status: 'draft' | 'published') {
+    setError(null)
+    setSubmitting(true)
+
+    const payload = {
+      title: data.title.trim(),
+      slug: data.slug.trim(),
+      description: data.description.trim() || undefined,
+      content: data.content || undefined,
+      video_url: data.video_url.trim() || undefined,
+      audio_url: data.audio_url.trim() || undefined,
+      thumbnail_url: data.thumbnail_url || undefined,
+      preacher: data.preacher.trim(),
+      series: data.series.trim() || undefined,
+      date: data.date,
+      duration_minutes: data.duration_minutes ? Number(data.duration_minutes) : undefined,
+      status,
+    }
+
+    const result = await createSermon(payload)
+
+    setSubmitting(false)
+
+    if ('error' in result) {
+      setError(result.error)
+      throw new Error(result.error)
+    }
+
+    // Close modal and trigger success callback
+    setDraftReviewOpen(false)
+    setCurrentDraft(null)
+    onSuccess()
+  }
+
+  /**
+   * Handle close of Draft Review Modal
+   */
+  function handleDraftClose() {
+    setDraftReviewOpen(false)
+    setCurrentDraft(null)
   }
 
   function handleVideoUrlChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -129,8 +191,36 @@ export function SermonForm({ sermon, onSuccess, onCancel }: SermonFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4 space-y-5">
-      {/* Title */}
+    <>
+      <form onSubmit={handleSubmit} className="mt-4 space-y-5">
+        {/* AI Link Processor Section - Only show when creating new sermon */}
+        {!isEditing && (
+          <>
+            {isAIProcessorEnabled ? (
+              <AILinkProcessor onDraftGenerated={handleDraftGenerated} />
+            ) : (
+              <div className="rounded-lg border border-border bg-muted/30 p-4">
+                <p className="text-sm text-muted-foreground">
+                  AI link processing is currently unavailable. Please enter sermon content manually.
+                </p>
+              </div>
+            )}
+            
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or enter manually
+                </span>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Title */}
       <div className="space-y-1.5">
         <Label htmlFor="sermon-title">Title</Label>
         <Input
@@ -310,5 +400,16 @@ export function SermonForm({ sermon, onSuccess, onCancel }: SermonFormProps) {
         </Button>
       </div>
     </form>
+
+    {/* Draft Review Modal */}
+    {currentDraft && (
+      <DraftReviewModal
+        draft={currentDraft}
+        isOpen={draftReviewOpen}
+        onClose={handleDraftClose}
+        onSave={handleDraftSave}
+      />
+    )}
+  </>
   )
 }

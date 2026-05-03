@@ -17,6 +17,17 @@ const REQUIRED_VARS = [
 type RequiredVar = (typeof REQUIRED_VARS)[number]
 
 /**
+ * The optional AI processor env vars that env.ts validates.
+ */
+const AI_PROCESSOR_VARS = [
+  'GEMINI_API_KEY',
+  'AI_PROCESSING_TIMEOUT_MS',
+  'AI_RATE_LIMIT_PER_HOUR',
+] as const
+
+type AIProcessorVar = (typeof AI_PROCESSOR_VARS)[number]
+
+/**
  * Helper: set all required env vars to a non-empty value, then delete the
  * specified one. Returns a cleanup function that restores the original state.
  */
@@ -165,4 +176,120 @@ describe('Property 15 — Env validation identifies each missing variable', () =
       )
     }
   )
+})
+
+// Feature: sermon-ai-link-processor
+// Tests for AI processor environment variables (Requirements 15.1, 15.2, 15.3)
+
+describe('AI Processor Environment Variables', () => {
+  const savedEnv: Record<string, string | undefined> = {}
+  let consoleWarnSpy: ReturnType<typeof vi.spyOn>
+
+  beforeEach(() => {
+    // Save all env vars
+    for (const key of [...REQUIRED_VARS, ...AI_PROCESSOR_VARS]) {
+      savedEnv[key] = process.env[key]
+    }
+    // Set required vars to avoid errors
+    for (const key of REQUIRED_VARS) {
+      process.env[key] = 'test-value'
+    }
+    // Spy on console.warn
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    // Restore all env vars
+    for (const key of [...REQUIRED_VARS, ...AI_PROCESSOR_VARS]) {
+      const saved = savedEnv[key]
+      if (saved === undefined) {
+        delete process.env[key]
+      } else {
+        process.env[key] = saved
+      }
+    }
+    consoleWarnSpy.mockRestore()
+    vi.resetModules()
+  })
+
+  it('warns when GEMINI_API_KEY is missing', async () => {
+    delete process.env.GEMINI_API_KEY
+    vi.resetModules()
+    await import('../env')
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('GEMINI_API_KEY')
+    )
+  })
+
+  it('does not throw when GEMINI_API_KEY is missing (optional var)', async () => {
+    delete process.env.GEMINI_API_KEY
+    vi.resetModules()
+    await expect(import('../env')).resolves.not.toThrow()
+  })
+
+  it('exports aiProcessorEnv with default values when env vars are missing', async () => {
+    delete process.env.GEMINI_API_KEY
+    delete process.env.AI_PROCESSING_TIMEOUT_MS
+    delete process.env.AI_RATE_LIMIT_PER_HOUR
+    vi.resetModules()
+    const envModule = await import('../env')
+    
+    expect(envModule.aiProcessorEnv).toEqual({
+      geminiApiKey: '',
+      processingTimeoutMs: 600000,
+      rateLimitPerHour: 5,
+    })
+  })
+
+  it('exports aiProcessorEnv with provided values when env vars are set', async () => {
+    process.env.GEMINI_API_KEY = 'test-api-key'
+    process.env.AI_PROCESSING_TIMEOUT_MS = '300000'
+    process.env.AI_RATE_LIMIT_PER_HOUR = '10'
+    vi.resetModules()
+    const envModule = await import('../env')
+    
+    expect(envModule.aiProcessorEnv).toEqual({
+      geminiApiKey: 'test-api-key',
+      processingTimeoutMs: 300000,
+      rateLimitPerHour: 10,
+    })
+  })
+
+  it('exports isAIProcessorEnabled as false when GEMINI_API_KEY is missing', async () => {
+    delete process.env.GEMINI_API_KEY
+    vi.resetModules()
+    const envModule = await import('../env')
+    
+    expect(envModule.isAIProcessorEnabled).toBe(false)
+  })
+
+  it('exports isAIProcessorEnabled as true when GEMINI_API_KEY is present', async () => {
+    process.env.GEMINI_API_KEY = 'test-api-key'
+    vi.resetModules()
+    const envModule = await import('../env')
+    
+    expect(envModule.isAIProcessorEnabled).toBe(true)
+  })
+
+  it('parses numeric env vars correctly with various valid values', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.integer({ min: 1000, max: 3600000 }), // timeout in ms
+        fc.integer({ min: 1, max: 100 }), // rate limit
+        async (timeout, rateLimit) => {
+          process.env.GEMINI_API_KEY = 'test-key'
+          process.env.AI_PROCESSING_TIMEOUT_MS = String(timeout)
+          process.env.AI_RATE_LIMIT_PER_HOUR = String(rateLimit)
+          vi.resetModules()
+          const envModule = await import('../env')
+          
+          return (
+            envModule.aiProcessorEnv.processingTimeoutMs === timeout &&
+            envModule.aiProcessorEnv.rateLimitPerHour === rateLimit
+          )
+        }
+      ),
+      { numRuns: 100 }
+    )
+  })
 })

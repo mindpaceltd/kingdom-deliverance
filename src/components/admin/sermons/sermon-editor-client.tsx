@@ -19,11 +19,14 @@ import { RichTextEditor } from '@/components/admin/rich-text-editor'
 import { PublishPanel } from '../posts/publish-panel'
 import { SeoPanel } from '../posts/seo-panel'
 import { SeriesSelect } from './series-select'
+import { AILinkProcessor } from './ai-link-processor'
+import { DraftReviewModal, type SermonFormData } from './draft-review-modal'
 import { createSermon, updateSermon, checkSlugAvailability } from '@/lib/actions/sermons'
 import { generatePostContent } from '@/lib/actions/ai'
 import { computeSeoScore } from '@/lib/seo-scorer'
 import { cn, validateVideoUrl } from '@/lib/utils'
-import type { Sermon, SermonSeries } from '@/lib/types'
+import { isAIProcessorEnabled } from '@/lib/env'
+import type { Sermon, SermonSeries, SermonDraft } from '@/lib/types'
 import { MediaPicker } from '../media-picker'
 
 export interface SermonEditorClientProps {
@@ -90,6 +93,10 @@ export function SermonEditorClient({ sermon, allSeries }: SermonEditorClientProp
 
   // Preview mode
   const [previewMode, setPreviewMode] = React.useState(false)
+
+  // Draft Review Modal state
+  const [draftReviewOpen, setDraftReviewOpen] = React.useState(false)
+  const [currentDraft, setCurrentDraft] = React.useState<SermonDraft | null>(null)
 
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -197,6 +204,75 @@ export function SermonEditorClient({ sermon, allSeries }: SermonEditorClientProp
     if (result) setDraftSaved(true)
   }
 
+  /**
+   * Handle draft generated from AI Link Processor
+   * Opens the Draft Review Modal with the generated content
+   */
+  function handleDraftGenerated(draft: SermonDraft) {
+    setCurrentDraft(draft)
+    setDraftReviewOpen(true)
+  }
+
+  /**
+   * Handle save from Draft Review Modal
+   * Creates a new sermon with the reviewed data
+   */
+  async function handleDraftSave(data: SermonFormData, status: 'draft' | 'published') {
+    setError(null)
+    setSubmitting(true)
+
+    const { score } = computeSeoScore({
+      focusKeyword: data.keywords,
+      seoTitle: data.title,
+      metaDescription: data.description,
+      content: data.content,
+      slug: data.slug,
+      featuredImage: data.thumbnail_url,
+    })
+
+    const payload = {
+      title: data.title.trim(),
+      slug: data.slug.trim(),
+      description: data.description.trim() || undefined,
+      content: data.content || undefined,
+      video_url: data.video_url.trim() || undefined,
+      audio_url: data.audio_url.trim() || undefined,
+      thumbnail_url: data.thumbnail_url || undefined,
+      featured_image_alt: '',
+      preacher: data.preacher.trim(),
+      series_id: data.series ? null : null, // TODO: Handle series lookup
+      date: data.date,
+      duration_minutes: data.duration_minutes ? Number(data.duration_minutes) : undefined,
+      status,
+      seo_score: score,
+      meta_title: data.title,
+      meta_description: data.description,
+      focus_keyword: data.keywords,
+    }
+
+    const result = await createSermon(payload)
+
+    setSubmitting(false)
+
+    if ('error' in result) {
+      setError(result.error)
+      throw new Error(result.error)
+    }
+
+    // Close modal and redirect to sermons list
+    setDraftReviewOpen(false)
+    setCurrentDraft(null)
+    router.push('/admin/sermons')
+  }
+
+  /**
+   * Handle close of Draft Review Modal
+   */
+  function handleDraftClose() {
+    setDraftReviewOpen(false)
+    setCurrentDraft(null)
+  }
+
   return (
     <div className="flex h-screen flex-col bg-background overflow-hidden -m-6">
       {/* Top bar */}
@@ -221,6 +297,33 @@ export function SermonEditorClient({ sermon, allSeries }: SermonEditorClientProp
       <div className="flex flex-1 min-h-0 overflow-hidden">
         <main className="flex-1 overflow-y-auto px-6 py-8">
           <div className="max-w-3xl mx-auto space-y-6">
+            {/* AI Link Processor Section - Only show when creating new sermon */}
+            {!isEditing && (
+              <>
+                {isAIProcessorEnabled ? (
+                  <AILinkProcessor onDraftGenerated={handleDraftGenerated} />
+                ) : (
+                  <div className="rounded-lg border border-border bg-muted/30 p-4">
+                    <p className="text-sm text-muted-foreground">
+                      AI link processing is currently unavailable. Please enter sermon content manually.
+                    </p>
+                  </div>
+                )}
+                
+                {/* Divider */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Or enter manually
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
+
             {/* Title */}
             <Input
               value={form.title}
@@ -440,6 +543,16 @@ export function SermonEditorClient({ sermon, allSeries }: SermonEditorClientProp
           />
         </aside>
       </div>
+
+      {/* Draft Review Modal */}
+      {currentDraft && (
+        <DraftReviewModal
+          draft={currentDraft}
+          isOpen={draftReviewOpen}
+          onClose={handleDraftClose}
+          onSave={handleDraftSave}
+        />
+      )}
     </div>
   )
 }
