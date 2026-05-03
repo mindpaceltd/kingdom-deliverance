@@ -47,15 +47,20 @@ export async function analyzeSermonVideo(
     if (sourceType === 'video') {
       // Extract transcript from video
       try {
-        const items = await YoutubeTranscript.fetchTranscript(videoUrl!)
+        // Robust YouTube ID extraction
+        const videoIdMatch = videoUrl?.match(/(?:v=|\/embed\/|\/watch\?v=|\/v\/|\/e\/|watch\?.*v=|^youtube\..*\/v\/|^youtu\.be\/|youtu\.be\/)([^#\&\?]*).*/);
+        const videoId = videoIdMatch ? videoIdMatch[1] : videoUrl;
+        
+        console.log('[analyzeSermonVideo] Fetching transcript for ID:', videoId)
+        const items = await YoutubeTranscript.fetchTranscript(videoId!)
         contentSource = items.map((i) => i.text).join(' ')
       } catch (e) {
         console.error('[analyzeSermonVideo] transcript fetch failed:', e)
-        return { success: false, error: 'Failed to fetch transcript from this video. Ensure it has captions enabled.' }
+        return { success: false, error: 'Failed to fetch transcript from this video. Ensure it has captions enabled or try a different video.' }
       }
 
       if (!contentSource || contentSource.length < 100) {
-        return { success: false, error: 'Transcript is too short to analyze.' }
+        return { success: false, error: 'Transcript is too short to analyze. Ensure the video has spoken content.' }
       }
     } else {
       // Use title as content source
@@ -67,7 +72,14 @@ export async function analyzeSermonVideo(
     if (!apiKey) return { success: false, error: 'Gemini AI is not configured.' }
 
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    // Use gemini-1.5-flash as the primary, but handle potential model name issues
+    let model;
+    try {
+      model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    } catch (e) {
+      console.warn('[analyzeSermonVideo] gemini-1.5-flash not available, falling back to gemini-pro')
+      model = genAI.getGenerativeModel({ model: 'gemini-pro' })
+    }
 
     let prompt = ''
     
@@ -85,7 +97,7 @@ export async function analyzeSermonVideo(
         Return the result as a VALID JSON object with these keys: title, description, html, focusKeyword, imagePrompt.
 
         Transcript:
-        ${contentSource.slice(0, 30000)} // Limit to ~30k chars for token safety
+        ${contentSource.slice(0, 30000)}
       `
     } else {
       prompt = `
@@ -110,8 +122,22 @@ export async function analyzeSermonVideo(
       `
     }
 
-    const aiResult = await model.generateContent(prompt)
-    const responseText = aiResult.response.text()
+    let aiResult;
+    try {
+      aiResult = await model.generateContent(prompt)
+    } catch (err: any) {
+      console.error('[analyzeSermonVideo] gemini-1.5-flash failed:', err.message)
+      if (err.message?.includes('not found') || err.message?.includes('404')) {
+        console.log('[analyzeSermonVideo] Attempting fallback to gemini-pro...')
+        const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-pro' })
+        aiResult = await fallbackModel.generateContent(prompt)
+      } else {
+        throw err
+      }
+    }
+
+    const response = await aiResult.response
+    const responseText = response.text()
     
     // Clean JSON response (sometimes AI wraps in ```json)
     const jsonStr = responseText.replace(/```json/i, '').replace(/```/g, '').trim()

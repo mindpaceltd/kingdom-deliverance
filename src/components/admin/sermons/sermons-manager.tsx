@@ -51,11 +51,19 @@ import type { Sermon } from '@/lib/types'
 // ---------------------------------------------------------------------------
 
 function formatDate(dateStr: string): string {
-  return new Intl.DateTimeFormat('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(dateStr))
+  try {
+    if (!dateStr) return 'N/A'
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return dateStr
+    
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }).format(date)
+  } catch (e) {
+    return dateStr
+  }
 }
 
 /** Collect unique non-empty values from an array of sermons for a given key */
@@ -80,6 +88,11 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
   const router = useRouter()
   const [sermons, setSermons] = React.useState<Sermon[]>(initialSermons)
   const [isRefreshing, setIsRefreshing] = React.useState(false)
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Magic AI state
   const [magicUrl, setMagicUrl] = React.useState('')
@@ -226,7 +239,9 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
       key: 'date',
       header: 'Date',
       cell: (sermon) => (
-        <span className="text-sm text-muted-foreground">{formatDate(sermon.date)}</span>
+        <span className="text-sm text-muted-foreground" suppressHydrationWarning>
+          {mounted ? formatDate(sermon.date) : sermon.date}
+        </span>
       ),
     },
     {
