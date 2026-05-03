@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   Users, MousePointer2, Search, TrendingUp, Settings, 
-  MailIcon, MessageCircle, EyeIcon, Loader2, CheckCircleIcon,
+  MailIcon, MessageCircle, Eye, Loader2, CheckCircle,
   BarChart3, Globe, ShieldCheck, Activity, Zap, ExternalLink
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -260,7 +260,7 @@ export function AnalyticsDashboard() {
         {/* OVERVIEW */}
         <TabsContent value="overview" className="space-y-8 mt-0 outline-none">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard title="Total Views" value={dbStats.totalViews.toLocaleString()} icon={<EyeIcon className="size-5 text-accent" />} trend="+12%" />
+            <StatCard title="Total Views" value={dbStats.totalViews.toLocaleString()} icon={<Eye className="size-5 text-accent" />} trend="+12%" />
             <StatCard title="Registered Users" value={dbStats.users.toLocaleString()} icon={<Users className="size-5 text-accent" />} trend="+5%" />
             <StatCard title="Submissions" value={dbStats.messages.toLocaleString()} icon={<MailIcon className="size-5 text-accent" />} trend="+8%" />
             <StatCard title="Testimonies" value={dbStats.testimonies.toLocaleString()} icon={<MessageCircle className="size-5 text-accent" />} trend="+24%" />
@@ -349,7 +349,7 @@ export function AnalyticsDashboard() {
                     <p className="text-base font-bold text-primary">{gaConfigured ? 'Property Synced' : 'Action Required'}</p>
                     <p className="text-xs text-muted-foreground mt-1">{gaConfigured ? 'Live data is flowing from Google Analytics 4.' : 'Please select a GA4 property to enable tracking.'}</p>
                   </div>
-                  {gaConfigured && <CheckCircleIcon className="size-5 text-green-500 mt-4" />}
+                  {gaConfigured && <CheckCircle className="size-5 text-green-500 mt-4" />}
                 </div>
                 <div className="rounded-2xl border border-primary/5 p-6 bg-gray-50/50 flex flex-col justify-between">
                   <div>
@@ -357,7 +357,7 @@ export function AnalyticsDashboard() {
                     <p className="text-base font-bold text-primary">{scConfigured ? 'Site Verified' : 'Needs Config'}</p>
                     <p className="text-xs text-muted-foreground mt-1">{scConfigured ? 'Google Search insights are currently active.' : 'Connect your site URL to see keyword rankings.'}</p>
                   </div>
-                  {scConfigured && <CheckCircleIcon className="size-5 text-green-500 mt-4" />}
+                  {scConfigured && <CheckCircle className="size-5 text-green-500 mt-4" />}
                 </div>
               </div>
 

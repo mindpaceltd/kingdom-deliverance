@@ -11,8 +11,7 @@ import {
   TrashIcon, 
   MapPin, 
   Calendar, 
-  ExternalLink,
-  Eye
+  ExternalLink
 } from 'lucide-react'
 import { DataTable, type ColumnDef } from '@/components/admin/data-table'
 import { StatusBadge } from '@/components/admin/status-badge'
@@ -162,9 +161,13 @@ export function EventsManager({ initialEvents }: EventsManagerProps) {
       header: 'Date & Time',
       cell: (event) => (
         <div className="flex flex-col">
-          <span className="text-sm font-medium text-foreground">{formatDate(event.date)}</span>
+          <span className="text-sm font-medium text-foreground" suppressHydrationWarning>
+            {formatDate(event.date)}
+          </span>
           {event.end_date && (
-            <span className="text-[10px] text-muted-foreground">Ends: {formatDate(event.end_date)}</span>
+            <span className="text-[10px] text-muted-foreground" suppressHydrationWarning>
+              Ends: {formatDate(event.end_date)}
+            </span>
           )}
         </div>
       ),

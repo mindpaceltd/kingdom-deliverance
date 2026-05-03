@@ -36,7 +36,7 @@ export function ProductCard({ product, view = 'grid' }: ProductCardProps) {
     })
 
     if (isBuy) {
-      router.push('/checkout')
+      router.push('/cart')
     }
   }
 

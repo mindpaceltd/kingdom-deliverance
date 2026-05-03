@@ -59,7 +59,7 @@ export function EventEditorClient({ event }: EventEditorClientProps) {
     slug: event?.slug ?? '',
     description: event?.description ?? '',
     content: event?.content ?? '',
-    date: event?.date ?? new Date().toISOString().split('T')[0],
+    date: event?.date ?? '',
     end_date: event?.end_date ?? '',
     location: event?.location ?? '',
     image_url: event?.image_url ?? '',
@@ -78,6 +78,12 @@ export function EventEditorClient({ event }: EventEditorClientProps) {
   const [aiLoading, setAiLoading] = React.useState(false)
   const [showAiMenu, setShowAiMenu] = React.useState(false)
   const [previewMode, setPreviewMode] = React.useState(false)
+
+  React.useEffect(() => {
+    if (!isEditing && !form.date) {
+      setField('date', new Date().toISOString().split('T')[0])
+    }
+  }, [isEditing])
 
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -239,7 +245,7 @@ export function EventEditorClient({ event }: EventEditorClientProps) {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-sm font-semibold flex items-center gap-2">
-                    <Eye className="size-3.5 text-muted-foreground" />
+                    <EyeIcon className="size-3.5 text-muted-foreground" />
                     Registration URL
                   </Label>
                   <Input
