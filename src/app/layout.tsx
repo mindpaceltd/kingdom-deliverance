@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Poppins } from "next/font/google";
+import Script from "next/script";
 import { createClient } from '@/lib/supabase/server';
 import "./globals.css";
 
@@ -82,6 +83,20 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="flex flex-col min-h-screen">
+        {/* Google Analytics (gtag.js) */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-BDH3RW93YC"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-BDH3RW93YC');
+          `}
+        </Script>
         {children}
         <ScrollToTop />
       </body>

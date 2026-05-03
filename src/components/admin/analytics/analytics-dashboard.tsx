@@ -143,6 +143,24 @@ export function AnalyticsDashboard() {
     }
   }
 
+  async function refreshConfig() {
+    if (!userId) return
+    const supabase = createClient()
+    const [
+      { data: analyticsConfig },
+      { data: searchConsoleConfig }
+    ] = await Promise.all([
+      supabase.from('analytics_config').select('property_id').eq('user_id', userId).single(),
+      supabase.from('search_console_config').select('site_url').eq('user_id', userId).single()
+    ])
+
+    setGaConfigured(!!analyticsConfig?.property_id)
+    setScConfigured(!!searchConsoleConfig?.site_url)
+    
+    if (analyticsConfig?.property_id) fetchGaData()
+    if (searchConsoleConfig?.site_url) fetchScData()
+  }
+
   async function handleDisconnect() {
     const supabase = createClient()
     if (userId) {
@@ -311,11 +329,16 @@ export function AnalyticsDashboard() {
         {/* SEARCH CONSOLE */}
         <TabsContent value="search-console" className="space-y-6 mt-0 outline-none">
           {scLoading ? (
-            <div className="flex items-center justify-center h-[50vh]"><Loader2 className="size-8 animate-spin text-accent" /></div>
+            <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
+              <Loader2 className="size-8 animate-spin text-accent" />
+              <p className="text-xs text-muted-foreground">Fetching Search Console data...</p>
+            </div>
           ) : !isGoogleConnected ? (
             <EmptyState icon={<Globe className="size-12 text-primary/20 mb-4" />} title="Google Not Connected" desc="Link your Google account in Settings to unlock deep search insights." />
-          ) : !scData ? (
+          ) : !scConfigured ? (
             <EmptyState icon={<Search className="size-12 text-primary/20 mb-4" />} title="Search Console Pending" desc="Select your website property in the Settings tab to start tracking keywords." />
+          ) : !scData ? (
+            <EmptyState icon={<Activity className="size-12 text-primary/20 mb-4" />} title="No Search Data Found" desc="Your site is connected, but Google hasn't reported any search traffic for the selected period yet." />
           ) : (
             <div className="space-y-6">
               <div className="grid gap-4 md:grid-cols-4">
@@ -394,11 +417,16 @@ export function AnalyticsDashboard() {
         {/* GOOGLE ANALYTICS */}
         <TabsContent value="google-analytics" className="space-y-6 mt-0 outline-none">
           {gaLoading ? (
-            <div className="flex items-center justify-center h-[50vh]"><Loader2 className="size-8 animate-spin text-accent" /></div>
+            <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
+              <Loader2 className="size-8 animate-spin text-accent" />
+              <p className="text-xs text-muted-foreground">Connecting to GA4...</p>
+            </div>
           ) : !isGoogleConnected ? (
             <EmptyState icon={<MousePointer2 className="size-12 text-primary/20 mb-4" />} title="Analytics Not Connected" desc="Sign in with Google to enable official GA4 measurement." />
-          ) : !gaData ? (
+          ) : !gaConfigured ? (
             <EmptyState icon={<Activity className="size-12 text-primary/20 mb-4" />} title="GA4 Not Configured" desc="Go to Settings and select a Google Analytics 4 property to see visitor data." />
+          ) : !gaData ? (
+             <EmptyState icon={<BarChart3 className="size-12 text-primary/20 mb-4" />} title="No Analytics Data" desc="Your GA4 property is linked, but no visitor data was found for the last 28 days." />
           ) : (
             <div className="space-y-6">
               <div className="grid gap-4 md:grid-cols-3">
@@ -478,7 +506,7 @@ export function AnalyticsDashboard() {
                    <GooglePropertySetup
                     isConnected={isGoogleConnected}
                     userId={userId}
-                    onConfigSaved={() => { fetchGaData(); fetchScData(); }}
+                    onConfigSaved={refreshConfig}
                   />
                 </div>
               )}

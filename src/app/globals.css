@@ -214,6 +214,9 @@
     background-repeat: no-repeat;
     background-size: cover;
   }
+  .animate-pulse-subtle {
+    animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
 }
 
 @keyframes fade-up {
@@ -251,6 +254,17 @@
   }
   100% {
     box-shadow: 0 0 40px hsl(var(--accent) / 0.6);
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(0.98);
   }
 }
 

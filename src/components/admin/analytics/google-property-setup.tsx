@@ -320,12 +320,15 @@ export function GooglePropertySetup({ isConnected, userId, onConfigSaved }: Prop
                 {loadingProps && <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="size-3 animate-spin" /> Loading properties...</div>}
                 {properties.length > 0 && (
                   <div>
-                    <Label className="text-xs font-bold uppercase text-muted-foreground">2. Select Property</Label>
-                    <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
+                    <Label className="text-xs font-bold uppercase text-primary mb-2 block">Step 2: Select Property</Label>
+                    <div className="mt-2 space-y-1 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
                       {properties.map((prop: any) => (
                         <button key={prop.name} onClick={() => setSelectedProperty(prop.name)}
-                          className={`w-full text-left px-3 py-2 text-sm rounded-lg border transition-all ${selectedProperty === prop.name ? 'border-primary bg-primary/5 font-medium' : 'border-border hover:bg-muted/50'}`}>
-                          {prop.displayName} <span className="text-xs text-muted-foreground ml-1">({prop.name})</span>
+                          className={`w-full text-left px-3 py-2.5 text-sm rounded-xl border transition-all ${selectedProperty === prop.name ? 'border-accent bg-accent/5 ring-1 ring-accent/20 font-bold' : 'border-border hover:bg-muted/50'}`}>
+                          <div className="flex items-center justify-between">
+                             <span>{prop.displayName}</span>
+                             <span className="text-[10px] opacity-50 font-mono">({prop.name.replace('properties/', '')})</span>
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -350,10 +353,18 @@ export function GooglePropertySetup({ isConnected, userId, onConfigSaved }: Prop
                   </div>
                 </div>
                 {selectedProperty && (
-                  <Button size="sm" onClick={saveAnalyticsConfig} disabled={saving} className="gap-2">
-                    {saving ? <Loader2 className="size-4 animate-spin" /> : <ChevronRight className="size-4" />}
-                    Save & Continue
-                  </Button>
+                  <div className="pt-2">
+                    <Label className="text-xs font-bold uppercase text-primary mb-3 block">Step 3: Confirm Configuration</Label>
+                    <Button 
+                      size="sm" 
+                      onClick={saveAnalyticsConfig} 
+                      disabled={saving} 
+                      className="gap-2 rounded-xl bg-accent hover:bg-accent/90 text-white shadow-lg shadow-accent/20 animate-pulse-subtle w-full sm:w-auto"
+                    >
+                      {saving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircleIcon className="size-4" />}
+                      Save & Continue to Search Console
+                    </Button>
+                  </div>
                 )}
               </div>
             )}
@@ -395,10 +406,18 @@ export function GooglePropertySetup({ isConnected, userId, onConfigSaved }: Prop
                   ))}
                 </div>
                 {selectedSite && (
-                  <Button size="sm" onClick={saveScConfig} disabled={saving} className="gap-2 mt-2">
-                    {saving ? <Loader2 className="size-4 animate-spin" /> : <ChevronRight className="size-4" />}
-                    Finish Setup
-                  </Button>
+                  <div className="pt-2">
+                    <Label className="text-xs font-bold uppercase text-primary mb-3 block">Step 2: Confirm Site</Label>
+                    <Button 
+                      size="sm" 
+                      onClick={saveScConfig} 
+                      disabled={saving} 
+                      className="gap-2 rounded-xl bg-accent hover:bg-accent/90 text-white shadow-lg shadow-accent/20 animate-pulse-subtle w-full sm:w-auto"
+                    >
+                      {saving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircleIcon className="size-4" />}
+                      Complete Setup & View Analytics
+                    </Button>
+                  </div>
                 )}
               </div>
             )}
