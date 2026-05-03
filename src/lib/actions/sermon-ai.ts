@@ -10,7 +10,8 @@ import { ROLES } from '@/lib/roles'
 import { createSermon } from './sermons'
 
 export interface AnalyzeSermonRequest {
-  videoUrl: string
+  videoUrl?: string
+  title?: string
 }
 
 export interface AnalyzeSermonResult {
@@ -20,7 +21,8 @@ export interface AnalyzeSermonResult {
 }
 
 /**
- * Analyzes a YouTube video, extracts transcript, generates sermon notes/title/description,
+ * Analyzes a YouTube video OR generates content from a title,
+ * extracts transcript (if video), generates sermon notes/title/description,
  * generates a placeholder/AI image, and saves as a draft.
  */
 export async function analyzeSermonVideo(
@@ -30,21 +32,34 @@ export async function analyzeSermonVideo(
     const authResult = await requireRoles(ROLES.CONTENT)
     if ('error' in authResult) return { success: false, error: authResult.error }
 
-    const videoUrl = req.videoUrl.trim()
-    if (!videoUrl) return { success: false, error: 'Video URL is required' }
-
-    // 1. Get Transcript
-    let transcript = ''
-    try {
-      const items = await YoutubeTranscript.fetchTranscript(videoUrl)
-      transcript = items.map((i) => i.text).join(' ')
-    } catch (e) {
-      console.error('[analyzeSermonVideo] transcript fetch failed:', e)
-      return { success: false, error: 'Failed to fetch transcript from this video. Ensure it has captions enabled.' }
+    const videoUrl = req.videoUrl?.trim()
+    const titleInput = req.title?.trim()
+    
+    // Validate input
+    if (!videoUrl && !titleInput) {
+      return { success: false, error: 'Either video URL or sermon title is required' }
     }
 
-    if (!transcript || transcript.length < 100) {
-      return { success: false, error: 'Transcript is too short to analyze.' }
+    // 1. Get Content (Transcript or Title)
+    let contentSource = ''
+    let sourceType: 'video' | 'title' = videoUrl ? 'video' : 'title'
+    
+    if (sourceType === 'video') {
+      // Extract transcript from video
+      try {
+        const items = await YoutubeTranscript.fetchTranscript(videoUrl!)
+        contentSource = items.map((i) => i.text).join(' ')
+      } catch (e) {
+        console.error('[analyzeSermonVideo] transcript fetch failed:', e)
+        return { success: false, error: 'Failed to fetch transcript from this video. Ensure it has captions enabled.' }
+      }
+
+      if (!contentSource || contentSource.length < 100) {
+        return { success: false, error: 'Transcript is too short to analyze.' }
+      }
+    } else {
+      // Use title as content source
+      contentSource = titleInput!
     }
 
     // 2. AI Analysis (Gemini)
@@ -54,21 +69,46 @@ export async function analyzeSermonVideo(
     const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
 
-    const prompt = `
-      You are an expert sermon editor for Kingdom Deliverance Centre Uganda (KDC Uganda).
-      I will provide a transcript from a Christian sermon video.
-      Your task is to analyze it and generate:
-      1. A powerful, catchy sermon title.
-      2. A short, engaging 2-sentence description/excerpt.
-      3. Well-structured sermon notes in HTML format (Intro, 3 Biblical Points, Closing Prayer).
-      4. A suggested focus keyword (1-2 words).
-      5. A prompt for an AI image generator that captures the essence of this sermon (e.g. "A powerful illustration of divine healing in a modern African setting").
+    let prompt = ''
+    
+    if (sourceType === 'video') {
+      prompt = `
+        You are an expert sermon editor for Kingdom Deliverance Centre Uganda (KDC Uganda).
+        I will provide a transcript from a Christian sermon video.
+        Your task is to analyze it and generate:
+        1. A powerful, catchy sermon title.
+        2. A short, engaging 2-sentence description/excerpt.
+        3. Well-structured sermon notes in HTML format (Intro, 3 Biblical Points, Closing Prayer).
+        4. A suggested focus keyword (1-2 words).
+        5. A prompt for an AI image generator that captures the essence of this sermon (e.g. "A powerful illustration of divine healing in a modern African setting").
 
-      Return the result as a VALID JSON object with these keys: title, description, html, focusKeyword, imagePrompt.
+        Return the result as a VALID JSON object with these keys: title, description, html, focusKeyword, imagePrompt.
 
-      Transcript:
-      ${transcript.slice(0, 30000)} // Limit to ~30k chars for token safety
-    `
+        Transcript:
+        ${contentSource.slice(0, 30000)} // Limit to ~30k chars for token safety
+      `
+    } else {
+      prompt = `
+        You are an expert sermon writer for Kingdom Deliverance Centre Uganda (KDC Uganda).
+        I will provide a sermon title.
+        Your task is to create a complete, powerful sermon based on this title:
+        1. Use the provided title as-is.
+        2. Write a short, engaging 2-sentence description/excerpt.
+        3. Create well-structured sermon notes in HTML format with:
+           - Introduction (set the context, hook the audience)
+           - 3 Main Biblical Points (each with scripture references, explanations, and practical applications)
+           - Closing Prayer (powerful, faith-building prayer)
+        4. Suggest a focus keyword (1-2 words).
+        5. Create a prompt for an AI image generator that captures the essence of this sermon.
+
+        Make it biblically sound, culturally relevant to Uganda, and spiritually powerful.
+        
+        Return the result as a VALID JSON object with these keys: title, description, html, focusKeyword, imagePrompt.
+
+        Sermon Title:
+        ${contentSource}
+      `
+    }
 
     const aiResult = await model.generateContent(prompt)
     const responseText = aiResult.response.text()
@@ -96,7 +136,7 @@ export async function analyzeSermonVideo(
       slug: slug,
       description: parsed.description,
       content: parsed.html,
-      video_url: videoUrl,
+      video_url: videoUrl || '', // Empty if title-based
       preacher: 'Bishop Climate Wiseman', // Default
       date: nextSunday.toISOString().split('T')[0],
       status: 'draft' as const,

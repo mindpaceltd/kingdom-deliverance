@@ -9,7 +9,9 @@ import {
   CopyIcon, 
   RotateCcw, 
   TrashIcon,
-  SparklesIcon
+  SparklesIcon,
+  LinkIcon,
+  TypeIcon
 } from 'lucide-react'
 
 import { DataTable, type ColumnDef } from '@/components/admin/data-table'
@@ -17,6 +19,7 @@ import { StatusBadge } from '@/components/admin/status-badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select,
   SelectContent,
@@ -80,8 +83,10 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
 
   // Magic AI state
   const [magicUrl, setMagicUrl] = React.useState('')
+  const [magicTitle, setMagicTitle] = React.useState('')
   const [magicLoading, setMagicLoading] = React.useState(false)
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
+  const [activeTab, setActiveTab] = React.useState('url')
 
   // Filter state
   const [filterPreacher, setFilterPreacher] = React.useState<string>('all')
@@ -151,12 +156,20 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
   }
 
   async function handleMagicAI() {
-    if (!magicUrl.trim()) return
+    const isUrlMode = activeTab === 'url'
+    const input = isUrlMode ? magicUrl.trim() : magicTitle.trim()
+    
+    if (!input) return
+    
     setMagicLoading(true)
     try {
-      const result = await analyzeSermonVideo({ videoUrl: magicUrl })
+      const result = await analyzeSermonVideo({ 
+        videoUrl: isUrlMode ? input : undefined,
+        title: !isUrlMode ? input : undefined
+      })
       if (result.success) {
         setMagicUrl('')
+        setMagicTitle('')
         setIsDialogOpen(false)
         await refreshSermons()
         // Optional: redirect to the new draft if result.id is present
@@ -355,36 +368,69 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
               <DialogHeader>
                 <DialogTitle>Sermon Magic AI</DialogTitle>
                 <DialogDescription>
-                  Paste a YouTube link below and we'll automatically generate sermon notes, title, and a featured image for you.
+                  Generate sermon content automatically using AI
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="video-url">YouTube Video URL</Label>
-                  <Input 
-                    id="video-url" 
-                    placeholder="https://www.youtube.com/watch?v=..." 
-                    value={magicUrl}
-                    onChange={(e) => setMagicUrl(e.target.value)}
-                  />
-                </div>
-              </div>
+              
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="url" className="gap-2">
+                    <LinkIcon className="h-4 w-4" />
+                    From Video
+                  </TabsTrigger>
+                  <TabsTrigger value="title" className="gap-2">
+                    <TypeIcon className="h-4 w-4" />
+                    From Title
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="url" className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="video-url">YouTube Video URL</Label>
+                    <Input 
+                      id="video-url" 
+                      placeholder="https://www.youtube.com/watch?v=..." 
+                      value={magicUrl}
+                      onChange={(e) => setMagicUrl(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Paste a YouTube link to extract transcript and generate sermon content
+                    </p>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="title" className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="sermon-title">Sermon Title</Label>
+                    <Input 
+                      id="sermon-title" 
+                      placeholder="e.g., The Power of Faith in Difficult Times" 
+                      value={magicTitle}
+                      onChange={(e) => setMagicTitle(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Enter a sermon title and AI will generate complete sermon content
+                    </p>
+                  </div>
+                </TabsContent>
+              </Tabs>
+              
               <DialogFooter>
                 <Button 
                   type="button" 
                   onClick={handleMagicAI} 
-                  disabled={magicLoading || !magicUrl.trim()}
+                  disabled={magicLoading || (activeTab === 'url' ? !magicUrl.trim() : !magicTitle.trim())}
                   className="w-full bg-violet-600 hover:bg-violet-700"
                 >
                   {magicLoading ? (
                     <>
                       <RotateCcw className="mr-2 h-4 w-4 animate-spin" />
-                      Analyzing Video...
+                      Generating Content...
                     </>
                   ) : (
                     <>
                       <SparklesIcon className="mr-2 h-4 w-4" />
-                      Analyze & Generate Draft
+                      Generate Sermon Draft
                     </>
                   )}
                 </Button>
