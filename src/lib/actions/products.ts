@@ -79,6 +79,23 @@ export async function deleteProduct(id: string) {
   return { success: true }
 }
 
+export async function deleteProducts(ids: string[]) {
+  if (ids.length === 0) {
+    return { success: true }
+  }
+
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('products')
+    .delete()
+    .in('id', ids)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/admin/products')
+  return { success: true }
+}
+
 export async function duplicateProduct(id: string) {
   const supabase = createClient()
   

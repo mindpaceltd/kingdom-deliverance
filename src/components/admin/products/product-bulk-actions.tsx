@@ -4,7 +4,6 @@ import * as React from 'react'
 import { Button } from '@/components/ui/button'
 import { Download, Upload, Loader2, FileSpreadsheet, Copy } from 'lucide-react'
 import { exportProductsToCSV, importProductsFromCSV } from '@/lib/actions/bulk-products'
-import { duplicateProduct } from '@/lib/actions/products'
 import Papa from 'papaparse'
 import { useRouter } from 'next/navigation'
 import {
@@ -15,14 +14,31 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
+interface ProductBulkActionsProps {
+  selectedCount?: number
+  onBulkDelete?: () => void
+  onClearSelection?: () => void
+}
+
 const MAPPABLE_FIELDS = [
   'Name',
   'Slug',
+  'SKU',
   'Regular Price (USD)',
   'Sale Price (USD)',
   'Type',
   'Category',
   'Stock Status',
+  'Stock',
+  'Manage Stock',
+  'Virtual',
+  'Weight',
+  'Length',
+  'Width',
+  'Height',
+  'Author',
+  'Total Sales',
+  'Post Date',
   'Featured Image URL',
   'Featured Image Alt Text',
   'Short Description',
@@ -35,33 +51,55 @@ const MAPPABLE_FIELDS = [
   'Gallery Image URLs'
 ]
 
-const DEFAULT_HEADER_MAP: Record<string, string> = {
-  Name: 'post_title',
-  Slug: 'post_name',
-  'Regular Price (USD)': 'regular_price',
-  'Sale Price (USD)': 'sale_price',
-  Type: 'tax:product_type',
-  Category: 'tax:product_cat',
-  'Stock Status': 'stock_status',
-  'Featured Image URL': 'images',
-  'Featured Image Alt Text': 'image_alt',
-  'Short Description': 'post_excerpt',
-  Description: 'post_content',
-  'File URL': 'downloadable_files',
-  'Download Limit': 'download_limit',
-  'Download Expiry Days': 'download_expiry',
-  'Is Featured': 'tax:product_visibility',
-  Status: 'post_status',
-  'Gallery Image URLs': 'images'
+const DEFAULT_HEADER_MAP: Record<string, string[]> = {
+  Name: ['post_title', 'title', 'Name'],
+  Slug: ['post_name', 'slug'],
+  SKU: ['sku', 'SKU'],
+  'Regular Price (USD)': ['regular_price', 'regular_price_usd', 'price'],
+  'Sale Price (USD)': ['sale_price', 'sale_price_usd'],
+  Type: ['tax:product_type', 'type'],
+  Category: ['tax:product_cat', 'product_cat', 'Categories', 'categories', 'Category'],
+  'Stock Status': ['stock_status', 'Stock Status', 'In stock?'],
+  Stock: ['stock', 'stock_quantity', 'Stock'],
+  'Manage Stock': ['manage_stock', 'Manage Stock'],
+  Virtual: ['virtual', 'Virtual', 'is_virtual'],
+  Weight: ['weight', 'Weight', 'weight_kg'],
+  Length: ['length', 'Length'],
+  Width: ['width', 'Width'],
+  Height: ['height', 'Height'],
+  Author: ['attribute:pa_book-author', 'Author', 'book_author'],
+  'Total Sales': ['meta:total_sales', 'Total Sales', 'total_sales'],
+  'Post Date': ['post_date', 'Post Date'],
+  'Featured Image URL': ['Featured Image URL', 'image_url', 'Featured Image', 'featured_image', 'Image', 'image', 'Image URL'],
+  'Featured Image Alt Text': ['Featured Image Alt Text', 'image_alt', 'alt_text'],
+  'Short Description': ['Short Description', 'short_description', 'post_excerpt', 'Excerpt'],
+  Description: ['Description', 'description', 'post_content', 'Content'],
+  'File URL': ['File URL', 'file_url', 'downloadable_files', 'Downloadable Files'],
+  'Download Limit': ['Download Limit', 'download_limit'],
+  'Download Expiry Days': ['Download Expiry Days', 'download_expiry', 'download_expiry_days'],
+  'Is Featured': ['Is Featured', 'is_featured', 'Featured', 'featured', 'tax:product_visibility'],
+  Status: ['Status', 'status', 'post_status'],
+  'Gallery Image URLs': ['Gallery Image URLs', 'gallery_image_urls', 'Images', 'images', 'Gallery', 'gallery', 'Image', 'image', 'Gallery Images', 'gallery images']
 }
 
 function buildAutoMap(headers: string[]) {
+  const normalizedHeaders = headers.map((header) => header.trim().toLowerCase())
   const map: Record<string, string> = {}
   MAPPABLE_FIELDS.forEach((field) => {
-    const defaultHeader = DEFAULT_HEADER_MAP[field]
-    const exact = headers.find((header) => header.toLowerCase() === field.toLowerCase())
-    const alias = defaultHeader ? headers.find((header) => header.toLowerCase() === defaultHeader.toLowerCase()) : undefined
-    map[field] = exact || alias || ''
+    const exactIndex = normalizedHeaders.findIndex((header) => header === field.toLowerCase())
+    const foundHeader = exactIndex >= 0 ? headers[exactIndex] : ''
+    if (foundHeader) {
+      map[field] = foundHeader
+      return
+    }
+
+    const aliases = DEFAULT_HEADER_MAP[field] || []
+    const aliasHeader = aliases
+      .map((alias) => alias.trim().toLowerCase())
+      .map((alias) => normalizedHeaders.find((header) => header === alias))
+      .find(Boolean)
+
+    map[field] = aliasHeader || ''
   })
   return map
 }
@@ -78,7 +116,11 @@ function remapRows(rows: any[], fieldMap: Record<string, string>) {
   })
 }
 
-export function ProductBulkActions() {
+export function ProductBulkActions({
+  selectedCount = 0,
+  onBulkDelete,
+  onClearSelection,
+}: ProductBulkActionsProps) {
   const [loading, setLoading] = React.useState(false)
   const [parseLoading, setParseLoading] = React.useState(false)
   const [fileName, setFileName] = React.useState('')
@@ -128,9 +170,18 @@ export function ProductBulkActions() {
           return
         }
 
-        const headers = results.meta.fields || []
+        const rawHeaders = results.meta.fields || []
+        const headers = rawHeaders.map((header) => String(header || '').trim())
+        const normalizedRows = (results.data as any[]).map((row) => {
+          const normalizedRow: Record<string, any> = {}
+          Object.keys(row).forEach((key) => {
+            normalizedRow[String(key || '').trim()] = row[key]
+          })
+          return normalizedRow
+        })
+
         setCsvHeaders(headers)
-        setCsvRows(results.data as any[])
+        setCsvRows(normalizedRows)
         setFieldMap(buildAutoMap(headers))
       },
       error: () => {
@@ -164,8 +215,8 @@ export function ProductBulkActions() {
   }
 
   const downloadTemplate = () => {
-    const headers = 'Name,Slug,Regular Price (USD),Sale Price (USD),Type,Category,Stock Status,Featured Image URL,Featured Image Alt Text,Short Description,Description,File URL,Download Limit,Download Expiry Days,Is Featured,Status,Gallery Image URLs'
-    const example = 'Deliverance Book,deliverance-book,15,10,digital,Books,instock,https://.../cover.jpg,Book cover alt,Short summary,Full product description,https://.../book.pdf,-1,-1,yes,published,https://.../cover.jpg|https://.../back.jpg'
+    const headers = 'Name,Slug,SKU,Regular Price (USD),Sale Price (USD),Type,Category,Stock Status,Stock,Manage Stock,Virtual,Weight,Length,Width,Height,Author,Total Sales,Post Date,Featured Image URL,Featured Image Alt Text,Short Description,Description,File URL,Download Limit,Download Expiry Days,Is Featured,Status,Gallery Image URLs'
+    const example = 'Deliverance Book,deliverance-book,DELIV001,15,10,digital,Books,instock,10,yes,yes,0.5,15,10,2,John Doe,32,2026-05-03,https://.../cover.jpg,Book cover alt,Short summary,Full product description,https://.../book.pdf,-1,-1,yes,published,https://.../cover.jpg|https://.../back.jpg'
     const blob = new Blob([`${headers}\n${example}`], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
@@ -191,10 +242,24 @@ export function ProductBulkActions() {
             Choose File
           </Button>
         </div>
-        <Button variant="secondary" size="sm" onClick={handleImport} disabled={csvRows.length === 0 || importLoading} className="gap-2">
-          {importLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-          Import
-        </Button>
+        <div className="flex gap-2 flex-wrap items-center justify-end">
+          {selectedCount > 0 && onBulkDelete && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onBulkDelete}
+              disabled={loading || importLoading}
+              className="gap-2 text-destructive hover:text-destructive"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Delete {selectedCount} selected
+            </Button>
+          )}
+          <Button variant="secondary" size="sm" onClick={handleImport} disabled={csvRows.length === 0 || importLoading} className="gap-2">
+            {importLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+            Import
+          </Button>
+        </div>
       </div>
 
       <input
@@ -225,7 +290,7 @@ export function ProductBulkActions() {
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{field}</p>
                     <Select
                       value={fieldMap[field] || ''}
-                      onValueChange={(value) => setFieldMap((prev) => ({ ...prev, [field]: value }))}
+                      onValueChange={(value) => setFieldMap((prev) => ({ ...prev, [field]: value || '' }))}
                     >
                       <SelectTrigger className="w-full bg-white">
                         <SelectValue placeholder="Map column" />
@@ -250,7 +315,7 @@ export function ProductBulkActions() {
                     <table className="min-w-full text-left text-xs">
                       <thead>
                         <tr>
-                          {['Name', 'Slug', 'Category', 'Regular Price (USD)', 'Sale Price (USD)', 'Type', 'Featured Image URL'].map((col) => (
+                          {['Name', 'Slug', 'Category', 'Regular Price (USD)', 'Sale Price (USD)', 'Type', 'Featured Image URL', 'Gallery Image URLs', 'Is Featured'].map((col) => (
                             <th key={col} className="px-2 py-2 font-semibold text-muted-foreground border-b">{col}</th>
                           ))}
                         </tr>
