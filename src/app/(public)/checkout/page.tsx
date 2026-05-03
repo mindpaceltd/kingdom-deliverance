@@ -165,18 +165,29 @@ export default function CheckoutPage() {
 
   const handleGoogleLogin = async () => {
     setLoading(true)
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/checkout`,
-      },
-    })
-    if (error) {
-      setAuthError(error.message)
+    setAuthError('')
+
+    try {
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=/checkout`,
+        },
+      })
+      if (error) {
+        setAuthError(error.message)
+        setLoading(false)
+        return
+      }
+      if (data?.url) {
+        window.location.href = data.url
+      }
+    } catch (error: any) {
+      setAuthError(error?.message || 'Google login failed. Please try again.')
       setLoading(false)
     }
   }
@@ -276,32 +287,33 @@ export default function CheckoutPage() {
                     onChange={e => setFormData({...formData, phone: e.target.value})}
                   />
                 </div>
-                <div className="space-y-4">
-                  <label className="flex items-center gap-2 text-sm font-semibold">
-                    <input
-                      type="checkbox"
-                      checked={createAccount}
-                      disabled={!!currentUser}
-                      onChange={e => setCreateAccount(e.target.checked)}
-                      className="h-4 w-4 rounded border-muted-foreground text-primary focus:ring-primary"
-                    />
-                    Create an account with this email
-                  </label>
-                  {createAccount && !currentUser && (
-                    <div className="space-y-1.5">
-                      <Label htmlFor="password" className="text-sm font-semibold">Password *</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        required
-                        placeholder="••••••••"
-                        value={formData.password}
-                        onChange={e => setFormData({...formData, password: e.target.value})}
+                {!currentUser && (
+                  <div className="space-y-4">
+                    <label className="flex items-center gap-2 text-sm font-semibold">
+                      <input
+                        type="checkbox"
+                        checked={createAccount}
+                        onChange={e => setCreateAccount(e.target.checked)}
+                        className="h-4 w-4 rounded border-muted-foreground text-primary focus:ring-primary"
                       />
-                      <p className="text-xs text-muted-foreground">An account will be created so you can track orders and downloads.</p>
-                    </div>
-                  )}
-                </div>
+                      Create an account with this email
+                    </label>
+                    {createAccount && (
+                      <div className="space-y-1.5">
+                        <Label htmlFor="password" className="text-sm font-semibold">Password *</Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          required
+                          placeholder="••••••••"
+                          value={formData.password}
+                          onChange={e => setFormData({...formData, password: e.target.value})}
+                        />
+                        <p className="text-xs text-muted-foreground">An account will be created so you can track orders and downloads.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <Label htmlFor="currency" className="text-sm font-semibold">Payment Currency</Label>
                   <Select value={currency} onValueChange={(value) => setCurrency(value ?? currency)}>

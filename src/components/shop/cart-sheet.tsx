@@ -1,8 +1,10 @@
 'use client'
 
 import React from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetHeader,
   SheetTitle,
@@ -15,6 +17,7 @@ import { formatPrice } from '@/lib/utils'
 import Link from 'next/link'
 
 export function CartSheet() {
+  const router = useRouter()
   const { items, removeItem, updateQuantity, subtotal, totalItems } = useCart()
 
   return (
@@ -106,12 +109,16 @@ export function CartSheet() {
               <span className="text-muted-foreground font-medium">Subtotal</span>
               <span className="text-2xl font-bold text-primary">{formatPrice(subtotal)}</span>
             </div>
-            <Button asChild className="w-full h-14 rounded-2xl text-lg gap-2 shadow-xl shadow-primary/20">
-              <Link href="/checkout">
+            <SheetClose asChild>
+              <Button
+                type="button"
+                onClick={() => router.push('/checkout')}
+                className="w-full h-14 rounded-2xl text-lg gap-2 shadow-xl shadow-primary/20"
+              >
                 Checkout Now
                 <ArrowRight className="w-5 h-5" />
-              </Link>
-            </Button>
+              </Button>
+            </SheetClose>
             <p className="text-[10px] text-center text-muted-foreground mt-4 uppercase tracking-widest font-bold">
               Secure Checkout via Pesapal
             </p>

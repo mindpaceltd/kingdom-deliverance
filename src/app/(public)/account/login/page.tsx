@@ -67,14 +67,23 @@ export default function AccountLoginPage() {
   const handleGoogleLogin = async () => {
     setLoading(true)
     setError('')
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${next}`,
-      },
-    })
-    if (error) {
-      setError(error.message)
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${next}`,
+        },
+      })
+      if (error) {
+        setError(error.message)
+        setLoading(false)
+        return
+      }
+      if (data?.url) {
+        window.location.href = data.url
+      }
+    } catch (error: any) {
+      setError(error?.message || 'Google login failed. Please try again.')
       setLoading(false)
     }
   }
