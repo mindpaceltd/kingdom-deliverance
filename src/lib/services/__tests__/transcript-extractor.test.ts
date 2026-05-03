@@ -1,5 +1,37 @@
 import { describe, it, expect } from 'vitest'
-import { extractYouTubeVideoId } from '../transcript-extractor'
+import { extractYouTubeVideoId, normalizeYouTubeUrl } from '../transcript-extractor'
+
+describe('normalizeYouTubeUrl', () => {
+  it('should convert Shorts URL to standard watch URL', () => {
+    const shortsUrl = 'https://www.youtube.com/shorts/NCMNt1HscZk'
+    const normalized = normalizeYouTubeUrl(shortsUrl)
+    expect(normalized).toBe('https://www.youtube.com/watch?v=NCMNt1HscZk')
+  })
+
+  it('should convert Shorts URL without protocol to standard watch URL', () => {
+    const shortsUrl = 'youtube.com/shorts/NCMNt1HscZk'
+    const normalized = normalizeYouTubeUrl(shortsUrl)
+    expect(normalized).toBe('https://www.youtube.com/watch?v=NCMNt1HscZk')
+  })
+
+  it('should leave standard watch URL unchanged', () => {
+    const watchUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+    const normalized = normalizeYouTubeUrl(watchUrl)
+    expect(normalized).toBe(watchUrl)
+  })
+
+  it('should leave youtu.be URL unchanged', () => {
+    const shortUrl = 'https://youtu.be/dQw4w9WgXcQ'
+    const normalized = normalizeYouTubeUrl(shortUrl)
+    expect(normalized).toBe(shortUrl)
+  })
+
+  it('should leave embed URL unchanged', () => {
+    const embedUrl = 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+    const normalized = normalizeYouTubeUrl(embedUrl)
+    expect(normalized).toBe(embedUrl)
+  })
+})
 
 describe('extractYouTubeVideoId', () => {
   it('should extract video ID from youtube.com/watch?v= URL', () => {
