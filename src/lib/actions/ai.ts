@@ -34,9 +34,9 @@ export async function generatePostContent(
 
   // Try models in order — fall back if one is unavailable or quota-exceeded
   const MODEL_CHAIN = [
-    'gemini-pro',                           // most stable free tier
-    'gemini-1.5-pro',                       // fallback
-    'gemini-2.0-flash-exp',                 // newer fallback
+    'gemini-1.5-flash-latest',              // most stable free tier
+    'gemini-1.5-pro-latest',                // fallback
+    'gemini-2.0-flash-exp',                 // newer experimental
   ]
 
   let prompt: string
