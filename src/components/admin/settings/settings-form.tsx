@@ -500,6 +500,17 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                          <Input type="password" value={values.pesapal_consumer_secret} onChange={e => handleChange('pesapal_consumer_secret', e.target.value)} />
                       </div>
                       <div className="space-y-1.5">
+                         <Label className="text-xs">IPN ID</Label>
+                         <Input
+                           value={values.pesapal_ipn_id || ''}
+                           onChange={e => handleChange('pesapal_ipn_id', e.target.value)}
+                           placeholder="Register IPN in Pesapal dashboard → copy ID here"
+                         />
+                         <p className="text-[10px] text-muted-foreground">
+                           Get this from your Pesapal merchant dashboard under IPN settings.
+                         </p>
+                      </div>
+                      <div className="space-y-1.5">
                          <Label className="text-xs">Environment</Label>
                          <Select value={values.pesapal_mode || 'sandbox'} onValueChange={v => handleChange('pesapal_mode', v ?? 'sandbox')}>
                             <SelectTrigger>

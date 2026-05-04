@@ -50,6 +50,7 @@ const SETTINGS_KEYS = [
   'pesapal_consumer_key',
   'pesapal_consumer_secret',
   'pesapal_mode',
+  'pesapal_ipn_id',
 ] as const
 
 export default async function AdminSettingsPage() {

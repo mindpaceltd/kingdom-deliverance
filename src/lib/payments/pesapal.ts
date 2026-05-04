@@ -1,25 +1,39 @@
-const PESAPAL_URL =
-  process.env.PESAPAL_MODE === 'live'
+function getPesapalUrl(mode?: string): string {
+  const m = mode || process.env.PESAPAL_MODE || 'live'
+  return m === 'live'
     ? 'https://pay.pesapal.com/v3'
     : 'https://cybqa.pesapal.com/apiV3'
+}
 
-export async function getPesapalAuthToken(): Promise<string> {
-  const consumerKey = process.env.PESAPAL_CONSUMER_KEY
-  const consumerSecret = process.env.PESAPAL_CONSUMER_SECRET
+/**
+ * Get a Pesapal auth token.
+ * Accepts credentials directly (from DB settings) or falls back to env vars.
+ */
+export async function getPesapalAuthToken(
+  consumerKey?: string,
+  consumerSecret?: string,
+  mode?: string
+): Promise<string> {
+  const key = consumerKey || process.env.PESAPAL_CONSUMER_KEY
+  const secret = consumerSecret || process.env.PESAPAL_CONSUMER_SECRET
 
-  if (!consumerKey || !consumerSecret) {
-    throw new Error('Pesapal credentials are not configured (PESAPAL_CONSUMER_KEY / PESAPAL_CONSUMER_SECRET)')
+  if (!key || !secret) {
+    throw new Error(
+      'Pesapal credentials are not configured. Please add Consumer Key and Consumer Secret in Settings → Payments.'
+    )
   }
 
-  const response = await fetch(`${PESAPAL_URL}/api/Auth/RegisterInteraction`, {
+  const url = getPesapalUrl(mode)
+
+  const response = await fetch(`${url}/api/Auth/RegisterInteraction`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
     body: JSON.stringify({
-      consumer_key: consumerKey,
-      consumer_secret: consumerSecret,
+      consumer_key: key,
+      consumer_secret: secret,
     }),
   })
 
@@ -31,14 +45,17 @@ export async function getPesapalAuthToken(): Promise<string> {
   const data = await response.json()
 
   if (!data.token) {
-    throw new Error(`Pesapal auth returned no token: ${JSON.stringify(data).slice(0, 200)}`)
+    throw new Error(
+      `Pesapal auth returned no token. Check your Consumer Key and Secret in Settings → Payments. Response: ${JSON.stringify(data).slice(0, 200)}`
+    )
   }
 
   return data.token
 }
 
-export async function registerPesapalIPN(token: string) {
-  const response = await fetch(`${PESAPAL_URL}/api/URLRegister/RegisterIPN`, {
+export async function registerPesapalIPN(token: string, mode?: string) {
+  const url = getPesapalUrl(mode)
+  const response = await fetch(`${url}/api/URLRegister/RegisterIPN`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -69,13 +86,18 @@ export async function initiatePesapalPayment(
       last_name: string
     }
   },
-  token: string
+  token: string,
+  mode?: string
 ) {
   if (!data.notification_id) {
-    throw new Error('PESAPAL_IPN_ID environment variable is not set')
+    throw new Error(
+      'Pesapal IPN ID is not configured. Please register an IPN URL in your Pesapal dashboard and save the ID in Settings → Payments.'
+    )
   }
 
-  const response = await fetch(`${PESAPAL_URL}/api/Transactions/SubmitOrderRequest`, {
+  const url = getPesapalUrl(mode)
+
+  const response = await fetch(`${url}/api/Transactions/SubmitOrderRequest`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -101,9 +123,14 @@ export async function initiatePesapalPayment(
   return response.json()
 }
 
-export async function getPesapalTransactionStatus(orderTrackingId: string, token: string) {
+export async function getPesapalTransactionStatus(
+  orderTrackingId: string,
+  token: string,
+  mode?: string
+) {
+  const url = getPesapalUrl(mode)
   const response = await fetch(
-    `${PESAPAL_URL}/api/Transactions/GetTransactionStatus?orderTrackingId=${orderTrackingId}`,
+    `${url}/api/Transactions/GetTransactionStatus?orderTrackingId=${orderTrackingId}`,
     {
       method: 'GET',
       headers: {
