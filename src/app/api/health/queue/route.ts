@@ -22,6 +22,10 @@ import { createRedisConnection } from '@/lib/config/redis'
 import { SERMON_QUEUE_NAME } from '@/lib/config/queue'
 import { checkQueueAlerts, type QueueAlert } from '@/lib/services/queue-monitor'
 
+// Prevent Next.js from statically generating this route at build time.
+// It connects to Redis which is not available in the build environment.
+export const dynamic = 'force-dynamic'
+
 const OLLAMA_ENDPOINT = process.env.OLLAMA_ENDPOINT || 'http://localhost:11434'
 
 interface RedisServiceStatus {

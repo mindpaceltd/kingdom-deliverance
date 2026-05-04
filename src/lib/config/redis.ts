@@ -50,8 +50,28 @@ export function createRedisConnection(): Redis {
 /**
  * Shared Redis connection instance for the application
  * Use this for general Redis operations (not BullMQ queues)
+ *
+ * Lazily initialized to avoid connecting at module load time,
+ * which would cause build failures in environments without Redis (e.g. Vercel CI).
  */
-export const redis = createRedisConnection()
+let _redis: Redis | null = null
+
+export function getRedis(): Redis {
+  if (!_redis) {
+    _redis = createRedisConnection()
+  }
+  return _redis
+}
+
+/**
+ * @deprecated Use getRedis() for new code. This proxy exists for backward compatibility
+ * and avoids an eager connection at import time.
+ */
+export const redis = new Proxy({} as Redis, {
+  get(_target, prop) {
+    return (getRedis() as any)[prop]
+  },
+})
 
 /**
  * Test Redis connectivity
@@ -59,7 +79,7 @@ export const redis = createRedisConnection()
  */
 export async function testRedisConnection(): Promise<boolean> {
   try {
-    const result = await redis.ping()
+    const result = await getRedis().ping()
     return result === 'PONG'
   } catch (error) {
     console.error('[Redis] Connection test failed:', error)

@@ -17,6 +17,9 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 
+// Prevent Next.js from statically generating this route at build time.
+export const dynamic = 'force-dynamic'
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------

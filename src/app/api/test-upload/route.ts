@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 
 // Temporary debug endpoint — remove after upload is fixed
+export const dynamic = 'force-dynamic'
 export async function GET() {
   try {
     const supabase = createAdminClient()
