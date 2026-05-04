@@ -78,7 +78,7 @@ export default async function EventsPage() {
                 <span className="inline-flex items-center gap-1.5 mb-5 text-xs font-bold tracking-widest uppercase text-accent border border-accent/40 rounded-full px-3 py-1 w-fit">
                   <Star className="w-3 h-3 fill-accent" /> Featured
                 </span>
-                <h3 className="font-serif text-3xl md:text-4xl font-bold leading-tight">
+                <h3 className="font-serif text-3xl md:text-4xl font-bold leading-tight text-accent">
                   {featured.title}
                 </h3>
                 {featured.description && (
@@ -114,24 +114,40 @@ export default async function EventsPage() {
                 </Button>
               </div>
 
-              {/* Right — date display */}
-              <div className="md:col-span-2 min-h-56 bg-gradient-to-br from-accent/15 via-accent/5 to-white flex flex-col items-center justify-center p-10 gap-4">
+              {/* Right — image or date display */}
+              <div className="md:col-span-2 min-h-56 relative overflow-hidden flex flex-col items-center justify-center">
                 {featured.image_url ? (
-                  <img
-                    src={featured.image_url}
-                    alt={featured.title}
-                    className="w-full h-48 object-cover rounded-2xl shadow-lg"
-                  />
+                  <>
+                    <img
+                      src={featured.image_url}
+                      alt={featured.title}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                    {/* Date overlay */}
+                    <div className="relative z-10 bg-black/50 backdrop-blur-sm rounded-2xl px-8 py-6 text-center">
+                      <div className="text-7xl font-serif font-black text-white leading-none">
+                        {format(new Date(featured.date), "dd")}
+                      </div>
+                      <div className="text-xl font-bold text-accent mt-1">
+                        {format(new Date(featured.date), "MMMM yyyy")}
+                      </div>
+                      <div className="mt-1 text-sm text-white/70 font-medium">
+                        {format(new Date(featured.date), "EEEE")}
+                      </div>
+                    </div>
+                  </>
                 ) : (
-                  <div className="text-center">
-                    <div className="text-8xl font-serif font-black text-primary leading-none">
-                      {format(new Date(featured.date), "dd")}
-                    </div>
-                    <div className="text-2xl font-bold text-accent mt-2">
-                      {format(new Date(featured.date), "MMMM yyyy")}
-                    </div>
-                    <div className="mt-3 text-sm text-primary/50 font-medium">
-                      {format(new Date(featured.date), "EEEE")}
+                  <div className="bg-gradient-to-br from-accent/15 via-accent/5 to-white w-full h-full flex items-center justify-center p-10">
+                    <div className="text-center">
+                      <div className="text-8xl font-serif font-black text-primary leading-none">
+                        {format(new Date(featured.date), "dd")}
+                      </div>
+                      <div className="text-2xl font-bold text-accent mt-2">
+                        {format(new Date(featured.date), "MMMM yyyy")}
+                      </div>
+                      <div className="mt-3 text-sm text-primary/50 font-medium">
+                        {format(new Date(featured.date), "EEEE")}
+                      </div>
                     </div>
                   </div>
                 )}
