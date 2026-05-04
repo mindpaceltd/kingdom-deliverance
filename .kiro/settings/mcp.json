@@ -6,7 +6,8 @@
         "list_tables",
         "apply_migration",
         "get_advisors",
-        "execute_sql"
+        "execute_sql",
+        "list_migrations"
       ]
     }
   }

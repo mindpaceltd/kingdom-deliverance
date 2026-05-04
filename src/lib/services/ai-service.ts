@@ -7,9 +7,10 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 
 // Model chain: try in order until one works
 const GEMINI_MODELS = [
-  'gemini-1.5-flash',
-  'gemini-1.5-pro',
-  'gemini-pro',
+  'models/gemini-1.5-flash',
+  'models/gemini-1.5-pro',
+  'gemini-1.5-flash-latest',
+  'gemini-1.5-pro-latest',
 ] as const
 
 interface GenerateOptions {

@@ -16,10 +16,11 @@ import { SlugInput } from '@/components/admin/slug-input'
 import { RichTextEditor } from '@/components/admin/rich-text-editor'
 import { MediaPicker } from '@/components/admin/media-picker'
 import { AILinkProcessor } from '@/components/admin/sermons/ai-link-processor'
+import { AILinkProcessorQueue } from '@/components/admin/sermons/ai-link-processor-queue'
 import { DraftReviewModal, type SermonFormData } from '@/components/admin/sermons/draft-review-modal'
 import { createSermon, updateSermon } from '@/lib/actions/sermons'
 import { validateVideoUrl } from '@/lib/utils'
-import { isAIProcessorEnabled } from '@/lib/env'
+import { isAIProcessorEnabled, isQueueProcessorEnabled } from '@/lib/env'
 import type { Sermon, SermonDraft } from '@/lib/types'
 
 // ---------------------------------------------------------------------------
@@ -197,7 +198,11 @@ export function SermonForm({ sermon, onSuccess, onCancel }: SermonFormProps) {
         {!isEditing && (
           <>
             {isAIProcessorEnabled ? (
-              <AILinkProcessor onDraftGenerated={handleDraftGenerated} />
+              isQueueProcessorEnabled ? (
+                <AILinkProcessorQueue onDraftGenerated={handleDraftGenerated} />
+              ) : (
+                <AILinkProcessor onDraftGenerated={handleDraftGenerated} />
+              )
             ) : (
               <div className="rounded-lg border border-border bg-muted/30 p-4">
                 <p className="text-sm text-muted-foreground">

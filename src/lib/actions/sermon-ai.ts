@@ -72,14 +72,7 @@ export async function analyzeSermonVideo(
     if (!apiKey) return { success: false, error: 'Gemini AI is not configured.' }
 
     const genAI = new GoogleGenerativeAI(apiKey)
-    // Use gemini-1.5-flash as the primary, but handle potential model name issues
-    let model;
-    try {
-      model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
-    } catch (e) {
-      console.warn('[analyzeSermonVideo] gemini-1.5-flash not available, falling back to gemini-pro')
-      model = genAI.getGenerativeModel({ model: 'gemini-pro' })
-    }
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
 
     let prompt = ''
     
@@ -122,21 +115,8 @@ export async function analyzeSermonVideo(
       `
     }
 
-    let aiResult;
-    try {
-      aiResult = await model.generateContent(prompt)
-    } catch (err: any) {
-      console.error('[analyzeSermonVideo] gemini-1.5-flash failed:', err.message)
-      if (err.message?.includes('not found') || err.message?.includes('404')) {
-        console.log('[analyzeSermonVideo] Attempting fallback to gemini-pro...')
-        const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-pro' })
-        aiResult = await fallbackModel.generateContent(prompt)
-      } else {
-        throw err
-      }
-    }
-
-    const response = await aiResult.response
+    const aiResult = await model.generateContent(prompt)
+    const response = aiResult.response
     const responseText = response.text()
     
     // Clean JSON response (sometimes AI wraps in ```json)

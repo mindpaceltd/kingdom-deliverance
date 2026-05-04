@@ -3,16 +3,20 @@ import { aiProcessorEnv } from '@/lib/env'
 
 /**
  * Create a new processing log entry
- * 
+ *
  * @param userId - The ID of the user initiating the processing request
  * @param linkUrl - The URL being processed
- * @param status - Initial status (typically 'pending')
+ * @param status - Initial status (typically 'pending' or 'processing')
+ * @param jobId - Optional BullMQ job ID for queue-based processing
+ * @param retryCount - Optional retry attempt count (from job.attemptsMade)
  * @returns The ID of the created log entry
  */
 export async function createProcessingLog(
   userId: string,
   linkUrl: string,
-  status: string
+  status: string,
+  jobId?: string,
+  retryCount?: number
 ): Promise<string> {
   const supabase = createAdminClient()
 
@@ -22,6 +26,8 @@ export async function createProcessingLog(
       user_id: userId,
       link_url: linkUrl,
       status,
+      ...(jobId !== undefined && { job_id: jobId }),
+      ...(retryCount !== undefined && { retry_count: retryCount }),
     })
     .select('id')
     .single()
@@ -39,17 +45,21 @@ export async function createProcessingLog(
 
 /**
  * Update an existing processing log entry
- * 
+ *
  * @param logId - The ID of the log entry to update
  * @param status - New status ('processing', 'completed', 'failed')
  * @param errorMessage - Optional error message (for 'failed' status)
  * @param durationMs - Optional processing duration in milliseconds
+ * @param retryCount - Optional updated retry count
+ * @param processingStep - Optional current processing step label
  */
 export async function updateProcessingLog(
   logId: string,
   status: string,
   errorMessage?: string,
-  durationMs?: number
+  durationMs?: number,
+  retryCount?: number,
+  processingStep?: string
 ): Promise<void> {
   const supabase = createAdminClient()
 
@@ -57,6 +67,8 @@ export async function updateProcessingLog(
     status: string
     error_message?: string | null
     duration_ms?: number | null
+    retry_count?: number
+    processing_step?: string | null
   } = {
     status,
   }
@@ -67,6 +79,14 @@ export async function updateProcessingLog(
 
   if (durationMs !== undefined) {
     updateData.duration_ms = durationMs
+  }
+
+  if (retryCount !== undefined) {
+    updateData.retry_count = retryCount
+  }
+
+  if (processingStep !== undefined) {
+    updateData.processing_step = processingStep
   }
 
   const { error } = await supabase
