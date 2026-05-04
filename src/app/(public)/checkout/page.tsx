@@ -64,6 +64,7 @@ export default function CheckoutPage() {
   const [createAccount, setCreateAccount] = useState(false)
   const [authError, setAuthError] = useState('')
   const [currentUser, setCurrentUser] = useState<any>(null)
+  const [mounted, setMounted] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     name: '',
@@ -73,6 +74,9 @@ export default function CheckoutPage() {
     country: 'Uganda',
     password: '',
   })
+
+  // Prevent hydration mismatch — only render price-dependent content after mount
+  useEffect(() => { setMounted(true) }, [])
 
   const allDigital = items.every(item => item.type === 'digital')
   const currentRate = CURRENCIES.find(c => c.code === currency)?.rate || 1
@@ -457,7 +461,7 @@ export default function CheckoutPage() {
                         {item.type === 'digital' ? '📥 Digital' : '📦 Physical'} · Qty: {item.quantity}
                       </p>
                     </div>
-                    <span className="font-bold text-sm text-gray-900">{formatPrice(item.price * item.quantity)}</span>
+                    <span className="font-bold text-sm text-gray-900" suppressHydrationWarning>{mounted ? formatPrice(item.price * item.quantity) : '...'}</span>
                   </div>
                 ))}
               </div>
@@ -465,25 +469,25 @@ export default function CheckoutPage() {
               <div className="space-y-2 mb-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Subtotal (USD)</span>
-                  <span className="font-medium">{formatPrice(subtotal)}</span>
+                  <span className="font-medium" suppressHydrationWarning>{mounted ? formatPrice(subtotal) : '...'}</span>
                 </div>
                 {currency !== 'USD' && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Converted ({currency})</span>
-                    <span className="font-medium">{formatPrice(convertedTotal, currency)}</span>
+                    <span className="font-medium" suppressHydrationWarning>{mounted ? formatPrice(convertedTotal, currency) : '...'}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Shipping</span>
-                  <span className="font-medium">{formatPrice(shippingCost, currency)}</span>
+                  <span className="font-medium" suppressHydrationWarning>{mounted ? formatPrice(shippingCost, currency) : '...'}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Taxes</span>
-                  <span className="font-medium">{formatPrice(taxAmount, currency)}</span>
+                  <span className="font-medium" suppressHydrationWarning>{mounted ? formatPrice(taxAmount, currency) : '...'}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold pt-3 border-t border-gray-200">
                   <span>Total</span>
-                  <span className="text-[#d4a017]">{formatPrice(orderTotal, currency)}</span>
+                  <span className="text-[#d4a017]" suppressHydrationWarning>{mounted ? formatPrice(orderTotal, currency) : '...'}</span>
                 </div>
               </div>
 

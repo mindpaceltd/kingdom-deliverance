@@ -173,6 +173,12 @@ export async function createOrder(data: {
     return { error: 'Unsupported payment gateway' }
   } catch (err: any) {
     console.error('Payment Exception:', err)
-    return { error: 'Failed to initiate payment. Please try again.' }
+    // Surface the real error in development, generic message in production
+    const message = err?.message || 'Unknown error'
+    console.error('[createOrder] Payment error detail:', message)
+    return { error: message.includes('not configured') || message.includes('credentials')
+      ? 'Payment gateway is not configured. Please contact support.'
+      : 'Failed to initiate payment. Please try again.'
+    }
   }
 }
