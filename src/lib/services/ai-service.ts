@@ -5,12 +5,17 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-// Model chain: try in order until one works
+// Model chain: try in order until one works.
+// Ordered by availability/reliability — if one is overloaded, move to the next.
 const GEMINI_MODELS = [
   'gemini-2.5-flash',
-  'gemini-2.5-pro',
   'gemini-2.0-flash',
+  'gemini-2.5-pro',
+  'gemini-1.5-flash-002',   // stable pinned version, less likely to be overloaded
+  'gemini-1.5-pro-002',
 ] as const
+
+type GeminiModel = typeof GEMINI_MODELS[number]
 
 interface GenerateOptions {
   prompt: string
@@ -26,91 +31,112 @@ interface GenerateResult {
 }
 
 /**
- * Generate content with automatic model fallback
+ * Classify an error to decide whether to retry the same model or skip to next.
+ */
+function classifyError(msg: string): 'skip_model' | 'retry' | 'fatal' {
+  // Model not found — skip immediately
+  if (msg.includes('404') || msg.includes('Not Found') || msg.includes('not found')) {
+    return 'skip_model'
+  }
+  // Overloaded / rate limited — skip to next model
+  if (
+    msg.includes('503') ||
+    msg.includes('Service Unavailable') ||
+    msg.includes('overloaded') ||
+    msg.includes('high demand') ||
+    msg.includes('429') ||
+    msg.includes('quota') ||
+    msg.includes('Too Many Requests') ||
+    msg.includes('RESOURCE_EXHAUSTED')
+  ) {
+    return 'skip_model'
+  }
+  // Transient network errors — worth retrying same model
+  if (
+    msg.includes('ECONNRESET') ||
+    msg.includes('ETIMEDOUT') ||
+    msg.includes('fetch failed') ||
+    msg.includes('network')
+  ) {
+    return 'retry'
+  }
+  // Everything else — retry once then skip
+  return 'retry'
+}
+
+/**
+ * Sleep for ms milliseconds
+ */
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/**
+ * Generate content with automatic model fallback and smart retry logic.
+ * On 503/429/overload: immediately tries the next model.
+ * On transient errors: retries the same model with backoff.
  */
 export async function generateWithFallback(
   options: GenerateOptions
 ): Promise<GenerateResult> {
-  const { prompt, maxRetries = 3, timeout = 60000 } = options
-  
+  const { prompt, maxRetries = 2, timeout = 90000 } = options
+
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
-    return {
-      success: false,
-      error: 'Gemini API key not configured',
-    }
+    return { success: false, error: 'Gemini API key not configured' }
   }
 
   const genAI = new GoogleGenerativeAI(apiKey)
-  let lastError: Error | null = null
+  let lastError = 'All AI models failed'
 
-  // Try each model in the chain
   for (const modelName of GEMINI_MODELS) {
     console.log(`[AI Service] Trying model: ${modelName}`)
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const model = genAI.getGenerativeModel({ model: modelName })
-        
-        // Create timeout promise
-        const timeoutPromise = new Promise<never>((_, reject) => {
+
+        const timeoutPromise = new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Request timeout')), timeout)
-        })
-        
-        // Race between generation and timeout
+        )
+
         const result = await Promise.race([
           model.generateContent(prompt),
           timeoutPromise,
         ])
-        
+
         const text = result.response.text()
-        
+
         if (!text || text.trim().length === 0) {
           throw new Error('Empty response from AI')
         }
-        
+
         console.log(`[AI Service] ✅ Success with ${modelName} (attempt ${attempt})`)
-        
-        return {
-          success: true,
-          text,
-          modelUsed: modelName,
-        }
+        return { success: true, text, modelUsed: modelName }
+
       } catch (error) {
-        lastError = error as Error
         const errorMsg = error instanceof Error ? error.message : String(error)
-        
-        console.log(
-          `[AI Service] ❌ ${modelName} attempt ${attempt}/${maxRetries} failed:`,
-          errorMsg
-        )
-        
-        // If it's a 404 (model not found), don't retry this model
-        if (errorMsg.includes('404') || errorMsg.includes('Not Found')) {
-          console.log(`[AI Service] Model ${modelName} not available, trying next...`)
-          break
+        lastError = errorMsg
+        console.log(`[AI Service] ❌ ${modelName} attempt ${attempt}/${maxRetries}: ${errorMsg.slice(0, 120)}`)
+
+        const action = classifyError(errorMsg)
+
+        if (action === 'skip_model') {
+          console.log(`[AI Service] Skipping ${modelName} → trying next model`)
+          break // exit retry loop, move to next model
         }
-        
-        // If it's a quota error, try next model immediately
-        if (errorMsg.includes('quota') || errorMsg.includes('429')) {
-          console.log(`[AI Service] Quota exceeded for ${modelName}, trying next...`)
-          break
-        }
-        
-        // For other errors, wait before retry
+
+        // retry — wait with exponential backoff before next attempt
         if (attempt < maxRetries) {
-          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000)
-          await new Promise(resolve => setTimeout(resolve, delay))
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 4000)
+          console.log(`[AI Service] Retrying in ${delay}ms...`)
+          await sleep(delay)
         }
       }
     }
   }
 
-  // All models failed
-  return {
-    success: false,
-    error: lastError?.message || 'All AI models failed',
-  }
+  return { success: false, error: `AI unavailable: ${lastError.slice(0, 200)}` }
 }
 
 /**
@@ -120,7 +146,7 @@ export async function generateSermonFromTranscript(
   transcript: string
 ): Promise<GenerateResult> {
   const truncated = transcript.slice(0, 30000)
-  
+
   const prompt = `
 You are an expert sermon editor for Kingdom Deliverance Centre Uganda (KDC Uganda).
 Analyze this sermon transcript and generate:
@@ -136,7 +162,7 @@ Transcript:
 ${truncated}
   `.trim()
 
-  return generateWithFallback({ prompt, timeout: 90000 })
+  return generateWithFallback({ prompt, timeout: 120000 })
 }
 
 /**
@@ -164,7 +190,7 @@ Make it biblically sound, culturally relevant to Uganda, and spiritually powerfu
 Return as VALID JSON with keys: title, description, html, focusKeyword, imagePrompt
   `.trim()
 
-  return generateWithFallback({ prompt, timeout: 90000 })
+  return generateWithFallback({ prompt, timeout: 120000 })
 }
 
 /**
@@ -172,12 +198,10 @@ Return as VALID JSON with keys: title, description, html, focusKeyword, imagePro
  */
 export function parseAIResponse(text: string): any {
   try {
-    // Remove markdown code blocks if present
     const cleaned = text
       .replace(/```json\s*/gi, '')
       .replace(/```\s*/g, '')
       .trim()
-    
     return JSON.parse(cleaned)
   } catch (error) {
     console.error('[AI Service] Failed to parse JSON:', error)

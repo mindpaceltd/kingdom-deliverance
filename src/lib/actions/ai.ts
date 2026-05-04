@@ -32,11 +32,13 @@ export async function generatePostContent(
 
   const genAI = new GoogleGenerativeAI(apiKey)
 
-  // Try models in order — fall back if one is unavailable or quota-exceeded
+  // Try models in order — skip immediately on 503/429/overload
   const MODEL_CHAIN = [
-    'gemini-2.5-flash',   // current stable, best price-performance
-    'gemini-2.5-pro',     // fallback, more capable
-    'gemini-2.0-flash',   // older fallback
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-2.5-pro',
+    'gemini-1.5-flash-002',
+    'gemini-1.5-pro-002',
   ]
 
   let prompt: string
@@ -129,14 +131,16 @@ Requirements:
       } catch (modelErr: unknown) {
         const msg = modelErr instanceof Error ? modelErr.message : String(modelErr)
         lastError = msg
-        console.warn(`[generatePostContent] model ${modelName} failed:`, msg)
+        console.warn(`[generatePostContent] model ${modelName} failed:`, msg.slice(0, 120))
 
-        // If it's a quota error, try next model
-        if (msg.includes('429') || msg.includes('quota') || msg.includes('Too Many Requests')) {
-          continue
-        }
-        // If it's a 404 (model not found), try next
-        if (msg.includes('404') || msg.includes('not found')) {
+        // Skip to next model on: overload, quota, not found
+        if (
+          msg.includes('503') || msg.includes('Service Unavailable') ||
+          msg.includes('overloaded') || msg.includes('high demand') ||
+          msg.includes('429') || msg.includes('quota') || msg.includes('Too Many Requests') ||
+          msg.includes('404') || msg.includes('not found') || msg.includes('Not Found') ||
+          msg.includes('RESOURCE_EXHAUSTED')
+        ) {
           continue
         }
         // Any other error — stop trying
@@ -145,10 +149,14 @@ Requirements:
     }
 
     // All models failed
-    if (lastError.includes('429') || lastError.includes('quota') || lastError.includes('Too Many Requests')) {
-      return { error: 'AI quota limit reached. Please wait a minute and try again.' }
+    if (
+      lastError.includes('503') || lastError.includes('overloaded') ||
+      lastError.includes('high demand') || lastError.includes('429') ||
+      lastError.includes('quota')
+    ) {
+      return { error: 'AI is currently busy. Please try again in a moment.' }
     }
-    return { error: `AI generation failed: ${lastError}` }
+    return { error: `AI generation failed: ${lastError.slice(0, 200)}` }
 
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)
