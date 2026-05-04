@@ -1,8 +1,8 @@
 function getPesapalUrl(mode?: string): string {
   const m = mode || process.env.PESAPAL_MODE || 'live'
   return m === 'live'
-    ? 'https://pay.pesapal.com/v3/api'          // production
-    : 'https://cybqa.pesapal.com/pesapalv3/api'  // sandbox
+    ? 'https://pay.pesapal.com/v3'              // production
+    : 'https://cybqa.pesapal.com/pesapalv3'     // sandbox
 }
 
 /**
