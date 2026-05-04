@@ -26,7 +26,7 @@ export async function generateSummary(transcript: string): Promise<string> {
   // Truncate transcript to 30k characters to stay within token limits
   const truncatedTranscript = transcript.slice(0, 30000)
   
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
   
   const prompt = `
 You are a sermon content specialist. Analyze the following sermon transcript and create a comprehensive, detailed summary suitable for a church website.
@@ -119,7 +119,7 @@ export async function generateSEO(
   // Truncate transcript to 5k characters for SEO generation
   const truncatedTranscript = transcript.slice(0, 5000)
   
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
   
   const prompt = `
 You are an SEO specialist for a church website. Based on the sermon content below, generate SEO-optimized metadata.
