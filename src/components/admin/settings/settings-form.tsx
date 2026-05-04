@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { saveSettings } from '@/lib/actions/settings'
+import { saveSettings, registerPesapalIPNAction } from '@/lib/actions/settings'
 import { createMediaRecord } from '@/lib/actions/media'
 import { createClient } from '@/lib/supabase/client'
 import type { SiteSetting } from '@/lib/types'
@@ -162,6 +162,52 @@ function BrandingImageField({ label, description, value, onUpload, onClear, aspe
 
 interface SettingsFormProps {
   initialSettings: SiteSetting[]
+}
+
+// ---------------------------------------------------------------------------
+// RegisterIPNButton — auto-registers Pesapal IPN and fills in the ID
+// ---------------------------------------------------------------------------
+
+function RegisterIPNButton({ onSuccess }: { onSuccess: (id: string) => void }) {
+  const [loading, setLoading] = React.useState(false)
+  const [status, setStatus] = React.useState<'idle' | 'ok' | 'err'>('idle')
+  const [msg, setMsg] = React.useState('')
+
+  async function handleRegister() {
+    setLoading(true)
+    setStatus('idle')
+    setMsg('')
+    const result = await registerPesapalIPNAction()
+    setLoading(false)
+    if ('error' in result) {
+      setStatus('err')
+      setMsg(result.error)
+    } else {
+      setStatus('ok')
+      setMsg(`Registered! ID: ${result.ipnId}`)
+      onSuccess(result.ipnId)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={handleRegister}
+        disabled={loading}
+        className="shrink-0 h-9 text-xs whitespace-nowrap"
+      >
+        {loading ? 'Registering…' : 'Auto-Register'}
+      </Button>
+      {msg && (
+        <p className={`text-[10px] ${status === 'ok' ? 'text-green-600' : 'text-destructive'}`}>
+          {msg}
+        </p>
+      )}
+    </div>
+  )
 }
 
 export function SettingsForm({ initialSettings }: SettingsFormProps) {
@@ -500,14 +546,21 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                          <Input type="password" value={values.pesapal_consumer_secret} onChange={e => handleChange('pesapal_consumer_secret', e.target.value)} />
                       </div>
                       <div className="space-y-1.5">
-                         <Label className="text-xs">IPN ID</Label>
-                         <Input
-                           value={values.pesapal_ipn_id || ''}
-                           onChange={e => handleChange('pesapal_ipn_id', e.target.value)}
-                           placeholder="Register IPN in Pesapal dashboard → copy ID here"
-                         />
+                         <Label className="text-xs">IPN Notification ID</Label>
+                         <div className="flex gap-2">
+                           <Input
+                             value={values.pesapal_ipn_id || ''}
+                             onChange={e => handleChange('pesapal_ipn_id', e.target.value)}
+                             placeholder="e.g. a1b2c3d4-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                             className="font-mono text-xs"
+                           />
+                           <RegisterIPNButton
+                             onSuccess={(id) => handleChange('pesapal_ipn_id', id)}
+                           />
+                         </div>
                          <p className="text-[10px] text-muted-foreground">
-                           Get this from your Pesapal merchant dashboard under IPN settings.
+                           This is the <strong>ID</strong> returned after registering your IPN URL — not the URL itself.
+                           Click <strong>Auto-Register</strong> to register automatically using your credentials above.
                          </p>
                       </div>
                       <div className="space-y-1.5">
