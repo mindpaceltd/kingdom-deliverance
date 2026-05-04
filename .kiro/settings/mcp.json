@@ -7,7 +7,8 @@
         "apply_migration",
         "get_advisors",
         "execute_sql",
-        "list_migrations"
+        "list_migrations",
+        "get_logs"
       ]
     }
   }
