@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { formatPrice } from '@/lib/utils'
 import { AddToCartButton } from './add-to-cart-button'
 import { useScroll, useMotionValueEvent } from 'framer-motion'
+import { useCurrency } from '@/lib/currency-context'
 
 interface StickyAddToCartProps {
   product: any
@@ -14,6 +15,7 @@ interface StickyAddToCartProps {
 export function StickyAddToCart({ product, price }: StickyAddToCartProps) {
   const [isVisible, setIsVisible] = React.useState(false)
   const { scrollY } = useScroll()
+  const { formatPrice } = useCurrency()
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     // Show after scrolling past the main buy box (roughly 800px)

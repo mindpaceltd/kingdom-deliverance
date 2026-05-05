@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react'
 import { useCart } from '@/lib/cart-context'
-import { formatPrice } from '@/lib/utils'
 import { useCurrency, SUPPORTED_CURRENCIES } from '@/lib/currency-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

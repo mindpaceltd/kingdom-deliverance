@@ -13,12 +13,13 @@ import {
 import { Button } from '@/components/ui/button'
 import { ShoppingCart, ShoppingBag, Trash2, Plus, Minus, ArrowRight } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
-import { formatPrice } from '@/lib/utils'
+import { useCurrency } from '@/lib/currency-context'
 import Link from 'next/link'
 
 export function CartSheet() {
   const router = useRouter()
   const { items, removeItem, updateQuantity, subtotal, totalItems } = useCart()
+  const { formatPrice } = useCurrency()
 
   return (
     <Sheet>

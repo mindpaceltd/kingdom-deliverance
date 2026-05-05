@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { useCart } from '@/lib/cart-context'
-import { formatPrice } from '@/lib/utils'
+import { useCurrency } from '@/lib/currency-context'
 import { Button } from '@/components/ui/button'
 import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -10,6 +10,7 @@ import { motion } from 'framer-motion'
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, subtotal } = useCart()
+  const { formatPrice } = useCurrency()
 
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-16">
