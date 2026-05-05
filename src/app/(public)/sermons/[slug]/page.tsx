@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import Image from "next/image";
 import { format } from "date-fns";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -50,16 +51,18 @@ export default async function SermonDetailPage({ params }: Props) {
 
   return (
     <div className="flex flex-col">
-      <section 
-        className={`relative py-24 text-white ${!sermon.thumbnail_url ? 'bg-primary' : ''}`}
-        style={sermon.thumbnail_url ? {
-          backgroundImage: `url(${sermon.thumbnail_url})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        } : undefined}
-      >
+      <section className="relative py-24 text-white bg-primary overflow-hidden">
         {sermon.thumbnail_url && (
-          <div className="absolute inset-0 bg-primary/80 z-0" />
+          <div className="absolute inset-0 z-0">
+            <Image 
+              src={sermon.thumbnail_url}
+              alt=""
+              fill
+              className="object-cover opacity-40"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/50 to-transparent" />
+          </div>
         )}
         <div className="relative z-10 container px-4 max-w-4xl mx-auto">
           <Link href="/sermons" className="inline-flex items-center gap-2 text-white/60 hover:text-accent text-sm mb-8 transition-colors">
