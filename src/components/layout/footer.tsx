@@ -81,6 +81,16 @@ export async function Footer() {
                 );
               })}
             </div>
+            {/* Privacy & Terms below socials */}
+            <div className="flex items-center gap-4 pt-1">
+              <Link href="/privacy" className="text-xs text-white/40 hover:text-accent transition-colors duration-200">
+                Privacy Policy
+              </Link>
+              <span className="w-px h-3 bg-white/15" />
+              <Link href="/terms" className="text-xs text-white/40 hover:text-accent transition-colors duration-200">
+                Terms of Service
+              </Link>
+            </div>
           </div>
 
           {/* Quick Links */}
@@ -95,8 +105,6 @@ export async function Footer() {
                 { name: "Gallery", href: "/gallery" },
                 { name: "Watch Live", href: "/live" },
                 { name: "Give Online", href: "/donations" },
-                { name: "Privacy Policy", href: "/privacy" },
-                { name: "Terms of Service", href: "/terms" },
                 { name: "Contact", href: "/contact" },
               ].map((link) => (
                 <li key={link.href}>
