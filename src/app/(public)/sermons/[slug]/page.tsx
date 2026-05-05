@@ -50,8 +50,18 @@ export default async function SermonDetailPage({ params }: Props) {
 
   return (
     <div className="flex flex-col">
-      <section className="py-24 bg-primary text-white">
-        <div className="container px-4 max-w-4xl mx-auto">
+      <section 
+        className={`relative py-24 text-white ${!sermon.thumbnail_url ? 'bg-primary' : ''}`}
+        style={sermon.thumbnail_url ? {
+          backgroundImage: `url(${sermon.thumbnail_url})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        } : undefined}
+      >
+        {sermon.thumbnail_url && (
+          <div className="absolute inset-0 bg-primary/80 z-0" />
+        )}
+        <div className="relative z-10 container px-4 max-w-4xl mx-auto">
           <Link href="/sermons" className="inline-flex items-center gap-2 text-white/60 hover:text-accent text-sm mb-8 transition-colors">
             <ArrowLeft className="w-4 h-4" /> All Sermons
           </Link>
