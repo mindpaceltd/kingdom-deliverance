@@ -22,7 +22,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = data.meta_title || `${data.title} | KDC Uganda Sermons`;
   const description = data.meta_description || data.description || "Watch and listen to powerful sermons from Kingdom Deliverance Centre Uganda.";
   const url = `https://kdcuganda.org/sermons/${data.slug}`;
-  const image = data.thumbnail_url || "https://kdcuganda.org/og?title=" + encodeURIComponent(data.title);
+  
+  // Use thumbnail if it's a stable hosted URL (not a dynamic generation URL)
+  // Fall back to our branded OG image generator
+  const isStableImage = data.thumbnail_url && 
+    !data.thumbnail_url.includes('pollinations.ai') &&
+    (data.thumbnail_url.startsWith('https://') || data.thumbnail_url.startsWith('http://'));
+  const image = isStableImage 
+    ? data.thumbnail_url 
+    : `https://kdcuganda.org/og?title=${encodeURIComponent(data.title)}&description=${encodeURIComponent((data.description || '').slice(0, 100))}`;
 
   return {
     title,
@@ -45,7 +53,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export const revalidate = 3600;
-export const dynamic = 'force-dynamic';
 
 export default async function SermonDetailPage({ params }: Props) {
   const supabase = createClient();
