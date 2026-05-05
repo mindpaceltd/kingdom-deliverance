@@ -22,6 +22,7 @@ import { SeriesSelect } from './series-select'
 import { AILinkProcessor } from './ai-link-processor'
 import { DraftReviewModal, type SermonFormData } from './draft-review-modal'
 import { createSermon, updateSermon, checkSlugAvailability } from '@/lib/actions/sermons'
+import { rewriteSermonWithAi } from '@/lib/actions/sermon-ai'
 import { generatePostContent } from '@/lib/actions/ai'
 import { computeSeoScore } from '@/lib/seo-scorer'
 import { cn, validateVideoUrl } from '@/lib/utils'
@@ -155,6 +156,32 @@ export function SermonEditorClient({ sermon, allSeries }: SermonEditorClientProp
     }
 
     setField('content', result.html)
+  }
+  
+  async function handleAiRewrite() {
+    if (!sermon?.id || !form.title.trim()) return
+    
+    if (!confirm('This will completely rewrite the sermon notes, description, and thumbnail based on the current title. The status will be set to Draft. Continue?')) {
+      return
+    }
+
+    setShowAiMenu(false)
+    setAiLoading(true)
+    setAiError(null)
+
+    try {
+      const result = await rewriteSermonWithAi(sermon.id, form.title)
+      if (result.success) {
+        // Refresh page to show updated content
+        window.location.reload()
+      } else {
+        setAiError(result.error || 'Rewrite failed')
+      }
+    } catch (err: any) {
+      setAiError(err.message || 'An error occurred during rewrite')
+    } finally {
+      setAiLoading(false)
+    }
   }
 
   async function save(overrideStatus?: 'draft' | 'published' | 'scheduled') {
@@ -443,17 +470,31 @@ export function SermonEditorClient({ sermon, allSeries }: SermonEditorClientProp
                     </Button>
                     {showAiMenu && (
                        <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-lg border border-border bg-popover shadow-lg overflow-hidden">
-                         <button
-                           type="button"
-                           className="flex w-full items-start gap-3 px-4 py-3 text-left text-sm hover:bg-muted"
-                           onClick={() => handleAiGenerate('full')}
-                         >
-                           <SparklesIcon className="size-4 mt-0.5 shrink-0 text-primary" />
-                           <div>
-                             <p className="font-medium">Generate Transcript</p>
-                             <p className="text-xs text-muted-foreground mt-0.5">Write notes from title</p>
-                           </div>
-                         </button>
+                         {!isEditing ? (
+                           <button
+                             type="button"
+                             className="flex w-full items-start gap-3 px-4 py-3 text-left text-sm hover:bg-muted"
+                             onClick={() => handleAiGenerate('full')}
+                           >
+                             <SparklesIcon className="size-4 mt-0.5 shrink-0 text-primary" />
+                             <div>
+                               <p className="font-medium">Generate Transcript</p>
+                               <p className="text-xs text-muted-foreground mt-0.5">Write notes from title</p>
+                             </div>
+                           </button>
+                         ) : (
+                           <button
+                             type="button"
+                             className="flex w-full items-start gap-3 px-4 py-3 text-left text-sm hover:bg-muted"
+                             onClick={handleAiRewrite}
+                           >
+                             <SparklesIcon className="size-4 mt-0.5 shrink-0 text-amber-500" />
+                             <div>
+                               <p className="font-medium font-bold text-amber-600">AI Rewrite All</p>
+                               <p className="text-xs text-muted-foreground mt-0.5">Full rewrite from title</p>
+                             </div>
+                           </button>
+                         )}
                          <button
                            type="button"
                            className={cn(
