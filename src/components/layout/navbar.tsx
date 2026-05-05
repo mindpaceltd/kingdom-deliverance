@@ -31,7 +31,7 @@ const navigation = [
   { name: "Ministries", href: "/ministries" },
   { name: "Shop", href: "/shop" },
   { 
-    name: "Get Involved", 
+    name: "More", 
     children: [
       { name: "Live Broadcast", href: "/live" },
       { name: "Blog", href: "/blog" },
@@ -82,12 +82,13 @@ export function Navbar() {
         </Link>
 
         {/* Desktop Nav */}
-        <div className="hidden lg:flex items-center gap-2">
+        <div className="hidden lg:flex items-center gap-1">
           {navigation.map((item) => (
+            item.name === "Home" ? null :
             item.children ? (
               <DropdownMenu key={item.name}>
                 <DropdownMenuTrigger className={cn(
-                  "flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 outline-none",
+                  "flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 outline-none",
                   item.children.some(child => pathname === child.href)
                     ? "text-accent bg-white/8"
                     : "text-white/85 hover:text-accent hover:bg-white/8"
@@ -110,7 +111,7 @@ export function Navbar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "relative px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:text-accent hover:bg-white/8",
+                  "relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:text-accent hover:bg-white/8",
                   pathname === item.href ? "text-accent bg-white/8" : "text-white/85"
                 )}
               >
