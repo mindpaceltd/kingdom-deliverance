@@ -58,13 +58,13 @@ export default async function SermonDetailPage({ params }: Props) {
               src={sermon.thumbnail_url}
               alt=""
               fill
-              className="object-cover opacity-40"
+              className="object-cover object-center opacity-50"
               priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/50 to-transparent" />
           </div>
         )}
-        <div className="relative z-10 container px-4 max-w-4xl mx-auto">
+        <div className="relative z-10 container px-4 max-w-4xl mx-auto text-center flex flex-col items-center">
           <Link href="/sermons" className="inline-flex items-center gap-2 text-white/60 hover:text-accent text-sm mb-8 transition-colors">
             <ArrowLeft className="w-4 h-4" /> All Sermons
           </Link>
@@ -73,8 +73,8 @@ export default async function SermonDetailPage({ params }: Props) {
               {sermon.sermon_series?.name || sermon.series}
             </p>
           )}
-          <h1 className="font-serif text-4xl md:text-5xl font-bold leading-tight">{sermon.title}</h1>
-          <div className="flex flex-wrap gap-5 mt-6 text-white/70 text-sm">
+          <h1 className="font-serif text-4xl md:text-5xl font-bold leading-tight text-accent">{sermon.title}</h1>
+          <div className="flex flex-wrap justify-center gap-5 mt-6 text-white/70 text-sm">
             <span className="flex items-center gap-1.5"><User className="w-4 h-4 text-accent" />{sermon.preacher}</span>
             <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-accent" />{format(new Date(sermon.date), "MMMM d, yyyy")}</span>
             {sermon.duration_minutes && <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-accent" />{sermon.duration_minutes} min</span>}
