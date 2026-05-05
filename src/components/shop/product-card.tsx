@@ -4,6 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { ShoppingCart, Star, Package, ArrowRight } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
+import { useCurrency } from '@/lib/currency-context'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 
@@ -14,12 +15,10 @@ interface ProductCardProps {
 
 export function ProductCard({ product, view = 'grid' }: ProductCardProps) {
   const { addItem } = useCart()
+  const { formatPrice, currency } = useCurrency()
 
   const hasDiscount = product.sale_price_usd > 0 && product.sale_price_usd < product.regular_price_usd
   const displayPrice = hasDiscount ? product.sale_price_usd : (product.regular_price_usd || product.price_usd)
-  const RATE = 3800
-  const priceUGX = Math.round(displayPrice * RATE)
-  const regularUGX = Math.round((product.regular_price_usd || product.price_usd) * RATE)
 
   const router = useRouter()
   const handleAddToCart = (e: React.MouseEvent, isBuy: boolean = false) => {
@@ -73,12 +72,12 @@ export function ProductCard({ product, view = 'grid' }: ProductCardProps) {
           <div className="flex items-center justify-between mt-auto">
             <div className="flex flex-col">
               <div className="flex items-baseline gap-2">
-                <span className="text-base md:text-lg font-black text-primary">
-                  UGX {priceUGX.toLocaleString()}
+                <span className="text-base md:text-lg font-black text-primary" suppressHydrationWarning>
+                  {formatPrice(displayPrice)}
                 </span>
                 {hasDiscount && (
-                  <span className="text-[10px] text-gray-400 line-through">
-                    {regularUGX.toLocaleString()}
+                  <span className="text-[10px] text-gray-400 line-through" suppressHydrationWarning>
+                    {formatPrice(product.regular_price_usd || product.price_usd)}
                   </span>
                 )}
               </div>
@@ -135,12 +134,12 @@ export function ProductCard({ product, view = 'grid' }: ProductCardProps) {
 
         <div className="mt-auto pt-2">
           <div className="flex flex-col gap-0.5 mb-3">
-            <span className="text-sm sm:text-base font-black text-primary">
-              UGX {priceUGX.toLocaleString()}
+            <span className="text-sm sm:text-base font-black text-primary" suppressHydrationWarning>
+              {formatPrice(displayPrice)}
             </span>
             {hasDiscount && (
-              <span className="text-[10px] text-gray-400 line-through leading-none">
-                {regularUGX.toLocaleString()}
+              <span className="text-[10px] text-gray-400 line-through leading-none" suppressHydrationWarning>
+                {formatPrice(product.regular_price_usd || product.price_usd)}
               </span>
             )}
           </div>

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useCart } from '@/lib/cart-context'
 import { formatPrice } from '@/lib/utils'
+import { useCurrency, SUPPORTED_CURRENCIES } from '@/lib/currency-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,13 +18,6 @@ import {
 } from '@/components/ui/select'
 import { createBrowserClient } from '@supabase/ssr'
 
-const CURRENCIES = [
-  { code: 'USD', name: 'US Dollar', rate: 1 },
-  { code: 'UGX', name: 'Uganda Shilling', rate: 3800 },
-  { code: 'KES', name: 'Kenya Shilling', rate: 130 },
-  { code: 'RWF', name: 'Rwanda Franc', rate: 1250 },
-  { code: 'GBP', name: 'British Pound', rate: 0.8 },
-]
 
 const SHIPPING_OPTIONS = [
   {
@@ -57,8 +51,8 @@ const PAYMENT_METHODS = [
 
 export default function CheckoutPage() {
   const { items, subtotal, totalItems } = useCart()
+  const { currency, rate, rates, setCurrency } = useCurrency()
   const [loading, setLoading] = useState(false)
-  const [currency, setCurrency] = useState('UGX')
   const [gateway, setGateway] = useState<'pesapal' | 'paypal'>('pesapal')
   const [shippingMethod, setShippingMethod] = useState<'standard' | 'express'>('standard')
   const [createAccount, setCreateAccount] = useState(false)
@@ -79,14 +73,13 @@ export default function CheckoutPage() {
   useEffect(() => { setMounted(true) }, [])
 
   const allDigital = items.every(item => item.type === 'digital')
-  const currentRate = CURRENCIES.find(c => c.code === currency)?.rate || 1
   const selectedShipping = SHIPPING_OPTIONS.find((option) => option.id === shippingMethod)
   const shippingCost = allDigital
     ? 0
-    : Math.round((selectedShipping?.costUsd || 0) * currentRate * 100) / 100
+    : Math.round((selectedShipping?.costUsd || 0) * rate * 100) / 100
   const taxRate = 0
-  const taxAmount = Math.round((subtotal * currentRate * taxRate) * 100) / 100
-  const convertedTotal = subtotal * currentRate
+  const taxAmount = Math.round((subtotal * rate * taxRate) * 100) / 100
+  const convertedTotal = subtotal * rate
   const orderTotal = Math.round((convertedTotal + shippingCost + taxAmount) * 100) / 100
 
   // Pre-fill form if user is authenticated
@@ -325,8 +318,8 @@ export default function CheckoutPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {CURRENCIES.map(c => (
-                        <SelectItem key={c.code} value={c.code}>{c.name} ({c.code})</SelectItem>
+                      {SUPPORTED_CURRENCIES.map(code => (
+                        <SelectItem key={code} value={code}>{code}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -412,7 +405,7 @@ export default function CheckoutPage() {
                           <p className="text-xs text-gray-500 mt-1">{option.description}</p>
                         </div>
                         <span className="text-sm font-semibold text-gray-900">
-                          {formatPrice(Math.round(option.costUsd * currentRate * 100) / 100, currency)}
+                          {formatPrice(Math.round(option.costUsd * rate * 100) / 100, currency)}
                         </span>
                       </div>
                     </button>
