@@ -25,7 +25,7 @@ export async function getPesapalAuthToken(
 
   const url = getPesapalUrl(mode)
 
-  const response = await fetch(`${url}/api/Auth/RegisterInteraction`, {
+  const response = await fetch(`${url}/api/Auth/RequestToken`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
