@@ -14,15 +14,34 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = createClient();
   const { data: event } = await supabase
     .from("events")
-    .select("title, description, meta_title, meta_description")
+    .select("title, description, meta_title, meta_description, image_url, slug")
     .eq("slug", params.slug)
     .single();
     
   if (!event) return { title: "Event Not Found" };
-  
-  return { 
-    title: event.meta_title || `${event.title} | KDC Uganda Events`, 
-    description: event.meta_description || event.description || undefined 
+
+  const title = event.meta_title || `${event.title} | KDC Uganda Events`;
+  const description = event.meta_description || event.description || "Join us for this upcoming event at Kingdom Deliverance Centre Uganda.";
+  const url = `https://kdcuganda.org/events/${event.slug}`;
+  const image = event.image_url || "https://kdcuganda.org/og?title=" + encodeURIComponent(event.title);
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title: event.meta_title || event.title,
+      description,
+      url,
+      siteName: "Kingdom Deliverance Centre Uganda",
+      type: "website",
+      images: [{ url: image, width: 1200, height: 630, alt: event.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: event.meta_title || event.title,
+      description,
+      images: [image],
+    },
   };
 }
 

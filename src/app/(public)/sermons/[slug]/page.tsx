@@ -13,15 +13,34 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = createClient();
   const { data } = await supabase
     .from("sermons")
-    .select("title, description, meta_title, meta_description")
+    .select("title, description, meta_title, meta_description, thumbnail_url, slug")
     .eq("slug", params.slug)
     .single();
 
   if (!data) return { title: "Sermon Not Found" };
 
+  const title = data.meta_title || `${data.title} | KDC Uganda Sermons`;
+  const description = data.meta_description || data.description || "Watch and listen to powerful sermons from Kingdom Deliverance Centre Uganda.";
+  const url = `https://kdcuganda.org/sermons/${data.slug}`;
+  const image = data.thumbnail_url || "https://kdcuganda.org/og?title=" + encodeURIComponent(data.title);
+
   return {
-    title: data.meta_title || `${data.title} | KDC Uganda Sermons`,
-    description: data.meta_description || data.description || undefined,
+    title,
+    description,
+    openGraph: {
+      title: data.meta_title || data.title,
+      description,
+      url,
+      siteName: "Kingdom Deliverance Centre Uganda",
+      type: "article",
+      images: [{ url: image, width: 1200, height: 630, alt: data.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: data.meta_title || data.title,
+      description,
+      images: [image],
+    },
   };
 }
 
