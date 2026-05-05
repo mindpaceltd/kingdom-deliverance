@@ -22,24 +22,19 @@ const navigation = [
     name: "About Us", 
     children: [
       { name: "Our Story", href: "/about" },
-      { name: "Ministries", href: "/ministries" },
       { name: "Gallery", href: "/gallery" },
       { name: "Contact Us", href: "/contact" },
     ]
   },
-  { 
-    name: "Media", 
-    children: [
-      { name: "Sermons", href: "/sermons" },
-      { name: "Live Broadcast", href: "/live" },
-      { name: "Blog", href: "/blog" },
-    ]
-  },
+  { name: "Sermons", href: "/sermons" },
+  { name: "Events", href: "/events" },
+  { name: "Ministries", href: "/ministries" },
   { name: "Shop", href: "/shop" },
   { 
     name: "Get Involved", 
     children: [
-      { name: "Events", href: "/events" },
+      { name: "Live Broadcast", href: "/live" },
+      { name: "Blog", href: "/blog" },
       { name: "Prayer Request", href: "/prayer" },
       { name: "Partner With Us", href: "/donations" },
     ]
