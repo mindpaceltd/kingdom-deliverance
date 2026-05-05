@@ -55,7 +55,7 @@ export async function getPesapalAuthToken(
 
 export async function registerPesapalIPN(token: string, mode?: string) {
   const url = getPesapalUrl(mode)
-  const response = await fetch(`${url}/api/URLRegister/RegisterIPN`, {
+  const response = await fetch(`${url}/api/URLSetup/RegisterIPN`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,

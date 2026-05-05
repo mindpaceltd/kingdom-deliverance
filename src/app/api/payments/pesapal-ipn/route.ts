@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getPesapalAuthToken, getPesapalTransactionStatus } from '@/lib/payments/pesapal'
+import { getPesapalSettings } from '@/lib/payments/pesapal-settings'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,10 +29,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Get auth token for PesaPal API
-    const token = await getPesapalAuthToken()
+    const settings = await getPesapalSettings()
+    const token = await getPesapalAuthToken(settings.consumerKey, settings.consumerSecret, settings.mode)
 
     // Verify transaction status with PesaPal
-    const verification = await getPesapalTransactionStatus(orderTrackingId, token)
+    const verification = await getPesapalTransactionStatus(orderTrackingId, token, settings.mode)
 
     const supabase = createAdminClient()
     const isPaid = verification.status_code === 1 || verification.status_code === '1'

@@ -1,9 +1,12 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { getPesapalAuthToken, getPesapalTransactionStatus } from '@/lib/payments/pesapal'
+import { getPesapalSettings } from '@/lib/payments/pesapal-settings'
 import { capturePayPalPayment, getPayPalOrderDetails } from '@/lib/payments/paypal'
 import { finalizeOrder } from '@/lib/orders/finalize'
 import { redirect } from 'next/navigation'
 import { NextRequest } from 'next/server'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -18,8 +21,9 @@ export async function GET(request: NextRequest) {
     const orderTrackingId = searchParams.get('OrderTrackingId')
 
     if (orderTrackingId) {
-      const token = await getPesapalAuthToken()
-      const verification = await getPesapalTransactionStatus(orderTrackingId, token)
+      const settings = await getPesapalSettings()
+      const token = await getPesapalAuthToken(settings.consumerKey, settings.consumerSecret, settings.mode)
+      const verification = await getPesapalTransactionStatus(orderTrackingId, token, settings.mode)
 
       if (verification.status_code === 1 || verification.status_code === '1') {
         if (type === 'donation') {

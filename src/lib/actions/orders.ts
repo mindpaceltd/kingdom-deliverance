@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { getPesapalAuthToken, initiatePesapalPayment } from '@/lib/payments/pesapal'
+import { getPesapalSettings } from '@/lib/payments/pesapal-settings'
 import { initiatePayPalPayment } from '@/lib/payments/paypal'
 
 /**
@@ -9,22 +10,12 @@ import { initiatePayPalPayment } from '@/lib/payments/paypal'
  * Falls back to environment variables if not set in DB.
  */
 async function getPaymentSettings() {
+  const settings = await getPesapalSettings()
   const supabase = createAdminClient()
-  const keys = [
-    'pesapal_consumer_key',
-    'pesapal_consumer_secret',
-    'pesapal_mode',
-    'pesapal_enabled',
-    'pesapal_ipn_id',
-    'paypal_client_id',
-    'paypal_secret',
-    'paypal_mode',
-    'paypal_enabled',
-  ]
   const { data } = await supabase
     .from('site_settings')
     .select('key, value')
-    .in('key', keys)
+    .in('key', ['paypal_client_id', 'paypal_secret', 'paypal_mode', 'paypal_enabled'])
 
   const map: Record<string, string> = {}
   for (const row of data ?? []) {
@@ -32,11 +23,7 @@ async function getPaymentSettings() {
   }
 
   return {
-    pesapalConsumerKey: map.pesapal_consumer_key || process.env.PESAPAL_CONSUMER_KEY || '',
-    pesapalConsumerSecret: map.pesapal_consumer_secret || process.env.PESAPAL_CONSUMER_SECRET || '',
-    pesapalMode: map.pesapal_mode || process.env.PESAPAL_MODE || 'live',
-    pesapalEnabled: map.pesapal_enabled === 'true' || map.pesapal_enabled === '1',
-    pesapalIpnId: map.pesapal_ipn_id || process.env.PESAPAL_IPN_ID || '',
+    ...settings,
     paypalClientId: map.paypal_client_id || process.env.PAYPAL_CLIENT_ID || '',
     paypalSecret: map.paypal_secret || process.env.PAYPAL_SECRET || '',
     paypalMode: map.paypal_mode || process.env.PAYPAL_MODE || 'sandbox',
@@ -152,7 +139,7 @@ export async function createOrder(data: {
 
   try {
     if (gateway === 'pesapal') {
-      const token = await getPesapalAuthToken(paySettings.pesapalConsumerKey, paySettings.pesapalConsumerSecret, paySettings.pesapalMode)
+      const token = await getPesapalAuthToken(paySettings.consumerKey, paySettings.consumerSecret, paySettings.mode)
       const names = data.name.trim().split(' ')
       const firstName = names[0] || 'Customer'
       const lastName = names.slice(1).join(' ') || firstName
@@ -163,7 +150,7 @@ export async function createOrder(data: {
         currency: data.currency,
         description: `Order #${order.id.split('-')[0]} from Kingdom Deliverance Store`,
         callback_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/payments/verify?gateway=pesapal`,
-        notification_id: paySettings.pesapalIpnId,
+        notification_id: paySettings.ipnId,
         billing_address: {
           email_address: data.email,
           phone_number: data.phone,
