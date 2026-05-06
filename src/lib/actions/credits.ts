@@ -95,18 +95,21 @@ export async function purchaseCredits(email: string, packageId: string) {
 export async function adjustUserCredits(email: string, amount: number, reason: string) {
   const supabase = createAdminClient()
 
-  // 1. Get current balance
+  // 1. Get current balance and stats
   const { data: credit, error: fetchError } = await supabase
     .from('user_credits')
-    .select('balance')
+    .select('balance, lifetime_earned, lifetime_spent')
     .eq('email', email)
     .single()
 
   if (fetchError && fetchError.code !== 'PGRST116') {
-    return { error: fetchError.message }
+    return { success: false, error: fetchError.message }
   }
 
   const currentBalance = credit?.balance || 0
+  const currentEarned = credit?.lifetime_earned || 0
+  const currentSpent = credit?.lifetime_spent || 0
+  
   const newBalance = currentBalance + amount
 
   // 2. Upsert user_credits
@@ -115,12 +118,12 @@ export async function adjustUserCredits(email: string, amount: number, reason: s
     .upsert({
       email,
       balance: newBalance,
-      lifetime_earned: amount > 0 ? (credit?.lifetime_earned || 0) + amount : (credit?.lifetime_earned || 0),
-      lifetime_spent: amount < 0 ? (credit?.lifetime_spent || 0) + Math.abs(amount) : (credit?.lifetime_spent || 0),
+      lifetime_earned: amount > 0 ? currentEarned + amount : currentEarned,
+      lifetime_spent: amount < 0 ? currentSpent + Math.abs(amount) : currentSpent,
       updated_at: new Date().toISOString()
     }, { onConflict: 'email' })
 
-  if (upsertError) return { error: upsertError.message }
+  if (upsertError) return { success: false, error: upsertError.message }
 
   // 3. Record transaction
   const { error: txError } = await supabase
@@ -132,7 +135,7 @@ export async function adjustUserCredits(email: string, amount: number, reason: s
       metadata: { reason }
     })
 
-  if (txError) return { error: txError.message }
+  if (txError) return { success: false, error: txError.message }
 
   revalidatePath('/admin/credits')
   return { success: true }

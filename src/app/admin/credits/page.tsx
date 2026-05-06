@@ -72,8 +72,8 @@ export default async function AdminCreditsPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total Credits in System</p>
-              <p className="text-2xl font-bold">
-                {items.reduce((acc, curr) => acc + curr.balance, 0).toLocaleString()}
+              <p className="text-2xl font-bold" suppressHydrationWarning>
+                {items.reduce((acc, curr) => acc + curr.balance, 0).toLocaleString('en-US')}
               </p>
             </div>
           </div>
@@ -86,7 +86,7 @@ export default async function AdminCreditsPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Active Wallets</p>
-              <p className="text-2xl font-bold">{items.filter(i => i.balance > 0 || i.lifetime_earned > 0).length}</p>
+              <p className="text-2xl font-bold" suppressHydrationWarning>{items.filter(i => i.balance > 0 || i.lifetime_earned > 0).length}</p>
             </div>
           </div>
         </div>
@@ -131,19 +131,19 @@ export default async function AdminCreditsPage() {
                         <span className={cn(
                           "font-bold",
                           item.balance > 0 ? "text-accent" : "text-muted-foreground/50"
-                        )}>
-                          {item.balance.toLocaleString()}
+                        )} suppressHydrationWarning>
+                          {item.balance.toLocaleString('en-US')}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-muted-foreground">
-                      {item.lifetime_earned.toLocaleString()}
+                    <td className="px-6 py-4 text-muted-foreground" suppressHydrationWarning>
+                      {item.lifetime_earned.toLocaleString('en-US')}
                     </td>
-                    <td className="px-6 py-4 text-muted-foreground">
-                      {item.lifetime_spent.toLocaleString()}
+                    <td className="px-6 py-4 text-muted-foreground" suppressHydrationWarning>
+                      {item.lifetime_spent.toLocaleString('en-US')}
                     </td>
-                    <td className="px-6 py-4 text-muted-foreground text-xs">
-                      {format(new Date(item.updated_at), 'MMM dd, yyyy')}
+                    <td className="px-6 py-4 text-muted-foreground text-xs" suppressHydrationWarning>
+                      {item.updated_at ? format(new Date(item.updated_at), 'MMM dd, yyyy') : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
