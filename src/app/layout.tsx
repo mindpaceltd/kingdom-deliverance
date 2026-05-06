@@ -70,6 +70,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
+import { Toaster } from "sonner";
 
 export default function RootLayout({
   children,
@@ -99,6 +100,7 @@ export default function RootLayout({
         </Script>
         {children}
         <ScrollToTop />
+        <Toaster position="top-center" expand={true} richColors />
       </body>
     </html>
   );
