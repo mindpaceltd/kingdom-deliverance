@@ -1,6 +1,7 @@
+'use server'
+
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { getPesapalAuthToken, initiatePesapalPayment } from '@/lib/payments/pesapal'
-
 async function getPesapalSettings() {
   const adminClient = createAdminClient()
   const { data } = await adminClient
@@ -62,11 +63,19 @@ export async function createDonationOrder(data: {
     const firstName = names[0] || 'Anonymous'
     const lastName = names.slice(1).join(' ') || 'Donor'
 
+    // Convert amount to UGX for Pesapal
+    const RATES: Record<string, number> = {
+      USD: 1, UGX: 3800, KES: 130, RWF: 1250, GBP: 0.79, EUR: 0.92, TZS: 2600, NGN: 1600, GHS: 15, ZAR: 18
+    }
+    const currentRate = RATES[data.currency] || 1
+    const amountInUsd = data.amount / currentRate
+    const amountInUgx = Math.round(amountInUsd * RATES['UGX'])
+
     const psaResponse = await initiatePesapalPayment(
       {
         id: tx_ref,
-        amount: data.amount,
-        currency: data.currency,
+        amount: amountInUgx,
+        currency: 'UGX',
         description: `Donation to Kingdom Deliverance Centre`,
         callback_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/payments/verify?gateway=pesapal&type=donation`,
         notification_id: pesapal.ipnId,
