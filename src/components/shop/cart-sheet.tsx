@@ -33,20 +33,20 @@ export function CartSheet() {
           )}
         </button>
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-md flex flex-col p-0">
-        <SheetHeader className="p-6 border-b">
+      <SheetContent className="w-full sm:max-w-md flex flex-col p-0 bg-[#080C18] border-l border-white/5 text-white">
+        <SheetHeader className="p-6 border-b border-white/5">
           <SheetTitle className="flex items-center gap-3">
             <ShoppingBag className="w-5 h-5 text-accent" />
-            Your Shopping Bag
+            <span className="text-white">Your Shopping Bag</span>
           </SheetTitle>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto">
           {items.length > 0 ? (
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-white/5">
               {items.map((item) => (
                 <div key={item.id} className="p-6 flex gap-4">
-                  <div className="h-20 w-16 rounded-xl bg-muted overflow-hidden shrink-0 border border-border">
+                  <div className="h-20 w-16 rounded-xl bg-white/5 overflow-hidden shrink-0 border border-white/5">
                     {item.image ? (
                       <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                     ) : (
@@ -57,31 +57,31 @@ export function CartSheet() {
                   </div>
                   <div className="flex-1 flex flex-col justify-between">
                     <div>
-                      <h4 className="font-bold text-primary text-sm line-clamp-1">{item.name}</h4>
-                      <p className="text-xs text-muted-foreground uppercase tracking-widest mt-0.5">{item.type}</p>
+                      <h4 className="font-bold text-white text-sm line-clamp-1">{item.name}</h4>
+                      <p className="text-[10px] text-white/40 uppercase tracking-widest mt-0.5">{item.type}</p>
                     </div>
                     <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center border rounded-lg overflow-hidden h-8">
+                      <div className="flex items-center border border-white/10 rounded-lg overflow-hidden h-8 bg-white/5">
                         <button 
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="px-2 hover:bg-muted transition-colors"
+                          className="px-2 hover:bg-white/10 transition-colors text-white/70"
                         >
                           <Minus className="w-3 h-3" />
                         </button>
-                        <span className="px-3 text-xs font-bold">{item.quantity}</span>
+                        <span className="px-3 text-xs font-bold text-white">{item.quantity}</span>
                         <button 
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="px-2 hover:bg-muted transition-colors"
+                          className="px-2 hover:bg-white/10 transition-colors text-white/70"
                         >
                           <Plus className="w-3 h-3" />
                         </button>
                       </div>
-                      <span className="font-bold text-sm">{formatPrice(item.price * item.quantity)}</span>
+                      <span className="font-bold text-sm text-accent">{formatPrice(item.price * item.quantity)}</span>
                     </div>
                   </div>
                   <button 
                     onClick={() => removeItem(item.id)}
-                    className="self-start text-muted-foreground hover:text-red-500 transition-colors"
+                    className="self-start text-white/20 hover:text-red-500 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -105,16 +105,16 @@ export function CartSheet() {
         </div>
 
         {items.length > 0 && (
-          <div className="p-6 border-t bg-muted/20">
+          <div className="p-6 border-t border-white/5 bg-white/[0.02]">
             <div className="flex items-center justify-between mb-6">
-              <span className="text-muted-foreground font-medium">Subtotal</span>
-              <span className="text-2xl font-bold text-primary">{formatPrice(subtotal)}</span>
+              <span className="text-white/60 font-medium">Subtotal</span>
+              <span className="text-2xl font-bold text-white">{formatPrice(subtotal)}</span>
             </div>
             <SheetClose asChild>
               <Button
                 type="button"
                 onClick={() => router.push('/checkout')}
-                className="w-full h-14 rounded-2xl text-lg gap-2 shadow-xl shadow-primary/20"
+                className="w-full h-14 rounded-2xl text-lg gap-2 bg-accent hover:bg-accent/90 text-primary font-bold shadow-xl shadow-accent/20"
               >
                 Checkout Now
                 <ArrowRight className="w-5 h-5" />

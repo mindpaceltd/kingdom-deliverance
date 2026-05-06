@@ -461,8 +461,7 @@ export function FireServiceForm() {
                       <Button 
                         onClick={() => handleFinalSubmit('vow')}
                         disabled={loading}
-                        variant="outline" 
-                        className="w-full border-white/20 text-white hover:bg-white/10 h-12"
+                        className="w-full bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-white/30 font-bold h-12 transition-all"
                       >
                         {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "Submit as a Vow"}
                       </Button>
