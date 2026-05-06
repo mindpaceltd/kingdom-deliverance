@@ -339,28 +339,22 @@ export default async function Home() {
       {/* Testimonies Section */}
       <TestimoniesSection />
 
-      {/* CTA Banner */}
-      <section className="py-12 bg-gradient-to-r from-accent via-yellow-400 to-accent">
-        <div className="container px-4 text-center space-y-6">
-          <h2 className="text-3xl md:text-4xl font-bold font-serif text-primary">
-            Ready to Experience God&apos;s Presence?
+      {/* CTA Banner - Fire Service */}
+      <section className="py-12 bg-gradient-to-r from-red-600 via-orange-500 to-red-600 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.2)_0%,transparent_100%)] mix-blend-multiply" />
+        <div className="container px-4 text-center space-y-6 relative z-10">
+          <h2 className="text-3xl md:text-4xl font-bold font-serif text-white">
+            🔥 The Fire Service: April 24, 2026 🔥
           </h2>
-          <p className="text-primary/80 text-base md:text-lg max-w-xl mx-auto">
-            Join us this Sunday and become part of a community that loves God and loves people.
+          <p className="text-white/90 text-base md:text-xl max-w-2xl mx-auto font-medium">
+            There is a matter in your life that will not respond until it is brought into the place of fire. Submit your case to the Fire Altar tonight.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
             <Button
               asChild
-              className="bg-primary hover:bg-primary/90 text-white font-bold rounded-full px-8 py-6 text-base shadow-xl hover:scale-105 transition-all duration-300"
+              className="bg-white hover:bg-gray-100 text-red-600 font-bold rounded-full px-10 py-6 text-lg shadow-2xl hover:scale-105 transition-all duration-300"
             >
-              <Link href="/about">Plan Your Visit</Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="border-primary/30 bg-transparent text-primary hover:bg-primary/10 font-bold rounded-full px-8 py-6 text-base transition-all duration-300"
-            >
-              <Link href="/contact">Get in Touch</Link>
+              <Link href="/fire-service">Submit Your Fire List Now</Link>
             </Button>
           </div>
         </div>

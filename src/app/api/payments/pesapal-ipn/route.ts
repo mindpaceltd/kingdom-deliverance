@@ -99,7 +99,46 @@ export async function GET(request: NextRequest) {
           console.log(`[PesaPal IPN] Donation ${donationTx.donation_id} payment confirmed`)
         }
       } else {
-        console.warn(`[PesaPal IPN] No transaction found for OrderTrackingId: ${orderTrackingId}`)
+        // Check if this is a credit transaction
+        const { data: creditTx } = await supabase
+          .from('credit_transactions')
+          .select('*')
+          .eq('reference_id', orderTrackingId)
+          .single()
+
+        if (creditTx) {
+          await supabase
+            .from('credit_transactions')
+            .update({
+              status: isPaid ? 'success' : 'failed',
+              raw_response: verification,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', creditTx.id)
+
+          if (isPaid) {
+            // Upsert the user balance
+            const { data: currentBalance } = await supabase
+              .from('user_credits')
+              .select('balance')
+              .eq('email', creditTx.email)
+              .maybeSingle()
+
+            const newBalance = (currentBalance?.balance || 0) + creditTx.amount
+
+            await supabase
+              .from('user_credits')
+              .upsert({ 
+                email: creditTx.email, 
+                balance: newBalance,
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'email' })
+
+            console.log(`[PesaPal IPN] Credits updated for ${creditTx.email}: +${creditTx.amount}`)
+          }
+        } else {
+          console.warn(`[PesaPal IPN] No transaction found for OrderTrackingId: ${orderTrackingId}`)
+        }
       }
     }
 

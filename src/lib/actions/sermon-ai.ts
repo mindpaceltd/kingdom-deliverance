@@ -85,11 +85,12 @@ async function generateSermonDraft(
   // 1. Build prompt
   const prompt =
     sourceType === 'video'
-      ? `You are an expert sermon editor for Kingdom Deliverance Centre Uganda (KDC Uganda).
+      ? `You are an expert sermon editor for Kingdom Deliverance Centre (KDC) Uganda.
 Analyze this sermon transcript and generate:
 1. A powerful, catchy sermon title.
 2. A short, engaging 2-sentence description/excerpt.
-3. Well-structured sermon notes in HTML format (Intro, 3 Biblical Points, Closing Prayer).
+3. Well-structured sermon notes in HTML format (Intro, 3 Biblical Points, Closing Prayer). 
+   - Use modern, clear Bible translations (like NIV or ESV) for scripture. Do NOT use archaic KJV-style language.
 4. A suggested focus keyword (1-2 words).
 5. A prompt for an AI image generator that captures the essence of this sermon.
 
@@ -97,7 +98,7 @@ Return ONLY a valid JSON object with keys: title, description, html, focusKeywor
 
 Transcript:
 ${contentSource.slice(0, 30000)}`
-      : `You are an expert sermon writer for Kingdom Deliverance Centre Uganda (KDC Uganda).
+      : `You are an expert sermon writer for Kingdom Deliverance Centre (KDC) Uganda.
 Create a complete, powerful sermon based on this title: "${contentSource}"
 
 1. Use the provided title as-is.
@@ -105,6 +106,7 @@ Create a complete, powerful sermon based on this title: "${contentSource}"
 3. Create well-structured sermon notes in HTML format:
    - Introduction (set context, hook the audience)
    - 3 Main Biblical Points (scripture references, explanations, practical applications)
+   - Use modern, clear Bible translations (like NIV or ESV). Avoid archaic KJV-style language.
    - Closing Prayer (powerful, faith-building)
 4. Suggest a focus keyword (1-2 words).
 5. Create a prompt for an AI image generator.

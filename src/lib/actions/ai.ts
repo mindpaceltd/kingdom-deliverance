@@ -43,7 +43,7 @@ export async function generatePostContent(
   let prompt: string
 
   if (req.mode === 'full') {
-    prompt = `You are a professional content writer for KDC Uganda, a Christian church website.
+    prompt = `You are a professional content writer for Kingdom Deliverance Centre (KDC) Uganda, a Christian church website.
 
 Write a complete, well-structured blog post in HTML format for the following:
 
@@ -53,13 +53,14 @@ ${req.focusKeyword ? `Focus keyword (use naturally throughout): ${req.focusKeywo
 
 Requirements:
 - Write at least 400 words
+- Use modern, clear Bible translations (like NIV or ESV) for scripture references. Do NOT use archaic KJV-style language.
 - Use proper HTML tags: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>, <blockquote>
 - Do NOT include <html>, <head>, <body>, or <title> tags — only the inner content
 - Write in a warm, faith-based, inspiring tone appropriate for a church audience
 - Include an introduction, 2-3 main sections with headings, and a conclusion
 - Return ONLY the HTML content, no markdown, no code fences`
   } else if (req.mode === 'improve') {
-    prompt = `You are a professional content editor for KDC Uganda, a Christian church website.
+    prompt = `You are a professional content editor for Kingdom Deliverance Centre (KDC) Uganda, a Christian church website.
 
 Improve and expand the following blog post content. Make it more engaging, better structured, and at least 400 words.
 
@@ -71,13 +72,14 @@ ${req.existingContent}
 
 Requirements:
 - Preserve the original meaning and key points
+- Use modern, clear Bible translations (like NIV or ESV). Avoid archaic KJV-style language.
 - Improve clarity, flow, and engagement
 - Use proper HTML tags: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>, <blockquote>
 - Do NOT include <html>, <head>, <body>, or <title> tags — only the inner content
 - Write in a warm, faith-based, inspiring tone
 - Return ONLY the HTML content, no markdown, no code fences`
   } else if (req.mode === 'sermon_full') {
-    prompt = `You are a professional sermon transcriber and editor for KDC Uganda.
+    prompt = `You are a professional sermon transcriber and editor for Kingdom Deliverance Centre (KDC) Uganda.
 
 Write a well-structured sermon transcript or detailed notes in HTML format for the following:
 
@@ -87,13 +89,14 @@ ${req.focusKeyword ? `Key Verse/Keyword: ${req.focusKeyword}` : ''}
 
 Requirements:
 - Write at least 500 words
+- Use modern, clear Bible translations (like NIV or ESV). Do NOT use archaic KJV-style language.
 - Use proper HTML tags: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>, <blockquote>
 - Structure: Introduction, 3 Biblical Points with scripture references (placeholder), and a Closing Prayer/Call to Action
 - Write in a warm, powerful, anointed tone appropriate for a sermon
 - Return ONLY the HTML content, no markdown, no code fences`
   } else {
     // sermon_improve
-    prompt = `You are a professional sermon editor for KDC Uganda.
+    prompt = `You are a professional sermon editor for Kingdom Deliverance Centre (KDC) Uganda.
 
 Improve and expand the following sermon notes or transcript. Make it more powerful, better structured, and more detailed.
 
@@ -105,6 +108,7 @@ ${req.existingContent}
 
 Requirements:
 - Expand to at least 500 words
+- Use modern, clear Bible translations (like NIV or ESV). Avoid archaic KJV-style language.
 - Use proper HTML tags: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>, <blockquote>
 - Enhance the spiritual depth and biblical flow
 - Return ONLY the HTML content, no markdown, no code fences`

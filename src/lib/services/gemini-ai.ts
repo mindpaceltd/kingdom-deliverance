@@ -29,16 +29,17 @@ export async function generateSummary(transcript: string): Promise<string> {
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
   
   const prompt = `
-You are a sermon content specialist. Analyze the following sermon transcript and create a comprehensive, detailed summary suitable for a church website.
+You are a sermon content specialist for Kingdom Deliverance Centre (KDC) Uganda. Analyze the following sermon transcript and create a comprehensive, detailed summary suitable for our website.
 
 Requirements:
 - Length: MINIMUM 1500 words (this is critical - write a thorough, detailed summary)
 - Include ALL main themes and key points with detailed explanations
 - Mention ALL scripture references with context and application
+- Use modern, clear Bible translations (like NIV or ESV). Avoid archaic KJV-style language.
 - Highlight actionable takeaways with practical examples
 - Include sermon structure (introduction, main points, conclusion)
 - Capture the preacher's tone and emphasis
-- Use clear, engaging language suitable for a church website
+- Use clear, engaging language suitable for Kingdom Deliverance Centre (KDC) Uganda
 - Write in paragraph form with proper transitions
 - Be thorough and comprehensive - this will be the main sermon content
 

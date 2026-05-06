@@ -48,6 +48,39 @@ export async function GET(request: NextRequest) {
           } else {
             redirectUrl = '/donations/error'
           }
+        } else if (type === 'credits') {
+          // Handle credit purchase
+          const { data: tx } = await supabase
+            .from('credit_transactions')
+            .update({ 
+              status: 'success', 
+              raw_response: verification 
+            })
+            .eq('reference_id', orderTrackingId)
+            .select().single()
+
+          if (tx) {
+            // Upsert the user balance
+            const { data: currentBalance } = await supabase
+              .from('user_credits')
+              .select('balance')
+              .eq('email', tx.email)
+              .maybeSingle()
+
+            const newBalance = (currentBalance?.balance || 0) + tx.amount
+
+            await supabase
+              .from('user_credits')
+              .upsert({ 
+                email: tx.email, 
+                balance: newBalance,
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'email' })
+            
+            redirectUrl = `/fire-service?purchase=success&credits=${tx.amount}`
+          } else {
+            redirectUrl = '/fire-service?purchase=error'
+          }
         } else {
           // Handle order payment
           const { data: tx } = await supabase

@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SearchModal } from "@/components/search/search-modal";
 import { CartSheet } from "@/components/shop/cart-sheet";
+import { CreditWallet } from "./credit-wallet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +28,7 @@ const navigation = [
     ]
   },
   { name: "Sermons", href: "/sermons" },
+  { name: "Fire Service 🔥", href: "/fire-service" },
   { name: "Events", href: "/events" },
   { name: "Ministries", href: "/ministries" },
   { name: "Shop", href: "/shop" },
@@ -89,7 +91,7 @@ export function Navbar() {
               <DropdownMenu key={item.name}>
                 <DropdownMenuTrigger className={cn(
                   "flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 outline-none",
-                  item.children.some(child => pathname === child.href)
+                  item.children.some(child => pathname === child.href || (child.href !== "/" && pathname.startsWith(child.href)))
                     ? "text-accent bg-white/8"
                     : "text-white/85 hover:text-accent hover:bg-white/8"
                 )}>
@@ -112,7 +114,7 @@ export function Navbar() {
                 href={item.href}
                 className={cn(
                   "relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:text-accent hover:bg-white/8",
-                  pathname === item.href ? "text-accent bg-white/8" : "text-white/85"
+                  pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href)) ? "text-accent bg-white/8" : "text-white/85"
                 )}
               >
                 {item.name}
@@ -132,6 +134,10 @@ export function Navbar() {
           </button>
 
           <CartSheet />
+
+          <div className="hidden lg:block">
+            <CreditWallet />
+          </div>
 
           <Button
             asChild
@@ -162,6 +168,9 @@ export function Navbar() {
             className="lg:hidden bg-[#0d1b3e]/98 backdrop-blur-xl border-t border-white/10 overflow-hidden"
           >
             <div className="container px-4 py-6 space-y-4">
+              <div className="flex items-center justify-between px-4">
+                <CreditWallet />
+              </div>
               {navigation.map((item) => (
                 <div key={item.name} className="space-y-2">
                   {item.children ? (
@@ -177,7 +186,7 @@ export function Navbar() {
                             onClick={() => setIsOpen(false)}
                             className={cn(
                               "block px-4 py-2 rounded-lg text-sm transition-all duration-200",
-                              pathname === child.href ? "text-accent bg-white/8" : "text-white/70 hover:text-white"
+                              pathname === child.href || (child.href !== "/" && pathname.startsWith(child.href)) ? "text-accent bg-white/8" : "text-white/70 hover:text-white"
                             )}
                           >
                             {child.name}
@@ -191,7 +200,7 @@ export function Navbar() {
                       onClick={() => setIsOpen(false)}
                       className={cn(
                         "block px-4 py-3 rounded-xl text-base font-medium transition-all duration-200",
-                        pathname === item.href ? "text-accent bg-white/8" : "text-white/85"
+                        pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href)) ? "text-accent bg-white/8" : "text-white/85"
                       )}
                     >
                       {item.name}

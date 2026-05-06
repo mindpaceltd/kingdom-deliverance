@@ -1,0 +1,396 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Flame, ArrowRight, ArrowLeft, Upload, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import { getUserCreditBalance, getCreditPackages, getServicePricing, purchaseCredits } from '@/lib/actions/credits'
+import { submitFireServiceRequest } from '@/lib/actions/fire-service'
+import { useSearchParams } from 'next/navigation'
+
+// Steps
+type Step = 1 | 2 | 3 | 4
+
+const PRAYER_AREAS = [
+  'Delay & Stagnation',
+  'Financial Breakthrough',
+  'Career / Job Stability',
+  'Marriage & Relationships',
+  'Legal Battles / Court Cases',
+  'Health & Healing',
+  'Witchcraft / Spiritual Attacks',
+  'Generational Curses',
+  'Business Breakthrough',
+  'Restoration of Lost Opportunities',
+]
+
+const SEED_PACKAGES = [
+  { id: 'light', name: 'LIGHT & SALVATION SEED', desc: 'Ps 27:1 The Lord is my light and my salvation — whom shall I fear? To break fear, confusion, and darkness.' },
+  { id: 'victory', name: 'NO WEAPON VICTORY SEED', desc: 'Isaiah 54:17 No weapon formed against me shall prosper. To cancel attacks, witchcraft, and spiritual opposition.' },
+  { id: 'fire', name: 'CONSUMING FIRE SEED', desc: 'Psalms 68 Let God arise, let His enemies be scattered. To destroy stubborn enemies and spiritual resistance.' },
+  { id: 'protection', name: 'DIVINE PROTECTION SEED', desc: 'Psalms 91 To secure protection, preservation, and covering. To break cycles of danger.' },
+  { id: 'total', name: 'TOTAL VICTORY & RESTORATION SEED', desc: 'Ps 108:13 Through God we will do valiantly. To recover lost opportunities, restore what was stolen.' }
+]
+
+export function FireServiceForm() {
+  const searchParams = useSearchParams()
+  const [step, setStep] = useState<Step>(1)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  
+  const [creditBalance, setCreditBalance] = useState<number>(0)
+  const [serviceCost, setServiceCost] = useState<number>(270)
+  const [packages, setPackages] = useState<any[]>([])
+  const [showPackages, setShowPackages] = useState(false)
+  
+  const [form, setForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    country: '',
+    phone: '',
+    attendance: 'online', // online, in_person
+    focusAreas: [] as string[],
+    details: '',
+    selectedSeed: 270, // Default credit amount
+  })
+
+  // Load initial data
+  useEffect(() => {
+    async function loadData() {
+      const cost = await getServicePricing('fire_service')
+      if (cost) {
+        setServiceCost(cost)
+        setForm(f => ({ ...f, selectedSeed: cost }))
+      }
+      const pkgs = await getCreditPackages()
+      setPackages(pkgs)
+    }
+    loadData()
+  }, [])
+
+  // Check balance when email changes or step 4 is reached
+  useEffect(() => {
+    if (form.email && form.email.includes('@')) {
+      getUserCreditBalance(form.email).then(setCreditBalance)
+    }
+  }, [form.email, step])
+
+  const nextStep = () => {
+    if (step === 1 && (!form.firstName || !form.email)) return
+    setStep(s => Math.min(s + 1, 4) as Step)
+  }
+  const prevStep = () => setStep(s => Math.max(s - 1, 1) as Step)
+
+  const handleToggleArea = (area: string) => {
+    setForm(prev => ({
+      ...prev,
+      focusAreas: prev.focusAreas.includes(area)
+        ? prev.focusAreas.filter(a => a !== area)
+        : [...prev.focusAreas, area]
+    }))
+  }
+
+  const handleBuyCredits = async (packageId: string) => {
+    if (!form.email) {
+      setError("Please enter your email in Step 1 first.")
+      setStep(1)
+      return
+    }
+    setLoading(true)
+    const result = await purchaseCredits({ email: form.email, packageId })
+    if (result.success && result.paymentUrl) {
+      window.location.href = result.paymentUrl
+    } else {
+      setError(result.error || "Failed to initiate payment.")
+      setLoading(false)
+    }
+  }
+
+  const handleFinalSubmit = async (method: 'credits' | 'vow') => {
+    setLoading(true)
+    setError(null)
+    const result = await submitFireServiceRequest({
+      ...form,
+      paymentMethod: method,
+    })
+    
+    if (result.success) {
+      setSuccess(true)
+    } else {
+      setError(result.error || "Submission failed.")
+    }
+    setLoading(false)
+  }
+
+  if (success) {
+    return (
+      <div className="bg-[#111A30] rounded-2xl p-10 border border-white/10 shadow-2xl text-center space-y-6">
+        <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <CheckCircle2 className="w-10 h-10 text-green-500" />
+        </div>
+        <h2 className="text-3xl font-serif font-bold text-white">Request Submitted!</h2>
+        <p className="text-white/70 max-w-md mx-auto">
+          Your Fire List has been received. Your case will be carried into the Fire Altar tonight. Keep believing for your breakthrough.
+        </p>
+        <Button onClick={() => window.location.reload()} className="bg-accent text-primary font-bold px-8">
+          Submit Another Request
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-[#111A30] rounded-2xl p-6 md:p-10 border border-white/10 shadow-2xl relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500" />
+      
+      <div className="text-center mb-8">
+        <h2 className="text-2xl md:text-3xl font-serif font-bold text-white mb-2">
+          All-Night Prayer + Fire Service
+        </h2>
+        <p className="text-accent text-sm md:text-base font-medium tracking-wide">
+          (Global Fire Altar Submission)
+        </p>
+      </div>
+
+      <div className="flex justify-between items-center mb-8 relative">
+        <div className="absolute left-0 top-1/2 w-full h-0.5 bg-white/10 -z-10" />
+        {[1, 2, 3, 4].map(num => (
+          <div 
+            key={num} 
+            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
+              step >= num ? 'bg-accent text-[#111A30]' : 'bg-[#1D2845] text-white/50'
+            }`}
+          >
+            {num}
+          </div>
+        ))}
+      </div>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl text-red-400 text-sm mb-6 flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 shrink-0" />
+          {error}
+        </div>
+      )}
+
+      <div className="space-y-6">
+        {/* STEP 1: Personal Details */}
+        {step === 1 && (
+          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h3 className="text-xl font-bold text-white mb-4">Step 1: Personal Details</h3>
+            <p className="text-sm text-white/70 mb-6">This is your prophetic agreement to enter your case into the FIRE ALTAR. What you submit here will be presented before God.</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>First Name *</Label>
+                <Input required value={form.firstName} onChange={e => setForm({...form, firstName: e.target.value})} className="bg-[#1D2845] border-white/10" />
+              </div>
+              <div className="space-y-2">
+                <Label>Last Name *</Label>
+                <Input required value={form.lastName} onChange={e => setForm({...form, lastName: e.target.value})} className="bg-[#1D2845] border-white/10" />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Email Address *</Label>
+              <Input type="email" required value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="bg-[#1D2845] border-white/10" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Country *</Label>
+                <Input required value={form.country} onChange={e => setForm({...form, country: e.target.value})} className="bg-[#1D2845] border-white/10" placeholder="e.g. United Kingdom" />
+              </div>
+              <div className="space-y-2">
+                <Label>Phone Number *</Label>
+                <Input required value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="bg-[#1D2845] border-white/10" placeholder="+256 ..." />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2: Attendance */}
+        {step === 2 && (
+          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h3 className="text-xl font-bold text-white mb-4">Step 2: Attendance</h3>
+            <Label className="mb-4 block">How Will You Be Attending? *</Label>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => setForm({...form, attendance: 'in_person'})}
+                className={`p-6 rounded-xl border-2 text-left transition-all ${form.attendance === 'in_person' ? 'border-accent bg-accent/10' : 'border-white/10 bg-[#1D2845] hover:border-white/30'}`}
+              >
+                <h4 className="font-bold text-lg text-white">In Person</h4>
+                <p className="text-sm text-white/60">Join us at the venue</p>
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setForm({...form, attendance: 'online'})}
+                className={`p-6 rounded-xl border-2 text-left transition-all ${form.attendance === 'online' ? 'border-accent bg-accent/10' : 'border-white/10 bg-[#1D2845] hover:border-white/30'}`}
+              >
+                <h4 className="font-bold text-lg text-white">Online</h4>
+                <p className="text-sm text-white/60">Join via livestream</p>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: Prayer Focus */}
+        {step === 3 && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h3 className="text-xl font-bold text-white mb-2">Step 3: Prayer Focus (Fire List)</h3>
+            <p className="text-sm text-red-400 font-bold bg-red-500/10 p-3 rounded-lg flex gap-2 items-start">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <span>Write clearly and specifically. Be direct. This is what will be taken into the fire.</span>
+            </p>
+
+            <div className="space-y-3 mt-6">
+              <Label>Select Your Prayer Focus Areas *</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                {PRAYER_AREAS.map(area => (
+                  <label key={area} className="flex items-center space-x-3 bg-[#1D2845] p-3 rounded-lg border border-white/5 cursor-pointer hover:bg-white/5">
+                    <Checkbox 
+                      checked={form.focusAreas.includes(area)}
+                      onCheckedChange={() => handleToggleArea(area)}
+                    />
+                    <span className="text-sm">{area}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Your Prayer Request *</Label>
+              <Textarea 
+                required 
+                value={form.details} 
+                onChange={e => setForm({...form, details: e.target.value})} 
+                className="bg-[#1D2845] border-white/10 min-h-[120px]" 
+                placeholder="Describe your prayer request in detail..." 
+              />
+            </div>
+          </div>
+        )}
+
+        {/* STEP 4: Seed Offering */}
+        {step === 4 && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex justify-between items-end mb-4">
+              <h3 className="text-xl font-bold text-white">Step 4: Seed Offering</h3>
+              <div className="text-right">
+                <p className="text-xs text-white/60 uppercase font-bold tracking-wider mb-1">Your Balance</p>
+                <p className="text-lg font-bold text-green-400">{creditBalance} Credits</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {SEED_PACKAGES.map(pkg => (
+                <label 
+                  key={pkg.id} 
+                  className={`flex flex-col md:flex-row items-start md:items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    form.selectedSeed === serviceCost ? 'border-accent bg-accent/10' : 'border-white/10 bg-[#1D2845] hover:border-white/30'
+                  }`}
+                >
+                  <div className="flex gap-4 items-start pr-4">
+                    <div className={`mt-1 flex items-center justify-center w-5 h-5 rounded-full border-2 ${form.selectedSeed === serviceCost ? 'border-accent' : 'border-white/30'}`}>
+                      {form.selectedSeed === serviceCost && <div className="w-2.5 h-2.5 rounded-full bg-accent" />}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white">{pkg.name}</h4>
+                      <p className="text-xs text-white/60 mt-1">{pkg.desc}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 md:mt-0 font-bold text-lg text-accent whitespace-nowrap">
+                    {serviceCost} Credits
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            <div className="bg-[#1D2845] p-6 rounded-xl border border-white/10 mt-6">
+              <h4 className="font-bold mb-4 text-white text-center md:text-left">Complete Submission ({serviceCost} Credits Required)</h4>
+              
+              {creditBalance >= serviceCost ? (
+                <Button 
+                  onClick={() => handleFinalSubmit('credits')}
+                  disabled={loading}
+                  className="w-full bg-green-500 hover:bg-green-600 text-white font-bold h-12"
+                >
+                  {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (
+                    <>
+                      <CheckCircle2 className="w-5 h-5 mr-2" />
+                      Submit Request & Deduct {serviceCost} Credits
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm text-red-400 font-medium text-center md:text-left">
+                    ⚠️ You need {serviceCost - creditBalance} more credits to submit this request.
+                  </p>
+                  
+                  {showPackages ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in zoom-in-95 duration-300">
+                      {packages.map(pkg => (
+                        <Button 
+                          key={pkg.id} 
+                          onClick={() => handleBuyCredits(pkg.id)}
+                          disabled={loading}
+                          variant="outline" 
+                          className="h-auto py-4 flex flex-col gap-1 border-white/10 bg-[#1D2845] hover:bg-accent hover:text-primary transition-all"
+                        >
+                          <span className="font-bold text-lg">{pkg.credits_amount} Credits</span>
+                          <span className="text-xs opacity-70">${pkg.price_usd} USD</span>
+                        </Button>
+                      ))}
+                      <Button variant="ghost" onClick={() => setShowPackages(false)} className="sm:col-span-2 text-white/50 text-xs">Cancel</Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Button 
+                        onClick={() => setShowPackages(true)}
+                        className="w-full bg-accent hover:bg-accent/90 text-[#111A30] font-bold h-12"
+                      >
+                        Buy Credits
+                      </Button>
+                      <Button 
+                        onClick={() => handleFinalSubmit('vow')}
+                        disabled={loading}
+                        variant="outline" 
+                        className="w-full border-white/20 text-white hover:bg-white/10 h-12"
+                      >
+                        {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "Submit as a Vow"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Navigation Buttons */}
+        <div className="flex justify-between pt-6 mt-6 border-t border-white/10">
+          {step > 1 ? (
+            <Button type="button" variant="ghost" onClick={prevStep} disabled={loading} className="text-white hover:bg-white/10">
+              <ArrowLeft className="w-4 h-4 mr-2" /> Back
+            </Button>
+          ) : <div></div>}
+          
+          {step < 4 ? (
+            <Button onClick={nextStep} disabled={loading} className="bg-white text-[#111A30] hover:bg-white/90 font-bold px-8">
+              Next Step <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  )
+}
