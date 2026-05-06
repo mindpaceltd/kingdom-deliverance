@@ -1,7 +1,96 @@
 'use server'
 
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+
+export async function getUserCreditBalance(email: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('user_credits')
+    .select('balance')
+    .eq('email', email)
+    .single()
+
+  if (error && error.code !== 'PGRST116') return 0
+  return data?.balance || 0
+}
+
+export async function getCreditPackages() {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('credit_packages')
+    .select('*')
+    .order('amount', { ascending: true })
+
+  if (error) return []
+  return data
+}
+
+export async function getServicePricing(serviceName: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('service_pricing')
+    .select('credits_required')
+    .eq('service_name', serviceName)
+    .single()
+
+  if (error) return 270 // Fallback default
+  return data?.credits_required || 270
+}
+
+export async function spendCredits({ email, amount, type, referenceId }: {
+  email: string,
+  amount: number,
+  type: string,
+  referenceId?: string
+}) {
+  const supabase = createAdminClient()
+
+  // Check balance
+  const { data: credit, error: fetchError } = await supabase
+    .from('user_credits')
+    .select('balance, lifetime_spent')
+    .eq('email', email)
+    .single()
+
+  if (fetchError) return { success: false, error: 'User wallet not found.' }
+  if (credit.balance < amount) return { success: false, error: 'Insufficient credits.' }
+
+  const newBalance = credit.balance - amount
+  const newLifetimeSpent = (credit.lifetime_spent || 0) + amount
+
+  // Update balance
+  const { error: updateError } = await supabase
+    .from('user_credits')
+    .update({ 
+      balance: newBalance, 
+      lifetime_spent: newLifetimeSpent,
+      updated_at: new Date().toISOString()
+    })
+    .eq('email', email)
+
+  if (updateError) return { success: false, error: updateError.message }
+
+  // Record transaction
+  await supabase
+    .from('credit_transactions')
+    .insert({
+      email,
+      amount: -amount,
+      transaction_type: 'spend',
+      reference_id: referenceId,
+      metadata: { service_type: type }
+    })
+
+  revalidatePath('/admin/credits')
+  return { success: true }
+}
+
+export async function purchaseCredits(email: string, packageId: string) {
+  // This would normally integrate with a payment gateway
+  // For now, it's a placeholder or needs actual implementation
+  return { success: false, error: 'Payment integration required.' }
+}
 
 export async function adjustUserCredits(email: string, amount: number, reason: string) {
   const supabase = createAdminClient()

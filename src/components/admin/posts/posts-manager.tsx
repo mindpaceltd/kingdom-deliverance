@@ -485,7 +485,7 @@ export function PostsManager({ initialPosts, initialFilter }: PostsManagerProps)
         ) : (
           <div className="space-y-4">
             {/* List Header (Hidden on mobile) */}
-            <div className="hidden md:grid grid-cols-[40px_1fr_120px_140px_100px_180px] gap-4 px-6 py-2 text-xs font-bold text-muted-foreground uppercase tracking-widest border-b border-transparent">
+            <div className="hidden md:grid grid-cols-[40px_1fr_100px_140px_100px_180px] gap-4 px-6 py-2 text-xs font-bold text-muted-foreground uppercase tracking-widest border-b border-transparent">
               <div className="flex justify-center">
                 <Checkbox
                   checked={allPageSelected}
@@ -514,7 +514,7 @@ export function PostsManager({ initialPosts, initialFilter }: PostsManagerProps)
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.03 }}
                     className={cn(
-                      "grid grid-cols-1 md:grid-cols-[40px_1fr_120px_140px_100px_180px] gap-4 px-4 md:px-6 py-4 rounded-2xl border transition-all duration-300 group",
+                      "grid grid-cols-1 md:grid-cols-[40px_1fr_100px_140px_100px_180px] gap-4 px-4 md:px-6 py-4 rounded-2xl border transition-all duration-300 group",
                       isSelected 
                         ? "bg-accent/[0.03] border-accent/30 shadow-md shadow-accent/5" 
                         : "bg-card hover:bg-muted/50 hover:border-accent/20 hover:shadow-lg hover:shadow-black/5"
@@ -549,13 +549,12 @@ export function PostsManager({ initialPosts, initialFilter }: PostsManagerProps)
                         >
                           {post.title}
                         </button>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
+                        <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1 truncate max-w-[200px]">
                             <User2Icon className="h-3 w-3" />
                             {post.profiles?.name || 'Unknown'}
                           </span>
-                          <span className="text-muted-foreground/30">•</span>
-                          <span>{formatDate(post.updated_at)}</span>
+                          <span className="opacity-70">{formatDate(post.updated_at)}</span>
                         </div>
                       </div>
                     </div>

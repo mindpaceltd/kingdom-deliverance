@@ -22,7 +22,7 @@ export function FireServiceContent() {
       {/* Hero Section */}
       <motion.section 
         style={{ opacity, scale }}
-        className="relative h-[90vh] flex items-center justify-center overflow-hidden border-b border-white/5"
+        className="relative min-h-[85vh] pt-32 pb-20 flex items-center justify-center overflow-hidden border-b border-white/5"
       >
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#050810]/50 to-[#050810]" />
         
@@ -51,7 +51,7 @@ export function FireServiceContent() {
           ))}
         </div>
 
-        <div className="container relative z-10 px-4 text-center mt-12">
+        <div className="container relative z-10 px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
