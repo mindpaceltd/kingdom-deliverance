@@ -1,9 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { EyeIcon, PackageIcon } from 'lucide-react'
+import { EyeIcon, PackageIcon, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { OrderActions } from '@/components/admin/orders/order-actions'
 
 export default async function AdminOrdersPage() {
   const supabase = createClient()
@@ -55,7 +56,7 @@ export default async function AdminOrdersPage() {
                       {order.currency} {order.total_amount.toLocaleString()}
                     </td>
                     <td className="px-6 py-4">
-                      <Badge variant={order.payment_status === 'paid' ? 'success' : 'outline'}>
+                      <Badge variant={order.payment_status === 'paid' ? 'success' : order.payment_status === 'refunded' ? 'destructive' : 'outline'}>
                         {order.payment_status}
                       </Badge>
                     </td>
@@ -68,11 +69,14 @@ export default async function AdminOrdersPage() {
                       {format(new Date(order.created_at), 'MMM dd, yyyy')}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/admin/orders/${order.id}`}>
-                          <EyeIcon className="h-4 w-4 mr-2" /> View
-                        </Link>
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button variant="ghost" size="sm" asChild title="View Details">
+                          <Link href={`/admin/orders/${order.id}`}>
+                            <EyeIcon className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <OrderActions order={order} showLabel={false} />
+                      </div>
                     </td>
                   </tr>
                 ))

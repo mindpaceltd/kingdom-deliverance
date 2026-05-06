@@ -205,10 +205,53 @@ export async function createOrder(data: {
     console.error('Payment Exception:', err)
     // Surface the real error in development, generic message in production
     const message = err?.message || 'Unknown error'
-    console.error('[createOrder] Payment error detail:', message)
     return { error: message.includes('not configured') || message.includes('credentials')
       ? 'Payment gateway is not configured. Please contact support.'
       : 'Failed to initiate payment. Please try again.'
     }
   }
+}
+
+export async function deleteOrder(id: string) {
+  const adminClient = createAdminClient()
+  
+  // 1. Delete order items first (due to foreign key)
+  const { error: itemsError } = await adminClient
+    .from('order_items')
+    .delete()
+    .eq('order_id', id)
+
+  if (itemsError) return { success: false, error: itemsError.message }
+
+  // 2. Delete transactions
+  await adminClient
+    .from('transactions')
+    .delete()
+    .eq('order_id', id)
+
+  // 3. Delete the order
+  const { error: orderError } = await adminClient
+    .from('orders')
+    .delete()
+    .eq('id', id)
+
+  if (orderError) return { success: false, error: orderError.message }
+
+  return { success: true }
+}
+
+export async function updateOrderStatus(id: string, data: {
+  status?: string
+  payment_status?: string
+}) {
+  const adminClient = createAdminClient()
+  
+  const { error } = await adminClient
+    .from('orders')
+    .update(data)
+    .eq('id', id)
+
+  if (error) return { success: false, error: error.message }
+
+  return { success: true }
 }
