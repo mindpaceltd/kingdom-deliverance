@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Coins, Plus, History, Search } from 'lucide-react'
@@ -9,36 +9,50 @@ import { cn } from '@/lib/utils'
 
 export default async function AdminCreditsPage() {
   const supabase = createClient()
+  const adminClient = createAdminClient()
   
-  // Get all profiles and their associated credits
-  const { data: users } = await supabase
+  // 1. Fetch all profiles
+  const { data: profiles } = await supabase
     .from('profiles')
-    .select(`
-      email,
-      name,
-      user_credits (
-        balance,
-        lifetime_earned,
-        lifetime_spent,
-        updated_at
-      )
-    `)
+    .select('*')
     .order('name')
 
-  // Map to a consistent structure
-  const items = (users || []).map(u => {
-    const credits = (u.user_credits as any)?.[0] || {
+  // 2. Fetch all user credits
+  const { data: allCredits } = await supabase
+    .from('user_credits')
+    .select('*')
+
+  // 3. Fetch auth users to get emails (profiles don't store emails for security/privacy)
+  const { data: authData } = await adminClient.auth.admin.listUsers()
+  const authUsers = authData?.users ?? []
+  
+  // Build lookup maps
+  const emailMap = new Map<string, string>()
+  authUsers.forEach(u => {
+    if (u.email) emailMap.set(u.id, u.email)
+  })
+
+  const creditMap = new Map<string, any>()
+  allCredits?.forEach(c => {
+    creditMap.set(c.email, c)
+  })
+
+  // 4. Merge data
+  const items = (profiles || []).map(p => {
+    const email = emailMap.get(p.id) || ''
+    const credits = creditMap.get(email) || {
       balance: 0,
       lifetime_earned: 0,
       lifetime_spent: 0,
-      updated_at: u.created_at || new Date().toISOString()
+      updated_at: p.created_at || new Date().toISOString()
     }
     return {
-      email: u.email,
-      name: u.name,
+      id: p.id,
+      email,
+      name: p.name,
       ...credits
     }
-  })
+  }).filter(item => item.email !== '') // Only show users with an email
 
   return (
     <div className="space-y-6">
