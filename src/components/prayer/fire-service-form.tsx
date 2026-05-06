@@ -255,13 +255,14 @@ export function FireServiceForm() {
               <Label>Select Your Prayer Focus Areas *</Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
                 {PRAYER_AREAS.map(area => (
-                  <label key={area} className="flex items-center space-x-3 bg-[#1D2845] p-3 rounded-lg border border-white/5 cursor-pointer hover:bg-white/5">
+                  <div key={area} className="flex items-center space-x-3 bg-[#1D2845] p-3 rounded-lg border border-white/5 cursor-pointer hover:bg-white/5" onClick={() => handleToggleArea(area)}>
                     <Checkbox 
                       checked={form.focusAreas.includes(area)}
                       onCheckedChange={() => handleToggleArea(area)}
+                      onClick={(e) => e.stopPropagation()}
                     />
-                    <span className="text-sm">{area}</span>
-                  </label>
+                    <span className="text-sm text-white">{area}</span>
+                  </div>
                 ))}
               </div>
             </div>
@@ -292,11 +293,12 @@ export function FireServiceForm() {
 
             <div className="space-y-3">
               {SEED_PACKAGES.map(pkg => (
-                <label 
+                <div 
                   key={pkg.id} 
                   className={`flex flex-col md:flex-row items-start md:items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
                     form.selectedSeed === serviceCost ? 'border-accent bg-accent/10' : 'border-white/10 bg-[#1D2845] hover:border-white/30'
                   }`}
+                  onClick={() => setForm({...form, selectedSeed: serviceCost})}
                 >
                   <div className="flex gap-4 items-start pr-4">
                     <div className={`mt-1 flex items-center justify-center w-5 h-5 rounded-full border-2 ${form.selectedSeed === serviceCost ? 'border-accent' : 'border-white/30'}`}>
@@ -310,7 +312,7 @@ export function FireServiceForm() {
                   <div className="mt-4 md:mt-0 font-bold text-lg text-accent whitespace-nowrap">
                     {serviceCost} Credits
                   </div>
-                </label>
+                </div>
               ))}
             </div>
 

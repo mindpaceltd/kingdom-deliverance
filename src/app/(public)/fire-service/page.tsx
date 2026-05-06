@@ -166,9 +166,14 @@ export default function FireServicePage() {
 
         {/* The Form Component */}
         <div id="prayer-form" className="mt-16 scroll-mt-24">
-          <FireServiceForm />
+          <React.Suspense fallback={
+            <div className="h-[600px] w-full bg-[#111A30] animate-pulse rounded-2xl border border-white/10" />
+          }>
+            <FireServiceForm />
+          </React.Suspense>
         </div>
       </div>
     </div>
   )
 }
+import * as React from 'react'
