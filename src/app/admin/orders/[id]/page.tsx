@@ -52,10 +52,20 @@ export default async function AdminOrderDetailsPage({ params }: { params: { id: 
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Order #{order.id.slice(0, 8)}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Order {order.id ? `#${order.id.slice(0, 8)}` : 'Details'}</h1>
             <div className="flex items-center gap-2 text-muted-foreground mt-1">
               <Calendar className="h-3.5 w-3.5" />
-              <span>{format(new Date(order.created_at), 'PPP p')}</span>
+              <span>
+                {order.created_at ? (
+                  (() => {
+                    try {
+                      return format(new Date(order.created_at), 'PPP p')
+                    } catch (e) {
+                      return 'Invalid date'
+                    }
+                  })()
+                ) : 'N/A'}
+              </span>
             </div>
           </div>
         </div>
@@ -87,13 +97,13 @@ export default async function AdminOrderDetailsPage({ params }: { params: { id: 
                     <div>
                       <p className="font-medium">{item.products?.name || 'Unknown Product'}</p>
                       <p className="text-sm text-muted-foreground">
-                        {order.currency} {item.price_at_purchase.toLocaleString()} × {item.quantity}
+                        {order.currency || 'UGX'} {typeof item.price_at_purchase === 'number' ? item.price_at_purchase.toLocaleString() : (item.price_at_purchase || 0)} × {item.quantity || 0}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="font-bold">
-                      {order.currency} {(item.price_at_purchase * item.quantity).toLocaleString()}
+                      {order.currency || 'UGX'} {typeof item.price_at_purchase === 'number' ? (item.price_at_purchase * (item.quantity || 1)).toLocaleString() : '0'}
                     </p>
                   </div>
                 </div>
@@ -102,7 +112,7 @@ export default async function AdminOrderDetailsPage({ params }: { params: { id: 
             <div className="px-6 py-4 bg-muted/30 flex justify-between items-center border-t border-white/5">
               <span className="font-bold">Total Amount</span>
               <span className="text-xl font-bold text-accent">
-                {order.currency} {order.total_amount.toLocaleString()}
+                {order.currency || 'UGX'} {typeof order.total_amount === 'number' ? order.total_amount.toLocaleString() : (order.total_amount || 0)}
               </span>
             </div>
           </div>
@@ -176,7 +186,7 @@ export default async function AdminOrderDetailsPage({ params }: { params: { id: 
                 </div>
                 <div>
                   <p className="font-medium leading-none">{order.shipping_address?.name || 'Guest Customer'}</p>
-                  <p className="text-xs text-muted-foreground mt-1">ID: {order.user_id ? order.user_id.slice(0, 8) : 'GUEST'}</p>
+                  <p className="text-xs text-muted-foreground mt-1">ID: {order.user_id && typeof order.user_id === 'string' ? order.user_id.slice(0, 8) : 'GUEST'}</p>
                 </div>
               </div>
               

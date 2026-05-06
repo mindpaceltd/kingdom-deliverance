@@ -42,31 +42,39 @@ export default async function AdminOrdersPage() {
                 orders.map((order) => (
                   <tr key={order.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-4 font-mono text-xs text-primary">
-                      #{order.id.slice(0, 8)}
+                      {order.id ? `#${order.id.slice(0, 8)}` : 'N/A'}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="font-medium text-primary">
-                          {order.customer_name || order.shipping_address?.name || order.email}
+                          {order.customer_name || order.shipping_address?.name || order.email || 'Unknown'}
                         </span>
                         <span className="text-xs text-muted-foreground">{order.email}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-primary font-bold">
-                      {order.currency} {order.total_amount.toLocaleString()}
+                      {order.currency || 'UGX'} {typeof order.total_amount === 'number' ? order.total_amount.toLocaleString() : order.total_amount || '0'}
                     </td>
                     <td className="px-6 py-4">
                       <Badge variant={order.payment_status === 'paid' ? 'success' : order.payment_status === 'refunded' ? 'destructive' : 'outline'}>
-                        {order.payment_status}
+                        {order.payment_status || 'pending'}
                       </Badge>
                     </td>
                     <td className="px-6 py-4">
                       <Badge variant={order.status === 'processing' ? 'secondary' : 'outline'}>
-                        {order.status}
+                        {order.status || 'pending'}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">
-                      {format(new Date(order.created_at), 'MMM dd, yyyy')}
+                      {order.created_at ? (
+                        (() => {
+                          try {
+                            return format(new Date(order.created_at), 'MMM dd, yyyy')
+                          } catch (e) {
+                            return 'Invalid date'
+                          }
+                        })()
+                      ) : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">

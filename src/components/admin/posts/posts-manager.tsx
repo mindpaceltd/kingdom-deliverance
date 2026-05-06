@@ -291,382 +291,462 @@ export function PostsManager({ initialPosts, initialFilter }: PostsManagerProps)
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="space-y-4 p-6">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold">Posts</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage blog posts and news articles.
-          </p>
+    <div className="space-y-8 p-6 pb-20">
+      {/* Page Header & Stats Summary */}
+      <div className="flex flex-col gap-8">
+        <div className="flex items-center justify-between">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <h1 className="text-3xl font-black tracking-tight text-primary">Content <span className="text-accent">Library</span></h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage your blog posts, news, and prophetic articles.
+            </p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <Button 
+              onClick={() => router.push('/admin/posts/new')} 
+              size="lg"
+              className="rounded-full shadow-lg hover:shadow-accent/20 transition-all hover:scale-105 active:scale-95"
+            >
+              <PlusIcon className="mr-2 h-4 w-4" />
+              Create New Post
+            </Button>
+          </motion.div>
         </div>
-        <Button onClick={() => router.push('/admin/posts/new')} size="sm">
-          <PlusIcon />
-          New Post
-        </Button>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[
+            { label: 'Total Posts', value: posts.length, icon: FileTextIcon, color: 'text-blue-500' },
+            { label: 'Published', value: posts.filter(p => p.status === 'published').length, icon: CheckCircle2Icon, color: 'text-green-500' },
+            { label: 'Scheduled', value: posts.filter(p => p.status === 'scheduled').length, icon: ClockIcon, color: 'text-purple-500' },
+            { label: 'Avg SEO Score', value: Math.round(posts.reduce((acc, p) => acc + (p.seo_score || 0), 0) / (posts.length || 1)), icon: BarChartIcon, color: 'text-accent' }
+          ].map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="p-4 rounded-2xl border bg-card/50 backdrop-blur-sm shadow-sm flex items-center gap-4 hover:border-accent/30 transition-colors group"
+            >
+              <div className={cn("p-3 rounded-xl bg-muted group-hover:scale-110 transition-transform", stat.color)}>
+                <stat.icon className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{stat.label}</p>
+                <p className="text-xl font-bold tabular-nums">{stat.value}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
 
-      {/* Filter tabs */}
-      <div
-        role="tablist"
-        aria-label="Filter posts by status"
-        className="flex gap-1 border-b border-border"
-      >
-        {FILTER_TABS.map((tab) => {
-          const count =
-            tab.key === 'all'
-              ? posts.length
-              : posts.filter((p) => p.status === tab.key).length
+      {/* Main Content Area */}
+      <div className="space-y-6">
+        {/* Filter tabs */}
+        <div className="flex items-center justify-between border-b pb-px overflow-x-auto scrollbar-hide">
+          <div
+            role="tablist"
+            className="flex gap-2"
+          >
+            {FILTER_TABS.map((tab) => {
+              const count =
+                tab.key === 'all'
+                  ? posts.length
+                  : posts.filter((p) => p.status === tab.key).length
 
-          return (
-            <button
-              key={tab.key}
-              role="tab"
-              aria-selected={activeFilter === tab.key}
-              type="button"
-              onClick={() => handleFilterChange(tab.key)}
-              className={cn(
-                'flex items-center gap-1.5 rounded-t-md px-3 py-2 text-sm font-medium transition-colors',
-                activeFilter === tab.key
-                  ? 'border-b-2 border-primary text-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {tab.label}
-              {count > 0 && (
-                <span
+              return (
+                <button
+                  key={tab.key}
+                  role="tab"
+                  aria-selected={activeFilter === tab.key}
+                  type="button"
+                  onClick={() => handleFilterChange(tab.key)}
                   className={cn(
-                    'rounded-full px-1.5 py-0.5 text-xs tabular-nums',
+                    'relative px-4 py-2 text-sm font-medium transition-all flex items-center gap-2 whitespace-nowrap',
                     activeFilter === tab.key
-                      ? 'bg-primary/10 text-primary'
-                      : 'bg-muted text-muted-foreground'
+                      ? 'text-primary'
+                      : 'text-muted-foreground hover:text-primary'
                   )}
                 >
-                  {count}
-                </span>
-              )}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Bulk-action toolbar — shown when one or more posts are selected */}
-      {selectedIds.size > 0 && (
-        <div
-          role="toolbar"
-          aria-label="Bulk actions"
-          className="flex items-center gap-2 rounded-md border border-border bg-muted/50 px-4 py-2"
-        >
-          <span className="text-sm font-medium text-foreground">
-            {selectedIds.size} selected
-          </span>
-
-          {/* Bulk Trash — for non-trash filters */}
-          {!isTrashFilter && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleBulkTrash}
-              disabled={actionLoading === 'bulk'}
-              className="text-destructive hover:text-destructive"
-            >
-              <Trash2Icon className="mr-1.5 size-3.5" />
-              Bulk Trash
-            </Button>
-          )}
-
-          {/* Bulk Restore — for trash filter */}
-          {isTrashFilter && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleBulkRestore}
-              disabled={actionLoading === 'bulk'}
-            >
-              <RotateCcwIcon className="mr-1.5 size-3.5" />
-              Bulk Restore
-            </Button>
-          )}
-
-          {/* Bulk Delete Permanently — for trash filter, admin only */}
-          {isTrashFilter && role === 'admin' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleBulkPermanentDelete}
-              disabled={actionLoading === 'bulk'}
-              className="text-destructive hover:text-destructive"
-            >
-              <XIcon className="mr-1.5 size-3.5" />
-              Bulk Delete Permanently
-            </Button>
-          )}
-
-          {/* Clear selection */}
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => setSelectedIds(new Set())}
-            aria-label="Clear selection"
-            title="Clear selection"
-            className="ml-auto"
-          >
-            <XIcon className="size-3.5" />
-          </Button>
-        </div>
-      )}
-
-      {/* Table or empty state */}
-      {filteredPosts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
-          <p className="text-sm">{EMPTY_STATE_MESSAGES[activeFilter]}</p>
-          {activeFilter === 'all' && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => router.push('/admin/posts/new')}
-            >
-              <PlusIcon />
-              Create Post
-            </Button>
-          )}
-        </div>
-      ) : (
-        <>
-          {/* Table with manual checkbox header */}
-          <div className="rounded-md border">
-            <table className="w-full caption-bottom text-sm">
-              <thead className="[&_tr]:border-b">
-                <tr className="border-b transition-colors hover:bg-muted/50">
-                  {/* Select-all checkbox */}
-                  <th className="h-10 w-[40px] px-2 text-left align-middle font-medium text-muted-foreground">
-                    <Checkbox
-                      checked={allPageSelected}
-                      indeterminate={somePageSelected}
-                      onChange={toggleSelectAll}
-                      aria-label="Select all posts on this page"
+                  {tab.label}
+                  {count > 0 && (
+                    <span className={cn(
+                      "text-[10px] px-1.5 py-0.5 rounded-full font-bold",
+                      activeFilter === tab.key ? "bg-accent/10 text-accent" : "bg-muted text-muted-foreground"
+                    )}>
+                      {count}
+                    </span>
+                  )}
+                  {activeFilter === tab.key && (
+                    <motion.div
+                      layoutId="activeTab"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent"
                     />
-                  </th>
-                  <th className="h-10 max-w-[240px] px-4 text-left align-middle font-medium text-muted-foreground">
-                    Title
-                  </th>
-                  <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Type
-                  </th>
-                  <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Status
-                  </th>
-                  <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
-                    SEO
-                  </th>
-                  <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Author
-                  </th>
-                  <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Date
-                  </th>
-                  <th className="h-10 w-[140px] px-4 text-left align-middle font-medium text-muted-foreground" />
-                </tr>
-              </thead>
-              <tbody className="[&_tr:last-child]:border-0">
-                {pagedPosts.map((post) => {
-                  const isTrash = post.status === 'trash'
-                  const loading = actionLoading
-                  const isSelected = selectedIds.has(post.id)
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
 
-                  return (
-                    <tr
-                      key={post.id}
-                      className={cn(
-                        'border-b transition-colors hover:bg-muted/50',
-                        isSelected && 'bg-muted/30'
-                      )}
+        {/* Bulk Actions Floating Bar */}
+        <AnimatePresence>
+          {selectedIds.size > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 px-6 py-3 rounded-full bg-primary text-primary-foreground shadow-2xl backdrop-blur-md border border-white/10"
+            >
+              <span className="text-sm font-bold border-r border-white/20 pr-4">
+                {selectedIds.size} SELECTED
+              </span>
+              <div className="flex items-center gap-2">
+                {!isTrashFilter ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleBulkTrash}
+                    disabled={actionLoading === 'bulk'}
+                    className="h-8 text-red-400 hover:text-red-300 hover:bg-white/10"
+                  >
+                    <Trash2Icon className="mr-2 h-3.5 w-3.5" />
+                    Move to Trash
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleBulkRestore}
+                      disabled={actionLoading === 'bulk'}
+                      className="h-8 hover:bg-white/10"
                     >
-                      {/* Checkbox */}
-                      <td className="w-[40px] px-2 py-2 align-middle">
-                        <Checkbox
-                          checked={isSelected}
-                          onChange={() => toggleSelectRow(post.id)}
-                          aria-label={`Select ${post.title}`}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </td>
+                      <RotateCcwIcon className="mr-2 h-3.5 w-3.5" />
+                      Restore
+                    </Button>
+                    {role === 'admin' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleBulkPermanentDelete}
+                        disabled={actionLoading === 'bulk'}
+                        className="h-8 text-red-400 hover:text-red-300 hover:bg-white/10"
+                      >
+                        <XIcon className="mr-2 h-3.5 w-3.5" />
+                        Delete Permanently
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+              <button
+                onClick={() => setSelectedIds(new Set())}
+                className="ml-2 p-1 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <XIcon className="h-4 w-4" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-                      {/* Title */}
-                      <td className="max-w-[240px] px-4 py-2 align-middle">
+        {/* List Content */}
+        {filteredPosts.length === 0 ? (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center justify-center gap-4 py-32 rounded-3xl border border-dashed bg-muted/20"
+          >
+            <div className="p-6 rounded-full bg-muted/50">
+              <FileTextIcon className="h-12 w-12 text-muted-foreground/50" />
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-medium text-muted-foreground">{EMPTY_STATE_MESSAGES[activeFilter]}</p>
+              <p className="text-sm text-muted-foreground/60">Try changing your filter or create something new.</p>
+            </div>
+            {activeFilter === 'all' && (
+              <Button
+                variant="outline"
+                className="mt-4 rounded-full"
+                onClick={() => router.push('/admin/posts/new')}
+              >
+                <PlusIcon className="mr-2 h-4 w-4" />
+                Create First Post
+              </Button>
+            )}
+          </motion.div>
+        ) : (
+          <div className="space-y-4">
+            {/* List Header (Hidden on mobile) */}
+            <div className="hidden md:grid grid-cols-[40px_1fr_120px_140px_100px_180px] gap-4 px-6 py-2 text-xs font-bold text-muted-foreground uppercase tracking-widest border-b border-transparent">
+              <div className="flex justify-center">
+                <Checkbox
+                  checked={allPageSelected}
+                  indeterminate={somePageSelected}
+                  onChange={toggleSelectAll}
+                />
+              </div>
+              <div>Details</div>
+              <div className="text-center">Category</div>
+              <div className="text-center">Status</div>
+              <div className="text-center">SEO</div>
+              <div className="text-right">Actions</div>
+            </div>
+
+            {/* List Body */}
+            <div className="space-y-3">
+              {pagedPosts.map((post, index) => {
+                const isTrash = post.status === 'trash'
+                const isSelected = selectedIds.has(post.id)
+                const loading = actionLoading === `trash-${post.id}` || actionLoading === `dup-${post.id}`
+
+                return (
+                  <motion.div
+                    key={post.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.03 }}
+                    className={cn(
+                      "grid grid-cols-1 md:grid-cols-[40px_1fr_120px_140px_100px_180px] gap-4 px-4 md:px-6 py-4 rounded-2xl border transition-all duration-300 group",
+                      isSelected 
+                        ? "bg-accent/[0.03] border-accent/30 shadow-md shadow-accent/5" 
+                        : "bg-card hover:bg-muted/50 hover:border-accent/20 hover:shadow-lg hover:shadow-black/5"
+                    )}
+                  >
+                    {/* Checkbox */}
+                    <div className="hidden md:flex items-center justify-center">
+                      <Checkbox
+                        checked={isSelected}
+                        onChange={() => toggleSelectRow(post.id)}
+                      />
+                    </div>
+
+                    {/* Post Main Info */}
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="h-12 w-12 rounded-xl bg-muted overflow-hidden shrink-0 border border-white/5 relative group/img">
+                        {post.featured_image ? (
+                          <img src={post.featured_image} alt="" className="h-full w-full object-cover group-hover/img:scale-110 transition-transform duration-500" />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center text-muted-foreground/30">
+                            <ImageIcon className="h-6 w-6" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                          <EyeIcon className="h-4 w-4 text-white" />
+                        </div>
+                      </div>
+                      <div className="min-w-0 space-y-1">
                         <button
-                          type="button"
                           onClick={() => router.push(`/admin/posts/${post.id}`)}
-                          className="truncate text-left text-sm font-medium text-foreground underline-offset-2 hover:underline max-w-[220px] block"
-                          title={post.title}
+                          className="font-bold text-primary hover:text-accent transition-colors truncate block text-left w-full"
                         >
                           {post.title}
                         </button>
-                      </td>
-
-                      {/* Type */}
-                      <td className="px-4 py-2 align-middle">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                            post.type === 'blog'
-                              ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'
-                              : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                          }`}
-                        >
-                          {post.type === 'blog' ? 'Blog' : 'News'}
-                        </span>
-                      </td>
-
-                      {/* Status */}
-                      <td className="px-4 py-2 align-middle">
-                        <StatusBadge status={post.status} />
-                      </td>
-
-                      {/* SEO Score */}
-                      <td className="px-4 py-2 align-middle">
-                        <SeoScoreBadge score={post.seo_score ?? 0} />
-                      </td>
-
-                      {/* Author */}
-                      <td className="px-4 py-2 align-middle">
-                        <span className="text-sm text-muted-foreground">
-                          {post.profiles?.name ?? '—'}
-                        </span>
-                      </td>
-
-                      {/* Date */}
-                      <td className="px-4 py-2 align-middle">
-                        <span className="text-sm text-muted-foreground">
-                          {formatDate(post.updated_at)}
-                        </span>
-                      </td>
-
-                      {/* Actions */}
-                      <td className="w-[140px] px-4 py-2 align-middle">
-                        <div className="flex items-center gap-0.5">
-                          {/* Edit — only for non-trash posts */}
-                          {!isTrash && (
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => router.push(`/admin/posts/${post.id}`)}
-                              aria-label={`Edit ${post.title}`}
-                              title="Edit"
-                            >
-                              <PencilIcon className="size-3.5" />
-                            </Button>
-                          )}
-
-                          {/* Preview — only for published posts */}
-                          {post.status === 'published' && (
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => window.open(`/blog/${post.slug}`, '_blank')}
-                              aria-label={`Preview ${post.title}`}
-                              title="Preview"
-                            >
-                              <ExternalLinkIcon className="size-3.5" />
-                            </Button>
-                          )}
-
-                          {/* Duplicate — only for non-trash posts */}
-                          {!isTrash && (
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => handleDuplicate(post)}
-                              disabled={loading === `dup-${post.id}`}
-                              aria-label={`Duplicate ${post.title}`}
-                              title="Duplicate"
-                            >
-                              <CopyIcon className="size-3.5" />
-                            </Button>
-                          )}
-
-                          {/* Restore — only for trash posts */}
-                          {isTrash && (
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => handleRestore(post)}
-                              disabled={loading === `restore-${post.id}`}
-                              aria-label={`Restore ${post.title}`}
-                              title="Restore"
-                            >
-                              <RotateCcwIcon className="size-3.5" />
-                            </Button>
-                          )}
-
-                          {/* Trash — only for non-trash posts, if user can modify */}
-                          {!isTrash && canModify(post) && (
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => handleTrash(post)}
-                              disabled={loading === `trash-${post.id}`}
-                              aria-label={`Move ${post.title} to trash`}
-                              title="Move to Trash"
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2Icon className="size-3.5" />
-                            </Button>
-                          )}
-
-                          {/* Permanent delete — only for trash posts, admin only */}
-                          {isTrash && role === 'admin' && (
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              onClick={() => handlePermanentDelete(post)}
-                              disabled={loading === `perm-${post.id}`}
-                              aria-label={`Permanently delete ${post.title}`}
-                              title="Delete Permanently"
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <XIcon className="size-3.5" />
-                            </Button>
-                          )}
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <User2Icon className="h-3 w-3" />
+                            {post.profiles?.name || 'Unknown'}
+                          </span>
+                          <span className="text-muted-foreground/30">•</span>
+                          <span>{formatDate(post.updated_at)}</span>
                         </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    </div>
 
-          {/* Pagination controls — shown when there are more than PAGE_SIZE posts */}
-          {filteredPosts.length > PAGE_SIZE && (
-            <div className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
-              <span>
-                Showing {pageStart + 1}–{pageEnd} of {filteredPosts.length} posts
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={safePage === 1}
-                >
-                  Previous
-                </Button>
-                <span className="tabular-nums">
-                  Page {safePage} of {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={safePage === totalPages}
-                >
-                  Next
-                </Button>
-              </div>
+                    {/* Category/Type */}
+                    <div className="hidden md:flex items-center justify-center">
+                      <Badge variant="outline" className={cn(
+                        "rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest",
+                        post.type === 'blog' ? "text-purple-500 border-purple-500/20 bg-purple-500/5" : "text-blue-500 border-blue-500/20 bg-blue-500/5"
+                      )}>
+                        {post.type}
+                      </Badge>
+                    </div>
+
+                    {/* Status */}
+                    <div className="hidden md:flex items-center justify-center">
+                      <StatusBadge status={post.status} className="shadow-sm" />
+                    </div>
+
+                    {/* SEO Score */}
+                    <div className="hidden md:flex items-center justify-center">
+                      <div className="relative h-10 w-10 flex items-center justify-center">
+                        <svg className="h-full w-full -rotate-90">
+                          <circle
+                            cx="20"
+                            cy="20"
+                            r="16"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            className="text-muted"
+                          />
+                          <circle
+                            cx="20"
+                            cy="20"
+                            r="16"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeDasharray={100}
+                            strokeDashoffset={100 - (post.seo_score || 0)}
+                            className={cn(
+                              (post.seo_score || 0) > 80 ? "text-green-500" : (post.seo_score || 0) > 50 ? "text-yellow-500" : "text-red-500"
+                            )}
+                          />
+                        </svg>
+                        <span className="absolute text-[10px] font-black tabular-nums">{post.seo_score || 0}</span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-end gap-1">
+                      {!isTrash ? (
+                        <>
+                          <Button variant="ghost" size="icon-sm" onClick={() => router.push(`/admin/posts/${post.id}`)} title="Edit">
+                            <PencilIcon className="h-3.5 w-3.5" />
+                          </Button>
+                          {post.status === 'published' && (
+                            <Button variant="ghost" size="icon-sm" onClick={() => window.open(`/blog/${post.slug}`, '_blank')} title="View Live">
+                              <ExternalLinkIcon className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="icon-sm" onClick={() => handleDuplicate(post)} title="Duplicate">
+                            <CopyIcon className="h-3.5 w-3.5" />
+                          </Button>
+                          {canModify(post) && (
+                            <Button variant="ghost" size="icon-sm" onClick={() => handleTrash(post)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10" title="Trash">
+                              <Trash2Icon className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <Button variant="ghost" size="icon-sm" onClick={() => handleRestore(post)} title="Restore">
+                            <RotateCcwIcon className="h-3.5 w-3.5" />
+                          </Button>
+                          {role === 'admin' && (
+                            <Button variant="ghost" size="icon-sm" onClick={() => handlePermanentDelete(post)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10" title="Delete Forever">
+                              <XIcon className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </motion.div>
+                )
+              })}
             </div>
-          )}
-        </>
-      )}
+
+            {/* Pagination */}
+            {filteredPosts.length > PAGE_SIZE && (
+              <div className="flex items-center justify-between px-6 py-8 border-t border-transparent">
+                <p className="text-sm text-muted-foreground font-medium">
+                  Showing <span className="text-primary">{pageStart + 1}</span> to <span className="text-primary">{pageEnd}</span> of <span className="text-primary font-bold">{filteredPosts.length}</span> articles
+                </p>
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={safePage === 1}
+                    className="rounded-full"
+                  >
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {[...Array(totalPages)].map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentPage(i + 1)}
+                        className={cn(
+                          "h-8 w-8 rounded-full text-xs font-bold transition-all",
+                          safePage === i + 1 ? "bg-accent text-white shadow-lg shadow-accent/20" : "text-muted-foreground hover:bg-muted"
+                        )}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={safePage === totalPages}
+                    className="rounded-full"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
+}
+
+function FileTextIcon(props: any) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+  )
+}
+
+function CheckCircle2Icon(props: any) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+  )
+}
+
+function ClockIcon(props: any) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+  )
+}
+
+function BarChartIcon(props: any) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+  )
+}
+
+function ImageIcon(props: any) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+  )
+}
+
+function EyeIcon(props: any) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+  )
+}
+
+function User2Icon(props: any) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+  )
+}
+
+function Badge({ children, variant = 'default', className }: { children: React.ReactNode, variant?: 'default' | 'outline' | 'secondary' | 'destructive', className?: string }) {
+  const variants = {
+    default: 'bg-primary text-primary-foreground',
+    secondary: 'bg-secondary text-secondary-foreground',
+    outline: 'border text-foreground',
+    destructive: 'bg-destructive text-destructive-foreground',
+  }
+  return (
+    <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors", variants[variant], className)}>
+      {children}
+    </span>
+  )
+}
+
+import { AnimatePresence } from 'framer-motion'
+
 }

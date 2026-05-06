@@ -39,6 +39,10 @@ export function OrderActions({ order, showLabel = true }: { order: any, showLabe
   const router = useRouter()
 
   const handleUpdateStatus = async (data: { status?: string, payment_status?: string }) => {
+    if (!order?.id) {
+      toast.error('Invalid order ID')
+      return
+    }
     setLoading(true)
     try {
       const res = await updateOrderStatus(order.id, data)
@@ -54,6 +58,10 @@ export function OrderActions({ order, showLabel = true }: { order: any, showLabe
   }
 
   const handleDelete = async () => {
+    if (!order?.id) {
+      toast.error('Invalid order ID')
+      return
+    }
     setLoading(true)
     try {
       const res = await deleteOrder(order.id)
@@ -88,21 +96,21 @@ export function OrderActions({ order, showLabel = true }: { order: any, showLabe
           <DropdownMenuSeparator />
           
           <DropdownMenuItem 
-            disabled={order.status === 'processing'}
+            disabled={order?.status === 'processing'}
             onClick={() => handleUpdateStatus({ status: 'processing' })}
           >
             <Loader2 className="h-4 w-4 mr-2" /> Mark as Processing
           </DropdownMenuItem>
           
           <DropdownMenuItem 
-            disabled={order.status === 'shipped'}
+            disabled={order?.status === 'shipped'}
             onClick={() => handleUpdateStatus({ status: 'shipped' })}
           >
             <Truck className="h-4 w-4 mr-2" /> Mark as Shipped
           </DropdownMenuItem>
           
           <DropdownMenuItem 
-            disabled={order.status === 'completed'}
+            disabled={order?.status === 'completed'}
             onClick={() => handleUpdateStatus({ status: 'completed' })}
           >
             <CheckCircle className="h-4 w-4 mr-2" /> Mark as Completed
@@ -113,7 +121,7 @@ export function OrderActions({ order, showLabel = true }: { order: any, showLabe
           
           <DropdownMenuItem 
             className="text-orange-500"
-            disabled={order.payment_status === 'refunded'}
+            disabled={order?.payment_status === 'refunded'}
             onClick={() => handleUpdateStatus({ payment_status: 'refunded', status: 'cancelled' })}
           >
             <RotateCcw className="h-4 w-4 mr-2" /> Refund & Cancel Order
@@ -138,7 +146,7 @@ export function OrderActions({ order, showLabel = true }: { order: any, showLabe
               Are you absolutely sure?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the order for <strong>{order.email}</strong>, 
+              This will permanently delete the order for <strong>{order?.email || 'this customer'}</strong>, 
               including all order items and transaction history. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -65,6 +65,17 @@ const allNavLinks: NavLink[] = [
       { href: '/admin/orders', label: 'Orders', icon: ListOrdered },
     ]
   },
+  { 
+    href: '/admin/credits', 
+    label: 'Credits & Services', 
+    icon: BarChart, 
+    adminOnly: true,
+    subLinks: [
+      { href: '/admin/credits', label: 'User Balances', icon: Users },
+      { href: '/admin/credits/requests', label: 'Service Requests', icon: MessageCircle },
+      { href: '/admin/credits/transactions', label: 'Transaction History', icon: BarChart },
+    ]
+  },
   { href: '/admin/inbox', label: 'Inbox', icon: Inbox, adminOnly: false },
   { href: '/admin/testimonies', label: 'Testimonies', icon: MessageCircle, adminOnly: false },
   { href: '/admin/users', label: 'Users', icon: Users, adminOnly: true },

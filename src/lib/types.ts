@@ -321,3 +321,47 @@ export interface LinkValidation {
   type?: 'youtube' | 'vimeo' | 'direct'
   error?: string
 }
+
+// ============================================
+// Credit System & Fire Service Types
+// ============================================
+
+export interface UserCredit {
+  id: string
+  user_id: string | null
+  email: string
+  balance: number
+  lifetime_earned: number
+  lifetime_spent: number
+  updated_at: string
+}
+
+export interface CreditTransaction {
+  id: string
+  user_id: string | null
+  email: string
+  amount: number
+  transaction_type: 'purchase' | 'spend' | 'admin_adjustment' | 'refund'
+  reference_id: string | null
+  metadata: Record<string, any> | null
+  created_at: string
+}
+
+export interface FireServiceRequest {
+  id: string
+  user_id: string | null
+  first_name: string
+  last_name: string
+  email: string
+  country: string
+  phone: string
+  attendance_mode: string
+  prayer_focus_areas: string[]
+  prayer_request_details: string
+  attachment_url: string | null
+  credits_used: number | null
+  payment_method: 'credits' | 'pesapal' | 'vow'
+  status: 'pending' | 'completed' | 'cancelled'
+  created_at: string
+}
+
