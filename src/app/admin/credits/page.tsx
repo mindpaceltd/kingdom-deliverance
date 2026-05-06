@@ -14,7 +14,7 @@ export default async function AdminCreditsPage() {
   // 1. Fetch all profiles
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('*')
+    .select('*, user_credits(*)')
     .order('name')
 
   // 2. Fetch all user credits
@@ -50,6 +50,7 @@ export default async function AdminCreditsPage() {
       id: p.id,
       email,
       name: p.name,
+      role: p.role,
       ...credits
     }
   }).filter(item => item.email !== '') // Only show users with an email
@@ -109,8 +110,18 @@ export default async function AdminCreditsPage() {
                 items.map((item) => (
                   <tr key={item.email} className="hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className="font-medium text-primary">{item.name || 'Untitled'}</span>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-primary">{item.name || 'Untitled'}</span>
+                          <Badge variant="outline" className={cn(
+                            "text-[10px] px-2 py-0 h-4 uppercase font-bold tracking-tighter",
+                            item.role === 'admin' ? "bg-red-500/10 text-red-500 border-red-500/20" :
+                            item.role === 'editor' ? "bg-blue-500/10 text-blue-500 border-blue-500/20" :
+                            "bg-muted text-muted-foreground"
+                          )}>
+                            {item.role}
+                          </Badge>
+                        </div>
                         <span className="text-xs text-muted-foreground">{item.email}</span>
                       </div>
                     </td>
