@@ -11,6 +11,7 @@ import {
   ExternalLinkIcon,
   XIcon,
 } from 'lucide-react'
+import { AnimatePresence } from 'framer-motion'
 
 import { StatusBadge } from '@/components/admin/status-badge'
 import { Button } from '@/components/ui/button'
@@ -745,8 +746,4 @@ function Badge({ children, variant = 'default', className }: { children: React.R
       {children}
     </span>
   )
-}
-
-import { AnimatePresence } from 'framer-motion'
-
 }

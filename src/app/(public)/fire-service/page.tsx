@@ -245,8 +245,8 @@ export default function FireServicePage() {
               <FireServiceForm />
             </React.Suspense>
           </div>
-        </div>
       </div>
     </div>
-  )
-import * as React from 'react'
+  </div>
+)
+}
