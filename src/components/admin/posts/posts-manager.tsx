@@ -11,7 +11,7 @@ import {
   ExternalLinkIcon,
   XIcon,
 } from 'lucide-react'
-import { AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 
 import { StatusBadge } from '@/components/admin/status-badge'
 import { Button } from '@/components/ui/button'

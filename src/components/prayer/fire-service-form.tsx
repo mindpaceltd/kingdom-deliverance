@@ -10,6 +10,22 @@ import { Flame, ArrowRight, ArrowLeft, Upload, CheckCircle2, AlertCircle, Loader
 import { getUserCreditBalance, getCreditPackages, getServicePricing, purchaseCredits } from '@/lib/actions/credits'
 import { submitFireServiceRequest } from '@/lib/actions/fire-service'
 import { useSearchParams } from 'next/navigation'
+import { countries, Country } from '@/lib/countries'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
+import { Check, ChevronsUpDown } from "lucide-react"
 
 // Steps
 type Step = 1 | 2 | 3 | 4
@@ -51,13 +67,15 @@ export function FireServiceForm() {
     firstName: '',
     lastName: '',
     email: '',
-    country: '',
-    phone: '',
+    country: 'Uganda',
+    countryCode: 'UG',
+    phone: '+256',
     attendance: 'online', // online, in_person
     focusAreas: [] as string[],
     details: '',
     selectedSeed: 270, // Default credit amount
   })
+  const [countryOpen, setCountryOpen] = useState(false)
 
   // Load initial data
   useEffect(() => {
@@ -71,6 +89,26 @@ export function FireServiceForm() {
       setPackages(pkgs)
     }
     loadData()
+
+    // Try to detect user country
+    fetch('https://ipapi.co/json/')
+      .then(res => res.json())
+      .then(data => {
+        if (data.country_name && data.country && data.country_calling_code) {
+          const detectedCountry = countries.find(c => c.code === data.country)
+          if (detectedCountry) {
+            setForm(f => ({
+              ...f,
+              country: detectedCountry.name,
+              countryCode: detectedCountry.code,
+              phone: detectedCountry.dial_code
+            }))
+          }
+        }
+      })
+      .catch(() => {
+        // Fallback to Uganda is already set in initial state
+      })
   }, [])
 
   // Check balance when email changes or step 4 is reached
@@ -204,11 +242,69 @@ export function FireServiceForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Country *</Label>
-                <Input required value={form.country} onChange={e => setForm({...form, country: e.target.value})} className="bg-[#1D2845] border-white/10" placeholder="e.g. United Kingdom" />
+                <Popover open={countryOpen} onOpenChange={setCountryOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={countryOpen}
+                      className="w-full justify-between bg-[#1D2845] border-white/10 text-white hover:bg-[#1D2845]/80 hover:text-white"
+                    >
+                      <span className="truncate">
+                        {form.country
+                          ? countries.find((c) => c.name === form.country)?.flag + " " + form.country
+                          : "Select country..."}
+                      </span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-[#1D2845] border-white/10" align="start">
+                    <Command className="bg-transparent">
+                      <CommandInput placeholder="Search country..." className="text-white h-9" />
+                      <CommandList>
+                        <CommandEmpty>No country found.</CommandEmpty>
+                        <CommandGroup className="max-h-64 overflow-y-auto">
+                          {countries.map((c) => (
+                            <CommandItem
+                              key={c.code}
+                              value={c.name}
+                              onSelect={(currentValue) => {
+                                setForm({
+                                  ...form,
+                                  country: currentValue,
+                                  countryCode: c.code,
+                                  phone: c.dial_code
+                                })
+                                setCountryOpen(false)
+                              }}
+                              className="text-white hover:bg-accent/20 cursor-pointer"
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  form.country === c.name ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <span className="mr-2">{c.flag}</span>
+                              {c.name}
+                              <span className="ml-auto text-xs text-white/40">{c.dial_code}</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="space-y-2">
                 <Label>Phone Number *</Label>
-                <Input required value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="bg-[#1D2845] border-white/10" placeholder="+256 ..." />
+                <Input 
+                  required 
+                  value={form.phone} 
+                  onChange={e => setForm({...form, phone: e.target.value})} 
+                  className="bg-[#1D2845] border-white/10" 
+                  placeholder="+256 ..." 
+                />
               </div>
             </div>
           </div>

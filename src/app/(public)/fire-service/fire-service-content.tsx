@@ -51,12 +51,12 @@ export function FireServiceContent() {
           ))}
         </div>
 
-        <div className="container relative z-10 px-4 text-center">
+        <div className="container relative z-10 px-4 text-center mt-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-accent text-sm font-medium mb-8 backdrop-blur-md"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 text-accent text-sm font-semibold mb-12 backdrop-blur-md"
           >
             <Flame className="h-4 w-4 animate-bounce" />
             A Prophetic All-Night Encounter
@@ -66,7 +66,7 @@ export function FireServiceContent() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-6xl md:text-8xl font-black tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/40"
+            className="text-6xl md:text-[7.5rem] font-black tracking-tighter mb-10 leading-[0.85] bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/40"
           >
             THE FIRE <br />
             <span className="text-accent">SERVICE</span>
@@ -76,7 +76,7 @@ export function FireServiceContent() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-xl text-gray-400 max-w-2xl mx-auto mb-10 font-light leading-relaxed"
+            className="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto mb-16 font-light leading-relaxed px-4"
           >
             Submit your Fire List. Connect with a Prophetic Seed. 
             Tonight, your case will be carried into the Holy Fire Altar.
@@ -89,7 +89,7 @@ export function FireServiceContent() {
           >
             <button 
               onClick={() => document.getElementById('prayer-form')?.scrollIntoView({ behavior: 'smooth' })}
-              className="px-8 py-4 bg-accent text-white font-bold rounded-full hover:bg-accent/90 transition-all hover:scale-105 active:scale-95 shadow-[0_0_40px_-10px_rgba(255,77,0,0.5)]"
+              className="px-10 py-5 bg-accent text-white font-bold rounded-full hover:bg-accent/90 transition-all hover:scale-105 active:scale-95 shadow-[0_0_50px_-10px_rgba(255,77,0,0.6)]"
             >
               Submit Your Fire List
             </button>
