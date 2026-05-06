@@ -11,6 +11,9 @@ export default async function AdminCreditsPage() {
   const supabase = createClient()
   const adminClient = createAdminClient()
   
+  // Get current user to filter them out of the list
+  const { data: { user } } = await supabase.auth.getUser()
+  
   // 1. Fetch all profiles
   const { data: profiles } = await supabase
     .from('profiles')
@@ -53,7 +56,7 @@ export default async function AdminCreditsPage() {
       role: p.role,
       ...credits
     }
-  }).filter(item => item.email !== '' && item.role !== 'admin')
+  }).filter(item => item.email !== '' && item.email !== user?.email)
 
   return (
     <div className="space-y-6">
