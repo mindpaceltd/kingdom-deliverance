@@ -14,7 +14,7 @@ export default async function AdminCreditsPage() {
   // 1. Fetch all profiles
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('*, user_credits(*)')
+    .select('*')
     .order('name')
 
   // 2. Fetch all user credits
@@ -53,7 +53,7 @@ export default async function AdminCreditsPage() {
       role: p.role,
       ...credits
     }
-  }).filter(item => item.email !== '') // Only show users with an email
+  }).filter(item => item.email !== '' && item.role !== 'admin')
 
   return (
     <div className="space-y-6">
