@@ -64,7 +64,7 @@ function makeMockQueryBuilder() {
 }
 
 // ---------------------------------------------------------------------------
-// Mock @/lib/supabase/server — controls what createClient() returns
+// Mock @/lib/supabase/server — controls what getSupabaseClient() returns
 // ---------------------------------------------------------------------------
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () => ({

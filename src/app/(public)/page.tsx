@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from '@/lib/supabase/server';
 import { PostCard } from "@/components/content/post-card";
 import { EventCard } from "@/components/content/event-card";
 import { TestimoniesSection } from "@/components/home/testimonies-section";

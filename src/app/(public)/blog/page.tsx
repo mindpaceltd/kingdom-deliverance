@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from '@/lib/supabase/server';
 import Link from "next/link";
 import Image from "next/image";
 import { format } from "date-fns";

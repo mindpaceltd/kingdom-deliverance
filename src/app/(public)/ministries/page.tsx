@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from '@/lib/supabase/server';
 import Link from "next/link";
 import { ArrowRight, Users, Clock, Music, Heart, BookOpen, Shield, Star, Globe, Zap } from "lucide-react";
 import type { Metadata } from "next";

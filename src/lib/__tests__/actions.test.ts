@@ -18,7 +18,7 @@ vi.mock('@/lib/env', () => ({
 }))
 
 // ---------------------------------------------------------------------------
-// Mock @/lib/supabase/server — we control what createClient() returns
+// Mock @/lib/supabase/server — we control what getSupabaseClient() returns
 // ---------------------------------------------------------------------------
 
 /**

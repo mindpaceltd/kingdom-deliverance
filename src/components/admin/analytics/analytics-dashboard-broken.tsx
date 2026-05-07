@@ -13,7 +13,7 @@ import {
   Zap, ExternalLink, Globe, MousePointer2, MapPin
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from '@/lib/supabase/client'
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 

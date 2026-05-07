@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { MapPin, Mail, Phone, Heart, ArrowRight, Globe } from "lucide-react";
 import { IconFacebook, IconInstagram, IconYoutube, IconTwitter, IconLinkedin, IconTiktok } from "@/components/icons/social-inline";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from '@/lib/supabase/client';
 
 const platformIcons: Record<string, any> = {
   facebook: <IconFacebook className="w-4 h-4" />,

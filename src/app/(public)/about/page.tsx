@@ -43,7 +43,7 @@ const timeline = [
   { year: "2026", event: "Kingdom Deliverance Centre celebrates 18 years of ministry impact across Uganda." },
 ];
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from '@/lib/supabase/server';
 
 export default async function AboutPage() {
   const supabase = createClient();
