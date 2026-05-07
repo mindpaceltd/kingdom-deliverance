@@ -25,8 +25,8 @@ export const metadata: Metadata = {
 export default async function Home() {
   const supabase = createClient();
 
-  // Fetch: latest published sermon, featured upcoming events (fallback to next 3 upcoming), latest 3 posts, featured products
-  const [sermonRes, featuredEventsRes, postsRes, productsRes] = await Promise.all([
+  // Fetch: latest published sermon, featured upcoming events, latest 3 posts, featured products, and hero image
+  const [sermonRes, featuredEventsRes, postsRes, productsRes, heroRes] = await Promise.all([
     supabase
       .from("sermons")
       .select("*")
@@ -53,9 +53,16 @@ export default async function Home() {
       .eq("is_active", true)
       .order("created_at", { ascending: false })
       .limit(10),
+    supabase
+      .from("organization_images")
+      .select("url")
+      .eq("type", "hero")
+      .eq("is_active", true)
+      .maybeSingle(),
   ]);
 
   const featuredSermon: Sermon | null = sermonRes.data ?? null;
+  const heroImageUrl = heroRes.data?.url;
   let upcomingEvents: Event[] = featuredEventsRes.data ?? [];
 
   // Fallback: if no featured events, get next 3 upcoming regardless of is_featured
@@ -74,7 +81,7 @@ export default async function Home() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <HeroSection />
+      <HeroSection backgroundImage={heroImageUrl} />
 
       {/* Mission / Stats */}
       <PageSection className="bg-white py-24">

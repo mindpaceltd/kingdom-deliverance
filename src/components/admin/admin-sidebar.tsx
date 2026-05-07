@@ -83,7 +83,7 @@ const allNavLinks: NavLink[] = [
   { href: '/admin/profile', label: 'My Profile', icon: UserCircleIcon, adminOnly: false },
 ]
 
-export function AdminSidebar() {
+export function AdminSidebar({ logo }: { logo?: string }) {
   const { role } = useAdmin()
   const pathname = usePathname()
   const router = useRouter()
@@ -119,9 +119,18 @@ export function AdminSidebar() {
   return (
     <aside className="hidden lg:flex flex-col w-64 h-screen bg-[#1a1a2e] text-white shrink-0 sticky top-0 overflow-y-auto border-r border-white/5 scrollbar-hide">
       {/* Brand */}
-      <div className="px-6 py-5 border-b border-white/10 shrink-0">
-        <span className="text-lg font-bold tracking-tight">KDC Uganda</span>
-        <p className="text-xs text-white/50 mt-0.5">Admin Panel</p>
+      <div className="px-6 py-5 border-b border-white/10 shrink-0 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0 overflow-hidden">
+          {logo ? (
+            <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-primary font-bold text-sm">K</span>
+          )}
+        </div>
+        <div>
+          <span className="text-sm font-bold tracking-tight block">KDC Uganda</span>
+          <p className="text-[10px] text-white/50">Admin Panel</p>
+        </div>
       </div>
 
       {/* Nav */}

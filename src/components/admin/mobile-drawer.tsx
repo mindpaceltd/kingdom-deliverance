@@ -37,9 +37,10 @@ const allNavLinks = [
 interface MobileDrawerProps {
   open: boolean
   onClose: () => void
+  logo?: string
 }
 
-export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
+export function MobileDrawer({ open, onClose, logo }: MobileDrawerProps) {
   const { role } = useAdmin()
   const pathname = usePathname()
   const router = useRouter()
@@ -63,9 +64,18 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
         className="flex flex-col gap-0 p-0 bg-[#1a1a2e] text-white border-r border-white/10 w-64 sm:max-w-64"
       >
         {/* Brand */}
-        <div className="px-6 py-5 border-b border-white/10">
-          <span className="text-lg font-bold tracking-tight">KDC Uganda</span>
-          <p className="text-xs text-white/50 mt-0.5">Admin Panel</p>
+        <div className="px-6 py-5 border-b border-white/10 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0 overflow-hidden">
+            {logo ? (
+              <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-primary font-bold text-sm">K</span>
+            )}
+          </div>
+          <div>
+            <span className="text-sm font-bold tracking-tight block">KDC Uganda</span>
+            <p className="text-[10px] text-white/50">Admin Panel</p>
+          </div>
         </div>
 
         {/* Nav */}

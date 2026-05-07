@@ -7,6 +7,8 @@ import { ProductMediaGallery } from '@/components/shop/product-media-gallery'
 import { ProductTabs } from '@/components/shop/product-tabs'
 import { QuantitySelector } from '@/components/shop/quantity-selector'
 import { FormatSelector } from '@/components/shop/format-selector'
+import { createSocialImageMetadata } from '@/lib/seo-image-utils'
+import { createCanonicalMetadata } from '@/lib/seo/canonical-utils'
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   try {
@@ -21,22 +23,23 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
     const title = product.meta_title || `${product.name} | KDC Uganda Store`
     const description = product.meta_description || product.short_description || product.description?.replace(/<[^>]*>?/gm, '').substring(0, 160)
-    const ogImage = product.image_url
+    const socialImage = createSocialImageMetadata(product.name, description, product.image_url, 'product')
 
     return {
       title,
       description,
+      ...createCanonicalMetadata(`/shop/${product.slug}`),
       openGraph: {
         title,
         description,
         siteName: "Kingdom Deliverance Centre Uganda",
-        images: ogImage ? [{ url: ogImage, width: 1200, height: 630, alt: product.name }] : [],
+        images: [socialImage],
       },
       twitter: {
         card: "summary_large_image",
         title,
         description,
-        images: ogImage ? [ogImage] : [],
+        images: [socialImage.url],
       },
     }
   } catch {

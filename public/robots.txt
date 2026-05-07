@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Allow search engines to crawl all content
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /account/
+
+# Sitemap location
+Sitemap: https://kdcuganda.org/sitemap.xml
+
+# Crawl delay (optional, be respectful)
+Crawl-delay: 1

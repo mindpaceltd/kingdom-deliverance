@@ -43,7 +43,7 @@ const navigation = [
   },
 ];
 
-export function Navbar() {
+export function Navbar({ logo }: { logo?: string }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -70,8 +70,16 @@ export function Navbar() {
       <div className="container flex h-18 items-center justify-between px-4 py-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 group shrink-0">
-          <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-accent to-yellow-400 flex items-center justify-center shadow-lg shadow-accent/30 group-hover:shadow-accent/50 transition-all duration-300">
-            <span className="text-primary font-bold text-lg leading-none">K</span>
+          <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-accent to-yellow-400 flex items-center justify-center shadow-lg shadow-accent/30 group-hover:shadow-accent/50 transition-all duration-300 overflow-hidden">
+            {logo ? (
+              <img 
+                src={logo} 
+                alt="Logo" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-primary font-bold text-lg leading-none">K</span>
+            )}
           </div>
           <div className="flex flex-col leading-tight">
             <span className="font-serif text-lg font-bold text-white tracking-wide group-hover:text-accent transition-colors duration-300 md:text-xl">

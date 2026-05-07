@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Users, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Metadata } from "next";
+import { createSocialImageMetadata } from "@/lib/seo-image-utils";
+import { createCanonicalMetadata } from "@/lib/seo/canonical-utils";
 
 import { incrementMinistryViews } from "@/lib/actions/event-views";
 
@@ -22,24 +24,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = data.meta_title || `${data.name} | KDC Uganda Ministries`;
   const description = data.meta_description || data.description || "Discover the ministries of Kingdom Deliverance Centre Uganda.";
   const url = `https://kdcuganda.org/ministries/${data.slug}`;
-  const image = data.image_url || "https://kdcuganda.org/og?title=" + encodeURIComponent(data.name);
+  const socialImage = createSocialImageMetadata(data.name, description, data.image_url, 'ministry');
 
   return {
     title,
     description,
+    ...createCanonicalMetadata(`/ministries/${data.slug}`),
     openGraph: {
       title: data.meta_title || data.name,
       description,
       url,
       siteName: "Kingdom Deliverance Centre Uganda",
       type: "website",
-      images: [{ url: image, width: 1200, height: 630, alt: data.name }],
+      images: [socialImage],
     },
     twitter: {
       card: "summary_large_image",
       title: data.meta_title || data.name,
       description,
-      images: [image],
+      images: [socialImage.url],
     },
   };
 }

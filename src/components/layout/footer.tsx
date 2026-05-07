@@ -15,8 +15,13 @@ const platformIcons: Record<string, any> = {
 
 export async function Footer() {
   const supabase = createClient();
-  const { data: settings } = await supabase.from('site_settings').select('key, value');
-  const settingsMap = Object.fromEntries(settings?.map(s => [s.key, s.value]) || []);
+  const [settingsResult, orgLogoResult] = await Promise.all([
+    supabase.from('site_settings').select('key, value'),
+    supabase.from('organization_images').select('url').eq('type', 'logo').eq('is_active', true).maybeSingle()
+  ]);
+
+  const settingsMap = Object.fromEntries(settingsResult.data?.map(s => [s.key, s.value]) || []);
+  const siteLogo = orgLogoResult.data?.url || settingsMap.site_logo;
 
   const dynamicSocialLinks = settingsMap.social_links_json ? JSON.parse(settingsMap.social_links_json) : [];
   const additionalPhones = settingsMap.contact_phones_json ? JSON.parse(settingsMap.contact_phones_json) : [];
@@ -35,11 +40,19 @@ export async function Footer() {
           {/* Brand col */}
           <div className="md:col-span-4 space-y-5">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center shrink-0">
-                <span className="text-primary font-bold text-lg leading-none">K</span>
+              <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center shrink-0 overflow-hidden">
+                {siteLogo ? (
+                  <img 
+                    src={siteLogo} 
+                    alt="Logo" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-primary font-bold text-lg leading-none">K</span>
+                )}
               </div>
               <div>
-                <p className="font-serif text-lg font-bold text-white leading-tight">Kingdom Deliverance</p>
+                <p className="font-serif text-lg font-bold text-white leading-tight">{settingsMap.site_name || "Kingdom Deliverance"}</p>
                 <p className="text-xs text-white/50 tracking-widest uppercase">Centre Uganda</p>
               </div>
             </div>

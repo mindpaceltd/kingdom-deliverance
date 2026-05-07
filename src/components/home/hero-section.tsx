@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Play, ArrowRight, Sparkles, Heart, Clock } from "lucide-react";
 import Link from "next/link";
 
-export function HeroSection() {
+export function HeroSection({ backgroundImage }: { backgroundImage?: string }) {
+  const heroUrl = backgroundImage || "https://images.unsplash.com/photo-1438232992991-995b7058bbb3?q=80&w=2073&auto=format&fit=crop";
+
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden">
       {/* Background */}
@@ -13,8 +15,7 @@ export function HeroSection() {
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1438232992991-995b7058bbb3?q=80&w=2073&auto=format&fit=crop')",
+            backgroundImage: `url('${heroUrl}')`,
           }}
         />
         {/* Dark overlay for readability */}

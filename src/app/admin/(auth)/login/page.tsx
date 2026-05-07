@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, ShieldCheck, Eye, EyeOff } from "lucide-react";
+import { createBrowserClient } from "@supabase/ssr";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -11,6 +12,26 @@ export default function AdminLoginPage() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [logo, setLogo] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchLogo() {
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+      
+      // Check organization_images first, then site_settings
+      const [orgLogoRes, settingsLogoRes] = await Promise.all([
+        supabase.from('organization_images').select('url').eq('type', 'logo').eq('is_active', true).maybeSingle(),
+        supabase.from('site_settings').select('value').eq('key', 'site_logo').maybeSingle()
+      ]);
+      
+      const logoUrl = orgLogoRes.data?.url || settingsLogoRes.data?.value;
+      if (logoUrl) setLogo(logoUrl);
+    }
+    fetchLogo();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,9 +84,13 @@ export default function AdminLoginPage() {
               width: "64px", height: "64px", borderRadius: "50%",
               border: "2px solid #fbbf24", background: "rgba(251,191,36,0.1)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 16px",
+              margin: "0 auto 16px", overflow: "hidden"
             }}>
-              <ShieldCheck size={32} color="#fbbf24" />
+              {logo ? (
+                <img src={logo} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                <ShieldCheck size={32} color="#fbbf24" />
+              )}
             </div>
             <h1 style={{ color: "#fff", fontSize: "24px", fontWeight: 700, margin: "0 0 4px" }}>KDC Admin</h1>
             <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "14px", margin: 0 }}>Kingdom Deliverance Centre Uganda</p>

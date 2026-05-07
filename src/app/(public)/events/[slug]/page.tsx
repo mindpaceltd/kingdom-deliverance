@@ -5,6 +5,9 @@ import { notFound } from "next/navigation";
 import { Calendar, MapPin, ArrowLeft, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Metadata } from "next";
+import { createSocialImageMetadata } from "@/lib/seo-image-utils";
+import { createCanonicalMetadata } from "@/lib/seo/canonical-utils";
+import { BreadcrumbSchema, generateBreadcrumbs } from "@/components/seo/breadcrumb-schema";
 
 import { incrementEventViews } from "@/lib/actions/event-views";
 
@@ -23,24 +26,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = event.meta_title || `${event.title} | KDC Uganda Events`;
   const description = event.meta_description || event.description || "Join us for this upcoming event at Kingdom Deliverance Centre Uganda.";
   const url = `https://kdcuganda.org/events/${event.slug}`;
-  const image = event.image_url || "https://kdcuganda.org/og?title=" + encodeURIComponent(event.title);
+  const socialImage = createSocialImageMetadata(event.title, description, event.image_url, 'event');
 
   return {
     title,
     description,
+    ...createCanonicalMetadata(`/events/${event.slug}`),
     openGraph: {
       title: event.meta_title || event.title,
       description,
       url,
       siteName: "Kingdom Deliverance Centre Uganda",
       type: "website",
-      images: [{ url: image, width: 1200, height: 630, alt: event.title }],
+      images: [socialImage],
     },
     twitter: {
       card: "summary_large_image",
       title: event.meta_title || event.title,
       description,
-      images: [image],
+      images: [socialImage.url],
     },
   };
 }
@@ -56,8 +60,10 @@ export default async function EventDetailPage({ params }: Props) {
   incrementEventViews(event.id).catch(console.error);
 
   return (
-    <div className="flex flex-col">
-      <section className="py-28 bg-primary text-white relative overflow-hidden">
+    <>
+      <BreadcrumbSchema items={generateBreadcrumbs('event', event.title, event.slug)} />
+      <div className="flex flex-col">
+        <section className="py-28 bg-primary text-white relative overflow-hidden">
         <div className="container relative z-10 px-4 max-w-4xl mx-auto">
           <Link href="/events" className="inline-flex items-center gap-2 text-white/60 hover:text-accent text-sm mb-8 transition-colors">
             <ArrowLeft className="w-4 h-4" /> Back to Events
@@ -129,5 +135,6 @@ export default async function EventDetailPage({ params }: Props) {
         </div>
       </section>
     </div>
+    </>
   );
 }

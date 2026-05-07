@@ -30,12 +30,19 @@ export default async function AdminLayout({
     return <>{children}</>
   }
 
+  // Fetch logo from both site_settings and organization_images
+  const [logoSetting, orgLogoResult] = await Promise.all([
+    supabase.from('site_settings').select('value').eq('key', 'site_logo').single(),
+    supabase.from('organization_images').select('url').eq('type', 'logo').eq('is_active', true).maybeSingle()
+  ])
+  const logo = orgLogoResult.data?.url || logoSetting.data?.value
+
   return (
     <AdminProvider value={{ user, profile, role: profile.role }}>
       <div className="flex h-screen overflow-hidden bg-muted">
-        <AdminSidebar />
+        <AdminSidebar logo={logo} />
         <main className="flex-1 flex flex-col min-w-0">
-          <AdminHeader />
+          <AdminHeader logo={logo} />
           <div className="flex-1 overflow-auto p-6">
             {children}
           </div>

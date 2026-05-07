@@ -43,14 +43,28 @@ const timeline = [
   { year: "2026", event: "Kingdom Deliverance Centre celebrates 18 years of ministry impact across Uganda." },
 ];
 
-export default function AboutPage() {
+import { createClient } from "@/lib/supabase/server";
+
+export default async function AboutPage() {
+  const supabase = createClient();
+  
+  // Fetch hero image from organization_images
+  const { data: heroImage } = await supabase
+    .from('organization_images')
+    .select('url')
+    .eq('type', 'hero')
+    .eq('is_active', true)
+    .maybeSingle();
+
+  const heroUrl = heroImage?.url || 'https://images.unsplash.com/photo-1493397212122-2b85dda8106b?q=80&w=2071&auto=format&fit=crop';
+
   return (
     <div className="flex flex-col">
       {/* Hero */}
       <section className="relative pt-48 pb-32 lg:pt-56 lg:pb-40 text-white overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1493397212122-2b85dda8106b?q=80&w=2071&auto=format&fit=crop')" }}
+          style={{ backgroundImage: `url('${heroUrl}')` }}
         />
         <div className="absolute inset-0 bg-black/70" />
         <div className="container relative z-10 text-center max-w-4xl mx-auto px-4">

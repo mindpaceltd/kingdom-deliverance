@@ -32,7 +32,7 @@ function getPageTitle(pathname: string): string {
   return 'Admin'
 }
 
-export function AdminHeader() {
+export function AdminHeader({ logo }: { logo?: string }) {
   const { profile } = useAdmin()
   const pathname = usePathname()
   const router = useRouter()
@@ -132,7 +132,7 @@ export function AdminHeader() {
         </div>
       </header>
 
-      <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} logo={logo} />
     </>
   )
 }

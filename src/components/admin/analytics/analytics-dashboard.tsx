@@ -8,18 +8,341 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
-  Users, MousePointer2, Search, TrendingUp, Settings, 
+  Users, TrendingUp, Settings, 
   MailIcon, MessageCircle, Eye, Loader2, CheckCircle,
-  BarChart3, Globe, ShieldCheck, Activity, Zap, ExternalLink
+  Zap, ExternalLink, Globe, MousePointer2, MapPin
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
-import { GoogleConnectionCard } from "./google-connection-card"
-import { GooglePropertySetup } from "./google-property-setup"
 import { motion, AnimatePresence } from "framer-motion"
+
+export function AnalyticsDashboard() {
+  const [loading, setLoading] = React.useState(true)
+  const [userId, setUserId] = React.useState<string | null>(null)
+  const [topPosts, setTopPosts] = React.useState<any[]>([])
+  const [dbStats, setDbStats] = React.useState({ users: 0, messages: 0, testimonies: 0, totalViews: 0 })
+  const [vercelData, setVercelData] = React.useState<any>(null)
+  const [psData, setPsData] = React.useState<any>(null)
+  const [vercelLoading, setVercelLoading] = React.useState(false)
+  const [psLoading, setPsLoading] = React.useState(false)
+  const [vercelError, setVercelError] = React.useState<string | null>(null)
+  const [psError, setPsError] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    async function fetchData() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+      }
+
+      const [
+        { data: posts },
+        { count: userCount },
+        { count: msgCount },
+        { count: testCount },
+        { data: allPosts }
+      ] = await Promise.all([
+        supabase.from('posts').select('title, views, slug').order('views', { ascending: false }).limit(5),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }),
+        supabase.from('contact_submissions').select('*', { count: 'exact', head: true }),
+        supabase.from('testimonies').select('*', { count: 'exact', head: true }),
+        supabase.from('posts').select('views')
+      ])
+
+      if (posts) setTopPosts(posts)
+      setDbStats({
+        users: userCount || 0,
+        messages: msgCount || 0,
+        testimonies: testCount || 0,
+        totalViews: allPosts?.reduce((a, p) => a + (p.views || 0), 0) || 0
+      })
+      
+      if (user) {
+        await Promise.all([
+          fetchVercelData(),
+          fetchPsData()
+        ])
+      }
+      setLoading(false)
+    }
+    fetchData()
+  }, [])
+
+  async function fetchVercelData() {
+    setVercelLoading(true)
+    setVercelError(null)
+    try {
+      const res = await fetch('/api/vercel/analytics')
+      const data = await res.json()
+      if (res.ok) {
+        setVercelData(data.analytics)
+      } else {
+        setVercelError(data.error || 'Failed to fetch Vercel data')
+      }
+    } catch (error: any) {
+      setVercelError(error.message || 'Connection error')
+    } finally {
+      setVercelLoading(false)
+    }
+  }
+
+  async function fetchPsData() {
+    setPsLoading(true)
+    setPsError(null)
+    try {
+      const res = await fetch('/api/google/data/pagespeed')
+      const data = await res.json()
+      if (res.ok) {
+        setPsData(data)
+      } else {
+        setPsError(data.error || 'Failed to fetch PageSpeed data')
+      }
+    } catch (error: any) {
+      setPsError(error.message || 'Connection error')
+    } finally {
+      setPsLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] space-y-4">
+        <Loader2 className="size-10 animate-spin text-accent" />
+        <p className="text-sm font-medium text-muted-foreground animate-pulse">Initializing Dashboard...</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-700">
+      <Tabs defaultValue="overview" className="space-y-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <TabsList className="bg-primary/5 p-1 border border-primary/10 rounded-2xl h-12">
+            <TabsTrigger value="overview" className="gap-2 px-6 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-accent transition-all">
+              <TrendingUp className="size-4" /> Overview
+            </TabsTrigger>
+            <TabsTrigger value="vercel" className="gap-2 px-6 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-accent transition-all">
+              <Globe className="size-4" /> Vercel Analytics
+            </TabsTrigger>
+            <TabsTrigger value="pagespeed" className="gap-2 px-6 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-accent transition-all">
+              <Zap className="size-4" /> Page Speed
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="gap-2 px-6 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-accent transition-all">
+              <Settings className="size-4" /> Settings
+            </TabsTrigger>
+          </TabsList>
+          
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-wider bg-blue-50 border-blue-200 text-blue-700">
+              <Globe className="size-3" />
+              Vercel Sync
+            </div>
+          </div>
+        </div>
+
+        {/* OVERVIEW */}
+        <TabsContent value="overview" className="space-y-8 mt-0 outline-none">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard title="Total Views" value={dbStats.totalViews.toLocaleString()} icon={<Eye className="size-5 text-accent" />} trend="+12%" />
+            <StatCard title="Registered Users" value={dbStats.users.toLocaleString()} icon={<Users className="size-5 text-accent" />} trend="+5%" />
+            <StatCard title="Submissions" value={dbStats.messages.toLocaleString()} icon={<MailIcon className="size-5 text-accent" />} trend="+8%" />
+            <StatCard title="Testimonies" value={dbStats.testimonies.toLocaleString()} icon={<MessageCircle className="size-5 text-accent" />} trend="+24%" />
+          </div>
+        </TabsContent>
+
+        {/* VERCEL ANALYTICS */}
+        <TabsContent value="vercel" className="space-y-6 mt-0 outline-none">
+          {vercelLoading ? (
+            <div className="flex flex-col items-center justify-center py-32 space-y-4 animate-pulse">
+              <Loader2 className="size-12 animate-spin text-primary/20" />
+              <p className="text-sm text-muted-foreground font-medium">Fetching Vercel Analytics...</p>
+            </div>
+          ) : vercelError ? (
+            <EmptyState
+              icon={<Globe className="size-12 text-destructive/20 mb-4" />}
+              title="Vercel Analytics Error"
+              desc={vercelError}
+              link="https://vercel.com/account/settings/tokens"
+              linkLabel="Get Vercel Access Token"
+            />
+          ) : !vercelData ? (
+            <EmptyState icon={<Globe className="size-12 text-primary/20 mb-4" />} title="No Vercel Data" desc="Configure Vercel Analytics in Admin Settings > Integrations." />
+          ) : (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatCard 
+                  title="Page Views" 
+                  value={(vercelData.pageViews || 0).toLocaleString()} 
+                  icon={<Eye className="size-4 text-blue-500" />}
+                  trend={vercelData.pageViews > 0 ? 'ACTIVE' : 'IDLE'}
+                  trendLabel="Status"
+                />
+                <StatCard 
+                  title="Unique Visitors" 
+                  value={(vercelData.visitors || 0).toLocaleString()} 
+                  icon={<Users className="size-4 text-green-500" />}
+                  trend={vercelData.visitors > 0 ? 'TRACKING' : 'NONE'}
+                  trendLabel="Status"
+                />
+                <StatCard 
+                  title="Bounce Rate" 
+                  value={`${Math.round(vercelData.bounceRate || 0)}%`} 
+                  icon={<MousePointer2 className="size-4 text-purple-500" />}
+                  trend={vercelData.bounceRate < 50 ? 'GOOD' : 'HIGH'}
+                  trendLabel="Performance"
+                />
+                <StatCard 
+                  title="Avg. Duration" 
+                  value={`${Math.round(vercelData.averageSessionDuration || 0)}s`} 
+                  icon={<TrendingUp className="size-4 text-orange-500" />}
+                  trend={vercelData.averageSessionDuration > 30 ? 'ENGAGED' : 'SHORT'}
+                  trendLabel="Engagement"
+                />
+              </div>
+
+              {vercelData.topPages?.length > 0 && (
+                <Card className="border-primary/5 shadow-sm">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm">Top Pages</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {vercelData.topPages.slice(0, 5).map((page: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between p-2 rounded border border-border/50 text-sm">
+                          <span className="text-muted-foreground truncate">{page.path || page.url || `Page ${idx + 1}`}</span>
+                          <span className="font-bold text-primary">{page.visitors || page.views || 0}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {vercelData.topCountries?.length > 0 && (
+                <Card className="border-primary/5 shadow-sm">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm">Top Countries</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {vercelData.topCountries.slice(0, 5).map((country: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between p-2 rounded border border-border/50 text-sm">
+                          <span className="flex items-center gap-2 text-muted-foreground">
+                            <MapPin className="size-3" />
+                            {country.country || `Country ${idx + 1}`}
+                          </span>
+                          <span className="font-bold text-primary">{country.visitors || 0}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* PAGE SPEED */}
+        <TabsContent value="pagespeed" className="space-y-6 mt-0 outline-none">
+          {psLoading ? (
+            <div className="flex flex-col items-center justify-center py-32 space-y-4 animate-pulse">
+              <Loader2 className="size-12 animate-spin text-primary/20" />
+              <p className="text-sm text-muted-foreground font-medium">Running Lighthouse Audit...</p>
+            </div>
+          ) : psError ? (
+            <EmptyState
+              icon={<Zap className="size-12 text-destructive/20 mb-4" />}
+              title="PageSpeed Analysis Error"
+              desc={psError}
+              link="https://console.developers.google.com/apis/library/pagespeedonline.googleapis.com"
+              linkLabel="Open PageSpeed API settings"
+            />
+          ) : !psData ? (
+            <EmptyState icon={<Zap className="size-12 text-primary/20 mb-4" />} title="No PageSpeed Data" desc="Analyze your site's performance and SEO health." />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatCard 
+                title="Performance" 
+                value={`${Math.round(psData.scores.performance)}%`} 
+                icon={<Zap className="size-4 text-yellow-500" />} 
+                trend={psData.scores.performance > 89 ? 'EXCELLENT' : psData.scores.performance > 49 ? 'GOOD' : 'POOR'}
+                trendLabel="Score Status"
+              />
+              <StatCard 
+                title="Accessibility" 
+                value={`${Math.round(psData.scores.accessibility)}%`} 
+                icon={<Users className="size-4 text-blue-500" />} 
+                trend={psData.scores.accessibility > 89 ? 'EXCELLENT' : 'IMPROVE'}
+                trendLabel="Score Status"
+              />
+              <StatCard 
+                title="Best Practices" 
+                value={`${Math.round(psData.scores.bestPractices)}%`} 
+                icon={<CheckCircle className="size-4 text-purple-500" />} 
+                trend={psData.scores.bestPractices > 89 ? 'SECURE' : 'OPTIMIZE'}
+                trendLabel="Score Status"
+              />
+              <StatCard 
+                title="SEO Score" 
+                value={`${Math.round(psData.scores.seo)}%`} 
+                icon={<TrendingUp className="size-4 text-green-500" />} 
+                trend={psData.scores.seo > 89 ? 'OPTIMIZED' : 'NEEDS WORK'}
+                trendLabel="Score Status"
+              />
+            </div>
+          )}
+        </TabsContent>
+
+        {/* SETTINGS */}
+        <TabsContent value="settings" className="space-y-6 mt-0 outline-none">
+          <Card className="border-primary/10 shadow-xl rounded-3xl overflow-hidden">
+            <CardHeader className="bg-primary/5 border-b border-primary/5 p-8">
+              <CardTitle className="text-2xl font-bold">Analytics Configuration</CardTitle>
+              <CardDescription className="text-sm">Configure Vercel and PageSpeed integrations.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-8 space-y-10">
+              <section className="space-y-4">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary/40 flex items-center gap-2">
+                  <Globe className="size-3" /> Vercel Web Analytics
+                </h4>
+                <div className="rounded-2xl border border-primary/5 p-6 bg-gray-50/50">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    The Vercel Access Token is configured in Admin Settings > Integrations.
+                  </p>
+                  <Button asChild variant="outline" className="gap-2">
+                    <a href="/admin/settings" className="inline-flex">
+                      <Settings className="size-4" />
+                      Go to Settings
+                    </a>
+                  </Button>
+                </div>
+              </section>
+
+              <section className="space-y-4">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary/40 flex items-center gap-2">
+                  <Zap className="size-3" /> PageSpeed Insights
+                </h4>
+                <div className="rounded-2xl border border-primary/5 p-6 bg-gray-50/50">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    The PageSpeed API key is configured in Admin Settings > Integrations.
+                  </p>
+                  <Button asChild variant="outline" className="gap-2">
+                    <a href="/admin/settings" className="inline-flex">
+                      <Settings className="size-4" />
+                      Go to Settings
+                    </a>
+                  </Button>
+                </div>
+              </section>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
 
 export function AnalyticsDashboard() {
   const [loading, setLoading] = React.useState(true)

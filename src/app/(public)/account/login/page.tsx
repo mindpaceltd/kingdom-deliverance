@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,7 +14,21 @@ export default function AccountLoginPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [form, setForm] = useState({ email: '', password: '', name: '' })
+  const [logo, setLogo] = useState<string | null>(null)
   const router = useRouter()
+
+  useEffect(() => {
+    async function fetchLogo() {
+      const [orgLogoRes, settingsLogoRes] = await Promise.all([
+        supabase.from('organization_images').select('url').eq('type', 'logo').eq('is_active', true).maybeSingle(),
+        supabase.from('site_settings').select('value').eq('key', 'site_logo').maybeSingle()
+      ]);
+      
+      const logoUrl = orgLogoRes.data?.url || settingsLogoRes.data?.value;
+      if (logoUrl) setLogo(logoUrl);
+    }
+    fetchLogo();
+  }, []);
   const searchParams = useSearchParams()
   const next = searchParams.get('next') || '/account'
 
@@ -93,8 +107,12 @@ export default function AccountLoginPage() {
       <div className="container px-4 mx-auto max-w-md">
         <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
           <div className="flex items-center justify-center mb-6">
-            <div className="w-12 h-12 rounded-full bg-[#1e3a5f]/10 flex items-center justify-center">
-              <User className="w-6 h-6 text-[#1e3a5f]" />
+            <div className="w-16 h-16 rounded-full bg-[#1e3a5f]/10 flex items-center justify-center overflow-hidden border-2 border-accent/20">
+              {logo ? (
+                <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-8 h-8 text-[#1e3a5f]" />
+              )}
             </div>
           </div>
 

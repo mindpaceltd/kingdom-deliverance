@@ -47,11 +47,20 @@ export default async function PublicLayout({
   const countryCode = headers().get('x-vercel-ip-country')
   const detectedCurrency = detectCurrency(countryCode)
   const rates = await getExchangeRates()
+  const supabase = createClient()
+  
+  // Fetch logo from both site_settings and organization_images for maximum compatibility
+  const [logoSetting, orgLogoResult] = await Promise.all([
+    supabase.from('site_settings').select('value').eq('key', 'site_logo').single(),
+    supabase.from('organization_images').select('url').eq('type', 'logo').eq('is_active', true).maybeSingle()
+  ])
+  
+  const siteLogo = orgLogoResult.data?.url || logoSetting.data?.value
 
   return (
     <CartProvider>
       <CurrencyProvider detectedCurrency={detectedCurrency} rates={rates}>
-        <Navbar />
+        <Navbar logo={siteLogo} />
         <main className="flex-1">{children}</main>
         <Footer />
       </CurrencyProvider>

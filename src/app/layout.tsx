@@ -23,13 +23,14 @@ export async function generateMetadata(): Promise<Metadata> {
   const { data: settings } = await supabase
     .from('site_settings')
     .select('key, value')
-    .in('key', ['site_name', 'tagline', 'site_meta_title', 'site_meta_description', 'site_icon', 'site_og_image']);
+    .in('key', ['site_name', 'tagline', 'site_meta_title', 'site_meta_description', 'site_meta_keywords', 'site_icon', 'site_og_image']);
 
   const s = new Map(settings?.map(i => [i.key, i.value]) || []);
 
   const siteName = s.get('site_name') || "Kingdom Deliverance Centre Uganda";
   const metaTitle = s.get('site_meta_title') || siteName;
   const metaDesc = s.get('site_meta_description') || "Experience God's love, healing, and deliverance in our vibrant church community in Uganda.";
+  const metaKeywords = s.get('site_meta_keywords') || "church Uganda, Kingdom Deliverance Centre, Bishop Climate Wiseman, Christian ministry, deliverance, healing, Kampala church";
   const siteIcon = s.get('site_icon') || "/favicon.ico";
   const siteOgImage = s.get('site_og_image') || "https://images.unsplash.com/photo-1493397212122-2b85dda8106b?q=80&w=2071&auto=format&fit=crop";
 
@@ -39,6 +40,7 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | ${siteName}`
     },
     description: metaDesc,
+    keywords: metaKeywords,
     icons: {
       icon: siteIcon,
       shortcut: siteIcon,
@@ -71,6 +73,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
 import { Toaster } from "sonner";
+import { OrganizationSchema } from "@/components/seo/organization-schema";
 
 export default function RootLayout({
   children,
@@ -82,6 +85,7 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <OrganizationSchema />
       </head>
       <body className="flex flex-col min-h-screen">
         {/* Google Analytics (gtag.js) */}
