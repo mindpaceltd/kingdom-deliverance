@@ -12,7 +12,7 @@ export interface AltTextOptions {
   date?: string
 }
 
-export function generateOptimizedAltText(
+export function createOptimizedAltText(
   imageUrl?: string | null,
   options: AltTextOptions = {}
 ): string {
@@ -109,7 +109,7 @@ export function createImageMetadata(
   imageUrl?: string | null,
   options: AltTextOptions = {}
 ) {
-  const altText = generateOptimizedAltText(imageUrl, options)
+  const altText = createOptimizedAltText(imageUrl, options)
   const validation = validateAltText(altText)
 
   return {
