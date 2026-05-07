@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 
 export function AnalyticsDashboard() {
+  const supabase = createClient()
   const [loading, setLoading] = React.useState(true)
   const [userId, setUserId] = React.useState<string | null>(null)
   const [topPosts, setTopPosts] = React.useState<any[]>([])

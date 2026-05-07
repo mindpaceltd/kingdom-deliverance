@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server-actions'
 import { revalidatePath } from 'next/cache'
 
 export async function uploadOrganizationImage(
@@ -8,7 +8,7 @@ export async function uploadOrganizationImage(
   type: 'logo' | 'og_image' | 'church_building' | 'leadership' | 'hero',
   altText?: string
 ) {
-  const supabase = createClient()
+  const supabase = createAdminClient()
   
   try {
     // Upload to Supabase Storage
@@ -67,7 +67,7 @@ export async function uploadOrganizationImage(
 }
 
 export async function getOrganizationImages() {
-  const supabase = createClient()
+  const supabase = createAdminClient()
   
   const { data, error } = await supabase
     .from('organization_images')
@@ -88,7 +88,7 @@ export async function updateOrganizationImage(
     sort_order?: number
   }
 ) {
-  const supabase = createClient()
+  const supabase = createAdminClient()
   
   const { error } = await supabase
     .from('organization_images')
@@ -102,7 +102,7 @@ export async function updateOrganizationImage(
 }
 
 export async function deleteOrganizationImage(id: string) {
-  const supabase = createClient()
+  const supabase = createAdminClient()
   
   // Get image info first
   const { data: image } = await supabase
