@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
 
 export function createClient() {
   const cookieStore = cookies()
@@ -33,7 +34,7 @@ export function createClient() {
 
 /**
  * Admin client — bypasses RLS via service role key.
- * ONLY use in Server Actions or API routes. Never expose to browser.
+ * ONLY use in Server Actions or API routes. Never expose to the browser.
  */
 export function createAdminClient() {
   return createSupabaseClient(
