@@ -1,6 +1,6 @@
 'use client'
 
-import { createClient } from '@/lib/supabase/server-components'
+import { createClient } from '@/lib/supabase/client'
 
 interface OrganizationSchemaProps {
   type?: 'Church' | 'LocalBusiness'

@@ -22,42 +22,31 @@ export async function uploadOrganizationImage(
         cacheControl: '3600',
         upsert: true
       })
-    
+
     if (uploadError) throw uploadError
-    
+
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('organization-images')
       .getPublicUrl(filePath)
-    
-    // Save to database
+
+    // Insert into database
     const { error: dbError } = await supabase
       .from('organization_images')
       .insert({
-        name: file.name,
+        name: fileName,
         type,
         bucket: 'organization-images',
         path: filePath,
         url: publicUrl,
         alt_text: altText,
-        is_active: true
+        is_active: true,
+        sort_order: 0
       })
-    
+
     if (dbError) throw dbError
-    
-    // Update site settings if this is a logo or og_image
-    if (type === 'logo' || type === 'og_image') {
-      await supabase
-        .from('site_settings')
-        .upsert({
-          key: `site_${type === 'logo' ? 'logo' : 'og_image'}`,
-          value: publicUrl
-        })
-    }
-    
-    revalidatePath('/admin/media')
-    revalidatePath('/')
-    
+
+    revalidatePath('/admin/organization-images')
     return { success: true, url: publicUrl }
     
   } catch (error) {
@@ -97,7 +86,7 @@ export async function updateOrganizationImage(
   
   if (error) throw error
   
-  revalidatePath('/admin/media')
+  revalidatePath('/admin/organization-images')
   return { success: true }
 }
 
@@ -111,21 +100,23 @@ export async function deleteOrganizationImage(id: string) {
     .eq('id', id)
     .single()
   
-  if (image?.path) {
-    // Delete from storage
-    await supabase.storage
-      .from('organization-images')
-      .remove([image.path])
-  }
+  if (!image?.path) throw new Error('Image not found')
+  
+  // Delete from storage
+  const { error: storageError } = await supabase.storage
+    .from('organization-images')
+    .remove([image.path])
+  
+  if (storageError) throw storageError
   
   // Delete from database
-  const { error } = await supabase
+  const { error: dbError } = await supabase
     .from('organization_images')
     .delete()
     .eq('id', id)
   
-  if (error) throw error
+  if (dbError) throw dbError
   
-  revalidatePath('/admin/media')
+  revalidatePath('/admin/organization-images')
   return { success: true }
 }
