@@ -1,10 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { ArrowUpCircle, ArrowDownCircle, Info } from 'lucide-react'
 
 export default async function TransactionsPage({ searchParams }: { searchParams: { email?: string } }) {
-  const supabase = createClient()
+  const supabase = createAdminClient()
   
   let query = supabase
     .from('credit_transactions')
