@@ -15,13 +15,13 @@ export default async function AdminCreditsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   
   // 1. Fetch all profiles
-  const { data: profiles } = await supabase
+  const { data: profiles } = await adminClient
     .from('profiles')
     .select('*')
     .order('name')
 
   // 2. Fetch all user credits
-  const { data: allCredits } = await supabase
+  const { data: allCredits } = await adminClient
     .from('user_credits')
     .select('*')
 
@@ -56,7 +56,7 @@ export default async function AdminCreditsPage() {
       role: p.role,
       ...credits
     }
-  }).filter(item => item.email !== '' && item.email !== user?.email)
+  }).filter(item => item.email !== '' && item.role !== 'admin')
 
   return (
     <div className="space-y-6">
