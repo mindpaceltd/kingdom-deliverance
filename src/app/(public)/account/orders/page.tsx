@@ -1,15 +1,22 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { Package } from 'lucide-react'
+
+export const dynamic = 'force-dynamic'
 
 export default async function OrdersPage() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  if (!user) {
+    redirect('/login')
+  }
+
   const { data: orders } = await supabase
     .from('orders')
     .select('id, order_number, status, payment_status, total_amount, currency, created_at')
-    .or(`user_id.eq.${user!.id},email.eq.${user!.email}`)
+    .or(`user_id.eq.${user.id},email.eq.${user.email}`)
     .order('created_at', { ascending: false })
 
   return (

@@ -1,15 +1,22 @@
 import { createClient } from '@/lib/supabase/server'
 import { Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { redirect } from 'next/navigation'
+
+export const dynamic = 'force-dynamic'
 
 export default async function DownloadsPage() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  if (!user) {
+    redirect('/login')
+  }
+
   const { data: downloads } = await supabase
     .from('download_tokens')
     .select('*, product:products(name, image_url)')
-    .eq('email', user!.email!)
+    .eq('email', user.email!)
     .order('created_at', { ascending: false })
 
   return (

@@ -1,22 +1,29 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { Package, Download, ChevronRight } from 'lucide-react'
+
+export const dynamic = 'force-dynamic'
 
 export default async function AccountDashboard() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  if (!user) {
+    redirect('/login')
+  }
+
   const { data: recentOrders } = await supabase
     .from('orders')
     .select('id, order_number, status, payment_status, total_amount, currency, created_at')
-    .or(`user_id.eq.${user!.id},email.eq.${user!.email}`)
+    .or(`user_id.eq.${user.id},email.eq.${user.email}`)
     .order('created_at', { ascending: false })
     .limit(5)
 
   const { data: downloads } = await supabase
     .from('download_tokens')
     .select('id, token, product:products(name), download_count, max_downloads, expires_at')
-    .eq('email', user!.email!)
+    .eq('email', user.email!)
     .order('created_at', { ascending: false })
     .limit(5)
 
