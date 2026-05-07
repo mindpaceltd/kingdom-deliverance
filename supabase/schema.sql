@@ -56,7 +56,8 @@ INSERT INTO public.site_settings (key, value) VALUES
   ('instagram_url', ''),
   ('service_times', 'Sunday: 9:00 AM & 11:30 AM | Wednesday: 6:30 PM'),
   ('live_stream_url', ''),
-  ('donation_instructions', '')
+  ('donation_instructions', ''),
+  ('google_pagespeed_api_key', '')
 ON CONFLICT (key) DO NOTHING;
 
 -- ============================================================

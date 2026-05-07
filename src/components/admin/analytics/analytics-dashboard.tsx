@@ -281,7 +281,13 @@ export function AnalyticsDashboard() {
               <p className="text-sm text-muted-foreground font-medium">Running Lighthouse Audit...</p>
             </div>
           ) : psError ? (
-            <EmptyState icon={<Zap className="size-12 text-destructive/20 mb-4" />} title="PageSpeed Analysis Error" desc={psError} />
+            <EmptyState
+              icon={<Zap className="size-12 text-destructive/20 mb-4" />}
+              title="PageSpeed Analysis Error"
+              desc={psError}
+              link="https://console.developers.google.com/apis/library/pagespeedonline.googleapis.com"
+              linkLabel="Open PageSpeed API settings"
+            />
           ) : !psData ? (
             <EmptyState icon={<Zap className="size-12 text-primary/20 mb-4" />} title="No PageSpeed Data" desc="Analyze your site's performance and SEO health." />
           ) : (
@@ -405,9 +411,10 @@ function StatCard({ title, value, icon, trend, trendLabel }: { title: string; va
   )
 }
 
-function EmptyState({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
-  const isApiDisabled = desc.toLowerCase().includes('google cloud console') || desc.includes('googleapis.com')
-  const apiLink = "https://console.developers.google.com/apis/api/analyticsdata.googleapis.com/overview"
+function EmptyState({ icon, title, desc, link, linkLabel }: { icon: React.ReactNode; title: string; desc: string; link?: string; linkLabel?: string }) {
+  const isApiDisabled = !!link || desc.toLowerCase().includes('google cloud console') || desc.includes('googleapis.com')
+  const apiLink = link ?? "https://console.developers.google.com/apis/api/analyticsdata.googleapis.com/overview"
+  const buttonLabel = linkLabel ?? 'Open Google API settings'
 
   return (
     <Card className="flex flex-col items-center justify-center py-24 text-center border-dashed border-2 bg-gray-50/30 rounded-3xl animate-in zoom-in-95 duration-500">
@@ -419,7 +426,7 @@ function EmptyState({ icon, title, desc }: { icon: React.ReactNode; title: strin
         <Button asChild className="mt-6 rounded-xl bg-primary hover:bg-primary/90 gap-2 px-8">
           <a href={apiLink} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="size-4" />
-            Enable API in Google Cloud
+            {buttonLabel}
           </a>
         </Button>
       )}

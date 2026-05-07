@@ -14,7 +14,8 @@ import {
   AlertTriangleIcon,
   PlusIcon,
   Trash2Icon,
-  Share2Icon
+  Share2Icon,
+  ZapIcon
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,7 +39,7 @@ import { cn } from '@/lib/utils'
 // Settings Categories
 // ---------------------------------------------------------------------------
 
-type Category = 'general' | 'branding' | 'seo' | 'email' | 'payments'
+type Category = 'general' | 'branding' | 'seo' | 'email' | 'payments' | 'integrations' | 'social'
 
 const CATEGORIES: { id: Category; label: string; icon: any }[] = [
   { id: 'general', label: 'General', icon: GlobeIcon },
@@ -46,6 +47,7 @@ const CATEGORIES: { id: Category; label: string; icon: any }[] = [
   { id: 'seo', label: 'SEO Settings', icon: SearchIcon },
   { id: 'email', label: 'Email (SMTP)', icon: MailIcon },
   { id: 'payments', label: 'Payments', icon: CreditCardIcon },
+  { id: 'integrations', label: 'Integrations', icon: ZapIcon },
   { id: 'social', label: 'Social & Links', icon: Share2Icon },
 ]
 
@@ -577,6 +579,44 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                       </div>
                    </div>
                 )}
+             </div>
+          </div>
+        )}
+
+        {activeCategory === 'integrations' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+             <div className="border-b border-border pb-4">
+                <h2 className="text-lg font-bold">API Integrations</h2>
+                <p className="text-sm text-muted-foreground">Configure keys for Google APIs and other integrations.</p>
+             </div>
+
+             {/* Google PageSpeed Insights */}
+             <div className="space-y-4 p-5 rounded-xl border border-border bg-muted/10">
+                <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-3">
+                      <div className="size-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs"><ZapIcon className="size-4" /></div>
+                      <div>
+                        <h3 className="font-bold">PageSpeed Insights API</h3>
+                        <p className="text-xs text-muted-foreground">Monitor site performance and SEO health</p>
+                      </div>
+                   </div>
+                </div>
+                <div className="grid gap-4 pt-2">
+                   <div className="space-y-1.5">
+                      <Label className="text-xs">API Key</Label>
+                      <Input 
+                        type="password" 
+                        value={values.google_pagespeed_api_key || ''} 
+                        onChange={e => handleChange('google_pagespeed_api_key', e.target.value)}
+                        placeholder="Get your key from Google Cloud Console"
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        <a href="https://console.developers.google.com/apis/library/pagespeedonline.googleapis.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                          Get PageSpeed API Key →
+                        </a>
+                      </p>
+                   </div>
+                </div>
              </div>
           </div>
         )}
