@@ -521,7 +521,7 @@ export default async function BlogPostPage({ params }: Props) {
           <section className="py-12 bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="font-bold text-2xl md:text-3xl text-gray-900 mb-8">You May Also Like</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
                 {related.map((p) => (
                   <article key={p.id} className="group bg-white rounded-2xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5">
                     <Link href={`/blog/${p.slug}`} className="block relative aspect-[4/3] bg-primary/5 overflow-hidden">
@@ -531,29 +531,29 @@ export default async function BlogPostPage({ params }: Props) {
                           alt={p.title}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-500"
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw"
                           unoptimized={p.featured_image.toLowerCase().endsWith('.heic') || p.featured_image.toLowerCase().endsWith('.heif')}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                          <User className="w-8 h-8 text-primary/20" />
+                          <User className="w-6 h-6 md:w-8 md:h-8 text-primary/20" />
                         </div>
                       )}
                       {/* Category badge overlay */}
-                      <span className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-widest bg-amber-400 text-[#1a1a2e] rounded-full px-2.5 py-1">
+                      <span className="absolute top-2 left-2 md:top-3 md:left-3 text-[8px] md:text-[10px] font-bold uppercase tracking-widest bg-amber-400 text-[#1a1a2e] rounded-full px-1.5 py-0.5 md:px-2.5 md:py-1">
                         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                         {(p as any).type === "news" ? "NEWS" : (p as any).type === "biography" ? "BIOGRAPHY" : "BLOG"}
                       </span>
                     </Link>
-                    <div className="p-4 space-y-2">
-                      <h3 className="font-semibold text-primary group-hover:text-amber-600 transition-colors line-clamp-2 leading-snug text-sm">
+                    <div className="p-3 md:p-4 space-y-1.5 md:space-y-2">
+                      <h3 className="font-semibold text-primary group-hover:text-amber-600 transition-colors line-clamp-2 leading-snug text-xs md:text-sm">
                         <Link href={`/blog/${p.slug}`}>{p.title}</Link>
                       </h3>
                       {p.published_at && (
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <div className="flex flex-col xl:flex-row xl:items-center gap-1 xl:gap-3 text-[9px] md:text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
-                            {format(new Date(p.published_at), "MMM d, yyyy")}
+                            <span className="truncate max-w-[80px] md:max-w-none">{format(new Date(p.published_at), "MMM d, yyyy")}</span>
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />

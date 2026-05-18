@@ -97,7 +97,7 @@ export default async function BlogPage({ searchParams }: Props) {
       {/* ------------------------------------------------------------------ */}
       {/* HERO SECTION                                                        */}
       {/* ------------------------------------------------------------------ */}
-      <section className="relative h-[320px] md:h-[450px] flex items-center overflow-hidden">
+      <section className="relative py-24 md:py-0 md:h-[450px] flex items-center overflow-hidden">
         <Image
           src="https://images.unsplash.com/photo-1504052434569-70ad5836ab65?auto=format&fit=crop&q=80"
           alt="Hero Background"
@@ -107,12 +107,12 @@ export default async function BlogPage({ searchParams }: Props) {
         />
         <div className="absolute inset-0 bg-black/60" />
         <div className="container relative z-10 px-4 max-w-7xl mx-auto text-white text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-4">Blog & News</h1>
-          <p className="text-xl text-white/80 max-w-2xl mx-auto mb-6 md:mb-10 leading-relaxed">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 text-[#eab308]">Blog & News</h1>
+          <p className="text-sm sm:text-base md:text-xl text-white/80 max-w-2xl mx-auto mb-6 md:mb-10 leading-relaxed">
             Insights, teachings, and updates to inspire your faith and transform your life.
           </p>
 
-          <form method="GET" className="max-w-2xl mx-auto">
+          <form method="GET" className="max-w-xl mx-auto">
             <div className="relative flex shadow-2xl">
               <div className="absolute left-4 top-1/2 -translate-y-1/2">
                 <Search className="w-5 h-5 text-gray-400" />
@@ -121,11 +121,11 @@ export default async function BlogPage({ searchParams }: Props) {
                 name="q"
                 defaultValue={query}
                 placeholder="Search articles..."
-                className="w-full pl-12 pr-4 py-4 rounded-l-lg bg-white text-gray-900 focus:outline-none"
+                className="w-full pl-12 pr-4 py-3 md:py-4 rounded-l-lg bg-white text-gray-900 focus:outline-none text-sm md:text-base"
               />
               <button
                 type="submit"
-                className="px-8 py-4 bg-[#0a121f] text-white font-semibold rounded-r-lg hover:bg-black transition-colors"
+                className="px-6 py-3 md:px-8 md:py-4 bg-[#0a121f] text-white font-semibold rounded-r-lg hover:bg-black transition-colors text-sm md:text-base whitespace-nowrap"
               >
                 Search
               </button>
@@ -218,7 +218,7 @@ export default async function BlogPage({ searchParams }: Props) {
             )}
 
             {/* Grid Posts */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 md:gap-8">
               {grid.map((post) => (
                 <article key={post.id} className="group bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 flex flex-col">
                   <Link href={`/blog/${post.slug}`} className="relative aspect-[16/10] block overflow-hidden">
@@ -232,29 +232,29 @@ export default async function BlogPage({ searchParams }: Props) {
                       />
                     ) : (
                       <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                        <BookOpen className="w-12 h-12 text-gray-300" />
+                        <BookOpen className="w-8 h-8 md:w-12 md:h-12 text-gray-300" />
                       </div>
                     )}
-                    <div className="absolute bottom-4 left-4">
-                      <span className="bg-[#eab308] text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded">
+                    <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4">
+                      <span className="bg-[#eab308] text-white text-[8px] md:text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 md:px-2 md:py-1 rounded">
                         {post.type || "Sermons"}
                       </span>
                     </div>
                   </Link>
-                  <div className="p-6 flex flex-col flex-1 space-y-3">
-                    <h3 className="text-lg font-bold text-[#0a121f] group-hover:text-[#eab308] transition-colors line-clamp-2">
+                  <div className="p-3 md:p-6 flex flex-col flex-1 space-y-2 md:space-y-3">
+                    <h3 className="text-sm md:text-lg font-bold text-[#0a121f] group-hover:text-[#eab308] transition-colors line-clamp-2">
                       <Link href={`/blog/${post.slug}`}>{post.title}</Link>
                     </h3>
-                    <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed flex-1">
+                    <p className="text-xs md:text-sm text-gray-500 line-clamp-2 leading-relaxed flex-1">
                       {post.excerpt}
                     </p>
-                    <div className="flex items-center justify-between text-[11px] text-gray-400 font-medium pt-4 border-t border-gray-50">
-                      <span className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5" />
-                        {post.published_at && format(new Date(post.published_at), "MMM d, yyyy")}
+                    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-1.5 md:gap-0 text-[9px] md:text-[11px] text-gray-400 font-medium pt-2 md:pt-4 border-t border-gray-50">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                        <span className="truncate max-w-[80px] md:max-w-none">{post.published_at && format(new Date(post.published_at), "MMM d, yyyy")}</span>
                       </span>
-                      <span className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5" />
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3 md:w-3.5 md:h-3.5" />
                         {readTime(post.content)}
                       </span>
                     </div>
