@@ -22,6 +22,18 @@ const nextConfig = {
         protocol: "https",
         hostname: "wuqhrjczlolhiaihosei.supabase.co",
       },
+      {
+        protocol: "https",
+        hostname: "*.r2.cloudflarestorage.com",
+      },
+      {
+        protocol: "https",
+        hostname: "kdcuganda.org",
+      },
+      {
+        protocol: "https",
+        hostname: "*.kdcuganda.org",
+      },
     ],
   },
 };
