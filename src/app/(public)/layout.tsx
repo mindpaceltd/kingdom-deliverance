@@ -4,6 +4,7 @@ import { Footer } from '@/components/layout/footer'
 import { CartProvider } from '@/lib/cart-context'
 import { getExchangeRates } from '@/lib/services/exchange-rates'
 import { CurrencyProvider } from '@/lib/currency-context'
+import { createClient } from '@/lib/supabase/server'
 
 // ─── Geo-detection ────────────────────────────────────────────────────────────
 
