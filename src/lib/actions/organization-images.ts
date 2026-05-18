@@ -2,6 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase/server-actions'
 import { revalidatePath } from 'next/cache'
+import { uploadFile, deleteFile, getKeyFromUrl } from '@/lib/services/r2-storage'
 
 export async function uploadOrganizationImage(
   file: File,
@@ -11,24 +12,21 @@ export async function uploadOrganizationImage(
   const supabase = createAdminClient()
   
   try {
-    // Upload to Supabase Storage
+    // Convert File to Buffer for R2 SDK upload
+    const arrayBuffer = await file.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
     const fileExt = file.name.split('.').pop()
     const fileName = `${type}-${Date.now()}.${fileExt}`
     const filePath = `organization/${fileName}`
     
-    const { error: uploadError } = await supabase.storage
-      .from('organization-images')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: true
-      })
+    // Upload to Cloudflare R2 Storage
+    const r2Result = await uploadFile(filePath, buffer, file.type, 'organization-images')
+    
+    if ('error' in r2Result) {
+      throw new Error(r2Result.error)
+    }
 
-    if (uploadError) throw uploadError
-
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('organization-images')
-      .getPublicUrl(filePath)
+    const publicUrl = r2Result.url
 
     // Insert into database
     const { error: dbError } = await supabase
@@ -96,18 +94,29 @@ export async function deleteOrganizationImage(id: string) {
   // Get image info first
   const { data: image } = await supabase
     .from('organization_images')
-    .select('path')
+    .select('path, url')
     .eq('id', id)
     .single()
   
-  if (!image?.path) throw new Error('Image not found')
+  if (!image) throw new Error('Image not found')
   
-  // Delete from storage
-  const { error: storageError } = await supabase.storage
-    .from('organization-images')
-    .remove([image.path])
-  
-  if (storageError) throw storageError
+  // Check if it's an R2 URL
+  const r2Key = getKeyFromUrl(image.url || '')
+  if (r2Key) {
+    const { error: r2Error } = await deleteFile(r2Key, 'organization-images')
+    if (r2Error) {
+      console.warn('[deleteOrganizationImage] R2 delete warning:', r2Error)
+    }
+  } else if (image.path) {
+    // Delete from Supabase Storage
+    const { error: storageError } = await supabase.storage
+      .from('organization-images')
+      .remove([image.path])
+    
+    if (storageError) {
+      console.warn('[deleteOrganizationImage] Supabase delete warning:', storageError.message)
+    }
+  }
   
   // Delete from database
   const { error: dbError } = await supabase

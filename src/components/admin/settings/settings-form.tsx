@@ -31,8 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { saveSettings, registerPesapalIPNAction } from '@/lib/actions/settings'
-import { createMediaRecord } from '@/lib/actions/media'
-import { createClient } from '@/lib/supabase/client'
+import { uploadMediaAction } from '@/lib/actions/media'
 import type { SiteSetting } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -76,34 +75,17 @@ function BrandingImageField({ label, description, value, onUpload, onClear, aspe
 
     setUploading(true)
     try {
-      const supabase = createClient()
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
-      const filePath = `branding/${fileName}`
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('bucket', 'media')
 
-      // 1. Upload to storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('media')
-        .upload(filePath, file)
+      // Upload and create record via our generic R2 Server Action
+      const result = await uploadMediaAction(formData)
+      if ('error' in result) {
+        throw new Error(result.error)
+      }
 
-      if (uploadError) throw uploadError
-
-      // 2. Get Public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('media')
-        .getPublicUrl(filePath)
-
-      // 3. Create Media Record
-      await createMediaRecord({
-        filename: file.name,
-        url: publicUrl,
-        type: 'image',
-        mime_type: file.type,
-        size_bytes: file.size,
-        bucket: 'media'
-      })
-
-      onUpload(publicUrl)
+      onUpload(result.url)
     } catch (error: any) {
       alert(`Upload failed: ${error.message}`)
     } finally {

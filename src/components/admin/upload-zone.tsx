@@ -83,9 +83,6 @@ export function UploadZone({
     async (file: File, index: number) => {
       const supabase = createClient()
       const type = getMimeCategory(file.type)
-      const timestamp = Date.now()
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-      const path = `${type}/${timestamp}-${safeName}`
 
       setUploads((prev) =>
         prev.map((u, i) =>
@@ -93,13 +90,22 @@ export function UploadZone({
         )
       )
 
-      // 1. Upload to Supabase Storage
-      const { error: storageError } = await supabase.storage
-        .from('media')
-        .upload(path, file, { upsert: false })
-
-      if (storageError) {
-        const msg = storageError.message
+      // 1. Get Presigned URL
+      let presignData
+      try {
+        const presignRes = await fetch('/api/admin/storage/presign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filename: file.name,
+            contentType: file.type || 'application/octet-stream',
+            bucket: 'media',
+          }),
+        })
+        presignData = await presignRes.json()
+        if (!presignRes.ok) throw new Error(presignData.error || 'Failed to get upload URL')
+      } catch (e: any) {
+        const msg = e.message
         setUploads((prev) =>
           prev.map((u, i) =>
             i === index ? { ...u, status: 'error', error: msg } : u
@@ -109,11 +115,28 @@ export function UploadZone({
         return
       }
 
-      // 2. Get public URL
-      const { data: urlData } = supabase.storage
-        .from('media')
-        .getPublicUrl(path)
-      const publicUrl = urlData.publicUrl
+      // 2. Direct PUT to Cloudflare R2
+      try {
+        const uploadRes = await fetch(presignData.uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type || 'application/octet-stream',
+          },
+        })
+        if (!uploadRes.ok) throw new Error(`R2 Upload failed: HTTP ${uploadRes.status}`)
+      } catch (e: any) {
+        const msg = `Cloudflare R2 Upload failed: ${e.message}`
+        setUploads((prev) =>
+          prev.map((u, i) =>
+            i === index ? { ...u, status: 'error', error: msg } : u
+          )
+        )
+        onUploadError?.(msg)
+        return
+      }
+
+      const publicUrl = presignData.publicUrl
 
       // 3. Create media record in DB
       const result = await createMediaRecord({

@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { uploadFile } from '@/lib/services/r2-storage'
 
 export interface UpdateProfilePayload {
   name: string
@@ -86,6 +87,42 @@ export async function saveAvatarUrl(
   revalidatePath('/admin')
   revalidatePath('/admin/profile')
   return { success: true }
+}
+
+/**
+ * Handles uploading the profile picture to Cloudflare R2 securely.
+ */
+export async function uploadAvatarAction(
+  formData: FormData
+): Promise<{ success: true; url: string } | { error: string }> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthenticated' }
+
+  const file = formData.get('file') as File | null
+  if (!file) return { error: 'No file provided' }
+
+  try {
+    const arrayBuffer = await file.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+    const ext = file.name.split('.').pop() ?? 'jpg'
+    const path = `avatars/${user.id}/avatar-${Date.now()}.${ext}`
+
+    const r2Result = await uploadFile(path, buffer, file.type, 'avatars')
+    if ('error' in r2Result) {
+      return { error: r2Result.error }
+    }
+
+    // Save avatar URL to DB
+    const dbResult = await saveAvatarUrl(user.id, r2Result.url)
+    if ('error' in dbResult) {
+      return { error: dbResult.error }
+    }
+
+    return { success: true, url: r2Result.url }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : String(e) }
+  }
 }
 
 // ---------------------------------------------------------------------------

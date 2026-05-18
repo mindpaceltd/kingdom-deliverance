@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { requireRole } from '@/lib/actions/auth-helpers'
 import { requireAdmin, requireRoles } from '@/lib/authz'
 import { ROLES } from '@/lib/roles'
+import { uploadFile, deleteFile, getKeyFromUrl } from '@/lib/services/r2-storage'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -131,18 +132,28 @@ export async function deleteMedia(
 
   const bucket = media.bucket ?? 'media'
 
-  const marker = `/storage/v1/object/public/${bucket}/`
-  const markerIndex = media.url.indexOf(marker)
+  // 1. If it's an R2 URL, delete it from R2 Storage
+  const r2Key = getKeyFromUrl(media.url)
+  if (r2Key) {
+    const { error: r2Error } = await deleteFile(r2Key, bucket)
+    if (r2Error) {
+      console.error('[deleteMedia] R2 delete error:', r2Error)
+    }
+  } else {
+    // 2. Otherwise delete it from Supabase Storage
+    const marker = `/storage/v1/object/public/${bucket}/`
+    const markerIndex = media.url.indexOf(marker)
 
-  if (markerIndex !== -1) {
-    const storagePath = media.url.slice(markerIndex + marker.length)
+    if (markerIndex !== -1) {
+      const storagePath = media.url.slice(markerIndex + marker.length)
 
-    const { error: storageError } = await supabase.storage
-      .from(bucket)
-      .remove([storagePath])
+      const { error: storageError } = await supabase.storage
+        .from(bucket)
+        .remove([storagePath])
 
-    if (storageError) {
-      console.error('[deleteMedia] storage remove error', storageError.message)
+      if (storageError) {
+        console.error('[deleteMedia] Supabase storage remove error:', storageError.message)
+      }
     }
   }
 
@@ -158,4 +169,63 @@ export async function deleteMedia(
 
   revalidatePath('/admin/media')
   return { success: true }
+}
+
+// ---------------------------------------------------------------------------
+// uploadMediaAction
+// Generic server action to upload media files to Cloudflare R2 and create a database media record.
+// ---------------------------------------------------------------------------
+
+export async function uploadMediaAction(
+  formData: FormData
+): Promise<{ success: true; url: string; id: string } | { error: string }> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthenticated' }
+
+  const file = formData.get('file') as File | null
+  const customBucket = formData.get('bucket') as string | null
+  if (!file) return { error: 'No file provided' }
+
+  try {
+    const arrayBuffer = await file.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+    const fileExt = file.name.split('.').pop()
+    const uniqueName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`
+    
+    // Determine the directory prefix based on content type or bucket
+    const bucket = customBucket || 'media'
+    const prefix = bucket === 'media' ? 'uploads' : 'branding'
+    const path = `${prefix}/${uniqueName}`
+
+    // Upload to Cloudflare R2
+    const r2Result = await uploadFile(path, buffer, file.type, bucket)
+    if ('error' in r2Result) {
+      return { error: r2Result.error }
+    }
+
+    // Determine type
+    let type: 'image' | 'video' | 'audio' | 'document' = 'document'
+    if (file.type.startsWith('image/')) type = 'image'
+    else if (file.type.startsWith('video/')) type = 'video'
+    else if (file.type.startsWith('audio/')) type = 'audio'
+
+    // Create DB media record
+    const dbResult = await createMediaRecord({
+      filename: file.name,
+      url: r2Result.url,
+      type,
+      mime_type: file.type,
+      size_bytes: file.size,
+      bucket
+    })
+
+    if ('error' in dbResult) {
+      return { error: dbResult.error }
+    }
+
+    return { success: true, url: r2Result.url, id: dbResult.id }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : String(e) }
+  }
 }

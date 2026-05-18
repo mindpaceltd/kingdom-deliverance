@@ -3,8 +3,7 @@
 import * as React from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { updateProfile, updatePassword, saveAvatarUrl } from '@/lib/actions/profile'
+import { updateProfile, updatePassword, saveAvatarUrl, uploadAvatarAction } from '@/lib/actions/profile'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -58,31 +57,17 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
     if (!file) return
 
     setAvatarUploading(true)
-    const supabase = createClient()
+    setProfileMsg(null)
 
-    const ext = file.name.split('.').pop() ?? 'jpg'
-    const path = `${profile.id}/avatar-${Date.now()}.${ext}`
+    const formData = new FormData()
+    formData.append('file', file)
 
-    const { error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(path, file, { upsert: true })
-
-    if (uploadError) {
-      setProfileMsg({ type: 'error', text: `Avatar upload failed: ${uploadError.message}` })
-      setAvatarUploading(false)
-      return
-    }
-
-    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
-    const newUrl = urlData.publicUrl
-
-    // Save to DB
-    const result = await saveAvatarUrl(profile.id, newUrl)
+    const result = await uploadAvatarAction(formData)
     if ('error' in result) {
       setProfileMsg({ type: 'error', text: result.error })
     } else {
-      setAvatarUrl(newUrl)
-      setProfileMsg({ type: 'success', text: 'Avatar updated.' })
+      setAvatarUrl(result.url)
+      setProfileMsg({ type: 'success', text: 'Avatar updated successfully.' })
       router.refresh()
     }
 

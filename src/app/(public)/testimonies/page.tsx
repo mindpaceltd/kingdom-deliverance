@@ -34,22 +34,33 @@ export default function TestimoniesPage() {
 
       // 1. Upload File if present
       if (file) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `testimonies/${fileName}`;
-
-        const { error: uploadError, data } = await supabase.storage
-          .from("media")
-          .upload(filePath, file);
-
-        if (uploadError) throw new Error("Failed to upload media. Please try again.");
+        // Get presigned URL
+        const presignRes = await fetch('/api/admin/storage/presign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filename: file.name,
+            contentType: file.type || 'application/octet-stream',
+            bucket: 'media',
+            isTestimony: true,
+          }),
+        });
         
-        // Get public URL
-        const { data: publicUrlData } = supabase.storage
-          .from("media")
-          .getPublicUrl(filePath);
+        const presignData = await presignRes.json();
+        if (!presignRes.ok) throw new Error(presignData.error || 'Failed to initialize upload.');
+
+        // Upload directly to R2
+        const uploadRes = await fetch(presignData.uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type || 'application/octet-stream',
+          },
+        });
+        
+        if (!uploadRes.ok) throw new Error('Failed to upload media to server.');
           
-        mediaUrl = publicUrlData.publicUrl;
+        mediaUrl = presignData.publicUrl;
       }
 
       // 2. Insert into DB
