@@ -10,6 +10,7 @@ import {
   RotateCcwIcon,
   ExternalLinkIcon,
   XIcon,
+  GlobeIcon,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -188,8 +189,61 @@ export function PostsManager({ initialPosts, initialFilter }: PostsManagerProps)
   }
 
   // ---------------------------------------------------------------------------
-  // Bulk actions
+  // Bulk actions & Indexing
   // ---------------------------------------------------------------------------
+
+  async function handleSingleIndex(post: Post) {
+    setActionLoading(`index-${post.id}`)
+    try {
+      const url = `https://kdcuganda.org/blog/${post.slug}`
+      const res = await fetch('/api/google/search-console/index-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urls: [url] })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        alert('Successfully submitted to Google for indexing!')
+      } else {
+        alert('Failed: ' + (data.error || 'Unknown error'))
+      }
+    } catch (err: any) {
+      alert('Error: ' + err.message)
+    }
+    setActionLoading(null)
+  }
+
+  async function handleBulkIndex() {
+    setActionLoading('bulk')
+    const urlsToSubmit = Array.from(selectedIds).map(id => {
+      const post = posts.find(p => p.id === id)
+      return post && post.status === 'published' ? `https://kdcuganda.org/blog/${post.slug}` : null
+    }).filter(Boolean)
+
+    if (urlsToSubmit.length === 0) {
+      alert('No published posts selected.')
+      setActionLoading(null)
+      return
+    }
+
+    try {
+      const res = await fetch('/api/google/search-console/index-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urls: urlsToSubmit })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        alert(`Successfully submitted ${urlsToSubmit.length} post(s) to Google!`)
+      } else {
+        alert('Failed: ' + (data.error || 'Unknown error'))
+      }
+    } catch (err: any) {
+      alert('Error: ' + err.message)
+    }
+    setSelectedIds(new Set())
+    setActionLoading(null)
+  }
 
   async function handleBulkTrash() {
     if (
@@ -410,16 +464,28 @@ export function PostsManager({ initialPosts, initialFilter }: PostsManagerProps)
               </span>
               <div className="flex items-center gap-2">
                 {!isTrashFilter ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleBulkTrash}
-                    disabled={actionLoading === 'bulk'}
-                    className="h-8 text-red-400 hover:text-red-300 hover:bg-white/10"
-                  >
-                    <Trash2Icon className="mr-2 h-3.5 w-3.5" />
-                    Move to Trash
-                  </Button>
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleBulkIndex}
+                      disabled={actionLoading === 'bulk'}
+                      className="h-8 hover:bg-white/10"
+                    >
+                      <GlobeIcon className="mr-2 h-3.5 w-3.5" />
+                      Submit to Google
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleBulkTrash}
+                      disabled={actionLoading === 'bulk'}
+                      className="h-8 text-red-400 hover:text-red-300 hover:bg-white/10"
+                    >
+                      <Trash2Icon className="mr-2 h-3.5 w-3.5" />
+                      Move to Trash
+                    </Button>
+                  </>
                 ) : (
                   <>
                     <Button
@@ -613,9 +679,14 @@ export function PostsManager({ initialPosts, initialFilter }: PostsManagerProps)
                             <PencilIcon className="h-3.5 w-3.5" />
                           </Button>
                           {post.status === 'published' && (
-                            <Button variant="ghost" size="icon-sm" onClick={() => window.open(`/blog/${post.slug}`, '_blank')} title="View Live">
-                              <ExternalLinkIcon className="h-3.5 w-3.5" />
-                            </Button>
+                            <>
+                              <Button variant="ghost" size="icon-sm" onClick={() => handleSingleIndex(post)} title="Submit to Google Indexing">
+                                <GlobeIcon className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon-sm" onClick={() => window.open(`/blog/${post.slug}`, '_blank')} title="View Live">
+                                <ExternalLinkIcon className="h-3.5 w-3.5" />
+                              </Button>
+                            </>
                           )}
                           <Button variant="ghost" size="icon-sm" onClick={() => handleDuplicate(post)} title="Duplicate">
                             <CopyIcon className="h-3.5 w-3.5" />

@@ -21,16 +21,17 @@ export function getOptimizedImage(
   fallbackDescription?: string,
   type: 'blog' | 'sermon' | 'event' | 'ministry' | 'product' | 'default' = 'default'
 ): string {
-  // If we have a stable, non-dynamic image URL, use it
-  if (imageUrl && 
-      !imageUrl.includes('pollinations.ai') && 
-      !imageUrl.includes('unsplash') &&
-      (imageUrl.startsWith('https://') || imageUrl.startsWith('http://'))) {
-    return imageUrl
+  // If no image or using placeholder images, generate dynamic SEO image
+  if (!imageUrl || imageUrl.includes('pollinations.ai') || imageUrl.includes('unsplash')) {
+    return generateSeoImage(fallbackTitle, fallbackDescription, type)
   }
   
-  // Otherwise generate branded OG image
-  return generateSeoImage(fallbackTitle, fallbackDescription, type)
+  // Fully qualify relative URLs for social scrapers
+  if (!imageUrl.startsWith('http')) {
+    return `https://kdcuganda.org${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`
+  }
+  
+  return imageUrl
 }
 
 export function createSocialImageMetadata(

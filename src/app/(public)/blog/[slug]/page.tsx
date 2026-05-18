@@ -28,8 +28,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = data.meta_title || data.title;
   const description = data.meta_description || data.excerpt || "Read this post on KDC Uganda.";
   const url = `https://kdcuganda.org/blog/${data.slug}`;
-  const image = data.featured_image ||
+  let image = data.featured_image ||
     `https://kdcuganda.org/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description.slice(0, 100))}`;
+  
+  if (image && !image.startsWith('http')) {
+    image = `https://kdcuganda.org${image.startsWith('/') ? '' : '/'}${image}`;
+  }
 
   return {
     title: `${title} | KDC Uganda`,

@@ -23,6 +23,23 @@ export async function incrementPostViews(
 
   const supabase = createClient()
 
+  // Prevent admin / editor views from inflating stats
+  try {
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (authUser) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', authUser.id)
+        .maybeSingle()
+      if (profile?.role === 'admin' || profile?.role === 'editor') {
+        return
+      }
+    }
+  } catch (err) {
+    console.error('[incrementPostViews] Auth check error:', err)
+  }
+
   // Find the post by slug (published only)
   const { data: post } = await supabase
     .from('posts')
