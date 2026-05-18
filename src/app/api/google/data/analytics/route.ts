@@ -6,7 +6,7 @@ import { getAuthedGoogleClient } from '@/lib/google/client';
 export const dynamic = 'force-dynamic';
 
 // GET /api/google/data/analytics
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -27,13 +27,29 @@ export async function GET() {
       return NextResponse.json({ error: 'Invalid analytics property ID format.' }, { status: 400 });
     }
 
+    const requestUrl = new URL(request.url);
+    const dateRange = requestUrl.searchParams.get('range') || '28';
+    
+    let startDate = '28daysAgo';
+    let limit = '28';
+    if (dateRange === '7') {
+      startDate = '7daysAgo';
+      limit = '7';
+    } else if (dateRange === '14') {
+      startDate = '14daysAgo';
+      limit = '14';
+    } else if (dateRange === '90') {
+      startDate = '90daysAgo';
+      limit = '90';
+    }
+
     const auth = await getAuthedGoogleClient(user.id);
     const analyticsData = google.analyticsdata({ version: 'v1beta', auth });
 
     const { data } = await analyticsData.properties.runReport({
       property: config.property_id,
       requestBody: {
-        dateRanges: [{ startDate: '28daysAgo', endDate: 'today' }],
+        dateRanges: [{ startDate, endDate: 'today' }],
         metrics: [
           { name: 'activeUsers' },
           { name: 'sessions' },
@@ -42,7 +58,7 @@ export async function GET() {
         ],
         dimensions: [{ name: 'date' }],
         orderBys: [{ dimension: { dimensionName: 'date' } }],
-        limit: '28',
+        limit: limit,
       },
     });
 
@@ -50,7 +66,7 @@ export async function GET() {
     const { data: topPages } = await analyticsData.properties.runReport({
       property: config.property_id,
       requestBody: {
-        dateRanges: [{ startDate: '28daysAgo', endDate: 'today' }],
+        dateRanges: [{ startDate, endDate: 'today' }],
         metrics: [{ name: 'screenPageViews' }],
         dimensions: [{ name: 'pagePath' }, { name: 'pageTitle' }],
         orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
@@ -58,7 +74,30 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json({ report: data, topPages });
+    // Devices breakdown
+    const { data: devices } = await analyticsData.properties.runReport({
+      property: config.property_id,
+      requestBody: {
+        dateRanges: [{ startDate, endDate: 'today' }],
+        metrics: [{ name: 'activeUsers' }],
+        dimensions: [{ name: 'deviceCategory' }],
+        orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+      },
+    });
+
+    // Locations breakdown (Country and Region)
+    const { data: locations } = await analyticsData.properties.runReport({
+      property: config.property_id,
+      requestBody: {
+        dateRanges: [{ startDate, endDate: 'today' }],
+        metrics: [{ name: 'activeUsers' }],
+        dimensions: [{ name: 'country' }, { name: 'region' }],
+        orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+        limit: '5',
+      },
+    });
+
+    return NextResponse.json({ report: data, topPages, devices, locations });
   } catch (err: any) {
     console.error('Analytics API error:', err);
     const status = err.message?.includes('Google account not connected') || err.message?.includes('Unauthorized')

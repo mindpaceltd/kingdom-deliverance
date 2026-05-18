@@ -24,6 +24,7 @@ import { GooglePropertySetup } from "./google-property-setup"
 export function AnalyticsDashboard() {
   const [loading, setLoading] = React.useState(true)
   const [userId, setUserId] = React.useState<string | null>(null)
+  const [dateRange, setDateRange] = React.useState('28')
   
   // Database local stats
   const [dbStats, setDbStats] = React.useState({ users: 0, messages: 0, testimonies: 0, totalViews: 0 })
@@ -107,8 +108,8 @@ export function AnalyticsDashboard() {
             .catch(err => console.error("Error fetching Google email info:", err))
 
           // Trigger parallel data fetches
-          fetchGaData()
-          fetchScData()
+          fetchGaData(dateRange)
+          fetchScData(dateRange)
         }
         
         // Fetch PageSpeed data independently
@@ -125,11 +126,11 @@ export function AnalyticsDashboard() {
     fetchData()
   }, [fetchData])
 
-  async function fetchGaData() {
+  async function fetchGaData(range = dateRange) {
     setGaLoading(true)
     setGaError(null)
     try {
-      const res = await fetch('/api/google/data/analytics')
+      const res = await fetch(`/api/google/data/analytics?range=${range}`)
       const data = await res.json()
       if (res.ok) {
         setGaData(data)
@@ -143,11 +144,11 @@ export function AnalyticsDashboard() {
     }
   }
 
-  async function fetchScData() {
+  async function fetchScData(range = dateRange) {
     setScLoading(true)
     setScError(null)
     try {
-      const res = await fetch('/api/google/data/search-console')
+      const res = await fetch(`/api/google/data/search-console?range=${range}`)
       const data = await res.json()
       if (res.ok) {
         setScData(data)
@@ -192,9 +193,43 @@ export function AnalyticsDashboard() {
     setGaConfigured(!!analyticsConfig?.property_id)
     setScConfigured(!!searchConsoleConfig?.site_url)
     
-    fetchGaData()
-    fetchScData()
+    fetchGaData(dateRange)
+    fetchScData(dateRange)
     fetchPsData()
+  }
+
+  async function handleRangeChange(newRange: string) {
+    setDateRange(newRange)
+    setGaLoading(true)
+    setScLoading(true)
+    
+    try {
+      const [gaRes, scRes] = await Promise.all([
+        fetch(`/api/google/data/analytics?range=${newRange}`),
+        fetch(`/api/google/data/search-console?range=${newRange}`)
+      ])
+      
+      const gaDataJson = await gaRes.json()
+      const scDataJson = await scRes.json()
+      
+      if (gaRes.ok) {
+        setGaData(gaDataJson)
+      } else {
+        setGaError(gaDataJson.error || 'Failed to fetch GA4 data')
+      }
+      
+      if (scRes.ok) {
+        setScData(scDataJson)
+      } else {
+        setScError(scDataJson.error || 'Failed to fetch Search Console data')
+      }
+    } catch (err: any) {
+      setGaError(err.message || 'Connection error')
+      setScError(err.message || 'Connection error')
+    } finally {
+      setGaLoading(false)
+      setScLoading(false)
+    }
   }
 
   async function handleDisconnect() {
@@ -231,6 +266,51 @@ export function AnalyticsDashboard() {
       impressions: row.impressions || 0,
     }))
   }, [scData])
+
+  // Filtered Search Console Top Pages (Excluding Admin and Account pages)
+  const filteredScPages = React.useMemo(() => {
+    if (!scData?.topPages?.rows) return []
+    return scData.topPages.rows.filter((row: any) => {
+      const path = row.keys?.[0]?.replace(/https?:\/\/[^\/]+/, '') || '/'
+      const p = path.toLowerCase()
+      return !p.startsWith('/admin') && !p.startsWith('/account') && !p.startsWith('/api') && !p.includes('/admin/') && !p.includes('/account/')
+    })
+  }, [scData])
+
+  // Filtered GA4 Top Pages (Excluding Admin and Account pages)
+  const filteredGaPages = React.useMemo(() => {
+    if (!gaData?.topPages?.rows) return []
+    return gaData.topPages.rows.filter((row: any) => {
+      const path = row.dimensionValues?.[0]?.value || '/'
+      const p = path.toLowerCase()
+      return !p.startsWith('/admin') && !p.startsWith('/account') && !p.startsWith('/api') && !p.includes('/admin/') && !p.includes('/account/')
+    })
+  }, [gaData])
+
+  // Parse GA Devices Breakdown
+  const gaDevices = React.useMemo(() => {
+    if (!gaData?.devices?.rows) return []
+    const total = gaData.devices.rows.reduce((sum: number, r: any) => sum + parseInt(r.metricValues?.[0]?.value || '0'), 0)
+    return gaData.devices.rows.map((row: any) => {
+      const name = row.dimensionValues?.[0]?.value || 'Unknown'
+      const val = parseInt(row.metricValues?.[0]?.value || '0')
+      return {
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+        users: val,
+        percentage: total > 0 ? Math.round((val / total) * 100) : 0
+      }
+    })
+  }, [gaData])
+
+  // Parse GA Locations Breakdown
+  const gaLocations = React.useMemo(() => {
+    if (!gaData?.locations?.rows) return []
+    return gaData.locations.rows.map((row: any) => ({
+      country: row.dimensionValues?.[0]?.value || 'Unknown',
+      region: row.dimensionValues?.[1]?.value || 'Unknown',
+      users: parseInt(row.metricValues?.[0]?.value || '0')
+    }))
+  }, [gaData])
 
   // Extract GA Aggregated Stats
   const gaStats = React.useMemo(() => {
@@ -314,14 +394,25 @@ export function AnalyticsDashboard() {
           </TabsList>
           
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={fetchData} className="size-8 p-0 rounded-full border">
-              <RefreshCw className="size-3.5 text-muted-foreground" />
+            <select 
+              value={dateRange} 
+              onChange={(e) => handleRangeChange(e.target.value)}
+              className="bg-white border border-primary/10 rounded-full px-4 py-1.5 text-xs font-bold text-primary shadow-sm hover:border-primary/20 focus:outline-none focus:ring-1 focus:ring-accent transition-all shrink-0 cursor-pointer"
+            >
+              <option value="7">Last 7 Days</option>
+              <option value="14">Last 14 Days</option>
+              <option value="28">Last 28 Days</option>
+              <option value="90">Last 90 Days</option>
+            </select>
+            
+            <Button variant="ghost" size="sm" onClick={() => handleRangeChange(dateRange)} className="size-8 p-0 rounded-full border shrink-0">
+              <RefreshCw className={cn("size-3.5 text-muted-foreground", (gaLoading || scLoading) && "animate-spin")} />
             </Button>
             <div className={cn(
-              "flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-wider transition-colors",
-              isGoogleConnected ? "bg-green-50 border-green-200 text-green-700" : "bg-gray-50 border-gray-200 text-gray-400"
+              "flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-wider transition-colors shrink-0 whitespace-nowrap",
+              isGoogleConnected ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-gray-50 border-gray-200 text-gray-400"
             )}>
-              <Activity className="size-3" />
+              <span className={cn("size-1.5 rounded-full shrink-0", isGoogleConnected ? "bg-emerald-500 animate-pulse" : "bg-gray-400")} />
               Google {isGoogleConnected ? 'Sync Active' : 'Disconnected'}
             </div>
           </div>
@@ -475,8 +566,8 @@ export function AnalyticsDashboard() {
                   </CardHeader>
                   <CardContent className="p-0">
                     <div className="divide-y">
-                      {scData.topPages?.rows?.length > 0 ? (
-                        scData.topPages.rows.map((row: any, idx: number) => (
+                      {filteredScPages.length > 0 ? (
+                        filteredScPages.map((row: any, idx: number) => (
                           <div key={idx} className="flex items-center justify-between px-6 py-3.5 text-sm hover:bg-muted/10 transition-colors">
                             <span className="font-semibold text-primary font-mono truncate max-w-[280px]">{row.keys?.[0]?.replace(/https?:\/\/[^\/]+/, '') || '/'}</span>
                             <div className="flex items-center gap-4 text-xs font-medium shrink-0">
@@ -559,8 +650,8 @@ export function AnalyticsDashboard() {
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="divide-y">
-                    {gaData.topPages?.rows?.length > 0 ? (
-                      gaData.topPages.rows.map((row: any, idx: number) => (
+                    {filteredGaPages.length > 0 ? (
+                      filteredGaPages.map((row: any, idx: number) => (
                         <div key={idx} className="flex items-center justify-between px-6 py-3.5 text-sm hover:bg-muted/10 transition-colors">
                           <div className="flex flex-col gap-0.5 truncate max-w-[400px]">
                             <span className="font-semibold truncate text-primary">{row.dimensionValues?.[1]?.value || 'Page'}</span>
@@ -575,6 +666,67 @@ export function AnalyticsDashboard() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Devices & Locations Breakdowns */}
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Device Breakdown */}
+                <Card className="border-primary/5 shadow-sm rounded-2xl">
+                  <CardHeader>
+                    <CardTitle className="text-sm font-bold">Devices & Platforms</CardTitle>
+                    <CardDescription className="text-xs">Visitor breakdown by device category</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-5">
+                    {gaDevices.length > 0 ? (
+                      gaDevices.map((dev, idx) => (
+                        <div key={idx} className="space-y-1.5">
+                          <div className="flex items-center justify-between text-sm font-semibold">
+                            <span className="text-primary flex items-center gap-2">
+                              {dev.name === 'Mobile' ? '📱 Mobile' : dev.name === 'Desktop' ? '💻 Desktop' : '📟 Tablet'}
+                            </span>
+                            <span className="text-accent">{dev.users.toLocaleString()} users ({dev.percentage}%)</span>
+                          </div>
+                          <div className="w-full bg-primary/5 h-2.5 rounded-full overflow-hidden">
+                            <div 
+                              className={cn(
+                                "h-full rounded-full transition-all duration-500",
+                                dev.name === 'Mobile' ? 'bg-indigo-500' : dev.name === 'Desktop' ? 'bg-emerald-500' : 'bg-amber-500'
+                              )}
+                              style={{ width: `${dev.percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-muted-foreground text-center py-8">No device breakdown recorded.</p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Country Location Breakdown */}
+                <Card className="border-primary/5 shadow-sm rounded-2xl">
+                  <CardHeader>
+                    <CardTitle className="text-sm font-bold">Top Countries & Regions</CardTitle>
+                    <CardDescription className="text-xs">Geographic visitor locations</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="divide-y">
+                      {gaLocations.length > 0 ? (
+                        gaLocations.map((loc, idx) => (
+                          <div key={idx} className="flex items-center justify-between px-6 py-3.5 text-sm hover:bg-muted/10 transition-colors">
+                            <div className="flex flex-col gap-0.5 truncate pr-4">
+                              <span className="font-semibold truncate text-primary">📍 {loc.country}</span>
+                              <span className="text-xs text-muted-foreground font-mono">{loc.region}</span>
+                            </div>
+                            <span className="font-bold text-accent shrink-0">{loc.users.toLocaleString()} Users</span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-muted-foreground text-center py-8">No location data registered.</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           )}
         </TabsContent>

@@ -6,7 +6,7 @@ import { getAuthedGoogleClient } from '@/lib/google/client';
 export const dynamic = 'force-dynamic';
 
 // GET /api/google/data/search-console
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -29,12 +29,16 @@ export async function GET() {
       return NextResponse.json({ error: 'Invalid site URL format.' }, { status: 400 });
     }
 
+    const requestUrl = new URL(request.url);
+    const dateRangeStr = requestUrl.searchParams.get('range') || '28';
+    const dateRange = parseInt(dateRangeStr) || 28;
+
     const auth = await getAuthedGoogleClient(user.id);
     const searchconsole = google.searchconsole({ version: 'v1', auth });
 
     const today = new Date();
     const endDate = today.toISOString().split('T')[0];
-    const startDate = new Date(today.setDate(today.getDate() - 28)).toISOString().split('T')[0];
+    const startDate = new Date(today.setDate(today.getDate() - dateRange)).toISOString().split('T')[0];
 
     // Summary data
     const { data: summary } = await searchconsole.searchanalytics.query({
@@ -43,7 +47,7 @@ export async function GET() {
         startDate,
         endDate,
         dimensions: ['date'],
-        rowLimit: 28,
+        rowLimit: dateRange,
       },
     });
 
