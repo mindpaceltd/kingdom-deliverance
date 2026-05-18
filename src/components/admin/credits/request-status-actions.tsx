@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -52,7 +53,9 @@ export function RequestStatusActions({ request }: { request: any }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Manage Status</DropdownMenuLabel>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Manage Status</DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => handleUpdate('completed')} className="text-green-500">
               <CheckCircle className="h-4 w-4 mr-2" /> Mark Completed
