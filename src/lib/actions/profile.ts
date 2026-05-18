@@ -108,7 +108,7 @@ export async function uploadAvatarAction(
     const ext = file.name.split('.').pop() ?? 'jpg'
     const path = `avatars/${user.id}/avatar-${Date.now()}.${ext}`
 
-    const r2Result = await uploadFile(path, buffer, file.type, 'avatars')
+    const r2Result = await uploadFile(path, buffer, file.type)
     if ('error' in r2Result) {
       return { error: r2Result.error }
     }

@@ -20,7 +20,7 @@ export async function uploadOrganizationImage(
     const filePath = `organization/${fileName}`
     
     // Upload to Cloudflare R2 Storage
-    const r2Result = await uploadFile(filePath, buffer, file.type, 'organization-images')
+    const r2Result = await uploadFile(filePath, buffer, file.type)
     
     if ('error' in r2Result) {
       throw new Error(r2Result.error)

@@ -199,7 +199,7 @@ export async function uploadMediaAction(
     const path = `${prefix}/${uniqueName}`
 
     // Upload to Cloudflare R2
-    const r2Result = await uploadFile(path, buffer, file.type, bucket)
+    const r2Result = await uploadFile(path, buffer, file.type)
     if ('error' in r2Result) {
       return { error: r2Result.error }
     }
