@@ -89,9 +89,9 @@ export function AnalyticsDashboard() {
           { data: analyticsConfig },
           { data: searchConsoleConfig }
         ] = await Promise.all([
-          supabase.from('users_google_integrations').select('user_id').eq('user_id', user.id).single(),
-          supabase.from('analytics_config').select('property_id').eq('user_id', user.id).single(),
-          supabase.from('search_console_config').select('site_url').eq('user_id', user.id).single()
+          supabase.from('users_google_integrations').select('user_id').eq('user_id', user.id).maybeSingle(),
+          supabase.from('analytics_config').select('property_id').eq('user_id', user.id).maybeSingle(),
+          supabase.from('search_console_config').select('site_url').eq('user_id', user.id).maybeSingle()
         ])
 
         const connected = !!googleIntegration
@@ -185,8 +185,8 @@ export function AnalyticsDashboard() {
       { data: analyticsConfig },
       { data: searchConsoleConfig }
     ] = await Promise.all([
-      supabase.from('analytics_config').select('property_id').eq('user_id', userId).single(),
-      supabase.from('search_console_config').select('site_url').eq('user_id', userId).single()
+      supabase.from('analytics_config').select('property_id').eq('user_id', userId).maybeSingle(),
+      supabase.from('search_console_config').select('site_url').eq('user_id', userId).maybeSingle()
     ])
 
     setGaConfigured(!!analyticsConfig?.property_id)

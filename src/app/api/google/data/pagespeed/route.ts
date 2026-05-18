@@ -20,7 +20,7 @@ export async function GET() {
         .from('site_settings')
         .select('value')
         .eq('key', 'google_pagespeed_api_key')
-        .single()
+        .maybeSingle()
       
       if (dbKey?.value) {
         apiKey = dbKey.value

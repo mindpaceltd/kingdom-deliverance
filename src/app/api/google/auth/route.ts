@@ -14,9 +14,10 @@ export async function GET(request: Request) {
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const requestUrl = new URL(request.url);
+  const siteUrl = `${requestUrl.protocol}//${requestUrl.host}`;
 
-  if (!clientId || !clientSecret || !siteUrl) {
+  if (!clientId || !clientSecret) {
     return NextResponse.json({ error: 'Google OAuth credentials not configured.' }, { status: 500 });
   }
 
