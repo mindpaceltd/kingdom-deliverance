@@ -87,7 +87,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <OrganizationSchema />
       </head>
-      <body className="flex flex-col min-h-screen">
+      <body className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden relative">
         {/* Google Analytics (gtag.js) */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-BDH3RW93YC"
@@ -117,7 +117,9 @@ export default function RootLayout({
             gtag('config', 'G-QC1Z4DBHPW');
           `}
         </Script>
-        {children}
+        <div className="flex-1 flex flex-col w-full max-w-full overflow-x-hidden relative">
+          {children}
+        </div>
         <ScrollToTop />
         <Toaster position="top-center" expand={true} richColors />
       </body>

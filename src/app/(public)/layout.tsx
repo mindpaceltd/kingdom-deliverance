@@ -62,7 +62,7 @@ export default async function PublicLayout({
     <CartProvider>
       <CurrencyProvider detectedCurrency={detectedCurrency} rates={rates}>
         <Navbar logo={siteLogo} />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 w-full max-w-full overflow-x-hidden relative">{children}</main>
         <Footer />
       </CurrencyProvider>
     </CartProvider>

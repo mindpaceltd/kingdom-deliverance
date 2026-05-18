@@ -81,8 +81,8 @@ export function Navbar({ logo }: { logo?: string }) {
     >
       <div className="container flex h-18 items-center justify-between px-4 py-4">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group shrink-0">
-          <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-accent to-yellow-400 flex items-center justify-center shadow-lg shadow-accent/30 group-hover:shadow-accent/50 transition-all duration-300 overflow-hidden">
+        <Link href="/" className="flex items-center gap-2 xs:gap-3 group min-w-0 mr-2 sm:mr-0">
+          <div className="relative w-9 h-9 xs:w-10 xs:h-10 rounded-full bg-gradient-to-br from-accent to-yellow-400 flex items-center justify-center shadow-lg shadow-accent/30 group-hover:shadow-accent/50 transition-all duration-300 overflow-hidden shrink-0">
             {logo ? (
               <img 
                 src={logo} 
@@ -90,14 +90,14 @@ export function Navbar({ logo }: { logo?: string }) {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-primary font-bold text-lg leading-none">K</span>
+              <span className="text-primary font-bold text-base xs:text-lg leading-none">K</span>
             )}
           </div>
-          <div className="flex flex-col leading-tight">
-            <span className="font-serif text-lg font-bold text-white tracking-wide group-hover:text-accent transition-colors duration-300 md:text-xl">
+          <div className="flex flex-col leading-tight min-w-0">
+            <span className="font-serif text-sm xs:text-base sm:text-lg md:text-xl font-bold text-white tracking-wide group-hover:text-accent transition-colors duration-300 truncate">
               Kingdom Deliverance
             </span>
-            <span className="text-[10px] text-white/60 font-medium tracking-[0.2em] uppercase">
+            <span className="text-[8px] xs:text-[10px] text-white/60 font-medium tracking-[0.15em] xs:tracking-[0.2em] uppercase truncate">
               Centre Uganda
             </span>
           </div>
@@ -174,9 +174,9 @@ export function Navbar({ logo }: { logo?: string }) {
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 xs:gap-3 shrink-0">
           <button
-            className="text-white p-2 rounded-lg hover:bg-white/10 transition-colors duration-200"
+            className="text-white p-1.5 xs:p-2 rounded-lg hover:bg-white/10 transition-colors duration-200 shrink-0"
             onClick={() => setSearchOpen(true)}
             aria-label="Search"
           >
@@ -191,19 +191,20 @@ export function Navbar({ logo }: { logo?: string }) {
 
           <Button
             asChild
-            className="hidden lg:flex bg-accent hover:bg-accent/90 text-primary font-bold rounded-full px-6 shadow-md shadow-accent/25 hover:shadow-accent/40 hover:scale-105 transition-all duration-300"
+            className="hidden lg:flex bg-accent hover:bg-accent/90 text-primary font-bold rounded-full px-6 shadow-md shadow-accent/25 hover:shadow-accent/40 hover:scale-105 transition-all duration-300 shrink-0"
           >
             <Link href="/donations">Donate</Link>
           </Button>
 
           <button
-            className="lg:hidden text-white p-2 rounded-lg hover:bg-white/10 transition-colors duration-200"
+            className="lg:hidden text-white p-1.5 xs:p-2 rounded-lg hover:bg-white/10 transition-colors duration-200 shrink-0 flex items-center justify-center w-9 h-9"
             onClick={() => setIsOpen(!isOpen)}
             aria-label="Toggle menu"
           >
-            <AnimatePresence mode="wait">
-              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </AnimatePresence>
+            <div className="relative w-6 h-6 shrink-0">
+              <Menu className={cn("absolute inset-0 w-6 h-6 transition-all duration-300 transform shrink-0", isOpen ? "scale-0 rotate-90 opacity-0" : "scale-100 rotate-0 opacity-100")} />
+              <X className={cn("absolute inset-0 w-6 h-6 transition-all duration-300 transform shrink-0", isOpen ? "scale-100 rotate-0 opacity-100" : "scale-0 -rotate-90 opacity-0")} />
+            </div>
           </button>
         </div>
       </div>
@@ -217,7 +218,7 @@ export function Navbar({ logo }: { logo?: string }) {
             exit={{ opacity: 0, height: 0 }}
             className="lg:hidden bg-[#0d1b3e]/98 backdrop-blur-xl border-t border-white/10 overflow-y-auto max-h-[calc(100vh-4.5rem)]"
           >
-            <div className="container px-4 py-6 space-y-4">
+            <div className="w-full px-4 py-6 space-y-4">
               <div className="flex items-center justify-between px-4">
                 <CreditWallet />
               </div>
