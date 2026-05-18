@@ -139,6 +139,24 @@ export async function createOrder(data: {
 
   try {
     if (gateway === 'pesapal') {
+      // ── FREE ORDER: skip payment gateway, complete immediately ──────────────
+      if (totalInCurrency === 0) {
+        if (!user) {
+          return { error: 'Please sign in to claim free items.' }
+        }
+        await adminClient.from('transactions').insert({
+          order_id: order.id,
+          gateway: 'free',
+          reference: tx_ref,
+          amount: 0,
+          currency: data.currency,
+          status: 'success',
+        })
+        const { finalizeOrder } = await import('@/lib/orders/finalize')
+        await finalizeOrder(order.id)
+        return { success: true, paymentUrl: `/checkout/success?order_id=${order.id}` }
+      }
+
       const token = await getPesapalAuthToken(paySettings.consumerKey, paySettings.consumerSecret, paySettings.mode)
       const names = data.name.trim().split(' ')
       const firstName = names[0] || 'Customer'

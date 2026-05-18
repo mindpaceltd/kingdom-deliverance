@@ -19,6 +19,7 @@ export function ProductCard({ product, view = 'grid' }: ProductCardProps) {
 
   const hasDiscount = product.sale_price_usd > 0 && product.sale_price_usd < product.regular_price_usd
   const displayPrice = hasDiscount ? product.sale_price_usd : (product.regular_price_usd || product.price_usd)
+  const isFree = displayPrice === 0
 
   const router = useRouter()
   const handleAddToCart = (e: React.MouseEvent, isBuy: boolean = false) => {
@@ -81,7 +82,7 @@ export function ProductCard({ product, view = 'grid' }: ProductCardProps) {
             <div className="flex flex-col">
               <div className="flex items-baseline gap-1.5 md:gap-2 flex-wrap">
                 <span className="text-sm sm:text-base md:text-lg font-black text-primary" suppressHydrationWarning>
-                  {formatPrice(displayPrice)}
+                  {isFree ? 'Free' : formatPrice(displayPrice)}
                 </span>
                 {hasDiscount && (
                   <span className="text-[9px] sm:text-[10px] text-gray-400 line-through" suppressHydrationWarning>
@@ -151,7 +152,7 @@ export function ProductCard({ product, view = 'grid' }: ProductCardProps) {
         <div className="mt-auto pt-2">
           <div className="flex flex-col gap-0.5 mb-3">
             <span className="text-sm sm:text-base font-black text-primary" suppressHydrationWarning>
-              {formatPrice(displayPrice)}
+              {isFree ? 'Free' : formatPrice(displayPrice)}
             </span>
             {hasDiscount && (
               <span className="text-[10px] text-gray-400 line-through leading-none" suppressHydrationWarning>

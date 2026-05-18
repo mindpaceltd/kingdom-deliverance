@@ -9,6 +9,7 @@ import { QuantitySelector } from '@/components/shop/quantity-selector'
 import { FormatSelector } from '@/components/shop/format-selector'
 import { createSocialImageMetadata } from '@/lib/seo-image-utils'
 import { createCanonicalMetadata } from '@/lib/seo/canonical-utils'
+import { ProductPrice } from '@/components/shop/product-price'
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   try {
@@ -175,21 +176,11 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
 
               {/* Price block */}
               <div className="mb-4">
-                <div className="flex items-baseline gap-3 flex-wrap">
-                  <span className="text-2xl font-black text-gray-900">
-                    UGX {ugx(displayPrice)}
-                  </span>
-                  {hasDiscount && (
-                    <span className="text-lg text-gray-400 line-through">
-                      UGX {ugx(product.regular_price_usd)}
-                    </span>
-                  )}
-                </div>
-                {hasDiscount && (
-                  <p className="text-sm text-green-600 font-semibold mt-1">
-                    You save: UGX {savingsUGX.toLocaleString()} ({savingsPct}%)
-                  </p>
-                )}
+                <ProductPrice
+                  displayPrice={displayPrice}
+                  regularPrice={product.regular_price_usd || product.price_usd}
+                  hasDiscount={hasDiscount}
+                />
               </div>
 
               {/* Short description */}
@@ -298,7 +289,9 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
                         <p className="text-[10px] text-gray-400 mb-0.5">{p.category?.name}</p>
                         <h4 className="text-sm font-bold text-gray-900 line-clamp-2 leading-snug mb-1">{p.name}</h4>
                         <div className="mt-auto">
-                          <p className="text-sm font-black text-gray-800">UGX {ugx(pPrice)}</p>
+                          <p className="text-sm font-black text-gray-800" suppressHydrationWarning>
+                            <ProductPrice displayPrice={pPrice} regularPrice={p.regular_price_usd || p.price_usd} hasDiscount={pHasDiscount} compact />
+                          </p>
                         </div>
                       </div>
                     </Link>

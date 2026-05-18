@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react'
 import { useCart } from '@/lib/cart-context'
-import { formatPrice } from '@/lib/utils'
 import { useCurrency, SUPPORTED_CURRENCIES } from '@/lib/currency-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -454,33 +453,29 @@ export default function CheckoutPage() {
                         {item.type === 'digital' ? '📥 Digital' : '📦 Physical'} · Qty: {item.quantity}
                       </p>
                     </div>
-                    <span className="font-bold text-sm text-gray-900" suppressHydrationWarning>{mounted ? formatPrice(item.price * item.quantity) : '...'}</span>
+                    <span className="font-bold text-sm text-gray-900" suppressHydrationWarning>
+                      {mounted ? (item.price === 0 ? 'Free' : formatPrice(item.price * item.quantity)) : '...'}
+                    </span>
                   </div>
                 ))}
               </div>
 
               <div className="space-y-2 mb-6">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Subtotal (USD)</span>
+                  <span className="text-gray-500">Subtotal</span>
                   <span className="font-medium" suppressHydrationWarning>{mounted ? formatPrice(subtotal) : '...'}</span>
                 </div>
-                {currency !== 'USD' && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Converted ({currency})</span>
-                    <span className="font-medium" suppressHydrationWarning>{mounted ? formatPrice(convertedTotal, currency) : '...'}</span>
-                  </div>
-                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Shipping</span>
-                  <span className="font-medium" suppressHydrationWarning>{mounted ? formatPrice(shippingCost, currency) : '...'}</span>
+                  <span className="font-medium" suppressHydrationWarning>{mounted ? (shippingCost === 0 ? 'Free' : formatPrice(shippingCost / rate)) : '...'}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Taxes</span>
-                  <span className="font-medium" suppressHydrationWarning>{mounted ? formatPrice(taxAmount, currency) : '...'}</span>
+                  <span className="font-medium" suppressHydrationWarning>{mounted ? formatPrice(taxAmount) : '...'}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold pt-3 border-t border-gray-200">
-                  <span>Total</span>
-                  <span className="text-[#d4a017]" suppressHydrationWarning>{mounted ? formatPrice(orderTotal, currency) : '...'}</span>
+                  <span>Total ({currency})</span>
+                  <span className="text-[#d4a017]" suppressHydrationWarning>{mounted ? formatPrice(orderTotal / rate) : '...'}</span>
                 </div>
               </div>
 
