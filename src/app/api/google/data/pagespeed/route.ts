@@ -36,8 +36,15 @@ export async function GET() {
     apiUrl.searchParams.set('strategy', 'mobile')
     if (apiKey) apiUrl.searchParams.set('key', apiKey)
 
-    const res = await fetch(apiUrl.toString())
-    const data = await res.json()
+    let res = await fetch(apiUrl.toString())
+    let data = await res.json()
+
+    if (!res.ok && apiKey) {
+      console.warn('PageSpeed API call failed with API key, retrying without key...')
+      apiUrl.searchParams.delete('key')
+      res = await fetch(apiUrl.toString())
+      data = await res.json()
+    }
 
     if (!res.ok) {
       const message = data.error?.message || 'Failed to fetch PageSpeed data'

@@ -16,7 +16,7 @@ export async function GET() {
       .from('analytics_config')
       .select('property_id')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (!config?.property_id) {
       return NextResponse.json({ error: 'Analytics property not configured.' }, { status: 404 });

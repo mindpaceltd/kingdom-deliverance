@@ -16,7 +16,7 @@ export async function GET() {
       .from('search_console_config')
       .select('site_url')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (!config?.site_url) {
       return NextResponse.json({ error: 'Search Console site not configured.' }, { status: 404 });

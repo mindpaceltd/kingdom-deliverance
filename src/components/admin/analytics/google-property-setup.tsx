@@ -45,7 +45,7 @@ export function GooglePropertySetup({ isConnected, userId, onConfigSaved }: Prop
 
     fetchAccounts()
 
-    supabase.from('analytics_config').select('*').eq('user_id', userId).single().then(({ data }) => {
+    supabase.from('analytics_config').select('*').eq('user_id', userId).maybeSingle().then(({ data }) => {
       setAnalyticsConfig(data)
       if (data?.account_id) {
         setSelectedAccount(data.account_id)
@@ -56,7 +56,7 @@ export function GooglePropertySetup({ isConnected, userId, onConfigSaved }: Prop
       }
     })
 
-    supabase.from('search_console_config').select('*').eq('user_id', userId).single().then(({ data }) => {
+    supabase.from('search_console_config').select('*').eq('user_id', userId).maybeSingle().then(({ data }) => {
       setScConfig(data)
       if (data?.site_url) {
         setSelectedSite(data.site_url)
