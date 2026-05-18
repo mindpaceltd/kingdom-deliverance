@@ -5,7 +5,7 @@ import { getPresignedUploadUrl } from '@/lib/services/r2-storage'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { filename, contentType, bucket = 'media', isTestimony = false } = body
+    const { filename, contentType, bucket: passedBucket, isTestimony = false } = body
 
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -18,12 +18,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing filename or contentType' }, { status: 400 })
     }
 
+    // Always resolve the correct configured bucket from environment variables
+    const bucket = (passedBucket && passedBucket !== 'media')
+      ? passedBucket
+      : (process.env.R2_BUCKET_NAME || 'kdc-media')
+
     // Determine path based on type
     let prefix = 'uploads'
     if (contentType.startsWith('image/')) prefix = 'images'
     if (contentType.startsWith('video/')) prefix = 'videos'
     if (contentType.startsWith('audio/')) prefix = 'audio'
-    if (bucket !== 'media') prefix = bucket // e.g. organization-images
+    if (passedBucket && passedBucket !== 'media') prefix = passedBucket // e.g. organization-images
     
     // Force prefix for public testimony uploads
     if (isTestimony) {
