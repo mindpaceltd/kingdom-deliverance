@@ -77,7 +77,13 @@ function QrCard({ entry }: { entry: QrEntry }) {
         </div>
 
         {/* QR Code */}
-        <div className="bg-white rounded-2xl p-4 shadow-xl ring-4 ring-white/20">
+        <a
+          href="https://kdcuganda.org/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-white rounded-2xl p-4 shadow-xl ring-4 ring-white/20 hover:scale-105 transition-transform duration-200 cursor-pointer block"
+          title="Click to visit KDC Uganda"
+        >
           {entry.value ? (
             <QRCodeSVG
               id={`qr-svg-${entry.id}`}
@@ -93,7 +99,7 @@ function QrCard({ entry }: { entry: QrEntry }) {
               No value set yet
             </div>
           )}
-        </div>
+        </a>
 
         {/* Value display */}
         {entry.value && (
