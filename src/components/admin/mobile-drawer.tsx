@@ -14,6 +14,7 @@ import {
   Users,
   Settings,
   LogOut,
+  QrCode,
 } from 'lucide-react'
 import { useAdmin } from '@/lib/admin-context'
 import { createClient } from '@/lib/supabase/client'
@@ -32,6 +33,7 @@ const allNavLinks = [
   { href: '/admin/inbox', label: 'Inbox', icon: Inbox, adminOnly: false },
   { href: '/admin/users', label: 'Users', icon: Users, adminOnly: true },
   { href: '/admin/settings', label: 'Settings', icon: Settings, adminOnly: true },
+  { href: '/admin/qr-codes', label: 'QR Codes', icon: QrCode, adminOnly: true },
 ]
 
 interface MobileDrawerProps {

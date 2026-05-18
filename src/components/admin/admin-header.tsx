@@ -21,6 +21,7 @@ const pageTitles: Record<string, string> = {
   '/admin/inbox': 'Inbox',
   '/admin/users': 'Users',
   '/admin/settings': 'Settings',
+  '/admin/qr-codes': 'QR Codes',
   '/admin/profile': 'My Profile',
 }
 
