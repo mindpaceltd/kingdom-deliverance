@@ -86,10 +86,88 @@ export async function spendCredits({ email, amount, type, referenceId }: {
   return { success: true }
 }
 
-export async function purchaseCredits(email: string, packageId: string) {
-  // This would normally integrate with a payment gateway
-  // For now, it's a placeholder or needs actual implementation
-  return { success: false, error: 'Payment integration required.' }
+export async function purchaseCredits({ email, packageId }: { email: string; packageId: string }) {
+  const supabase = createAdminClient()
+
+  // Fetch the package
+  const { data: pkg, error: pkgError } = await supabase
+    .from('credit_packages')
+    .select('*')
+    .eq('id', packageId)
+    .single()
+
+  if (pkgError || !pkg) return { success: false, error: 'Credit package not found.' }
+
+  // Load Pesapal settings
+  const { data: settingsRows } = await supabase
+    .from('site_settings')
+    .select('key, value')
+    .in('key', ['pesapal_consumer_key', 'pesapal_consumer_secret', 'pesapal_mode', 'pesapal_ipn_id'])
+
+  const map: Record<string, string> = {}
+  for (const row of settingsRows ?? []) {
+    if (row.value) map[row.key] = row.value
+  }
+
+  const consumerKey = map.pesapal_consumer_key || process.env.PESAPAL_CONSUMER_KEY || ''
+  const consumerSecret = map.pesapal_consumer_secret || process.env.PESAPAL_CONSUMER_SECRET || ''
+  const mode = map.pesapal_mode || process.env.PESAPAL_MODE || 'live'
+  const ipnId = map.pesapal_ipn_id || process.env.PESAPAL_IPN_ID || ''
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${process.env.VERCEL_URL}` || 'https://kdcuganda.org'
+
+  try {
+    const { getPesapalAuthToken, initiatePesapalPayment } = await import('@/lib/payments/pesapal')
+    const token = await getPesapalAuthToken(consumerKey, consumerSecret, mode)
+
+    const tx_ref = `CREDITS-${packageId.split('-')[0]}-${Date.now()}`
+    const amountUgx = Math.round(Number(pkg.price_usd) * 3800)
+
+    const psaResponse = await initiatePesapalPayment(
+      {
+        id: tx_ref,
+        amount: amountUgx,
+        currency: 'UGX',
+        description: `${pkg.credits_amount} Credits — ${pkg.name} Package`,
+        callback_url: `${siteUrl}/api/payments/verify?gateway=pesapal&type=credits`,
+        notification_id: ipnId,
+        billing_address: {
+          email_address: email,
+          phone_number: '',
+          first_name: 'Credits',
+          last_name: 'Purchase',
+        },
+      },
+      token,
+      mode
+    )
+
+    const reference = psaResponse.order_tracking_id || tx_ref
+    const paymentUrl = psaResponse.redirect_url || psaResponse.payment_url || psaResponse.url
+
+    if (reference && paymentUrl) {
+      // Record pending credit transaction so IPN can fulfill it
+      await supabase.from('credit_transactions').insert({
+        email,
+        amount: pkg.credits_amount,
+        transaction_type: 'purchase',
+        reference_id: reference,
+        metadata: {
+          package_id: packageId,
+          package_name: pkg.name,
+          price_usd: pkg.price_usd,
+          gateway: 'pesapal',
+          status: 'pending',
+        },
+      })
+
+      return { success: true, paymentUrl }
+    }
+
+    return { success: false, error: psaResponse.message || 'Failed to initiate payment.' }
+  } catch (err: any) {
+    console.error('[purchaseCredits] Error:', err?.message)
+    return { success: false, error: err?.message || 'Failed to initiate payment.' }
+  }
 }
 
 export async function adjustUserCredits(email: string, amount: number, reason: string) {

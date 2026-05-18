@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { getUserCreditBalance } from '@/lib/actions/credits'
 import { Wallet, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import Link from 'next/link'
 
 export function CreditWallet() {
   const [balance, setBalance] = useState<number | null>(null)
@@ -24,7 +25,6 @@ export function CreditWallet() {
 
     loadBalance()
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
       loadBalance()
     })
@@ -36,9 +36,12 @@ export function CreditWallet() {
   if (balance === null) return null
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent font-bold text-sm">
+    <Link
+      href="/account"
+      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent font-bold text-sm hover:bg-accent/20 transition-colors"
+    >
       <Wallet className="w-3.5 h-3.5" />
       <span>{balance}</span>
-    </div>
+    </Link>
   )
 }

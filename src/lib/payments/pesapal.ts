@@ -55,6 +55,7 @@ export async function getPesapalAuthToken(
 
 export async function registerPesapalIPN(token: string, mode?: string) {
   const url = getPesapalUrl(mode)
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${process.env.VERCEL_URL}` || 'https://kdcuganda.org'
   const response = await fetch(`${url}/api/URLSetup/RegisterIPN`, {
     method: 'POST',
     headers: {
@@ -63,7 +64,7 @@ export async function registerPesapalIPN(token: string, mode?: string) {
       Accept: 'application/json',
     },
     body: JSON.stringify({
-      url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/payments/pesapal-ipn`,
+      url: `${siteUrl}/api/payments/pesapal-ipn`,
       ipn_notification_type: 'GET',
     }),
   })

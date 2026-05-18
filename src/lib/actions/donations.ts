@@ -71,13 +71,15 @@ export async function createDonationOrder(data: {
     const amountInUsd = data.amount / currentRate
     const amountInUgx = Math.round(amountInUsd * RATES['UGX'])
 
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${process.env.VERCEL_URL}` || 'https://kdcuganda.org'
+
     const psaResponse = await initiatePesapalPayment(
       {
         id: tx_ref,
         amount: amountInUgx,
         currency: 'UGX',
         description: `Donation to Kingdom Deliverance Centre`,
-        callback_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/payments/verify?gateway=pesapal&type=donation`,
+        callback_url: `${siteUrl}/api/payments/verify?gateway=pesapal&type=donation`,
         notification_id: pesapal.ipnId,
         billing_address: {
           email_address: data.donor_email || 'donations@kdcuganda.org',

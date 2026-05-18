@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getPesapalAuthToken, getPesapalTransactionStatus } from '@/lib/payments/pesapal'
 import { getPesapalSettings } from '@/lib/payments/pesapal-settings'
+import { finalizeOrder } from '@/lib/orders/finalize'
 
 export const dynamic = 'force-dynamic'
 
@@ -58,15 +59,7 @@ export async function GET(request: NextRequest) {
 
       // If payment successful and order_id exists, finalize the order
       if (isPaid && transaction.order_id) {
-        await supabase
-          .from('orders')
-          .update({
-            payment_status: 'completed',
-            order_status: 'processing',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', transaction.order_id)
-
+        await finalizeOrder(transaction.order_id)
         console.log(`[PesaPal IPN] Order ${transaction.order_id} payment confirmed`)
       }
     } else {

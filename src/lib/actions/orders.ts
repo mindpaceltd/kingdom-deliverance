@@ -144,12 +144,14 @@ export async function createOrder(data: {
       const firstName = names[0] || 'Customer'
       const lastName = names.slice(1).join(' ') || firstName
 
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${process.env.VERCEL_URL}` || 'https://kdcuganda.org'
+
       const psaResponse = await initiatePesapalPayment({
         id: tx_ref,
         amount: totalInCurrency,
         currency: data.currency,
         description: `Order #${order.id.split('-')[0]} from Kingdom Deliverance Store`,
-        callback_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/payments/verify?gateway=pesapal`,
+        callback_url: `${siteUrl}/api/payments/verify?gateway=pesapal`,
         notification_id: paySettings.ipnId,
         billing_address: {
           email_address: data.email,
@@ -174,15 +176,16 @@ export async function createOrder(data: {
         return { success: true, paymentUrl }
       }
 
-      return { error: psaResponse.message || 'Pesapal initiation failed' }
+      console.error('Pesapal response missing redirect_url:', JSON.stringify(psaResponse))
+      return { error: psaResponse.message || psaResponse.error?.message || 'Pesapal initiation failed — no redirect URL returned' }
     } else if (gateway === 'paypal') {
       const paypalResponse = await initiatePayPalPayment({
         orderId: order.id,
         amount: totalInCurrency,
         currency: data.currency,
         description: `Order #${order.id.split('-')[0]} from Kingdom Deliverance Store`,
-        returnUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/api/payments/verify?gateway=paypal`,
-        cancelUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout`
+        returnUrl: `${process.env.NEXT_PUBLIC_SITE_URL || `https://${process.env.VERCEL_URL}` || 'https://kdcuganda.org'}/api/payments/verify?gateway=paypal`,
+        cancelUrl: `${process.env.NEXT_PUBLIC_SITE_URL || `https://${process.env.VERCEL_URL}` || 'https://kdcuganda.org'}/checkout`
       })
 
       if (paypalResponse.success && paypalResponse.paymentUrl) {

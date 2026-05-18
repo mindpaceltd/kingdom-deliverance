@@ -93,6 +93,8 @@ export async function GET(request: NextRequest) {
             .select().single()
 
           if (tx) {
+            // Finalize: update order status, generate download tokens, send email
+            await finalizeOrder(tx.order_id)
             redirectUrl = `/checkout/success?order_id=${tx.order_id}`
           } else {
             redirectUrl = '/checkout/error'
@@ -149,6 +151,8 @@ export async function GET(request: NextRequest) {
               .select().single()
 
             if (tx) {
+              // Finalize: update order status, generate download tokens, send email
+              await finalizeOrder(tx.order_id)
               redirectUrl = `/checkout/success?order_id=${tx.order_id}`
             } else {
               redirectUrl = '/checkout/error'

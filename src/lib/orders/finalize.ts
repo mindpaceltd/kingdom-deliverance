@@ -57,6 +57,18 @@ export async function finalizeOrder(orderId: string) {
     .update({ status: newStatus, payment_status: 'paid' })
     .eq('id', orderId)
 
+  // 3b. Link order to user account if a user with this email exists (claim guest order)
+  if (!order.user_id && order.email) {
+    const { data: { users } } = await supabase.auth.admin.listUsers()
+    const matchedUser = users?.find((u: any) => u.email === order.email)
+    if (matchedUser?.id) {
+      await supabase
+        .from('orders')
+        .update({ user_id: matchedUser.id })
+        .eq('id', orderId)
+    }
+  }
+
   // 4. Generate download tokens for digital items
   const downloadTokens: any[] = []
   if (hasDigital) {
