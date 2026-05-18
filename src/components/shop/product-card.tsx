@@ -65,6 +65,14 @@ export function ProductCard({ product, view = 'grid' }: ProductCardProps) {
             <h3 className="text-sm md:text-base font-bold text-primary group-hover:text-accent transition-colors line-clamp-2 md:line-clamp-1 leading-tight">
               {product.name}
             </h3>
+            <div className="flex items-center gap-1 mt-1.5 mb-1">
+              <div className="flex">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-3 h-3 fill-[#f5a623] text-[#f5a623]" />
+                ))}
+              </div>
+              <span className="text-[10px] text-gray-500">({product.review_count || 24})</span>
+            </div>
             <p className="text-xs text-gray-500 line-clamp-2 mt-1 hidden md:block">
               {product.short_description}
             </p>
@@ -130,6 +138,14 @@ export function ProductCard({ product, view = 'grid' }: ProductCardProps) {
               {product.name}
             </h3>
           </Link>
+          <div className="flex items-center gap-1 mt-1.5">
+            <div className="flex">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-[#f5a623] text-[#f5a623]" />
+              ))}
+            </div>
+            <span className="text-[9px] sm:text-[10px] text-gray-500">({product.review_count || 24})</span>
+          </div>
         </div>
 
         <div className="mt-auto pt-2">

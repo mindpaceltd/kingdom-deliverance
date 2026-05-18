@@ -51,7 +51,7 @@ export function ShopContent({ products }: ShopContentProps) {
         <div className={cn(
           "grid",
           view === 'grid' 
-            ? "grid-cols-3 md:grid-cols-4 gap-2 sm:gap-6" 
+            ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-6" 
             : "grid-cols-1 gap-4"
         )}>
           {products.map((product) => (
