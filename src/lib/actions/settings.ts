@@ -25,6 +25,7 @@ export async function saveSettings(
 
   revalidatePath('/')
   revalidatePath('/contact')
+  revalidatePath('/give')
 
   return { success: true }
 }

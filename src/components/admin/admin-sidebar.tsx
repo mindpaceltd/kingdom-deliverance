@@ -21,7 +21,8 @@ import {
   FolderOpen,
   ChevronDown,
   ShoppingBag,
-  ListOrdered
+  ListOrdered,
+  QrCode
 } from 'lucide-react'
 import { useAdmin } from '@/lib/admin-context'
 import { createClient } from '@/lib/supabase/client'
@@ -80,6 +81,7 @@ const allNavLinks: NavLink[] = [
   { href: '/admin/testimonies', label: 'Testimonies', icon: MessageCircle, adminOnly: false },
   { href: '/admin/users', label: 'Users', icon: Users, adminOnly: true },
   { href: '/admin/settings', label: 'Settings', icon: Settings, adminOnly: true },
+  { href: '/admin/qr-codes', label: 'QR Codes', icon: QrCode, adminOnly: true },
   { href: '/admin/profile', label: 'My Profile', icon: UserCircleIcon, adminOnly: false },
 ]
 

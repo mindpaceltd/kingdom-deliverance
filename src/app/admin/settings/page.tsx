@@ -51,6 +51,10 @@ const SETTINGS_KEYS = [
   'pesapal_consumer_secret',
   'pesapal_mode',
   'pesapal_ipn_id',
+  // Integrations
+  'google_pagespeed_api_key',
+  // QR Codes
+  'qr_codes_json',
 ] as const
 
 export default async function AdminSettingsPage() {

@@ -15,7 +15,8 @@ import {
   PlusIcon,
   Trash2Icon,
   Share2Icon,
-  ZapIcon
+  ZapIcon,
+  QrCodeIcon
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -39,7 +40,7 @@ import { cn } from '@/lib/utils'
 // Settings Categories
 // ---------------------------------------------------------------------------
 
-type Category = 'general' | 'branding' | 'seo' | 'email' | 'payments' | 'integrations' | 'social'
+type Category = 'general' | 'branding' | 'seo' | 'email' | 'payments' | 'integrations' | 'social' | 'qrcodes'
 
 const CATEGORIES: { id: Category; label: string; icon: any }[] = [
   { id: 'general', label: 'General', icon: GlobeIcon },
@@ -49,6 +50,7 @@ const CATEGORIES: { id: Category; label: string; icon: any }[] = [
   { id: 'payments', label: 'Payments', icon: CreditCardIcon },
   { id: 'integrations', label: 'Integrations', icon: ZapIcon },
   { id: 'social', label: 'Social & Links', icon: Share2Icon },
+  { id: 'qrcodes', label: 'QR Codes', icon: QrCodeIcon },
 ]
 
 // ---------------------------------------------------------------------------
@@ -742,6 +744,124 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                          <p className="text-xs text-muted-foreground italic">No social media platforms added yet.</p>
                       )}
                    </div>
+                </div>
+             </div>
+          </div>
+        )}
+
+        {activeCategory === 'qrcodes' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+             <div className="border-b border-border pb-4">
+                <h2 className="text-lg font-bold">QR Codes</h2>
+                <p className="text-sm text-muted-foreground">
+                  Manage QR codes displayed on the public-facing Give / Donate page. Each entry can encode a mobile money number, bank account, PayPal link, or any URL.
+                </p>
+             </div>
+
+             <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                   <Label className="text-base font-bold">QR Code Entries</Label>
+                   <Button
+                     type="button"
+                     variant="outline"
+                     size="sm"
+                     onClick={() => {
+                       const current: any[] = values.qr_codes_json ? JSON.parse(values.qr_codes_json) : []
+                       handleChange('qr_codes_json', JSON.stringify([
+                         ...current,
+                         { id: crypto.randomUUID(), title: '', subtitle: '', value: '', color: '#1a1a2e' }
+                       ]))
+                     }}
+                   >
+                      <PlusIcon className="size-3 mr-1" /> Add QR Code
+                   </Button>
+                </div>
+
+                <div className="grid gap-4">
+                  {(values.qr_codes_json ? JSON.parse(values.qr_codes_json) : []).map((entry: any, idx: number) => (
+                    <div key={entry.id || idx} className="p-5 rounded-xl border border-border bg-muted/10 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Entry #{idx + 1}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const current = JSON.parse(values.qr_codes_json)
+                            current.splice(idx, 1)
+                            handleChange('qr_codes_json', JSON.stringify(current))
+                          }}
+                          className="text-destructive h-7 px-2"
+                        >
+                          <Trash2Icon className="size-3.5 mr-1" /> Remove
+                        </Button>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Title</Label>
+                          <Input
+                            value={entry.title}
+                            onChange={e => {
+                              const current = JSON.parse(values.qr_codes_json)
+                              current[idx].title = e.target.value
+                              handleChange('qr_codes_json', JSON.stringify(current))
+                            }}
+                            placeholder="e.g. Mobile Money – MTN"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Subtitle / Instructions</Label>
+                          <Input
+                            value={entry.subtitle}
+                            onChange={e => {
+                              const current = JSON.parse(values.qr_codes_json)
+                              current[idx].subtitle = e.target.value
+                              handleChange('qr_codes_json', JSON.stringify(current))
+                            }}
+                            placeholder="e.g. Scan to pay via MTN MoMo"
+                          />
+                        </div>
+                        <div className="sm:col-span-2 space-y-1.5">
+                          <Label className="text-xs">QR Value (URL, phone number, USSD, etc.)</Label>
+                          <Input
+                            value={entry.value}
+                            onChange={e => {
+                              const current = JSON.parse(values.qr_codes_json)
+                              current[idx].value = e.target.value
+                              handleChange('qr_codes_json', JSON.stringify(current))
+                            }}
+                            placeholder="e.g. https://paypal.me/... or +256700000000"
+                            className="font-mono text-xs"
+                          />
+                          <p className="text-[10px] text-muted-foreground">This exact text will be encoded into the QR code. Use a full URL for best compatibility.</p>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Card Accent Colour</Label>
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="color"
+                              value={entry.color || '#1a1a2e'}
+                              onChange={e => {
+                                const current = JSON.parse(values.qr_codes_json)
+                                current[idx].color = e.target.value
+                                handleChange('qr_codes_json', JSON.stringify(current))
+                              }}
+                              className="h-9 w-14 rounded border border-border cursor-pointer bg-transparent"
+                            />
+                            <span className="text-xs text-muted-foreground font-mono">{entry.color || '#1a1a2e'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {(!values.qr_codes_json || JSON.parse(values.qr_codes_json).length === 0) && (
+                    <div className="text-center py-10 rounded-xl border border-dashed border-border text-muted-foreground">
+                      <QrCodeIcon className="size-8 mx-auto mb-2 opacity-30" />
+                      <p className="text-sm">No QR codes yet. Click <strong>Add QR Code</strong> to create your first one.</p>
+                    </div>
+                  )}
                 </div>
              </div>
           </div>
