@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { createBrowserClient } from '@supabase/ssr'
 import { User, Loader2 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 
 // ── Inner component that uses useSearchParams (must be inside Suspense) ────────
 function LoginForm() {
@@ -195,7 +196,14 @@ function LoginForm() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm font-semibold">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold">Password</Label>
+                {mode === 'login' && (
+                  <Link href="/account/forgot-password" className="text-xs text-[#1e3a5f] hover:underline">
+                    Forgot password?
+                  </Link>
+                )}
+              </div>
               <Input
                 type="password"
                 required

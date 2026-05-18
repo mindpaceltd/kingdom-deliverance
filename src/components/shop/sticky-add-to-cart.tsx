@@ -2,7 +2,6 @@
 
 import * as React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { formatPrice } from '@/lib/utils'
 import { AddToCartButton } from './add-to-cart-button'
 import { useScroll, useMotionValueEvent } from 'framer-motion'
 import { useCurrency } from '@/lib/currency-context'
