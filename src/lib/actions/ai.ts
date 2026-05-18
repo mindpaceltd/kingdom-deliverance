@@ -25,7 +25,7 @@ export interface AiGenerateResult {
  * Resiliently parses JSON from Gemini, falling back to custom regex extraction 
  * if parsing fails due to unescaped control characters like literal newlines.
  */
-export function parseResilientJson(text: string): AiGenerateResult {
+function parseResilientJson(text: string): AiGenerateResult {
   let cleaned = text.trim()
   
   // Strip markdown code fences if present

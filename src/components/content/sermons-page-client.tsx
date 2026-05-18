@@ -98,9 +98,9 @@ export function SermonsPageClient({
       <div className="container px-4">
         {/* Filter bar */}
         <div className="bg-white rounded-2xl shadow-sm p-5 mb-10">
-          <div className="flex flex-wrap gap-3 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-4 items-end">
             {/* Preacher filter */}
-            <div className="flex flex-col gap-1.5 min-w-[160px]">
+            <div className="flex flex-col gap-1.5 w-full lg:w-48 lg:min-w-[180px]">
               <label className="text-xs font-medium text-muted-foreground">
                 Preacher
               </label>
@@ -108,7 +108,7 @@ export function SermonsPageClient({
                 value={currentFilters.preacher ?? "__all__"}
                 onValueChange={handlePreacherChange}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full h-10 lg:h-9 bg-white">
                   <SelectValue placeholder="All Preachers" />
                 </SelectTrigger>
                 <SelectContent>
@@ -123,7 +123,7 @@ export function SermonsPageClient({
             </div>
 
             {/* Series filter */}
-            <div className="flex flex-col gap-1.5 min-w-[160px]">
+            <div className="flex flex-col gap-1.5 w-full lg:w-48 lg:min-w-[180px]">
               <label className="text-xs font-medium text-muted-foreground">
                 Series
               </label>
@@ -131,7 +131,7 @@ export function SermonsPageClient({
                 value={currentFilters.series ?? "__all__"}
                 onValueChange={handleSeriesChange}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full h-10 lg:h-9 bg-white">
                   <SelectValue placeholder="All Series" />
                 </SelectTrigger>
                 <SelectContent>
@@ -146,28 +146,28 @@ export function SermonsPageClient({
             </div>
 
             {/* Date from */}
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 w-full lg:w-40">
               <label className="text-xs font-medium text-muted-foreground">
-                From
+                From Date
               </label>
               <input
                 type="date"
                 value={currentFilters.from ?? ""}
                 onChange={handleFromChange}
-                className="h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors"
+                className="w-full h-10 lg:h-9 rounded-lg border border-input bg-white px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-accent/20 transition-all duration-300"
               />
             </div>
 
             {/* Date to */}
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 w-full lg:w-40">
               <label className="text-xs font-medium text-muted-foreground">
-                To
+                To Date
               </label>
               <input
                 type="date"
                 value={currentFilters.to ?? ""}
                 onChange={handleToChange}
-                className="h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors"
+                className="w-full h-10 lg:h-9 rounded-lg border border-input bg-white px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-accent/20 transition-all duration-300"
               />
             </div>
 
@@ -177,9 +177,9 @@ export function SermonsPageClient({
                 variant="ghost"
                 size="sm"
                 onClick={handleClearFilters}
-                className="flex items-center gap-1.5 text-muted-foreground hover:text-destructive self-end"
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-destructive h-10 lg:h-9 px-4 lg:px-3 hover:bg-destructive/5 rounded-lg w-full sm:w-auto self-end lg:ml-2"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
                 Clear filters
               </Button>
             )}
