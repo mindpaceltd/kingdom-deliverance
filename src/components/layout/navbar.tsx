@@ -97,52 +97,56 @@ export function Navbar({ logo }: { logo?: string }) {
           {navigation.map((item) => (
             item.name === "Home" ? null :
             item.children ? (
-              <DropdownMenu 
+              <div
                 key={item.name}
-                open={activeDropdown === item.name}
-                onOpenChange={(open) => setActiveDropdown(open ? item.name : null)}
+                onMouseEnter={() => setActiveDropdown(item.name)}
+                onMouseLeave={() => setActiveDropdown(null)}
+                className="relative py-2"
               >
-                <div
-                  onMouseEnter={() => setActiveDropdown(item.name)}
-                  onMouseLeave={() => setActiveDropdown(null)}
-                  className="relative"
-                >
-                  <DropdownMenuTrigger className={cn(
+                <button 
+                  className={cn(
                     "flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 outline-none",
                     item.children.some(child => pathname === child.href || (child.href !== "/" && pathname.startsWith(child.href)))
                       ? "text-accent bg-white/8 font-semibold"
                       : "text-white/85 hover:text-accent hover:bg-white/8"
-                  )}>
-                    {item.name}
-                    <ChevronDown className="w-3 h-3 opacity-50" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent 
-                    align="start" 
-                    className="bg-[#0d1b3e] border-white/10 text-white min-w-[180px] p-2 rounded-xl backdrop-blur-xl"
-                    onMouseEnter={() => setActiveDropdown(item.name)}
-                    onMouseLeave={() => setActiveDropdown(null)}
-                  >
-                    {item.children.map((child) => {
-                      const isChildActive = pathname === child.href || (child.href !== "/" && pathname.startsWith(child.href));
-                      return (
-                        <DropdownMenuItem 
-                          key={child.href} 
-                          asChild 
-                          className={cn(
-                            "focus:bg-white/10 rounded-lg cursor-pointer transition-colors duration-150",
-                            isChildActive ? "text-accent bg-white/8 font-semibold" : "text-white/80 focus:text-accent"
-                          )}
-                          onClick={() => setActiveDropdown(null)}
-                        >
-                          <Link href={child.href} className="w-full px-3 py-2 text-sm">
+                  )}
+                >
+                  {item.name}
+                  <ChevronDown className={cn("w-3 h-3 opacity-50 transition-transform duration-200", activeDropdown === item.name && "rotate-180")} />
+                </button>
+
+                <AnimatePresence>
+                  {activeDropdown === item.name && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute left-0 top-full z-50 min-w-[185px] bg-[#0d1b3e]/95 backdrop-blur-xl border border-white/10 text-white p-2 rounded-xl shadow-2xl
+                        before:content-[''] before:absolute before:-top-3 before:left-0 before:right-0 before:h-3"
+                    >
+                      {item.children.map((child) => {
+                        const isChildActive = pathname === child.href || (child.href !== "/" && pathname.startsWith(child.href));
+                        return (
+                          <Link 
+                            key={child.href} 
+                            href={child.href}
+                            onClick={() => setActiveDropdown(null)}
+                            className={cn(
+                              "block px-3 py-2 text-sm rounded-lg cursor-pointer transition-colors duration-150",
+                              isChildActive 
+                                ? "text-accent bg-white/8 font-semibold" 
+                                : "text-white/85 hover:text-accent hover:bg-white/8"
+                            )}
+                          >
                             {child.name}
                           </Link>
-                        </DropdownMenuItem>
-                      );
-                    })}
-                  </DropdownMenuContent>
-                </div>
-              </DropdownMenu>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             ) : (
               <Link
                 key={item.href}
