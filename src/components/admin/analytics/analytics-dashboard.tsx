@@ -736,15 +736,13 @@ export function AnalyticsDashboard() {
           {psLoading ? (
             <div className="flex flex-col items-center justify-center py-32 space-y-4 animate-pulse">
               <Loader2 className="size-12 animate-spin text-primary/20" />
-              <p className="text-sm text-muted-foreground font-medium">Running Lighthouse Audit...</p>
+              <p className="text-sm text-muted-foreground font-medium">Running PageSpeed Audit...</p>
             </div>
           ) : psError ? (
             <EmptyState
               icon={<Zap className="size-12 text-destructive/20 mb-4" />}
               title="PageSpeed Analysis Error"
               desc={psError}
-              link="https://console.developers.google.com/apis/library/pagespeedonline.googleapis.com"
-              linkLabel="Open PageSpeed API settings"
             />
           ) : !psData ? (
             <EmptyState icon={<Zap className="size-12 text-primary/20 mb-4" />} title="No PageSpeed Data" desc="Analyze your site's performance and SEO health." />
@@ -784,8 +782,8 @@ export function AnalyticsDashboard() {
               {/* Page Speed Performance Recommendations */}
               <Card className="border-primary/5 shadow-sm rounded-2xl">
                 <CardHeader>
-                  <CardTitle className="text-sm font-bold">Lighthouse Core Web Vitals</CardTitle>
-                  <CardDescription className="text-xs">Real-time performance audits (Lighthouse Mobile API)</CardDescription>
+                  <CardTitle className="text-sm font-bold">Core Web Vitals & Diagnostics</CardTitle>
+                  <CardDescription className="text-xs">Dynamic server latency & HTML structure checks</CardDescription>
                 </CardHeader>
                 <CardContent className="divide-y p-0">
                   <div className="flex items-center justify-between px-6 py-4">
