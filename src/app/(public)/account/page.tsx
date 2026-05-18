@@ -10,7 +10,7 @@ export default async function AccountDashboard() {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login')
+    redirect('/account/login')
   }
 
   const { data: recentOrders } = await supabase

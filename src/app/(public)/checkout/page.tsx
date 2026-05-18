@@ -50,7 +50,7 @@ const PAYMENT_METHODS = [
 
 export default function CheckoutPage() {
   const { items, subtotal, totalItems } = useCart()
-  const { currency, rate, rates, setCurrency } = useCurrency()
+  const { currency, rate, rates, setCurrency, formatPrice } = useCurrency()
   const [loading, setLoading] = useState(false)
   const [gateway, setGateway] = useState<'pesapal' | 'paypal'>('pesapal')
   const [shippingMethod, setShippingMethod] = useState<'standard' | 'express'>('standard')
@@ -404,7 +404,7 @@ export default function CheckoutPage() {
                           <p className="text-xs text-gray-500 mt-1">{option.description}</p>
                         </div>
                         <span className="text-sm font-semibold text-gray-900">
-                          {formatPrice(Math.round(option.costUsd * rate * 100) / 100, currency)}
+                          {formatPrice(option.costUsd)}
                         </span>
                       </div>
                     </button>
@@ -467,15 +467,19 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Shipping</span>
-                  <span className="font-medium" suppressHydrationWarning>{mounted ? (shippingCost === 0 ? 'Free' : formatPrice(shippingCost / rate)) : '...'}</span>
+                  <span className="font-medium" suppressHydrationWarning>
+                    {mounted ? (allDigital || shippingCost === 0 ? 'Free' : formatPrice(selectedShipping?.costUsd || 0)) : '...'}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Taxes</span>
-                  <span className="font-medium" suppressHydrationWarning>{mounted ? formatPrice(taxAmount) : '...'}</span>
+                  <span className="font-medium" suppressHydrationWarning>{mounted ? formatPrice(0) : '...'}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold pt-3 border-t border-gray-200">
                   <span>Total ({currency})</span>
-                  <span className="text-[#d4a017]" suppressHydrationWarning>{mounted ? formatPrice(orderTotal / rate) : '...'}</span>
+                  <span className="text-[#d4a017]" suppressHydrationWarning>
+                    {mounted ? formatPrice(subtotal + (allDigital ? 0 : (selectedShipping?.costUsd || 0))) : '...'}
+                  </span>
                 </div>
               </div>
 
