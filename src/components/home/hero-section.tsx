@@ -9,7 +9,7 @@ export function HeroSection({ backgroundImage }: { backgroundImage?: string }) {
   const heroUrl = backgroundImage || "https://images.unsplash.com/photo-1438232992991-995b7058bbb3?q=80&w=2073&auto=format&fit=crop";
 
   return (
-    <section className="relative flex min-h-screen items-center justify-center overflow-hidden">
+    <section className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 z-0">
         <div
@@ -27,23 +27,23 @@ export function HeroSection({ backgroundImage }: { backgroundImage?: string }) {
       </div>
 
       {/* Content */}
-      <div className="container relative z-10 px-4 py-32 text-center text-white">
+      <div className="container relative z-10 px-4 pt-28 pb-16 md:py-32 text-center text-white">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, ease: "easeOut" }}
-          className="mx-auto max-w-4xl space-y-8"
+          className="mx-auto max-w-4xl space-y-6 md:space-y-8"
         >
           {/* Badge */}
           <motion.div
             initial={{ opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.2 }}
-            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-white/90"
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-4 py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-white/90"
           >
-            <Sparkles className="w-3.5 h-3.5 text-accent" />
+            <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-accent" />
             Welcome to Kingdom Deliverance Centre Uganda
-            <Heart className="w-3.5 h-3.5 text-accent" />
+            <Heart className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-accent" />
           </motion.div>
 
           {/* Heading */}
@@ -51,7 +51,7 @@ export function HeroSection({ backgroundImage }: { backgroundImage?: string }) {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.35 }}
-            className="font-serif text-5xl font-bold leading-[1.1] tracking-tight md:text-6xl lg:text-7xl drop-shadow-sm"
+            className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.15] sm:leading-[1.1] tracking-tight drop-shadow-sm"
           >
             <span className="text-accent">Encounter God,</span>{" "}
             <br className="hidden sm:block" />
@@ -65,7 +65,7 @@ export function HeroSection({ backgroundImage }: { backgroundImage?: string }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="mx-auto max-w-2xl text-base leading-relaxed text-white/80 md:text-lg lg:text-xl"
+            className="mx-auto max-w-2xl text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed text-white/80"
           >
             Join us this Sunday as we worship together, grow in faith, and experience the{" "}
             <span className="font-semibold text-accent">transformative power</span>{" "}
@@ -77,14 +77,14 @@ export function HeroSection({ backgroundImage }: { backgroundImage?: string }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.65 }}
-            className="flex flex-col items-center justify-center gap-4 sm:flex-row"
+            className="flex flex-col items-center justify-center gap-3.5 sm:flex-row"
           >
             <Button
               asChild
               size="lg"
-              className="group w-full sm:w-auto bg-accent hover:bg-accent/90 text-primary font-bold px-8 py-6 text-base rounded-full shadow-lg shadow-accent/30 hover:shadow-accent/50 hover:scale-105 transition-all duration-300"
+              className="group w-full sm:w-auto bg-accent hover:bg-accent/90 text-primary font-bold px-8 py-5 sm:py-6 text-base rounded-full shadow-lg shadow-accent/30 hover:shadow-accent/50 hover:scale-105 transition-all duration-300"
             >
-              <Link href="/about" className="flex items-center gap-2">
+              <Link href="/about" className="flex items-center gap-2 justify-center">
                 Plan a Visit
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
               </Link>
@@ -94,9 +94,9 @@ export function HeroSection({ backgroundImage }: { backgroundImage?: string }) {
               asChild
               size="lg"
               variant="outline"
-              className="group w-full sm:w-auto border-white/30 bg-white/10 backdrop-blur-md text-white hover:bg-white/20 hover:border-white/50 hover:scale-105 px-8 py-6 text-base rounded-full transition-all duration-300"
+              className="group w-full sm:w-auto border-white/30 bg-white/10 backdrop-blur-md text-white hover:bg-white/20 hover:border-white/50 hover:scale-105 px-8 py-5 sm:py-6 text-base rounded-full transition-all duration-300"
             >
-              <Link href="/live" className="flex items-center gap-2">
+              <Link href="/live" className="flex items-center gap-2 justify-center">
                 <Play className="w-4 h-4 fill-current" />
                 Watch Live
               </Link>
@@ -108,29 +108,29 @@ export function HeroSection({ backgroundImage }: { backgroundImage?: string }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.8 }}
-            className="mx-auto max-w-2xl"
+            className="mx-auto max-w-2xl w-full"
           >
-            <div className="rounded-2xl border border-white/15 bg-white/8 backdrop-blur-md p-6">
-              <div className="flex items-center justify-center gap-2 mb-5">
+            <div className="rounded-2xl border border-white/15 bg-white/8 backdrop-blur-md p-4 sm:p-6">
+              <div className="flex items-center justify-center gap-2 mb-3.5 sm:mb-5">
                 <Clock className="w-4 h-4 text-accent" />
-                <span className="text-sm font-semibold uppercase tracking-widest text-accent">
+                <span className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-accent">
                   Join Us This Week
                 </span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4 text-sm divide-y divide-white/10 sm:divide-y-0">
-                <div className="text-center space-y-1 pb-4 sm:pb-0">
-                  <div className="font-semibold text-white">Sunday Service</div>
-                  <div className="text-white/60 text-xs sm:text-[10px]">10:00 AM (EAT)</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-sm divide-y divide-white/10 sm:divide-y-0">
+                <div className="text-center space-y-0.5 pb-2.5 sm:pb-0">
+                  <div className="font-semibold text-white text-sm">Sunday Service</div>
+                  <div className="text-white/60 text-xs">10:00 AM (EAT)</div>
                 </div>
-                <div className="text-center space-y-1 py-4 sm:py-0 relative">
+                <div className="text-center space-y-0.5 py-2.5 sm:py-0 relative">
                   <div className="hidden sm:block absolute left-0 top-1/2 -translate-y-1/2 w-px h-8 bg-white/15" />
                   <div className="hidden sm:block absolute right-0 top-1/2 -translate-y-1/2 w-px h-8 bg-white/15" />
-                  <div className="font-semibold text-white">Bible Study</div>
-                  <div className="text-white/60 text-xs sm:text-[10px]">Wed 6:00 PM (EAT)</div>
+                  <div className="font-semibold text-white text-sm">Bible Study</div>
+                  <div className="text-white/60 text-xs">Wed 6:00 PM (EAT)</div>
                 </div>
-                <div className="text-center space-y-1 pt-4 sm:pt-0">
-                  <div className="font-semibold text-white">Prayer Meeting</div>
-                  <div className="text-white/60 text-xs sm:text-[10px]">Fri 6:00 PM (EAT)</div>
+                <div className="text-center space-y-0.5 pt-2.5 sm:pt-0">
+                  <div className="font-semibold text-white text-sm">Prayer Meeting</div>
+                  <div className="text-white/60 text-xs">Fri 6:00 PM (EAT)</div>
                 </div>
               </div>
             </div>
@@ -143,7 +143,7 @@ export function HeroSection({ backgroundImage }: { backgroundImage?: string }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1, delay: 1.2 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden md:flex"
       >
         <div className="flex flex-col items-center gap-1">
           <span className="text-white/40 text-xs tracking-widest uppercase">Scroll</span>

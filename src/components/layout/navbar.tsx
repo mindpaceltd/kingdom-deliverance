@@ -56,6 +56,17 @@ export function Navbar({ logo }: { logo?: string }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   return (
     <motion.nav
       initial={{ y: -80, opacity: 0 }}
@@ -204,7 +215,7 @@ export function Navbar({ logo }: { logo?: string }) {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden bg-[#0d1b3e]/98 backdrop-blur-xl border-t border-white/10 overflow-hidden"
+            className="lg:hidden bg-[#0d1b3e]/98 backdrop-blur-xl border-t border-white/10 overflow-y-auto max-h-[calc(100vh-4.5rem)]"
           >
             <div className="container px-4 py-6 space-y-4">
               <div className="flex items-center justify-between px-4">

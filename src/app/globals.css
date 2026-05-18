@@ -81,10 +81,11 @@
   
   html {
     scroll-behavior: smooth;
+    @apply overflow-x-hidden w-full;
   }
   
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased overflow-x-hidden w-full relative;
   }
   
   h1, h2, h3, h4, h5, h6 {
