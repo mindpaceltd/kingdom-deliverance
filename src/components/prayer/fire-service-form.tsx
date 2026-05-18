@@ -91,10 +91,10 @@ export function FireServiceForm() {
     loadData()
 
     // Try to detect user country
-    fetch('https://ipapi.co/json/')
+    fetch('https://get.geojs.io/v1/ip/country.json')
       .then(res => res.json())
       .then(data => {
-        if (data.country_name && data.country && data.country_calling_code) {
+        if (data.country) {
           const detectedCountry = countries.find(c => c.code === data.country)
           if (detectedCountry) {
             setForm(f => ({

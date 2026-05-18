@@ -26,6 +26,12 @@ export function getOptimizedImage(
     return generateSeoImage(fallbackTitle, fallbackDescription, type)
   }
   
+  // Fallback to dynamic PNG banner for unsupported HEIC/HEIF files for social sharing compatibility
+  const isHeic = imageUrl.toLowerCase().endsWith('.heic') || imageUrl.toLowerCase().endsWith('.heif')
+  if (isHeic) {
+    return generateSeoImage(fallbackTitle, fallbackDescription, type)
+  }
+  
   // Fully qualify relative URLs for social scrapers
   if (!imageUrl.startsWith('http')) {
     return `https://kdcuganda.org${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`

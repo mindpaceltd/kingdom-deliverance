@@ -28,8 +28,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = data.meta_title || data.title;
   const description = data.meta_description || data.excerpt || "Read this post on KDC Uganda.";
   const url = `https://kdcuganda.org/blog/${data.slug}`;
-  let image = data.featured_image ||
-    `https://kdcuganda.org/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description.slice(0, 100))}`;
+  const isHeic = data.featured_image?.toLowerCase().endsWith('.heic') || data.featured_image?.toLowerCase().endsWith('.heif');
+  
+  let image = (data.featured_image && !isHeic)
+    ? data.featured_image
+    : `https://kdcuganda.org/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description.slice(0, 120))}`;
   
   if (image && !image.startsWith('http')) {
     image = `https://kdcuganda.org${image.startsWith('/') ? '' : '/'}${image}`;
@@ -90,6 +93,14 @@ function injectHeadingIds(html: string | null): string {
   return html.replace(/<h([23])([^>]*)>/gi, (_, level, attrs) => {
     return `<h${level}${attrs} id="heading-${i++}">`;
   });
+}
+
+function fixExternalLinks(html: string | null): string {
+  if (!html) return "";
+  return html.replace(
+    /href=["'](instagram\.com|facebook\.com|twitter\.com|youtube\.com|x\.com|tiktok\.com|linkedin\.com)([^\s"']*)["']/gi,
+    'href="https://$1$2"'
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -190,7 +201,8 @@ export default async function BlogPostPage({ params }: Props) {
 
   const postUrl = `https://kdcuganda.org/blog/${post.slug}`;
   const headings = extractHeadings(post.content);
-  const contentWithIds = injectHeadingIds(post.content);
+  const cleanContent = fixExternalLinks(post.content);
+  const contentWithIds = injectHeadingIds(cleanContent);
   const rt = readTime(post.content);
   const isLongContent = (post.content?.length ?? 0) > 1500;
 

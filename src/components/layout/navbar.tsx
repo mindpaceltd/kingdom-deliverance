@@ -48,6 +48,7 @@ export function Navbar({ logo }: { logo?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 30);
@@ -96,25 +97,51 @@ export function Navbar({ logo }: { logo?: string }) {
           {navigation.map((item) => (
             item.name === "Home" ? null :
             item.children ? (
-              <DropdownMenu key={item.name}>
-                <DropdownMenuTrigger className={cn(
-                  "flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 outline-none",
-                  item.children.some(child => pathname === child.href || (child.href !== "/" && pathname.startsWith(child.href)))
-                    ? "text-accent bg-white/8"
-                    : "text-white/85 hover:text-accent hover:bg-white/8"
-                )}>
-                  {item.name}
-                  <ChevronDown className="w-3 h-3 opacity-50" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="bg-[#0d1b3e] border-white/10 text-white min-w-[180px] p-2 rounded-xl backdrop-blur-xl">
-                  {item.children.map((child) => (
-                    <DropdownMenuItem key={child.href} asChild className="focus:bg-white/10 focus:text-accent rounded-lg cursor-pointer">
-                      <Link href={child.href} className="w-full px-3 py-2 text-sm">
-                        {child.name}
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
+              <DropdownMenu 
+                key={item.name}
+                open={activeDropdown === item.name}
+                onOpenChange={(open) => setActiveDropdown(open ? item.name : null)}
+              >
+                <div
+                  onMouseEnter={() => setActiveDropdown(item.name)}
+                  onMouseLeave={() => setActiveDropdown(null)}
+                  className="relative"
+                >
+                  <DropdownMenuTrigger className={cn(
+                    "flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 outline-none",
+                    item.children.some(child => pathname === child.href || (child.href !== "/" && pathname.startsWith(child.href)))
+                      ? "text-accent bg-white/8 font-semibold"
+                      : "text-white/85 hover:text-accent hover:bg-white/8"
+                  )}>
+                    {item.name}
+                    <ChevronDown className="w-3 h-3 opacity-50" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    align="start" 
+                    className="bg-[#0d1b3e] border-white/10 text-white min-w-[180px] p-2 rounded-xl backdrop-blur-xl"
+                    onMouseEnter={() => setActiveDropdown(item.name)}
+                    onMouseLeave={() => setActiveDropdown(null)}
+                  >
+                    {item.children.map((child) => {
+                      const isChildActive = pathname === child.href || (child.href !== "/" && pathname.startsWith(child.href));
+                      return (
+                        <DropdownMenuItem 
+                          key={child.href} 
+                          asChild 
+                          className={cn(
+                            "focus:bg-white/10 rounded-lg cursor-pointer transition-colors duration-150",
+                            isChildActive ? "text-accent bg-white/8 font-semibold" : "text-white/80 focus:text-accent"
+                          )}
+                          onClick={() => setActiveDropdown(null)}
+                        >
+                          <Link href={child.href} className="w-full px-3 py-2 text-sm">
+                            {child.name}
+                          </Link>
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </div>
               </DropdownMenu>
             ) : (
               <Link
@@ -122,7 +149,7 @@ export function Navbar({ logo }: { logo?: string }) {
                 href={item.href}
                 className={cn(
                   "relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:text-accent hover:bg-white/8",
-                  pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href)) ? "text-accent bg-white/8" : "text-white/85"
+                  pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href)) ? "text-accent bg-white/8 font-semibold" : "text-white/85"
                 )}
               >
                 {item.name}
