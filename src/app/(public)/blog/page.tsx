@@ -26,6 +26,12 @@ function readTime(html: string | null): string {
   return `${mins} min read`;
 }
 
+function isHeic(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const lower = url.toLowerCase();
+  return lower.endsWith('.heic') || lower.endsWith('.heif');
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function profileName(profiles: any): string | null {
   if (!profiles) return null;
@@ -168,6 +174,7 @@ export default async function BlogPage({ searchParams }: Props) {
                         alt={featured.title}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-700"
+                        unoptimized={isHeic(featured.featured_image)}
                       />
                     ) : (
                       <div className="w-full h-full bg-gray-100 flex items-center justify-center">
@@ -221,6 +228,7 @@ export default async function BlogPage({ searchParams }: Props) {
                         alt={post.title}
                         fill
                         className="object-cover group-hover:scale-110 transition-transform duration-700"
+                        unoptimized={isHeic(post.featured_image)}
                       />
                     ) : (
                       <div className="w-full h-full bg-gray-100 flex items-center justify-center">
@@ -330,6 +338,7 @@ export default async function BlogPage({ searchParams }: Props) {
                         alt={p.title}
                         fill
                         className="object-cover group-hover:scale-110 transition-transform duration-500"
+                        unoptimized={isHeic(p.featured_image)}
                       />
                     </div>
                     <div className="flex flex-col justify-center">

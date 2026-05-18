@@ -239,6 +239,7 @@ export default async function BlogPostPage({ params }: Props) {
                 priority
                 className="object-cover object-center lg:object-[center_right]"
                 sizes="100vw"
+                unoptimized={post.featured_image.toLowerCase().endsWith('.heic') || post.featured_image.toLowerCase().endsWith('.heif')}
               />
               {/* Overlay: Solid dark on mobile, Gradient on desktop */}
               <div className="absolute inset-0 bg-[#0a1428]/85 lg:bg-transparent lg:bg-gradient-to-r lg:from-[#0a1428] lg:from-30% lg:via-[#0a1428]/60 lg:via-55% lg:to-transparent" />
@@ -519,6 +520,7 @@ export default async function BlogPostPage({ params }: Props) {
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-500"
                           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                          unoptimized={p.featured_image.toLowerCase().endsWith('.heic') || p.featured_image.toLowerCase().endsWith('.heif')}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gray-100">

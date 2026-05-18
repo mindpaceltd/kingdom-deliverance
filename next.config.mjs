@@ -13,6 +13,7 @@ const nextConfig = {
     optimizePackageImports: [],
   },
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
