@@ -74,7 +74,7 @@ export default function DonationsPage() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="relative pt-48 pb-32 lg:pt-56 lg:pb-40 text-white overflow-hidden">
+      <section className="relative pt-24 pb-16 md:pt-48 md:pb-32 lg:pt-56 lg:pb-40 text-white overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{

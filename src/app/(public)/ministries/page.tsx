@@ -64,7 +64,7 @@ export default async function MinistriesPage() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="relative py-40 text-white overflow-hidden">
+      <section className="relative py-20 md:py-40 text-white overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: "url('https://images.unsplash.com/photo-1491438590914-bc09fcaaf77a?q=80&w=2070&auto=format&fit=crop')" }}

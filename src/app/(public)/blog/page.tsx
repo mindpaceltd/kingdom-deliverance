@@ -97,7 +97,7 @@ export default async function BlogPage({ searchParams }: Props) {
       {/* ------------------------------------------------------------------ */}
       {/* HERO SECTION                                                        */}
       {/* ------------------------------------------------------------------ */}
-      <section className="relative h-[450px] flex items-center overflow-hidden">
+      <section className="relative h-[320px] md:h-[450px] flex items-center overflow-hidden">
         <Image
           src="https://images.unsplash.com/photo-1504052434569-70ad5836ab65?auto=format&fit=crop&q=80"
           alt="Hero Background"
@@ -108,7 +108,7 @@ export default async function BlogPage({ searchParams }: Props) {
         <div className="absolute inset-0 bg-black/60" />
         <div className="container relative z-10 px-4 max-w-7xl mx-auto text-white text-center">
           <h1 className="text-5xl md:text-6xl font-bold mb-4">Blog & News</h1>
-          <p className="text-xl text-white/80 max-w-2xl mx-auto mb-10 leading-relaxed">
+          <p className="text-xl text-white/80 max-w-2xl mx-auto mb-6 md:mb-10 leading-relaxed">
             Insights, teachings, and updates to inspire your faith and transform your life.
           </p>
 

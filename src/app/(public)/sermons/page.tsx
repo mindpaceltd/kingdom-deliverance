@@ -39,7 +39,7 @@ export default async function SermonsPage({ searchParams }: SermonsPageProps) {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="relative py-40 text-white overflow-hidden">
+      <section className="relative py-20 md:py-40 text-white overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
