@@ -287,17 +287,19 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
                   const pHasDiscount = p.sale_price_usd > 0 && p.sale_price_usd < p.regular_price_usd
                   const pPrice = pHasDiscount ? p.sale_price_usd : (p.regular_price_usd || p.price_usd)
                   return (
-                    <Link key={p.id} href={`/shop/${p.slug}`} className="group bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-all">
+                    <Link key={p.id} href={`/shop/${p.slug}`} className="block flex flex-col group bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-all">
                       <div className="relative aspect-square overflow-hidden bg-gray-100">
                         <img src={p.image_url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         {pHasDiscount && (
                           <span className="absolute top-2 left-2 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">SALE</span>
                         )}
                       </div>
-                      <div className="p-3">
+                      <div className="p-3 flex flex-col flex-1">
                         <p className="text-[10px] text-gray-400 mb-0.5">{p.category?.name}</p>
                         <h4 className="text-sm font-bold text-gray-900 line-clamp-2 leading-snug mb-1">{p.name}</h4>
-                        <p className="text-sm font-black text-gray-800">UGX {ugx(pPrice)}</p>
+                        <div className="mt-auto">
+                          <p className="text-sm font-black text-gray-800">UGX {ugx(pPrice)}</p>
+                        </div>
                       </div>
                     </Link>
                   )
