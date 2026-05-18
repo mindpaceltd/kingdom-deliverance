@@ -43,11 +43,17 @@ export default async function DownloadsPage() {
                     </p>
                   </div>
                   {available ? (
-                    <Button size="sm" asChild className="bg-blue-600 hover:bg-blue-700 text-xs">
-                      <a href={`/api/downloads/${dl.token}`}>
-                        <Download className="w-3 h-3 mr-1" /> Download
-                      </a>
-                    </Button>
+                    dl.product?.file_url ? (
+                      <Button size="sm" asChild className="bg-blue-600 hover:bg-blue-700 text-xs">
+                        <a href={`/api/downloads/${dl.token}`}>
+                          <Download className="w-3 h-3 mr-1" /> Download
+                        </a>
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-1 rounded">
+                        Coming soon
+                      </span>
+                    )
                   ) : (
                     <span className="text-xs text-red-500 font-medium">
                       {expired ? 'Expired' : 'Limit reached'}

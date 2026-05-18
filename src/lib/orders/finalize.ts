@@ -52,10 +52,14 @@ export async function finalizeOrder(orderId: string) {
 
   // 3. Update order status
   const newStatus = allDigital ? 'completed' : 'processing'
-  await supabase
+  const { error: updateError } = await supabase
     .from('orders')
     .update({ status: newStatus, payment_status: 'paid' })
     .eq('id', orderId)
+
+  if (updateError) {
+    console.error('finalizeOrder: failed to update order status', updateError)
+  }
 
   // 3b. Link order to user account if a user with this email exists (claim guest order)
   if (!order.user_id && order.email) {
@@ -70,16 +74,17 @@ export async function finalizeOrder(orderId: string) {
   }
 
   // 4. Generate download tokens for digital items
+  // Create tokens for ALL digital items regardless of file_url — file may be uploaded later
   const downloadTokens: any[] = []
   if (hasDigital) {
     const digitalItems = order.order_items.filter(
-      (item: any) => item.product?.type === 'digital' && item.product?.file_url
+      (item: any) => item.product?.type === 'digital'
     )
 
     for (const item of digitalItems) {
       const token = randomBytes(32).toString('hex')
       const expiresAt = new Date()
-      expiresAt.setDate(expiresAt.getDate() + 7) // 7 days expiry
+      expiresAt.setDate(expiresAt.getDate() + 30) // 30 days expiry
 
       const tokenData = {
         order_id: orderId,
@@ -87,17 +92,19 @@ export async function finalizeOrder(orderId: string) {
         product_id: item.product_id,
         token,
         email: order.email,
-        max_downloads: 5,
+        max_downloads: 10,
         expires_at: expiresAt.toISOString(),
       }
 
-      const { data: insertedToken } = await supabase
+      const { data: insertedToken, error: tokenError } = await supabase
         .from('download_tokens')
         .insert(tokenData)
         .select()
         .single()
 
-      if (insertedToken) {
+      if (tokenError) {
+        console.error('finalizeOrder: failed to insert download token', tokenError)
+      } else if (insertedToken) {
         downloadTokens.push({
           ...insertedToken,
           product_name: item.product.name,

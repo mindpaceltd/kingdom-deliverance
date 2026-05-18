@@ -48,6 +48,8 @@ export default async function OrdersPage() {
                     <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
                       order.status === 'completed' ? 'bg-green-100 text-green-700' :
                       order.status === 'processing' ? 'bg-blue-100 text-blue-700' :
+                      order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                      order.status === 'shipped' ? 'bg-purple-100 text-purple-700' :
                       order.payment_status === 'paid' ? 'bg-blue-100 text-blue-700' :
                       'bg-yellow-100 text-yellow-700'
                     }`}>
