@@ -102,6 +102,21 @@ export default function RootLayout({
             gtag('config', 'G-BDH3RW93YC');
           `}
         </Script>
+        
+        {/* Google Analytics G-QC1Z4DBHPW (New Property) */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-QC1Z4DBHPW"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics-new" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-QC1Z4DBHPW');
+          `}
+        </Script>
         {children}
         <ScrollToTop />
         <Toaster position="top-center" expand={true} richColors />
