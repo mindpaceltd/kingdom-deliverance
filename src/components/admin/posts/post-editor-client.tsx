@@ -160,7 +160,47 @@ export function PostEditorClient({ post, authorName, allTags, initialTags = [] }
       return
     }
 
-    setField('content', result.html)
+    if (result.html) setField('content', result.html)
+    if (result.excerpt) setField('excerpt', result.excerpt)
+    if (result.focusKeyword) setField('focus_keyword', result.focusKeyword)
+    if (result.seoTitle) setField('meta_title', result.seoTitle)
+    if (result.metaDescription) setField('meta_description', result.metaDescription)
+
+    if (result.tags && result.tags.length > 0) {
+      const newTags: Tag[] = [...selectedTags]
+      
+      for (const tagName of result.tags) {
+        const cleaned = tagName.trim()
+        if (!cleaned) continue
+        
+        // Check if already selected
+        if (newTags.some(t => t.name.toLowerCase() === cleaned.toLowerCase())) {
+          continue
+        }
+        
+        // Find in known tags
+        const found = knownTags.find(t => t.name.toLowerCase() === cleaned.toLowerCase())
+        if (found) {
+          newTags.push(found)
+        } else {
+          // Create new tag dynamically via POST /api/tags
+          try {
+            const res = await fetch('/api/tags', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: cleaned }),
+            })
+            const json = await res.json()
+            if (json.tag) {
+              newTags.push(json.tag)
+            }
+          } catch (e) {
+            console.error('[handleAiGenerate] failed to create tag dynamically:', cleaned, e)
+          }
+        }
+      }
+      setSelectedTags(newTags)
+    }
   }
 
   // ---------------------------------------------------------------------------

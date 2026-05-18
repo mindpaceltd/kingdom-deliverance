@@ -143,7 +143,7 @@ export function AdminSidebar({ logo }: { logo?: string }) {
           
           const isActive = link.href === '/admin'
             ? pathname === '/admin'
-            : pathname === link.href
+            : pathname === link.href || pathname.startsWith(link.href + '/')
 
           return (
             <div key={link.label} className="space-y-1">
