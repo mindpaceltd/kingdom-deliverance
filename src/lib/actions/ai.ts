@@ -22,6 +22,114 @@ export interface AiGenerateResult {
 }
 
 /**
+ * Resiliently parses JSON from Gemini, falling back to custom regex extraction 
+ * if parsing fails due to unescaped control characters like literal newlines.
+ */
+export function parseResilientJson(text: string): AiGenerateResult {
+  let cleaned = text.trim()
+  
+  // Strip markdown code fences if present
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```json\s*/i, '')
+    cleaned = cleaned.replace(/^```html\s*/i, '')
+    cleaned = cleaned.replace(/^```\s*/i, '')
+    cleaned = cleaned.replace(/\s*```$/i, '')
+    cleaned = cleaned.trim()
+  }
+
+  let html = ''
+  let excerpt = ''
+  let tags: string[] = []
+  let focusKeyword = ''
+  let seoTitle = ''
+  let metaDescription = ''
+
+  // Try standard JSON.parse first
+  try {
+    const parsed = JSON.parse(cleaned)
+    if (parsed && typeof parsed === 'object') {
+      html = parsed.html || ''
+      excerpt = parsed.excerpt || ''
+      tags = Array.isArray(parsed.tags) ? parsed.tags : []
+      focusKeyword = parsed.focusKeyword || ''
+      seoTitle = parsed.seoTitle || ''
+      metaDescription = parsed.metaDescription || ''
+    }
+  } catch (e) {
+    console.warn('[parseResilientJson] Standard JSON parse failed, using resilient regex extractor:', e)
+    
+    // Fallback: Regex extraction for each field
+    const extractField = (field: string): string => {
+      const regex = new RegExp(`"${field}"\\s*:\\s*"([\\s\\S]*?)(?<!\\\\)"`, 'i')
+      const match = cleaned.match(regex)
+      if (match && match[1]) {
+        return match[1]
+          .replace(/\\"/g, '"')
+          .replace(/\\r/g, '\r')
+          .replace(/\\t/g, '\t')
+          .replace(/\\\\/g, '\\')
+          .trim()
+      }
+      return ''
+    }
+
+    const extractTags = (): string[] => {
+      const regex = /"tags"\s*:\s*\[([\s\S]*?)\]/i
+      const match = cleaned.match(regex)
+      if (match && match[1]) {
+        return match[1]
+          .split(',')
+          .map(t => t.replace(/"/g, '').trim())
+          .filter(Boolean)
+      }
+      return []
+    }
+
+    html = extractField('html')
+    excerpt = extractField('excerpt')
+    tags = extractTags()
+    focusKeyword = extractField('focusKeyword') || extractField('focus_keyword')
+    seoTitle = extractField('seoTitle') || extractField('meta_title') || extractField('seo_title')
+    metaDescription = extractField('metaDescription') || extractField('meta_description') || extractField('seo_description')
+  }
+
+  // If we couldn't even extract HTML and the string is not JSON, treat entire response as HTML
+  if (!html && !cleaned.startsWith('{')) {
+    html = cleaned
+  }
+
+  // Post-process HTML to clean up any escaped characters, literal '\n' sequences, or markdown blocks
+  if (html) {
+    // 1. Unescape any literal double-escaped backslash-n sequences if they leak as text
+    html = html.replace(/\\n/g, '\n')
+    
+    // 2. Convert double-newlines to paragraph HTML if AI outputted plain text
+    if (!html.includes('<p>') && !html.includes('</h2>') && !html.includes('</h3>')) {
+      html = html
+        .split('\n\n')
+        .map(p => p.trim() ? `<p>${p.replace(/\n/g, '<br />')}</p>` : '')
+        .filter(Boolean)
+        .join('\n')
+    } else {
+      // Clean up excess spacing so it looks beautiful in TipTap
+      html = html.replace(/\n\n+/g, '\n')
+    }
+    
+    // 3. Strip any residual markdown blocks
+    html = html.replace(/^```html\s*/i, '').replace(/\s*```$/i, '')
+  }
+
+  return {
+    html: html.trim(),
+    excerpt: excerpt.trim(),
+    tags,
+    focusKeyword: focusKeyword.trim(),
+    seoTitle: seoTitle.trim(),
+    metaDescription: metaDescription.trim(),
+  }
+}
+
+/**
  * Generates or improves post content using Gemini AI.
  *
  * mode = 'full'    → write a complete blog post from the title/excerpt
@@ -55,13 +163,23 @@ Title: ${req.title}
 ${req.excerpt ? `Provided summary/excerpt: ${req.excerpt}` : ''}
 ${req.focusKeyword ? `Requested focus keyword: ${req.focusKeyword}` : ''}
 
+CRITICAL INSTRUCTIONS:
+1. Ensure the content and SEO are tailored to reflect KDC's roots in Uganda/Africa, but also highlight its global ministry, digital outreach, and impact to the rest of the world. Appeal to both a local African audience and a global international audience.
+2. The 'html' field MUST contain only clean, well-structured, valid HTML.
+   - EVERY paragraph must be wrapped in <p>...</p> tags.
+   - Headings must be wrapped in <h2>...</h2> or <h3>...</h3>.
+   - Lists must use <ul>/<li> or <ol>/<li>.
+   - Do NOT output literal backslash-n sequences like '\\n' or '\\n\\n' inside the HTML. Use proper HTML tags.
+   - Do NOT include <html>, <head>, <body>, or <title> tags.
+   - Do NOT include any JSON delimiters or structure inside the HTML.
+
 You MUST return a JSON object with the following fields:
-- html: The complete, well-structured blog post body in HTML format. Write at least 400 words. Use proper HTML tags like <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>, <blockquote>. Use modern Bible translations (NIV, ESV, NLT). Do NOT include <html>, <head>, <body> tags.
-- excerpt: A highly engaging, brief summary (100-150 characters) suitable for blog list cards.
+- html: The complete, well-structured blog post body in clean HTML format. Write at least 400 words.
+- excerpt: A highly engaging, brief summary (100-150 characters) suitable for blog list cards, reflecting KDC's global outreach.
 - tags: An array of 3 to 5 lowercase, highly relevant tags (e.g. ["faith", "prayer", "salvation"]).
 - focusKeyword: A high-intent keyword or phrase (2-4 words) that is naturally integrated in the content.
-- seoTitle: A search-optimized title (50-60 characters) that includes the focus keyword.
-- metaDescription: A compelling, search-optimized meta description (150-160 characters) that includes the focus keyword.
+- seoTitle: A search-optimized title (50-60 characters) that includes the focus keyword and appeals globally.
+- metaDescription: A compelling, search-optimized meta description (150-160 characters) that includes the focus keyword and highlights global ministry.
 
 Return ONLY the raw JSON object. Do not include markdown code blocks, do not include any text before or after the JSON.`
   } else if (req.mode === 'improve') {
@@ -73,6 +191,16 @@ ${req.focusKeyword ? `Focus keyword: ${req.focusKeyword}` : ''}
 
 Original Content:
 ${req.existingContent}
+
+CRITICAL INSTRUCTIONS:
+1. Ensure the content and SEO are tailored to reflect KDC's roots in Uganda/Africa, but also highlight its global ministry, digital outreach, and impact to the rest of the world. Appeal to both a local African audience and a global international audience.
+2. The 'html' field MUST contain only clean, well-structured, valid HTML.
+   - EVERY paragraph must be wrapped in <p>...</p> tags.
+   - Headings must be wrapped in <h2>...</h2> or <h3>...</h3>.
+   - Lists must use <ul>/<li> or <ol>/<li>.
+   - Do NOT output literal backslash-n sequences like '\\n' or '\\n\\n' inside the HTML. Use proper HTML tags.
+   - Do NOT include <html>, <head>, <body>, or <title> tags.
+   - Do NOT include any JSON delimiters or structure inside the HTML.
 
 You MUST return a JSON object with the following fields:
 - html: The improved, fully expanded post content in HTML format. Write at least 400 words. Use proper HTML tags like <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>, <blockquote>. Use modern Bible translations (NIV, ESV, NLT).
@@ -90,6 +218,13 @@ Write a complete, well-structured sermon transcript or detailed notes and all co
 Title: ${req.title}
 ${req.excerpt ? `Provided summary/excerpt: ${req.excerpt}` : ''}
 ${req.focusKeyword ? `Key Verse/Keyword: ${req.focusKeyword}` : ''}
+
+CRITICAL INSTRUCTIONS:
+1. Ensure the content and SEO reflect KDC's roots in Uganda/Africa, but also highlight its global ministry and outreach to the rest of the world.
+2. The 'html' field MUST contain only clean, well-structured, valid HTML.
+   - EVERY paragraph must be wrapped in <p>...</p> tags.
+   - Headings must be wrapped in <h2>...</h2> or <h3>...</h3>.
+   - Do NOT output literal backslash-n sequences like '\\n' or '\\n\\n' inside the HTML. Use proper HTML tags.
 
 You MUST return a JSON object with the following fields:
 - html: The complete sermon notes in HTML format. Write at least 500 words. Structure with an Introduction, 3 powerful Biblical Points with scripture references, and a Closing Prayer/Call to Action. Use proper HTML tags.
@@ -109,6 +244,13 @@ ${req.focusKeyword ? `Key Verse/Keyword: ${req.focusKeyword}` : ''}
 
 Original Content:
 ${req.existingContent}
+
+CRITICAL INSTRUCTIONS:
+1. Ensure the content and SEO reflect KDC's roots in Uganda/Africa, but also highlight its global ministry and outreach to the rest of the world.
+2. The 'html' field MUST contain only clean, well-structured, valid HTML.
+   - EVERY paragraph must be wrapped in <p>...</p> tags.
+   - Headings must be wrapped in <h2>...</h2> or <h3>...</h3>.
+   - Do NOT output literal backslash-n sequences like '\\n' or '\\n\\n' inside the HTML. Use proper HTML tags.
 
 You MUST return a JSON object with the following fields:
 - html: The improved, fully expanded sermon content in HTML format. Write at least 500 words. Use proper HTML tags.
@@ -134,28 +276,7 @@ Return ONLY the raw JSON object. Do not include markdown code blocks, do not inc
         const result = await model.generateContent(prompt)
         const text = result.response.text()
 
-        let cleaned = text.trim()
-        if (cleaned.startsWith('```')) {
-          cleaned = cleaned.replace(/^```json\s*/i, '')
-          cleaned = cleaned.replace(/^```\s*/i, '')
-          cleaned = cleaned.replace(/\s*```$/i, '')
-          cleaned = cleaned.trim()
-        }
-
-        try {
-          const parsed = JSON.parse(cleaned)
-          return {
-            html: parsed.html || '',
-            excerpt: parsed.excerpt || '',
-            tags: parsed.tags || [],
-            focusKeyword: parsed.focusKeyword || '',
-            seoTitle: parsed.seoTitle || '',
-            metaDescription: parsed.metaDescription || '',
-          }
-        } catch (jsonErr) {
-          console.warn('[generatePostContent] failed to parse JSON, falling back to raw html:', jsonErr)
-          return { html: text }
-        }
+        return parseResilientJson(text)
       } catch (modelErr: unknown) {
         const msg = modelErr instanceof Error ? modelErr.message : String(modelErr)
         lastError = msg
