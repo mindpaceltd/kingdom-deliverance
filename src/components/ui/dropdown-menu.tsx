@@ -66,9 +66,9 @@ const DropdownMenuGroup = MenuPrimitive.Group
 
 const DropdownMenuLabel = React.forwardRef<
   HTMLDivElement,
-  MenuPrimitive.GroupLabel.Props
+  React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <MenuPrimitive.GroupLabel
+  <div
     ref={ref}
     className={cn("px-2 py-1.5 text-xs font-bold text-white/50 uppercase tracking-wider", className)}
     {...props}
