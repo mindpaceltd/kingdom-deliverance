@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "test:queue": "npx tsx scripts/test-queue.ts",
     "worker": "npx tsx src/workers/sermon-processor.ts",
-    "worker:dev": "npx tsx --watch src/workers/sermon-processor.ts"
+    "worker:dev": "npx tsx --watch src/workers/sermon-processor.ts",
+    "migrate:public-assets": "npx tsx scripts/migrate_public_assets.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1048.0",

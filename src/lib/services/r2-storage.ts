@@ -1,15 +1,22 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { NodeHttpHandler } from '@smithy/node-http-handler'
+import * as https from 'https'
 
 // S3 Client configuration for Cloudflare R2
 const r2Client = new S3Client({
-  region: 'auto',
+  region: 'us-east-1',
   endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
   credentials: {
     accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
   },
   forcePathStyle: true,
+  requestHandler: new NodeHttpHandler({
+    httpsAgent: new https.Agent({
+      keepAlive: false,
+    }),
+  }),
 })
 
 const defaultBucket = process.env.R2_BUCKET_NAME || 'kdc-media-storage'
@@ -157,3 +164,49 @@ export function getKeyFromUrl(url: string): string | null {
 
   return null
 }
+
+/**
+ * Copies an object from the private bucket (defaultBucket) to the public bucket.
+ * 
+ * @param key - the object's key (path) inside the private bucket.
+ * @param publicBucket - name of the public bucket.
+ * @returns `{ ok: true }` on success or `{ error: string }` on failure.
+ */
+export async function copyObjectToPublicBucket(
+  key: string,
+  publicBucket: string = 'kdc-media-public'
+): Promise<{ ok: true } | { error: string }> {
+  try {
+    const cleanKey = key.replace(/^\/+/, '')
+
+    // Import CopyObjectCommand from the SDK
+    const { CopyObjectCommand } = await import('@aws-sdk/client-s3')
+
+    // CopyObjectCommand performs a direct cloud-to-cloud copy inside R2!
+    // CopySource must be formatted as: "/source_bucket/source_key"
+    const copyCommand = new CopyObjectCommand({
+      Bucket: publicBucket,
+      CopySource: encodeURI(`/${defaultBucket}/${cleanKey}`),
+      Key: cleanKey,
+    })
+
+    await r2Client.send(copyCommand)
+
+    return { ok: true }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('[r2-storage] copy to public bucket failed:', msg)
+    return { error: `Copy failed: ${msg}` }
+  }
+}
+
+/**
+ * Returns the public URL for an object that lives in the public bucket.
+ */
+export function getPublicUrl(key: string): string {
+  if (!key) return ''
+  const cleanKey = key.replace(/^\/+/, '')
+  const base = process.env.NEXT_PUBLIC_R2_PUBLIC_URL?.replace(/\/$/, '') || 'https://pub-6299bd19a8614368b611590ccf05ac14.r2.dev'
+  return `${base}/${cleanKey}`
+}
+
