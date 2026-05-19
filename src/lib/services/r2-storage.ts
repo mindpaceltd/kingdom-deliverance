@@ -105,6 +105,35 @@ export async function getPresignedUploadUrl(
 }
 
 /**
+ * Generates a presigned download URL (GET) for time-limited access to private files.
+ */
+export async function getPresignedDownloadUrl(
+  key: string,
+  expiresInSeconds: number = 60,
+  bucket: string = defaultBucket
+): Promise<{ url: string } | { error: string }> {
+  try {
+    const cleanKey = key.replace(/^\/+/, '')
+
+    // We need to import GetObjectCommand if not already imported
+    // Wait, let's just use it, but ensure it's imported at the top of the file
+    const { GetObjectCommand } = await import('@aws-sdk/client-s3')
+    
+    const command = new GetObjectCommand({
+      Bucket: bucket,
+      Key: cleanKey,
+    })
+
+    const url = await getSignedUrl(r2Client, command, { expiresIn: expiresInSeconds })
+    return { url }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('[r2-storage] Presign download generation failed:', msg)
+    return { error: `Presign generation failed: ${msg}` }
+  }
+}
+
+/**
  * Normalizes or extracts the R2 Key from an absolute R2 public URL.
  */
 export function getKeyFromUrl(url: string): string | null {

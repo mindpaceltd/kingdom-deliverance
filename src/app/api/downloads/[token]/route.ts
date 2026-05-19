@@ -72,6 +72,17 @@ export async function GET(
         .createSignedUrl(path, 60) // 60 second expiry
 
       signedUrl = data?.signedUrl || null
+    } else if (fileUrl.includes('.r2.dev') || fileUrl.includes('.r2.cloudflarestorage.com') || (process.env.NEXT_PUBLIC_R2_PUBLIC_URL && fileUrl.startsWith(process.env.NEXT_PUBLIC_R2_PUBLIC_URL))) {
+      // It's an R2 URL. Let's extract the key and generate a presigned download URL.
+      const { getKeyFromUrl, getPresignedDownloadUrl } = await import('@/lib/services/r2-storage')
+      const key = getKeyFromUrl(fileUrl)
+      
+      if (key) {
+        const result = await getPresignedDownloadUrl(key, 60) // 60 second expiry
+        if (!('error' in result)) {
+          signedUrl = result.url
+        }
+      }
     } else if (fileUrl.includes('/')) {
       // Assume format: bucket/path
       const parts = fileUrl.split('/')
