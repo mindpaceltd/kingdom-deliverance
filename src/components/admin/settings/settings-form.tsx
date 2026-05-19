@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { saveSettings, registerPesapalIPNAction } from '@/lib/actions/settings'
+import { saveSettings, registerPesapalIPNAction, testSMTPAction } from '@/lib/actions/settings'
 import { uploadMediaAction } from '@/lib/actions/media'
 import type { SiteSetting } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -210,6 +210,31 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
   const [values, setValues] = React.useState<Record<string, string>>(initialValues)
   const [saving, setSaving] = React.useState(false)
   const [saveSuccess, setSaveSuccess] = React.useState(false)
+
+  const [testEmail, setTestEmail] = React.useState('')
+  const [testingSMTP, setTestingSMTP] = React.useState(false)
+  const [testResult, setTestResult] = React.useState<{ success: boolean; message: string } | null>(null)
+
+  async function handleTestSMTP() {
+    if (!testEmail) {
+      setTestResult({ success: false, message: 'Please enter a test email address' })
+      return
+    }
+    setTestingSMTP(true)
+    setTestResult(null)
+    try {
+      const result = await testSMTPAction(testEmail)
+      if ('success' in result) {
+        setTestResult({ success: true, message: `Test email sent successfully! Message ID: ${result.messageId || 'N/A'}` })
+      } else {
+        setTestResult({ success: false, message: `Failed: ${result.error}` })
+      }
+    } catch (err: any) {
+      setTestResult({ success: false, message: `Failed: ${err?.message || 'Error occurred'}` })
+    } finally {
+      setTestingSMTP(false)
+    }
+  }
 
   function handleChange(key: string, value: string) {
     setValues((prev) => ({ ...prev, [key]: value }))
@@ -434,6 +459,36 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                    <Label>From Name</Label>
                    <Input value={values.smtp_from_name} onChange={e => handleChange('smtp_from_name', e.target.value)} />
                 </div>
+             </div>
+
+             <div className="pt-6 border-t border-border space-y-4">
+                <div>
+                   <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Test SMTP Connection</h3>
+                   <p className="text-xs text-muted-foreground mt-1">Send a test email to verify that your custom SMTP server settings are working properly. (Make sure to click "Save Settings" at the bottom first if you made changes!)</p>
+                </div>
+                <div className="flex gap-2 max-w-md">
+                   <Input 
+                      type="email" 
+                      placeholder="test-email@example.com" 
+                      value={testEmail} 
+                      onChange={e => setTestEmail(e.target.value)} 
+                      className="h-10 text-sm"
+                   />
+                   <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={handleTestSMTP} 
+                      disabled={testingSMTP}
+                      className="h-10 text-sm shrink-0"
+                   >
+                      {testingSMTP ? 'Sending...' : 'Send Test Email'}
+                   </Button>
+                </div>
+                {testResult && (
+                   <p className={cn("text-xs font-semibold mt-2", testResult.success ? "text-green-600" : "text-destructive")}>
+                      {testResult.message}
+                   </p>
+                )}
              </div>
           </div>
         )}

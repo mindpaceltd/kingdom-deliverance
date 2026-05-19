@@ -85,3 +85,42 @@ export async function registerPesapalIPNAction(): Promise<
     return { error: err?.message || 'IPN registration failed' }
   }
 }
+
+import { sendSystemEmail } from '@/lib/email'
+
+/**
+ * Send a test email to verify SMTP settings are correct.
+ */
+export async function testSMTPAction(
+  toEmail: string
+): Promise<{ success: true; messageId?: string } | { error: string }> {
+  const result = await requireAdmin()
+  if ('error' in result) return result
+
+  if (!toEmail || !toEmail.includes('@')) {
+    return { error: 'Please enter a valid email address' }
+  }
+
+  const subject = 'Test SMTP Configuration - KDC Uganda'
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+      <h2 style="color: #1e3a5f; margin-top: 0;">SMTP Configuration Success! ✓</h2>
+      <p style="font-size: 16px; color: #334155; line-height: 1.5;">This is a test email sent from <strong>Kingdom Deliverance Centre Uganda</strong> to verify that your custom SMTP server settings are working properly.</p>
+      <p style="font-size: 14px; color: #64748b;">If you received this message, your Nodemailer integration is configured correctly and ready to send transaction, order, and notification emails!</p>
+      <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+      <p style="font-size: 12px; color: #94a3b8; margin-bottom: 0;">© Kingdom Deliverance Centre Uganda</p>
+    </div>
+  `
+  const text = 'SMTP Configuration Test\n\nCongratulations!\nThis is a test email sent from Kingdom Deliverance Centre Uganda to verify that your custom SMTP server settings are working properly.'
+
+  try {
+    const mailResult = await sendSystemEmail(toEmail, subject, html, text)
+    if ('error' in mailResult) {
+      return { error: mailResult.error }
+    }
+    return { success: true, messageId: mailResult.messageId }
+  } catch (err: any) {
+    return { error: err?.message || 'SMTP test execution failed' }
+  }
+}
+
