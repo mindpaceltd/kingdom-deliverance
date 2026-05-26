@@ -48,6 +48,29 @@ export function DataTable<T>({
   className,
   isLoading = false,
 }: DataTableProps<T>) {
+  const [internalSearch, setInternalSearch] = React.useState('')
+  const [currentPage, setCurrentPage] = React.useState(1)
+
+  const searchQuery = searchValue !== undefined ? searchValue : internalSearch
+
+  const filteredData = React.useMemo(() => {
+    if (isLoading || onSearch || !searchQuery.trim()) return data
+
+    const query = searchQuery.toLowerCase()
+    return data.filter((row) =>
+      columns.some((col) => {
+        const cellContent = col.cell(row)
+        const cellText = getCellText(cellContent)
+        return cellText.toLowerCase().includes(query)
+      })
+    )
+  }, [isLoading, data, searchQuery, columns, onSearch])
+
+  React.useEffect(() => {
+    if (isLoading) return
+    setCurrentPage(1)
+  }, [isLoading, filteredData.length])
+
   if (isLoading) {
     return (
       <div className={cn('space-y-4', className)}>
@@ -58,41 +81,15 @@ export function DataTable<T>({
     )
   }
 
-  const [internalSearch, setInternalSearch] = React.useState('')
-  const [currentPage, setCurrentPage] = React.useState(1)
-
-  // Use controlled search value if provided, otherwise use internal state
-  const searchQuery = searchValue !== undefined ? searchValue : internalSearch
-
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     if (onSearch) {
       onSearch(value)
     } else {
       setInternalSearch(value)
-      setCurrentPage(1) // Reset to first page on search
+      setCurrentPage(1)
     }
   }
-
-  // Client-side filtering when no external search handler is provided
-  const filteredData = React.useMemo(() => {
-    if (onSearch || !searchQuery.trim()) return data
-
-    const query = searchQuery.toLowerCase()
-    return data.filter((row) =>
-      columns.some((col) => {
-        const cellContent = col.cell(row)
-        // Convert cell content to string for searching
-        const cellText = getCellText(cellContent)
-        return cellText.toLowerCase().includes(query)
-      })
-    )
-  }, [data, searchQuery, columns, onSearch])
-
-  // Reset to page 1 when filtered data changes
-  React.useEffect(() => {
-    setCurrentPage(1)
-  }, [filteredData.length])
 
   const totalItems = filteredData.length
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))

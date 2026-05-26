@@ -1,7 +1,16 @@
+import dynamic from 'next/dynamic'
 import { notFound } from 'next/navigation'
-import { PageEditorClient } from '@/components/admin/pages/page-editor-client'
+import { PageEditorSkeleton } from '@/components/admin/pages/pages-admin-skeleton'
 import { getAdminPage } from '@/lib/actions/pages'
 import type { CmsPage } from '@/lib/types'
+
+const PageEditorClient = dynamic(
+  () =>
+    import('@/components/admin/pages/page-editor-client').then((m) => ({
+      default: m.PageEditorClient,
+    })),
+  { ssr: false, loading: () => <PageEditorSkeleton /> }
+)
 
 export default async function EditAdminPage({
   params,
@@ -14,9 +23,5 @@ export default async function EditAdminPage({
     notFound()
   }
 
-  return (
-    <div className="p-6">
-      <PageEditorClient page={result.data as CmsPage} />
-    </div>
-  )
+  return <PageEditorClient page={result.data as CmsPage} />
 }

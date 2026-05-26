@@ -17,6 +17,7 @@ import {
   parsePageContent,
 } from '@/lib/cms/page-content'
 import type { CmsPage } from '@/lib/types'
+import { formatAdminDate } from '@/lib/format-admin-date'
 import { toast } from 'sonner'
 
 interface PagesManagerProps {
@@ -121,12 +122,8 @@ export function PagesManager({ initialPages }: PagesManagerProps) {
       key: 'updated',
       header: 'Last updated',
       cell: (p) => (
-        <span className="text-sm text-muted-foreground">
-          {new Date(p.updated_at).toLocaleDateString('en-UG', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-          })}
+        <span className="text-sm text-muted-foreground" suppressHydrationWarning>
+          {formatAdminDate(p.updated_at)}
         </span>
       ),
     },
