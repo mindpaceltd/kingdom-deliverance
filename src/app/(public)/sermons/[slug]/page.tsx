@@ -5,49 +5,63 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Headphones, Calendar, User, ArrowLeft, Clock, Eye } from "lucide-react";
 import type { Metadata } from "next";
+import { createSocialImageMetadata, stripHtmlExcerpt } from "@/lib/seo-image-utils";
+import { createCanonicalMetadata } from "@/lib/seo/canonical-utils";
+import { getOrgLogoUrl, getOrgOgImageUrl, getSiteName } from "@/lib/seo/site-branding";
+import { SermonSchema } from "@/components/seo/sermon-schema";
+import { ShareButtons } from "@/components/content/share-buttons";
 import { incrementSermonViews } from "@/lib/actions/event-views";
 
 interface Props { params: { slug: string } }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = createClient();
-  const { data } = await supabase
-    .from("sermons")
-    .select("title, description, meta_title, meta_description, thumbnail_url, slug")
-    .eq("slug", params.slug)
-    .single();
+  const [sermonResult, orgOgImage, siteName] = await Promise.all([
+    supabase
+      .from("sermons")
+      .select("title, description, meta_title, meta_description, thumbnail_url, slug")
+      .eq("slug", params.slug)
+      .single(),
+    getOrgOgImageUrl(),
+    getSiteName(),
+  ]);
 
+  const data = sermonResult.data;
   if (!data) return { title: "Sermon Not Found" };
 
-  const title = data.meta_title || `${data.title} | KDC Uganda Sermons`;
-  const description = data.meta_description || data.description || "Watch and listen to powerful sermons from Kingdom Deliverance Centre Uganda.";
-  const url = `https://kdcuganda.org/sermons/${data.slug}`;
-  
-  // Use thumbnail if it's a stable hosted URL (not a dynamic generation URL)
-  // Fall back to our branded OG image generator
-  const isStableImage = data.thumbnail_url && 
-    !data.thumbnail_url.includes('pollinations.ai') &&
-    (data.thumbnail_url.startsWith('https://') || data.thumbnail_url.startsWith('http://'));
-  const image = isStableImage 
-    ? data.thumbnail_url 
-    : `https://kdcuganda.org/og?title=${encodeURIComponent(data.title)}&description=${encodeURIComponent((data.description || '').slice(0, 100))}`;
+  const ogTitle = data.meta_title || data.title;
+  const excerpt =
+    data.meta_description?.trim() ||
+    stripHtmlExcerpt(data.description, 160) ||
+    "Watch and listen to powerful sermons from Kingdom Deliverance Centre Uganda.";
+  const socialImage = createSocialImageMetadata(
+    ogTitle,
+    excerpt,
+    data.thumbnail_url,
+    "sermon",
+    orgOgImage
+  );
+
+  const pageUrl = `https://kdcuganda.org/sermons/${data.slug}`;
 
   return {
-    title,
-    description,
+    title: `${ogTitle} | KDC Uganda Sermons`,
+    description: excerpt,
+    ...createCanonicalMetadata(`/sermons/${data.slug}`),
     openGraph: {
-      title: data.meta_title || data.title,
-      description,
-      url,
-      siteName: "Kingdom Deliverance Centre Uganda",
+      title: ogTitle,
+      description: excerpt,
+      url: pageUrl,
+      siteName,
       type: "article",
-      images: [{ url: image, width: 1200, height: 630, alt: data.title }],
+      locale: "en_US",
+      images: [socialImage],
     },
     twitter: {
       card: "summary_large_image",
-      title: data.meta_title || data.title,
-      description,
-      images: [image],
+      title: ogTitle,
+      description: excerpt,
+      images: [socialImage.url],
     },
   };
 }
@@ -56,16 +70,34 @@ export const revalidate = 3600;
 
 export default async function SermonDetailPage({ params }: Props) {
   const supabase = createClient();
-  const { data: sermon } = await supabase
-    .from("sermons")
-    .select("*, sermon_series(name)")
-    .eq("slug", params.slug)
-    .single();
+  const [sermonResult, orgOgImage, orgLogoUrl, siteName] = await Promise.all([
+    supabase
+      .from("sermons")
+      .select("*, sermon_series(name)")
+      .eq("slug", params.slug)
+      .single(),
+    getOrgOgImageUrl(),
+    getOrgLogoUrl(),
+    getSiteName(),
+  ]);
 
+  const { data: sermon } = sermonResult;
   if (!sermon) notFound();
 
-  // Track view (fire-and-forget, don't block render)
   void incrementSermonViews(sermon.id);
+
+  const excerpt =
+    sermon.meta_description?.trim() ||
+    stripHtmlExcerpt(sermon.description, 200) ||
+    "";
+  const sermonUrl = `https://kdcuganda.org/sermons/${sermon.slug}`;
+  const shareImage = createSocialImageMetadata(
+    sermon.meta_title || sermon.title,
+    excerpt || stripHtmlExcerpt(sermon.description, 160) || sermon.title,
+    sermon.thumbnail_url,
+    "sermon",
+    orgOgImage
+  );
 
   const { data: related } = await supabase
     .from("sermons")
@@ -76,6 +108,19 @@ export default async function SermonDetailPage({ params }: Props) {
     .order("date", { ascending: false });
 
   return (
+    <>
+      <SermonSchema
+        title={sermon.meta_title || sermon.title}
+        description={excerpt || sermon.title}
+        slug={sermon.slug}
+        datePublished={sermon.date}
+        preacher={sermon.preacher}
+        imageUrl={shareImage.url}
+        videoUrl={sermon.video_url}
+        audioUrl={sermon.audio_url}
+        orgName={siteName}
+        orgLogoUrl={orgLogoUrl}
+      />
     <div className="flex flex-col">
       <section className="relative py-24 text-white bg-primary overflow-hidden">
         {sermon.thumbnail_url && (
@@ -111,6 +156,13 @@ export default async function SermonDetailPage({ params }: Props) {
 
       <section className="py-16 bg-white">
         <div className="container px-4 max-w-4xl mx-auto space-y-10">
+          <ShareButtons
+            url={sermonUrl}
+            title={sermon.meta_title || sermon.title}
+            text={excerpt || sermon.title}
+            label="Share this message:"
+          />
+
           {/* Video Player */}
           {sermon.video_url && (
             <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl bg-black">
@@ -140,11 +192,16 @@ export default async function SermonDetailPage({ params }: Props) {
             </div>
           )}
 
-          {/* Description */}
-          {sermon.description && (
+          {/* Description / excerpt */}
+          {(excerpt || sermon.description) && (
             <div className="space-y-3">
               <h2 className="font-serif text-2xl font-bold text-primary">About This Message</h2>
-              <p className="text-primary/80 leading-relaxed text-lg">{sermon.description}</p>
+              {excerpt && (
+                <p className="text-lg font-medium leading-relaxed text-primary/90">{excerpt}</p>
+              )}
+              {sermon.description && sermon.description !== excerpt && (
+                <p className="text-primary/80 leading-relaxed text-lg">{sermon.description}</p>
+              )}
             </div>
           )}
 
@@ -171,5 +228,6 @@ export default async function SermonDetailPage({ params }: Props) {
         </div>
       </section>
     </div>
+    </>
   );
 }
