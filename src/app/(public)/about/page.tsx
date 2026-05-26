@@ -39,41 +39,20 @@ const timeline = [
   { year: "2026", event: "The Uganda branch continues to grow as a community rooted in faith, prayer, and deliverance." },
 ];
 
-import { createClient } from '@/lib/supabase/server';
-
-const DEFAULT_HERO_URL =
-  'https://images.unsplash.com/photo-1493397212122-2b85dda8106b?q=80&w=2071&auto=format&fit=crop';
+import { getAboutHeroUrl } from '@/lib/seo/page-hero';
 
 export default async function AboutPage() {
-  let heroUrl = DEFAULT_HERO_URL;
-
-  try {
-    const supabase = createClient();
-    const { data: heroImage, error } = await supabase
-      .from('organization_images')
-      .select('url')
-      .eq('type', 'hero')
-      .eq('is_active', true)
-      .maybeSingle();
-
-    if (error) {
-      console.error('[AboutPage] Hero image fetch failed:', error.message);
-    } else if (heroImage?.url) {
-      heroUrl = heroImage.url;
-    }
-  } catch (err) {
-    console.error('[AboutPage] Unexpected error loading hero image:', err);
-  }
+  const heroUrl = await getAboutHeroUrl();
 
   return (
     <div className="flex flex-col">
       {/* Hero */}
       <section className="relative pt-48 pb-32 lg:pt-56 lg:pb-40 text-white overflow-hidden">
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className="absolute inset-0 bg-cover bg-center scale-105"
           style={{ backgroundImage: `url('${heroUrl}')` }}
         />
-        <div className="absolute inset-0 bg-black/70" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0d1b3e]/90 via-[#0d1b3e]/75 to-[#0d1b3e]/95" />
         <div className="container relative z-10 text-center max-w-4xl mx-auto px-4">
           <FadeInSection>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-5 py-2 text-sm font-semibold text-accent mb-8">
