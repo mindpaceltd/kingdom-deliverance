@@ -1,6 +1,44 @@
 -- Testimonies: staff RLS + seed approved stories for KDC Uganda
 
+-- Align older remote tables with app column names
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'testimonies' AND column_name = 'message'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'testimonies' AND column_name = 'testimony'
+  ) THEN
+    ALTER TABLE public.testimonies RENAME COLUMN message TO testimony;
+  ELSIF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'testimonies' AND column_name = 'testimony'
+  ) THEN
+    ALTER TABLE public.testimonies ADD COLUMN testimony TEXT;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'testimonies' AND column_name = 'address'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'testimonies' AND column_name = 'location'
+  ) THEN
+    ALTER TABLE public.testimonies RENAME COLUMN address TO location;
+  END IF;
+END $$;
+
+ALTER TABLE public.testimonies ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE public.testimonies ADD COLUMN IF NOT EXISTS location TEXT;
+ALTER TABLE public.testimonies ADD COLUMN IF NOT EXISTS media_url TEXT;
+ALTER TABLE public.testimonies ADD COLUMN IF NOT EXISTS media_type TEXT;
+ALTER TABLE public.testimonies ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
 DROP POLICY IF EXISTS "Admins can manage all testimonies" ON public.testimonies;
+DROP POLICY IF EXISTS "Staff can view all testimonies" ON public.testimonies;
+DROP POLICY IF EXISTS "Staff can manage testimonies" ON public.testimonies;
+DROP POLICY IF EXISTS "Staff can delete testimonies" ON public.testimonies;
 
 CREATE POLICY "Staff can view all testimonies"
   ON public.testimonies
