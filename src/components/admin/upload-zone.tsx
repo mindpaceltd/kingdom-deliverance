@@ -41,7 +41,7 @@ function getMimeCategory(
 interface UploadZoneProps {
   onUploadComplete?: (url: string) => void
   /** Called once when every file in the current batch has finished (success or error). */
-  onBatchComplete?: (urls: string[]) => void
+  onBatchComplete?: (items: { url: string; filename: string }[]) => void
   onUploadError?: (error: string) => void
   accept?: string
   className?: string
@@ -154,12 +154,12 @@ export function UploadZone({
       (u) => u.status === 'pending' || u.status === 'uploading'
     )
     if (inFlight) return
-    const urls = uploads
+    const items = uploads
       .filter((u) => u.status === 'done' && u.url)
-      .map((u) => u.url as string)
-    if (urls.length === 0 || batchNotifiedRef.current) return
+      .map((u) => ({ url: u.url as string, filename: u.file.name }))
+    if (items.length === 0 || batchNotifiedRef.current) return
     batchNotifiedRef.current = true
-    onBatchComplete(urls)
+    onBatchComplete(items)
   }, [uploads, onBatchComplete])
 
   // ── File processing ───────────────────────────────────────────────────────

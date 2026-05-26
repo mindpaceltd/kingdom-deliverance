@@ -3,6 +3,7 @@ import { getGallery } from "@/lib/supabase/queries";
 import { normalizeMediaUrl } from "@/lib/media-url";
 import { DEFAULT_ABOUT_HERO_URL } from "@/lib/seo/page-hero";
 import { GalleryLightboxGrid } from "@/components/gallery/gallery-lightbox-grid";
+import { resolveGalleryCaption } from "@/lib/gallery-caption";
 
 export const metadata: Metadata = {
   title: "Gallery | Kingdom Deliverance Centre Uganda",
@@ -62,13 +63,16 @@ export default async function GalleryPage() {
               <GalleryLightboxGrid
                 items={items.map((item) => {
                   const albumLabel = formatAlbum(item.album);
-                  const title = item.title?.trim() || null;
-                  const caption =
-                    item.description?.trim() || title || albumLabel;
+                  const caption = resolveGalleryCaption({
+                    description: item.description,
+                    title: item.title,
+                    image_url: item.image_url,
+                    album: item.album,
+                  });
                   return {
                     id: item.id,
                     image_url: item.image_url,
-                    title,
+                    title: item.title,
                     description: item.description,
                     caption,
                     category: albumLabel,

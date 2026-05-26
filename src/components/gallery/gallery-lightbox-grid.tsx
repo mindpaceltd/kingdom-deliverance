@@ -7,18 +7,11 @@ import { cn } from '@/lib/utils'
 
 export interface GalleryGridItem {
   id: string
-  /** DB title (optional) */
   title?: string | null
-  /** DB caption / description (optional) */
   description?: string | null
-  /** Caption shown to visitors: description, else title, else album label */
   caption: string
   category: string
   image_url: string
-}
-
-function itemCaption(item: GalleryGridItem): string {
-  return item.caption.trim() || item.category
 }
 
 function shuffle<T>(items: T[]): T[] {
@@ -68,31 +61,43 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
 
   if (total === 0) return null
 
-  const prevIndex = openIndex !== null ? (openIndex - 1 + total) % total : 0
-  const nextIndex = openIndex !== null ? (openIndex + 1) % total : 0
-  const neighborIndices = [prevIndex, openIndex ?? 0, nextIndex]
+  const thumbStrip =
+    total > 1
+      ? Array.from({ length: Math.min(total, 7) }, (_, i) => {
+          const offset = i - Math.floor(Math.min(total, 7) / 2)
+          return (openIndex! + offset + total) % total
+        })
+      : openIndex !== null
+        ? [openIndex]
+        : []
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
         {shuffled.map((item, index) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setOpenIndex(index)}
-            className="group relative aspect-square overflow-hidden rounded-md border border-primary/10 bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            <GalleryImage
-              src={item.image_url}
-              alt={itemCaption(item)}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
-            />
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-              <p className="line-clamp-2 text-left text-[9px] font-medium leading-tight text-white sm:text-[10px]">
-                {itemCaption(item)}
+          <figure key={item.id} className="flex min-w-0 flex-col gap-1.5">
+            <button
+              type="button"
+              onClick={() => setOpenIndex(index)}
+              className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-primary/10 bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <GalleryImage
+                src={item.image_url}
+                alt={item.caption}
+                className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+              />
+            </button>
+            <figcaption className="min-w-0 px-0.5">
+              <p className="line-clamp-2 text-left text-[11px] font-semibold leading-snug text-primary sm:text-xs">
+                {item.caption}
               </p>
-            </div>
-          </button>
+              {item.category && (
+                <p className="mt-0.5 truncate text-[10px] uppercase tracking-wide text-primary/50">
+                  {item.category}
+                </p>
+              )}
+            </figcaption>
+          </figure>
         ))}
       </div>
 
@@ -101,14 +106,14 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
           className="fixed inset-0 z-[100] flex flex-col bg-black/95"
           role="dialog"
           aria-modal="true"
-          aria-label="Gallery image viewer"
+          aria-label={current.caption}
         >
-          <div className="flex items-center justify-between px-4 py-3 text-white">
-            <div className="min-w-0 flex-1 pr-4">
-              <p className="truncate text-lg font-semibold md:text-xl">
-                {itemCaption(current)}
+          <div className="flex shrink-0 items-start justify-between gap-3 px-3 py-3 text-white sm:px-5 sm:py-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-base font-semibold leading-snug sm:text-xl md:text-2xl">
+                {current.caption}
               </p>
-              <p className="text-xs text-white/60">
+              <p className="mt-1 text-xs text-white/60 sm:text-sm">
                 {openIndex + 1} of {total}
                 {current.category ? ` · ${current.category}` : ''}
               </p>
@@ -116,73 +121,87 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
             <button
               type="button"
               onClick={() => setOpenIndex(null)}
-              className="rounded-full p-2 hover:bg-white/10"
+              className="shrink-0 rounded-full p-2 hover:bg-white/10"
               aria-label="Close gallery"
             >
-              <X className="h-6 w-6" />
+              <X className="h-6 w-6 sm:h-7 sm:w-7" />
             </button>
           </div>
 
-          <div className="relative flex flex-1 items-center justify-center px-14 md:px-20">
-            <button
-              type="button"
-              onClick={() => go(-1)}
-              className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white hover:bg-white/20 md:left-4"
-              aria-label="Previous image"
-            >
-              <ChevronLeft className="h-8 w-8" />
-            </button>
+          <div className="relative flex min-h-0 flex-1 items-center justify-center px-10 sm:px-14 md:px-20">
+            {total > 1 && (
+              <button
+                type="button"
+                onClick={() => go(-1)}
+                className="absolute left-1 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/15 p-2 text-white hover:bg-white/25 sm:left-3 sm:p-3"
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="h-6 w-6 sm:h-8 sm:w-8" />
+              </button>
+            )}
 
-            <div className="relative flex h-[min(70vh,720px)] w-full max-w-5xl items-center justify-center">
+            <div className="flex max-h-[50vh] w-full max-w-5xl items-center justify-center sm:max-h-[58vh] md:max-h-[62vh]">
               <GalleryImage
                 src={current.image_url}
-                alt={itemCaption(current)}
-                className="max-h-[min(70vh,720px)] max-w-full object-contain"
-                fallbackClassName="flex h-48 w-48 items-center justify-center rounded-lg bg-white/10"
+                alt={current.caption}
+                className="max-h-[50vh] max-w-full object-contain sm:max-h-[58vh] md:max-h-[62vh]"
+                fallbackClassName="flex h-40 w-40 items-center justify-center rounded-lg bg-white/10 sm:h-48 sm:w-48"
               />
             </div>
 
-            <button
-              type="button"
-              onClick={() => go(1)}
-              className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white hover:bg-white/20 md:right-4"
-              aria-label="Next image"
-            >
-              <ChevronRight className="h-8 w-8" />
-            </button>
+            {total > 1 && (
+              <button
+                type="button"
+                onClick={() => go(1)}
+                className="absolute right-1 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/15 p-2 text-white hover:bg-white/25 sm:right-3 sm:p-3"
+                aria-label="Next image"
+              >
+                <ChevronRight className="h-6 w-6 sm:h-8 sm:w-8" />
+              </button>
+            )}
           </div>
 
-          {current.description?.trim() && (
-            <p className="mx-auto max-w-3xl px-6 pb-3 text-center text-sm leading-relaxed text-white/85 md:text-base">
-              {current.description.trim()}
+          <div className="shrink-0 border-t border-white/15 bg-black/40 px-4 py-3 sm:px-6 sm:py-4">
+            <p className="mx-auto max-w-3xl text-center text-sm leading-relaxed text-white sm:text-base">
+              {current.caption}
             </p>
-          )}
-
-          <div className="flex items-center justify-center gap-2 border-t border-white/10 px-4 py-4">
-            {neighborIndices.map((idx, i) => {
-              const item = shuffled[idx]
-              const isCenter = i === 1
-              return (
-                <button
-                  key={`${item.id}-${i}`}
-                  type="button"
-                  onClick={() => setOpenIndex(idx)}
-                  className={cn(
-                    'relative shrink-0 overflow-hidden rounded-md border-2 transition-all',
-                    isCenter
-                      ? 'h-20 w-28 border-accent opacity-100 md:h-24 md:w-32'
-                      : 'h-14 w-20 border-white/20 opacity-70 hover:opacity-100 md:h-16 md:w-24'
-                  )}
-                >
-                  <GalleryImage
-                    src={item.image_url}
-                    alt={itemCaption(item)}
-                    className="h-full w-full object-cover"
-                  />
-                </button>
-              )
-            })}
+            {current.description?.trim() &&
+              current.description.trim() !== current.caption && (
+                <p className="mx-auto mt-2 max-w-3xl text-center text-xs leading-relaxed text-white/70 sm:text-sm">
+                  {current.description.trim()}
+                </p>
+              )}
           </div>
+
+          {thumbStrip.length > 0 && (
+            <div className="shrink-0 overflow-x-auto border-t border-white/10 px-3 py-3 sm:px-4">
+              <div className="flex min-w-min items-center justify-center gap-2">
+                {thumbStrip.map((idx) => {
+                  const item = shuffled[idx]
+                  const isActive = idx === openIndex
+                  return (
+                    <button
+                      key={`${item.id}-${idx}`}
+                      type="button"
+                      onClick={() => setOpenIndex(idx)}
+                      className={cn(
+                        'relative shrink-0 overflow-hidden rounded-md border-2 transition-all',
+                        isActive
+                          ? 'h-16 w-24 border-accent sm:h-20 sm:w-28'
+                          : 'h-12 w-16 border-white/25 opacity-80 hover:opacity-100 sm:h-14 sm:w-20'
+                      )}
+                    >
+                      <GalleryImage
+                        src={item.image_url}
+                        alt={item.caption}
+                        className="h-full w-full object-cover"
+                      />
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </>

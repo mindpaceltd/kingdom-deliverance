@@ -20,6 +20,7 @@ import {
   reorderGallery,
   updateGalleryItem,
 } from '@/lib/actions/gallery'
+import { resolveGalleryCaption, titleFromFilename } from '@/lib/gallery-caption'
 import { createClient } from '@/lib/supabase/client'
 import type { GalleryItem } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -65,10 +66,16 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
     if (data) setItems(data as GalleryItem[])
   }, [])
 
-  async function handleBulkUpload(urls: string[]) {
-    if (urls.length === 0) return
+  async function handleBulkUpload(
+    uploaded: { url: string; filename: string }[]
+  ) {
+    if (uploaded.length === 0) return
     setSaving(true)
-    const result = await createGalleryItemsBulk(urls, 'General')
+    const entries = uploaded.map(({ url, filename }) => ({
+      url,
+      title: titleFromFilename(filename),
+    }))
+    const result = await createGalleryItemsBulk(entries, 'General')
     setSaving(false)
     if ('error' in result) {
       alert(result.error)
@@ -171,8 +178,18 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
           </Button>
         </div>
       ) : (
-        <ul role="list" className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12">
-          {items.map((item, index) => (
+        <ul
+          role="list"
+          className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+        >
+          {items.map((item, index) => {
+            const label = resolveGalleryCaption({
+              description: item.description,
+              title: item.title,
+              image_url: item.image_url,
+              album: item.album,
+            })
+            return (
             <li
               key={item.id}
               draggable
@@ -182,39 +199,36 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
               onDrop={(e) => handleDrop(e, index)}
               onDragEnd={handleDragEnd}
               className={cn(
-                'group relative flex aspect-square cursor-pointer flex-col overflow-hidden rounded-md border bg-card transition-all',
+                'group flex min-w-0 cursor-pointer flex-col gap-1 rounded-lg border bg-card p-1 transition-all',
                 dragOverIndex === index ? 'ring-2 ring-primary border-primary' : 'border-transparent hover:border-primary/20',
                 selectedItem?.id === item.id ? 'ring-2 ring-primary border-primary' : ''
               )}
               onClick={() => setSelectedItem(item)}
             >
-              <div className="absolute left-1.5 top-1.5 z-10 cursor-grab rounded-full bg-black/50 p-1 opacity-0 transition-opacity group-hover:opacity-100 shadow-sm">
-                <GripVerticalIcon className="size-3 text-white" />
-              </div>
-              
-              <div className="relative h-full w-full overflow-hidden bg-muted">
+              <div className="relative aspect-square w-full overflow-hidden rounded-md bg-muted">
+                <div className="absolute left-1 top-1 z-10 cursor-grab rounded-full bg-black/50 p-1 opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                  <GripVerticalIcon className="size-3 text-white" />
+                </div>
                 <Image
                   src={item.image_url}
-                  alt={item.title ?? 'Gallery image'}
+                  alt={label}
                   fill
                   sizes="(max-width: 640px) 50vw, 20vw"
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                   unoptimized
                 />
-              </div>
-
-              {/* Album badge */}
-              <div className="absolute bottom-2 left-2 z-10">
-                 <span className="text-[10px] font-bold uppercase tracking-wider text-white bg-black/60 px-1.5 py-0.5 rounded shadow-sm">
+                <div className="absolute bottom-1 left-1 z-10">
+                  <span className="rounded bg-black/60 px-1 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
                     {item.album}
-                 </span>
+                  </span>
+                </div>
               </div>
-              
-              <div className="absolute inset-0 bg-black/20 opacity-0 transition-opacity group-hover:opacity-100 flex items-center justify-center">
-                 <span className="text-[10px] font-medium text-white px-2 py-1 bg-black/60 rounded-full">Edit Details</span>
-              </div>
+              <p className="line-clamp-2 px-1 text-[10px] font-medium leading-tight text-foreground sm:text-[11px]">
+                {label}
+              </p>
             </li>
-          ))}
+            )
+          })}
         </ul>
       )}
 

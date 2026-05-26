@@ -49,11 +49,19 @@ export async function createGalleryItem(
   return { success: true, id: data.id }
 }
 
+export interface GalleryBulkEntry {
+  url: string
+  title?: string | null
+}
+
 export async function createGalleryItemsBulk(
-  urls: string[],
+  entries: GalleryBulkEntry[] | string[],
   album = 'General'
 ): Promise<{ success: true; count: number } | { error: string }> {
-  const cleaned = urls.map((u) => u.trim()).filter(Boolean)
+  const normalized: GalleryBulkEntry[] = entries.map((e) =>
+    typeof e === 'string' ? { url: e.trim() } : { url: e.url.trim(), title: e.title }
+  )
+  const cleaned = normalized.filter((e) => e.url)
   if (cleaned.length === 0) return { error: 'No images to add' }
 
   const result = await requireRoles(ROLES.CONTENT)
@@ -68,10 +76,10 @@ export async function createGalleryItemsBulk(
     .maybeSingle()
 
   let nextOrder = (last?.display_order ?? 0) + 1
-  const rows = cleaned.map((image_url) => ({
-    image_url,
+  const rows = cleaned.map(({ url, title }) => ({
+    image_url: url,
     album,
-    title: null,
+    title: title?.trim() || null,
     description: null,
     display_order: nextOrder++,
   }))
