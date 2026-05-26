@@ -20,6 +20,7 @@ import {
   reorderGallery,
   updateGalleryItem,
 } from '@/lib/actions/gallery'
+import { GalleryCaptionOverlay } from '@/components/gallery/gallery-caption-overlay'
 import { resolveGalleryCaption, titleFromFilename } from '@/lib/gallery-caption'
 import { createClient } from '@/lib/supabase/client'
 import type { GalleryItem } from '@/lib/types'
@@ -199,14 +200,14 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
               onDrop={(e) => handleDrop(e, index)}
               onDragEnd={handleDragEnd}
               className={cn(
-                'group flex min-w-0 cursor-pointer flex-col gap-1 rounded-lg border bg-card p-1 transition-all',
+                'group relative min-w-0 cursor-pointer overflow-hidden rounded-lg border bg-card transition-all',
                 dragOverIndex === index ? 'ring-2 ring-primary border-primary' : 'border-transparent hover:border-primary/20',
                 selectedItem?.id === item.id ? 'ring-2 ring-primary border-primary' : ''
               )}
               onClick={() => setSelectedItem(item)}
             >
-              <div className="relative aspect-square w-full overflow-hidden rounded-md bg-muted">
-                <div className="absolute left-1 top-1 z-10 cursor-grab rounded-full bg-black/50 p-1 opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+              <div className="relative aspect-square w-full bg-muted">
+                <div className="absolute left-1 top-1 z-20 cursor-grab rounded-full bg-black/50 p-1 opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
                   <GripVerticalIcon className="size-3 text-white" />
                 </div>
                 <Image
@@ -217,15 +218,8 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                   unoptimized
                 />
-                <div className="absolute bottom-1 left-1 z-10">
-                  <span className="rounded bg-black/60 px-1 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
-                    {item.album}
-                  </span>
-                </div>
+                <GalleryCaptionOverlay caption={label} className="z-[11]" />
               </div>
-              <p className="line-clamp-2 px-1 text-[10px] font-medium leading-tight text-foreground sm:text-[11px]">
-                {label}
-              </p>
             </li>
             )
           })}

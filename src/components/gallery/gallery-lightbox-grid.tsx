@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { GalleryImage } from '@/components/content/gallery-image'
+import { GalleryCaptionOverlay } from '@/components/gallery/gallery-caption-overlay'
 import { cn } from '@/lib/utils'
 
 export interface GalleryGridItem {
@@ -75,29 +76,19 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
     <>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
         {shuffled.map((item, index) => (
-          <figure key={item.id} className="flex min-w-0 flex-col gap-1.5">
-            <button
-              type="button"
-              onClick={() => setOpenIndex(index)}
-              className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-primary/10 bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              <GalleryImage
-                src={item.image_url}
-                alt={item.caption}
-                className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-              />
-            </button>
-            <figcaption className="min-w-0 px-0.5">
-              <p className="line-clamp-2 text-left text-[11px] font-semibold leading-snug text-primary sm:text-xs">
-                {item.caption}
-              </p>
-              {item.category && (
-                <p className="mt-0.5 truncate text-[10px] uppercase tracking-wide text-primary/50">
-                  {item.category}
-                </p>
-              )}
-            </figcaption>
-          </figure>
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setOpenIndex(index)}
+            className="relative aspect-[4/3] w-full min-w-0 overflow-hidden rounded-lg border border-primary/10 bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            <GalleryImage
+              src={item.image_url}
+              alt={item.caption}
+              className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+            />
+            <GalleryCaptionOverlay caption={item.caption} />
+          </button>
         ))}
       </div>
 
