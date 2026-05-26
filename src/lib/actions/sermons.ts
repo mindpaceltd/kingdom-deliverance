@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { indexOnPublish } from '@/lib/seo/google-indexing'
 import { requireRoles } from '@/lib/authz'
@@ -208,15 +208,38 @@ export async function restoreSermon(
 // duplicateSermon
 // ---------------------------------------------------------------------------
 
+function duplicateSermonTitle(title: string): string {
+  const trimmed = title.trim()
+  if (trimmed.startsWith('Copy of ')) return trimmed
+  return `Copy of ${trimmed}`
+}
+
+async function uniqueSermonSlug(
+  admin: ReturnType<typeof createAdminClient>,
+  baseSlug: string
+): Promise<string> {
+  let candidate = `${baseSlug}-copy`
+  for (let attempt = 1; attempt <= 99; attempt++) {
+    const { data: existing } = await admin
+      .from('sermons')
+      .select('id')
+      .eq('slug', candidate)
+      .maybeSingle()
+    if (!existing) return candidate
+    candidate = `${baseSlug}-copy-${attempt}`
+  }
+  throw new Error('Could not generate a unique slug for the duplicate')
+}
+
 export async function duplicateSermon(
   id: string
 ): Promise<{ success: true; id: string } | { error: string }> {
   const result = await requireRoles(ROLES.CONTENT)
   if ('error' in result) return result
 
-  const supabase = createClient()
+  const admin = createAdminClient()
 
-  const { data: source, error: fetchError } = await supabase
+  const { data: source, error: fetchError } = await admin
     .from('sermons')
     .select('*')
     .eq('id', id)
@@ -226,28 +249,15 @@ export async function duplicateSermon(
     return { error: fetchError?.message ?? 'Sermon not found' }
   }
 
-  const newTitle = source.title.startsWith('Copy of ')
-    ? source.title
-    : `Copy of ${source.title}`
-
-  const baseSlug = source.slug
-  let candidateSlug = `${baseSlug}-copy`
-  let attempt = 1
-
-  while (attempt <= 99) {
-    const { data: existing } = await supabase
-      .from('sermons')
-      .select('id')
-      .eq('slug', candidateSlug)
-      .maybeSingle()
-
-    if (!existing) break
-
-    attempt++
-    candidateSlug = `${baseSlug}-copy-${attempt}`
+  const newTitle = duplicateSermonTitle(String(source.title ?? 'Sermon'))
+  let candidateSlug: string
+  try {
+    candidateSlug = await uniqueSermonSlug(admin, String(source.slug ?? 'sermon'))
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Slug generation failed' }
   }
 
-  const { data: newSermon, error: insertError } = await supabase
+  const { data: newSermon, error: insertError } = await admin
     .from('sermons')
     .insert({
       title: newTitle,
@@ -282,7 +292,42 @@ export async function duplicateSermon(
   }
 
   revalidateSermonPaths()
+  revalidatePath('/admin/sermons')
   return { success: true, id: newSermon.id }
+}
+
+export async function duplicateSermons(
+  ids: string[]
+): Promise<
+  | { success: true; count: number; ids: string[]; failed?: string[] }
+  | { error: string; count?: number }
+> {
+  if (ids.length === 0) return { success: true, count: 0, ids: [] }
+
+  const created: string[] = []
+  const failed: string[] = []
+
+  for (const id of ids) {
+    const result = await duplicateSermon(id)
+    if ('error' in result) {
+      failed.push(result.error)
+      continue
+    }
+    created.push(result.id)
+  }
+
+  revalidatePath('/admin/sermons')
+
+  if (created.length === 0) {
+    return { error: failed[0] ?? 'Duplication failed', count: 0 }
+  }
+
+  return {
+    success: true,
+    count: created.length,
+    ids: created,
+    ...(failed.length > 0 ? { failed } : {}),
+  }
 }
 
 // ---------------------------------------------------------------------------

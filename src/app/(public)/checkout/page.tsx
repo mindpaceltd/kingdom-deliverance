@@ -5,6 +5,7 @@ import { useCart } from '@/lib/cart-context'
 import { useCurrency, SUPPORTED_CURRENCIES } from '@/lib/currency-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 import { createOrder } from '@/lib/actions/orders'
 import { Loader2, ShieldCheck, Wallet, Package, Download } from 'lucide-react'
@@ -297,9 +298,8 @@ export default function CheckoutPage() {
                     {createAccount && (
                       <div className="space-y-1.5">
                         <Label htmlFor="password" className="text-sm font-semibold">Password *</Label>
-                        <Input
+                        <PasswordInput
                           id="password"
-                          type="password"
                           required
                           placeholder="••••••••"
                           value={formData.password}

@@ -1,36 +1,37 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { 
-  PlusIcon, 
-  PencilIcon, 
-  Trash2Icon, 
-  CopyIcon, 
-  RotateCcw, 
+import {
+  PlusIcon,
+  PencilIcon,
+  Trash2Icon,
+  CopyIcon,
+  RotateCcw,
   TrashIcon,
   SparklesIcon,
   LinkIcon,
   TypeIcon,
-  SearchIcon,
   FilterIcon,
   CalendarIcon,
   EyeIcon,
-  CheckCircle2,
-  FileEditIcon,
-  ClockIcon,
-  TrendingUpIcon,
   VideoIcon,
-  UserIcon
+  UserIcon,
+  GlobeIcon,
+  ExternalLinkIcon,
+  XIcon,
+  Loader2,
 } from 'lucide-react'
+import { toast } from 'sonner'
+import { AnimatePresence, motion } from 'framer-motion'
 
 import { cn } from '@/lib/utils'
-
-import { DataTable, type ColumnDef } from '@/components/admin/data-table'
 import { StatusBadge } from '@/components/admin/status-badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select,
@@ -47,38 +48,37 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { 
-  trashSermon, 
-  restoreSermon, 
-  duplicateSermon, 
-  deleteSermon 
+} from '@/components/ui/dialog'
+import {
+  trashSermon,
+  restoreSermon,
+  duplicateSermon,
+  duplicateSermons,
+  deleteSermon,
 } from '@/lib/actions/sermons'
 import { analyzeSermonVideo } from '@/lib/actions/sermon-ai'
 import { createClient } from '@/lib/supabase/client'
+import { buildPublicContentUrl } from '@/lib/seo/public-content-urls'
+import { getSeoScoreColor } from '@/lib/posts-helpers'
 import type { Sermon } from '@/lib/types'
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+const PAGE_SIZE = 10
 
 function formatDate(dateStr: string): string {
+  if (!dateStr) return '—'
   try {
-    if (!dateStr) return 'N/A'
     const date = new Date(dateStr)
-    if (isNaN(date.getTime())) return dateStr
-    
+    if (Number.isNaN(date.getTime())) return dateStr
     return new Intl.DateTimeFormat('en-GB', {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
     }).format(date)
-  } catch (e) {
+  } catch {
     return dateStr
   }
 }
 
-/** Collect unique non-empty values from an array of sermons for a given key */
 function uniqueValues(sermons: Sermon[], key: keyof Sermon): string[] {
   const seen = new Set<string>()
   for (const s of sermons) {
@@ -88,31 +88,63 @@ function uniqueValues(sermons: Sermon[], key: keyof Sermon): string[] {
   return Array.from(seen).sort()
 }
 
-function StatCard({ label, value, icon: Icon, trend, color }: { label: string, value: string | number, icon: any, trend?: string, color: string }) {
+function SeoScoreBadge({ score }: { score: number }) {
+  const color = getSeoScoreColor(score ?? 0)
+  const colorClass = {
+    red: 'text-red-600 bg-red-50',
+    yellow: 'text-yellow-600 bg-yellow-50',
+    green: 'text-green-600 bg-green-50',
+  }[color]
+
   return (
-    <div className="bg-background rounded-xl border border-border/50 p-5 shadow-sm hover:shadow-md transition-all duration-300 group">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">{label}</p>
-          <h3 className="text-2xl font-bold mt-1 tracking-tight">{value}</h3>
-          {trend && (
-            <p className="text-xs text-emerald-600 font-medium mt-1 flex items-center gap-1">
-              <TrendingUpIcon className="size-3" />
-              {trend}
-            </p>
-          )}
-        </div>
-        <div className={cn("p-2.5 rounded-lg transition-colors", color)}>
-          <Icon className="size-5" />
-        </div>
-      </div>
-    </div>
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold tabular-nums',
+        colorClass
+      )}
+    >
+      {score ?? 0}
+    </span>
   )
 }
 
-// ---------------------------------------------------------------------------
-// SermonsManager
-// ---------------------------------------------------------------------------
+function OgReadiness({ sermon }: { sermon: Sermon }) {
+  const hasTitle = Boolean(sermon.meta_title?.trim())
+  const hasExcerpt = Boolean(
+    sermon.meta_description?.trim() || sermon.description?.trim()
+  )
+  const hasImage = Boolean(sermon.thumbnail_url?.trim())
+
+  const items = [
+    { ok: hasTitle, label: 'Title', key: 'T' },
+    { ok: hasExcerpt, label: 'Excerpt', key: 'E' },
+    { ok: hasImage, label: 'Image', key: 'I' },
+  ]
+
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div className="flex gap-1">
+        {items.map((item) => (
+          <span
+            key={item.key}
+            title={`OG ${item.label}: ${item.ok ? 'set' : 'missing'}`}
+            className={cn(
+              'text-[9px] font-black w-5 h-5 rounded flex items-center justify-center border',
+              item.ok
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : 'bg-muted text-muted-foreground border-border'
+            )}
+          >
+            {item.key}
+          </span>
+        ))}
+      </div>
+      <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
+        OG / SEO
+      </span>
+    </div>
+  )
+}
 
 interface SermonsManagerProps {
   initialSermons: Sermon[]
@@ -121,30 +153,25 @@ interface SermonsManagerProps {
 export function SermonsManager({ initialSermons }: SermonsManagerProps) {
   const router = useRouter()
   const [sermons, setSermons] = React.useState<Sermon[]>(initialSermons)
+  const [searchQuery, setSearchQuery] = React.useState('')
+  const [currentPage, setCurrentPage] = React.useState(1)
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set())
+  const [actionLoading, setActionLoading] = React.useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = React.useState(false)
-  const [mounted, setMounted] = React.useState(false)
 
-  React.useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // Magic AI state
   const [magicUrl, setMagicUrl] = React.useState('')
   const [magicTitle, setMagicTitle] = React.useState('')
   const [magicLoading, setMagicLoading] = React.useState(false)
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState('url')
 
-  // Filter state
-  const [filterPreacher, setFilterPreacher] = React.useState<string>('all')
-  const [filterStatus, setFilterStatus] = React.useState<string>('all')
-  const [filterDateFrom, setFilterDateFrom] = React.useState<string>('')
-  const [filterDateTo, setFilterDateTo] = React.useState<string>('')
+  const [filterPreacher, setFilterPreacher] = React.useState('all')
+  const [filterStatus, setFilterStatus] = React.useState('all')
+  const [filterDateFrom, setFilterDateFrom] = React.useState('')
+  const [filterDateTo, setFilterDateTo] = React.useState('')
 
-  // Derived option lists
   const preachers = React.useMemo(() => uniqueValues(sermons, 'preacher'), [sermons])
 
-  // Re-fetch sermons from Supabase using the browser client
   const refreshSermons = React.useCallback(async () => {
     setIsRefreshing(true)
     const supabase = createClient()
@@ -156,471 +183,666 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
     setIsRefreshing(false)
   }, [])
 
-  function openNew() {
-    router.push('/admin/sermons/new')
+  const filteredSermons = React.useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    return sermons.filter((s) => {
+      if (filterPreacher !== 'all' && s.preacher !== filterPreacher) return false
+      if (filterStatus !== 'all' && s.status !== filterStatus) return false
+      if (filterDateFrom && s.date < filterDateFrom) return false
+      if (filterDateTo && s.date > filterDateTo) return false
+      if (q) {
+        const haystack = [s.title, s.preacher, s.series, s.slug]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+        if (!haystack.includes(q)) return false
+      }
+      return true
+    })
+  }, [sermons, filterPreacher, filterStatus, filterDateFrom, filterDateTo, searchQuery])
+
+  const totalPages = Math.max(1, Math.ceil(filteredSermons.length / PAGE_SIZE))
+  const safePage = Math.min(currentPage, totalPages)
+  const pageStart = (safePage - 1) * PAGE_SIZE
+  const pagedSermons = filteredSermons.slice(pageStart, pageStart + PAGE_SIZE)
+  const pageIds = pagedSermons.map((s) => s.id)
+
+  const allPageSelected =
+    pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id))
+  const somePageSelected =
+    pageIds.some((id) => selectedIds.has(id)) && !allPageSelected
+
+  const stats = React.useMemo(
+    () => ({
+      total: sermons.length,
+      published: sermons.filter((s) => s.status === 'published').length,
+      drafts: sermons.filter((s) => s.status === 'draft').length,
+      views: sermons.reduce((acc, s) => acc + (s.views || 0), 0),
+    }),
+    [sermons]
+  )
+
+  function toggleSelectAll() {
+    if (allPageSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev)
+        pageIds.forEach((id) => next.delete(id))
+        return next
+      })
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev)
+        pageIds.forEach((id) => next.add(id))
+        return next
+      })
+    }
   }
 
-  function openEdit(sermon: Sermon) {
-    router.push(`/admin/sermons/${sermon.id}`)
+  function toggleSelectRow(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }
 
   async function handleDuplicate(sermon: Sermon) {
+    setActionLoading(`dup-${sermon.id}`)
     const result = await duplicateSermon(sermon.id)
-    if ('success' in result) {
-      await refreshSermons()
-    } else {
-      alert(result.error)
+    setActionLoading(null)
+    if ('error' in result) {
+      toast.error(result.error)
+      return
+    }
+    toast.success('Sermon duplicated as draft')
+    await refreshSermons()
+    router.push(`/admin/sermons/${result.id}`)
+  }
+
+  async function handleBulkDuplicate() {
+    if (selectedIds.size === 0) return
+    if (
+      !window.confirm(
+        `Duplicate ${selectedIds.size} sermon(s)? Copies will be saved as drafts.`
+      )
+    ) {
+      return
+    }
+    setActionLoading('bulk-dup')
+    const result = await duplicateSermons(Array.from(selectedIds))
+    setActionLoading(null)
+    if ('error' in result) {
+      toast.error(result.error)
+      return
+    }
+    toast.success(`Duplicated ${result.count} sermon(s)`)
+    setSelectedIds(new Set())
+    await refreshSermons()
+    router.refresh()
+  }
+
+  async function submitUrlsToGoogle(urls: string[]) {
+    if (urls.length === 0) {
+      toast.error('No published sermons with a slug selected.')
+      return
+    }
+    const res = await fetch('/api/google/search-console/index-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ urls }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      toast.error(data.error || 'Indexing request failed')
+      return
+    }
+    const ok =
+      data.results?.filter((r: { success?: boolean }) => r.success).length ?? urls.length
+    toast.success(`Submitted ${ok} URL(s) to Google for indexing`)
+  }
+
+  async function handleSingleIndex(sermon: Sermon) {
+    if (sermon.status !== 'published' || !sermon.slug) {
+      toast.error('Only published sermons can be indexed.')
+      return
+    }
+    setActionLoading(`index-${sermon.id}`)
+    try {
+      await submitUrlsToGoogle([buildPublicContentUrl('sermon', sermon.slug)])
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  async function handleBulkIndex() {
+    const urls = sermons
+      .filter(
+        (s) =>
+          selectedIds.has(s.id) && s.status === 'published' && s.slug
+      )
+      .map((s) => buildPublicContentUrl('sermon', s.slug!))
+
+    setActionLoading('bulk-index')
+    try {
+      await submitUrlsToGoogle(urls)
+    } finally {
+      setActionLoading(null)
+      setSelectedIds(new Set())
     }
   }
 
   async function handleTrash(sermon: Sermon) {
     if (!window.confirm(`Move "${sermon.title}" to trash?`)) return
+    setActionLoading(`trash-${sermon.id}`)
     const result = await trashSermon(sermon.id)
-    if ('success' in result) {
+    setActionLoading(null)
+    if ('error' in result) toast.error(result.error)
+    else {
+      toast.success('Moved to trash')
       await refreshSermons()
-    } else {
-      alert(result.error)
     }
   }
 
   async function handleRestore(sermon: Sermon) {
+    setActionLoading(`restore-${sermon.id}`)
     const result = await restoreSermon(sermon.id)
-    if ('success' in result) {
+    setActionLoading(null)
+    if ('error' in result) toast.error(result.error)
+    else {
+      toast.success('Sermon restored')
       await refreshSermons()
-    } else {
-      alert(result.error)
     }
   }
 
   async function handlePermanentDelete(sermon: Sermon) {
-    if (!window.confirm(`Permanently delete "${sermon.title}"? THIS CANNOT BE UNDONE.`)) return
+    if (!window.confirm(`Permanently delete "${sermon.title}"? This cannot be undone.`))
+      return
+    setActionLoading(`del-${sermon.id}`)
     const result = await deleteSermon(sermon.id)
-    if ('success' in result) {
+    setActionLoading(null)
+    if ('error' in result) toast.error(result.error)
+    else {
+      toast.success('Sermon deleted')
       await refreshSermons()
-    } else {
-      alert(result.error)
     }
   }
 
   async function handleMagicAI() {
     const isUrlMode = activeTab === 'url'
     const input = isUrlMode ? magicUrl.trim() : magicTitle.trim()
-    
     if (!input) return
-    
+
     setMagicLoading(true)
     try {
-      const result = await analyzeSermonVideo({ 
+      const result = await analyzeSermonVideo({
         videoUrl: isUrlMode ? input : undefined,
-        title: !isUrlMode ? input : undefined
+        title: !isUrlMode ? input : undefined,
       })
       if (result.success) {
         setMagicUrl('')
         setMagicTitle('')
         setIsDialogOpen(false)
+        toast.success('AI draft created')
         await refreshSermons()
-        // Optional: redirect to the new draft if result.id is present
       } else {
-        alert(result.error || 'AI Analysis failed')
+        toast.error(result.error || 'AI analysis failed')
       }
-    } catch (e: any) {
-      alert(e.message || 'An unexpected error occurred')
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Unexpected error')
     } finally {
       setMagicLoading(false)
     }
   }
 
-  // Client-side filtering
-  const filteredSermons = React.useMemo(() => {
-    return sermons.filter((s) => {
-      if (filterPreacher !== 'all' && s.preacher !== filterPreacher) return false
-      if (filterStatus !== 'all' && s.status !== filterStatus) return false
-      if (filterDateFrom && s.date < filterDateFrom) return false
-      if (filterDateTo && s.date > filterDateTo) return false
-      return true
-    })
-  }, [sermons, filterPreacher, filterStatus, filterDateFrom, filterDateTo])
-
-  const stats = React.useMemo(() => {
-    return {
-      total: sermons.length,
-      published: sermons.filter(s => s.status === 'published').length,
-      drafts: sermons.filter(s => s.status === 'draft').length,
-      views: sermons.reduce((acc, s) => acc + (s.views || 0), 0)
-    }
-  }, [sermons])
-
-  const columns: ColumnDef<Sermon>[] = [
-    {
-      key: 'title',
-      header: 'Sermon Details',
-      className: 'max-w-[350px]',
-      cell: (sermon) => (
-        <div className="flex items-center gap-3">
-          <div className="relative size-12 rounded-lg overflow-hidden bg-muted flex-shrink-0 border border-border/50 group-hover:border-primary/30 transition-colors">
-            {sermon.thumbnail_url ? (
-              <img 
-                src={sermon.thumbnail_url} 
-                alt="" 
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                <VideoIcon className="size-5 opacity-30" />
-              </div>
-            )}
-          </div>
-          <div className="flex flex-col min-w-0">
-            <button
-              type="button"
-              onClick={() => openEdit(sermon)}
-              className="text-sm font-semibold text-foreground hover:text-primary transition-colors truncate text-left"
-              title={sermon.title}
-            >
-              {sermon.title}
-            </button>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[11px] font-medium text-muted-foreground/80 bg-muted/50 px-1.5 py-0.5 rounded">
-                {sermon.sermon_series?.name || sermon.series || 'Individual'}
-              </span>
-              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                <UserIcon className="size-2.5" />
-                {sermon.preacher}
-              </span>
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'date',
-      header: 'Date',
-      cell: (sermon) => (
-        <div className="flex flex-col">
-          <span className="text-sm font-medium text-foreground/90" suppressHydrationWarning>
-            {mounted ? formatDate(sermon.date) : sermon.date}
-          </span>
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Publication</span>
-        </div>
-      ),
-    },
-    {
-      key: 'views',
-      header: 'Engagement',
-      cell: (sermon) => (
-        <div className="flex items-center gap-2">
-          <div className="flex flex-col">
-            <span className="text-sm font-bold text-foreground" suppressHydrationWarning>
-              {mounted ? (sermon.views?.toLocaleString() ?? 0) : '0'}
-            </span>
-            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-              <EyeIcon className="size-2.5" />
-              Total Views
-            </span>
-          </div>
-        </div>
-      )
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      cell: (sermon) => <StatusBadge status={sermon.status} />,
-    },
-    {
-      key: 'actions',
-      header: '',
-      className: 'w-[120px]',
-      cell: (sermon) => (
-        <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-          {sermon.status === 'trash' ? (
-            <>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => handleRestore(sermon)}
-                title="Restore"
-                className="hover:bg-emerald-50 hover:text-emerald-600"
-              >
-                <RotateCcw className="size-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => handlePermanentDelete(sermon)}
-                title="Delete Permanently"
-                className="text-destructive/60 hover:text-destructive hover:bg-destructive/10"
-              >
-                <TrashIcon className="size-3.5" />
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => handleDuplicate(sermon)}
-                title="Duplicate"
-                className="hover:bg-blue-50 hover:text-blue-600"
-              >
-                <CopyIcon className="size-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => openEdit(sermon)}
-                title="Edit"
-                className="hover:bg-primary/10 hover:text-primary"
-              >
-                <PencilIcon className="size-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => handleTrash(sermon)}
-                title="Trash"
-                className="text-destructive/60 hover:text-destructive hover:bg-destructive/10"
-              >
-                <Trash2Icon className="size-3.5" />
-              </Button>
-            </>
-          )}
-        </div>
-      ),
-    },
-  ]
-
-  const filterSlot = (
-    <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-lg border border-border/40">
-      <div className="flex items-center gap-2 px-2">
-        <FilterIcon className="size-3.5 text-muted-foreground" />
-      </div>
-      
-      <Select value={filterPreacher} onValueChange={(v) => setFilterPreacher(v ?? 'all')}>
-        <SelectTrigger className="h-8 w-[140px] border-none bg-transparent hover:bg-muted transition-colors shadow-none focus:ring-0">
-          <SelectValue placeholder="Preacher" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All Preachers</SelectItem>
-          {preachers.map((p) => (
-            <SelectItem key={p} value={p}>
-              {p}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <div className="w-px h-4 bg-border/60 mx-1" />
-
-      <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v ?? 'all')}>
-        <SelectTrigger className="h-8 w-[120px] border-none bg-transparent hover:bg-muted transition-colors shadow-none focus:ring-0">
-          <SelectValue placeholder="Status" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All Status</SelectItem>
-          <SelectItem value="published">Published</SelectItem>
-          <SelectItem value="draft">Draft</SelectItem>
-          <SelectItem value="scheduled">Scheduled</SelectItem>
-          <SelectItem value="trash">Trash</SelectItem>
-        </SelectContent>
-      </Select>
-
-      <div className="w-px h-4 bg-border/60 mx-1" />
-
-      <div className="flex items-center gap-1 group">
-        <CalendarIcon className="size-3.5 text-muted-foreground ml-2 group-focus-within:text-primary transition-colors" />
-        <Input
-          type="date"
-          value={filterDateFrom}
-          onChange={(e) => setFilterDateFrom(e.target.value)}
-          className="h-8 w-[130px] border-none bg-transparent p-1 focus-visible:ring-0 shadow-none text-xs"
-          title="From date"
-        />
-        <span className="text-muted-foreground/50 text-[10px]">to</span>
-        <Input
-          type="date"
-          value={filterDateTo}
-          onChange={(e) => setFilterDateTo(e.target.value)}
-          className="h-8 w-[130px] border-none bg-transparent p-1 focus-visible:ring-0 shadow-none text-xs"
-          title="To date"
-        />
-      </div>
-    </div>
+  const bulkBusy = Boolean(
+    actionLoading?.startsWith('bulk-') || actionLoading === 'bulk-dup'
   )
 
-  if (!mounted) {
-    return (
-      <div className="space-y-4 p-6">
-        <div className="flex items-center justify-between">
-          <div className="h-10 w-32 bg-muted animate-pulse rounded" />
-          <div className="h-10 w-48 bg-muted animate-pulse rounded" />
-        </div>
-        <div className="h-96 w-full bg-muted animate-pulse rounded" />
-      </div>
-    )
-  }
-
   return (
-    <div className="space-y-6 p-6 max-w-[1600px] mx-auto animate-in fade-in duration-500">
+    <div className="space-y-6 max-w-[1600px] mx-auto animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Sermons Library
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight">Sermons</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage your collection of spiritual messages, transcripts, and media assets.
+            Manage messages, SEO, Open Graph previews, and Google indexing.
           </p>
         </div>
-        
-        <div className="flex items-center gap-3">
+
+        <div className="flex items-center gap-3 flex-wrap">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button 
-                variant="outline" 
-                className="relative group gap-2 h-10 px-4 border-violet-500/20 bg-violet-500/5 text-violet-600 hover:bg-violet-500 hover:text-white transition-all duration-300 overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-violet-600/10 to-purple-600/10 group-hover:from-transparent group-hover:to-transparent transition-all" />
-                <SparklesIcon className="h-4 w-4 relative z-10 animate-pulse" />
-                <span className="relative z-10 font-medium">Sermon Magic AI</span>
+              <Button variant="outline" className="gap-2 border-violet-500/30 text-violet-700">
+                <SparklesIcon className="size-4" />
+                Sermon Magic AI
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md border-violet-500/20">
+            <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-violet-600">
-                  <SparklesIcon className="size-5" />
+                <DialogTitle className="flex items-center gap-2">
+                  <SparklesIcon className="size-5 text-violet-600" />
                   Sermon Magic AI
                 </DialogTitle>
                 <DialogDescription>
-                  Leverage Google Gemini 1.5 Flash to automatically craft sermon notes and media.
+                  Generate sermon notes, excerpt, and SEO fields automatically.
                 </DialogDescription>
               </DialogHeader>
-              
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1">
-                  <TabsTrigger value="url" className="gap-2 data-[state=active]:bg-violet-600 data-[state=active]:text-white transition-all">
-                    <LinkIcon className="h-4 w-4" />
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="url" className="gap-2">
+                    <LinkIcon className="size-4" />
                     From Video
                   </TabsTrigger>
-                  <TabsTrigger value="title" className="gap-2 data-[state=active]:bg-violet-600 data-[state=active]:text-white transition-all">
-                    <TypeIcon className="h-4 w-4" />
+                  <TabsTrigger value="title" className="gap-2">
+                    <TypeIcon className="size-4" />
                     From Title
                   </TabsTrigger>
                 </TabsList>
-                
-                <div className="mt-6 space-y-4">
-                  <TabsContent value="url" className="m-0 space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="video-url" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
-                        YouTube Video URL
-                      </Label>
-                      <div className="relative">
-                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                        <Input 
-                          id="video-url" 
-                          placeholder="https://www.youtube.com/watch?v=..." 
-                          value={magicUrl}
-                          onChange={(e) => setMagicUrl(e.target.value)}
-                          className="pl-10 h-11 border-border/50 focus-visible:ring-violet-500/30 focus-visible:border-violet-500"
-                        />
-                      </div>
-                      <p className="text-[11px] text-muted-foreground leading-relaxed">
-                        The AI will extract the transcript, summarize key points, and suggest an AI image prompt.
-                      </p>
-                    </div>
+                <div className="mt-4">
+                  <TabsContent value="url" className="m-0 space-y-2">
+                    <Label htmlFor="video-url">YouTube URL</Label>
+                    <Input
+                      id="video-url"
+                      value={magicUrl}
+                      onChange={(e) => setMagicUrl(e.target.value)}
+                      placeholder="https://www.youtube.com/watch?v=..."
+                    />
                   </TabsContent>
-                  
-                  <TabsContent value="title" className="m-0 space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="sermon-title" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
-                        Sermon Title
-                      </Label>
-                      <div className="relative">
-                        <TypeIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                        <Input 
-                          id="sermon-title" 
-                          placeholder="e.g., The Power of Divine Grace" 
-                          value={magicTitle}
-                          onChange={(e) => setMagicTitle(e.target.value)}
-                          className="pl-10 h-11 border-border/50 focus-visible:ring-violet-500/30 focus-visible:border-violet-500"
-                        />
-                      </div>
-                      <p className="text-[11px] text-muted-foreground leading-relaxed">
-                        Ideal for new sermon outlines. AI will generate structure, scriptures, and an excerpt.
-                      </p>
-                    </div>
+                  <TabsContent value="title" className="m-0 space-y-2">
+                    <Label htmlFor="sermon-title-ai">Sermon title</Label>
+                    <Input
+                      id="sermon-title-ai"
+                      value={magicTitle}
+                      onChange={(e) => setMagicTitle(e.target.value)}
+                      placeholder="Sermon title"
+                    />
                   </TabsContent>
                 </div>
               </Tabs>
-              
-              <DialogFooter className="mt-2">
-                <Button 
-                  type="button" 
-                  onClick={handleMagicAI} 
-                  disabled={magicLoading || (activeTab === 'url' ? !magicUrl.trim() : !magicTitle.trim())}
-                  className="w-full h-11 bg-violet-600 hover:bg-violet-700 shadow-lg shadow-violet-600/20 gap-2 font-semibold"
+              <DialogFooter>
+                <Button
+                  onClick={handleMagicAI}
+                  disabled={
+                    magicLoading ||
+                    (activeTab === 'url' ? !magicUrl.trim() : !magicTitle.trim())
+                  }
+                  className="w-full bg-violet-600 hover:bg-violet-700"
                 >
                   {magicLoading ? (
                     <>
-                      <RotateCcw className="size-4 animate-spin" />
-                      Weaving the message...
+                      <Loader2 className="size-4 animate-spin mr-2" />
+                      Generating…
                     </>
                   ) : (
-                    <>
-                      <SparklesIcon className="size-4" />
-                      Generate Draft
-                    </>
+                    'Generate Draft'
                   )}
                 </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
 
-          <Button onClick={openNew} className="h-10 px-4 gap-2 shadow-sm font-medium">
+          <Button onClick={() => router.push('/admin/sermons/new')} className="gap-2">
             <PlusIcon className="size-4" />
             New Sermon
           </Button>
         </div>
       </div>
 
-      {/* Stats Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          label="Total Sermons" 
-          value={stats.total} 
-          icon={VideoIcon} 
-          color="bg-blue-500/10 text-blue-600" 
-        />
-        <StatCard 
-          label="Total Views" 
-          value={stats.views.toLocaleString()} 
-          icon={EyeIcon} 
-          trend="+12% this month"
-          color="bg-emerald-500/10 text-emerald-600" 
-        />
-        <StatCard 
-          label="Published Content" 
-          value={stats.published} 
-          icon={CheckCircle2} 
-          color="bg-violet-500/10 text-violet-600" 
-        />
-        <StatCard 
-          label="Active Drafts" 
-          value={stats.drafts} 
-          icon={FileEditIcon} 
-          color="bg-amber-500/10 text-amber-600" 
-        />
+        {[
+          { label: 'Total Sermons', value: stats.total, icon: VideoIcon },
+          { label: 'Total Views', value: stats.views.toLocaleString(), icon: EyeIcon },
+          { label: 'Published', value: stats.published, icon: EyeIcon },
+          { label: 'Drafts', value: stats.drafts, icon: PencilIcon },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className="rounded-xl border bg-card p-4 shadow-sm"
+          >
+            <p className="text-xs text-muted-foreground font-medium">{stat.label}</p>
+            <p className="text-2xl font-bold mt-1">{stat.value}</p>
+          </div>
+        ))}
       </div>
 
-      {/* Main Table Area */}
-      <div className="bg-background rounded-2xl border border-border/50 shadow-sm overflow-hidden">
-        <DataTable
-          columns={columns}
-          data={filteredSermons}
-          searchPlaceholder="Search title, series or preacher..."
-          filterSlot={filterSlot}
-          isLoading={isRefreshing}
-          className="p-0 border-none space-y-0"
-        />
+      <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+        <div className="p-4 border-b space-y-3">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <Input
+              placeholder="Search title, series or preacher..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setCurrentPage(1)
+              }}
+              className="max-w-md"
+            />
+            <div className="flex flex-wrap items-center gap-2 bg-muted/30 p-1 rounded-lg border flex-1">
+              <FilterIcon className="size-3.5 text-muted-foreground ml-2" />
+              <Select
+                value={filterPreacher}
+                onValueChange={(v) => {
+                  setFilterPreacher(v ?? 'all')
+                  setCurrentPage(1)
+                }}
+              >
+                <SelectTrigger className="h-8 w-[140px] border-none bg-transparent shadow-none">
+                  <SelectValue placeholder="Preacher" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Preachers</SelectItem>
+                  {preachers.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={filterStatus}
+                onValueChange={(v) => {
+                  setFilterStatus(v ?? 'all')
+                  setCurrentPage(1)
+                }}
+              >
+                <SelectTrigger className="h-8 w-[120px] border-none bg-transparent shadow-none">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="published">Published</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="trash">Trash</SelectItem>
+                </SelectContent>
+              </Select>
+              <CalendarIcon className="size-3.5 text-muted-foreground" />
+              <Input
+                type="date"
+                value={filterDateFrom}
+                onChange={(e) => {
+                  setFilterDateFrom(e.target.value)
+                  setCurrentPage(1)
+                }}
+                className="h-8 w-[130px] border-none bg-transparent text-xs"
+              />
+              <span className="text-muted-foreground text-xs">to</span>
+              <Input
+                type="date"
+                value={filterDateTo}
+                onChange={(e) => {
+                  setFilterDateTo(e.target.value)
+                  setCurrentPage(1)
+                }}
+                className="h-8 w-[130px] border-none bg-transparent text-xs"
+              />
+            </div>
+          </div>
+
+        </div>
+
+        {isRefreshing ? (
+          <div className="p-12 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+            <Loader2 className="size-4 animate-spin" />
+            Refreshing…
+          </div>
+        ) : filteredSermons.length === 0 ? (
+          <div className="p-12 text-center text-muted-foreground text-sm">
+            No sermons match your filters.
+          </div>
+        ) : (
+          <>
+            <div className="hidden lg:grid grid-cols-[40px_minmax(0,1fr)_110px_90px_80px_100px_200px] gap-3 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-b bg-muted/30">
+              <div className="flex justify-center">
+                <Checkbox
+                  checked={allPageSelected}
+                  indeterminate={somePageSelected}
+                  onChange={toggleSelectAll}
+                />
+              </div>
+              <div>Sermon Details</div>
+              <div>Date</div>
+              <div className="text-center">Views</div>
+              <div className="text-center">SEO</div>
+              <div className="text-center">Status</div>
+              <div className="text-right">Actions</div>
+            </div>
+
+            <div className="divide-y">
+              {pagedSermons.map((sermon) => {
+                const isTrash = sermon.status === 'trash'
+                const isSelected = selectedIds.has(sermon.id)
+                const busy = actionLoading?.includes(sermon.id)
+
+                return (
+                  <div
+                    key={sermon.id}
+                    className={cn(
+                      'grid grid-cols-1 lg:grid-cols-[40px_minmax(0,1fr)_110px_90px_80px_100px_200px] gap-3 px-4 py-4 items-center transition-colors',
+                      isSelected ? 'bg-primary/5' : 'hover:bg-muted/30'
+                    )}
+                  >
+                    <div className="hidden lg:flex justify-center">
+                      <Checkbox
+                        checked={isSelected}
+                        onChange={() => toggleSelectRow(sermon.id)}
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="size-12 rounded-lg overflow-hidden bg-muted shrink-0 border">
+                        {sermon.thumbnail_url ? (
+                          <img
+                            src={sermon.thumbnail_url}
+                            alt=""
+                            className="size-full object-cover"
+                          />
+                        ) : (
+                          <div className="size-full flex items-center justify-center text-muted-foreground">
+                            <VideoIcon className="size-5 opacity-40" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/admin/sermons/${sermon.id}`)}
+                          className="text-sm font-semibold truncate block text-left hover:text-primary w-full"
+                        >
+                          {sermon.title}
+                        </button>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {sermon.sermon_series?.name || sermon.series || 'Individual'} ·{' '}
+                          {sermon.preacher}
+                        </p>
+                        {sermon.meta_title && (
+                          <p className="text-[10px] text-muted-foreground/80 truncate mt-0.5">
+                            OG: {sermon.meta_title}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="text-sm text-muted-foreground lg:block hidden">
+                      {formatDate(sermon.date)}
+                    </div>
+
+                    <div className="text-sm font-medium text-center lg:block hidden">
+                      {(sermon.views ?? 0).toLocaleString()}
+                    </div>
+
+                    <div className="lg:flex hidden flex-col items-center gap-1">
+                      <SeoScoreBadge score={sermon.seo_score ?? 0} />
+                      <OgReadiness sermon={sermon} />
+                    </div>
+
+                    <div className="lg:flex hidden justify-center">
+                      <StatusBadge status={sermon.status} />
+                    </div>
+
+                    <div className="flex items-center justify-end gap-0.5 flex-wrap">
+                      {isTrash ? (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            title="Restore"
+                            disabled={busy}
+                            onClick={() => handleRestore(sermon)}
+                          >
+                            <RotateCcw className="size-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            title="Delete permanently"
+                            disabled={busy}
+                            className="text-destructive"
+                            onClick={() => handlePermanentDelete(sermon)}
+                          >
+                            <TrashIcon className="size-3.5" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            title="Edit & SEO"
+                            onClick={() => router.push(`/admin/sermons/${sermon.id}`)}
+                          >
+                            <PencilIcon className="size-3.5" />
+                          </Button>
+                          {sermon.status === 'published' && sermon.slug && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                title="Submit to Google"
+                                disabled={busy}
+                                onClick={() => handleSingleIndex(sermon)}
+                              >
+                                <GlobeIcon className="size-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                title="View live"
+                                asChild
+                              >
+                                <Link
+                                  href={`/sermons/${sermon.slug}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <ExternalLinkIcon className="size-3.5" />
+                                </Link>
+                              </Button>
+                            </>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            title="Duplicate"
+                            disabled={busy}
+                            onClick={() => handleDuplicate(sermon)}
+                          >
+                            {actionLoading === `dup-${sermon.id}` ? (
+                              <Loader2 className="size-3.5 animate-spin" />
+                            ) : (
+                              <CopyIcon className="size-3.5" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            title="Move to trash"
+                            disabled={busy}
+                            className="text-destructive/80 hover:text-destructive"
+                            onClick={() => handleTrash(sermon)}
+                          >
+                            <Trash2Icon className="size-3.5" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-muted-foreground">
+              <span>
+                Showing {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filteredSermons.length)}{' '}
+                of {filteredSermons.length}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={safePage <= 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <span className="text-xs font-medium px-2">
+                  {safePage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={safePage >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
+
+      <AnimatePresence>
+        {selectedIds.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-2.5 rounded-full bg-primary text-primary-foreground shadow-xl"
+          >
+            <span className="text-sm font-bold border-r border-white/20 pr-3">
+              {selectedIds.size} selected
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 hover:bg-white/10"
+              disabled={bulkBusy}
+              onClick={handleBulkDuplicate}
+            >
+              <CopyIcon className="size-3.5 mr-1.5" />
+              Duplicate
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 hover:bg-white/10"
+              disabled={bulkBusy}
+              onClick={handleBulkIndex}
+            >
+              <GlobeIcon className="size-3.5 mr-1.5" />
+              Index on Google
+            </Button>
+            <button
+              type="button"
+              className="p-1 rounded-full hover:bg-white/10"
+              onClick={() => setSelectedIds(new Set())}
+            >
+              <XIcon className="size-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

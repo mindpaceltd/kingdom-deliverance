@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 import { createBrowserClient } from '@supabase/ssr'
 import { Lock, Loader2, CheckCircle2 } from 'lucide-react'
@@ -95,8 +95,7 @@ function ResetPasswordForm() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <Label className="text-sm font-semibold">New Password</Label>
-              <Input
-                type="password"
+              <PasswordInput
                 required
                 minLength={6}
                 placeholder="••••••••"
@@ -106,8 +105,7 @@ function ResetPasswordForm() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-sm font-semibold">Confirm Password</Label>
-              <Input
-                type="password"
+              <PasswordInput
                 required
                 minLength={6}
                 placeholder="••••••••"

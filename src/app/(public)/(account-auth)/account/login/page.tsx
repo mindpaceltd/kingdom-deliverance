@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 import { createBrowserClient } from '@supabase/ssr'
 import { User, Loader2 } from 'lucide-react'
@@ -204,8 +205,7 @@ function LoginForm() {
                   </Link>
                 )}
               </div>
-              <Input
-                type="password"
+              <PasswordInput
                 required
                 minLength={6}
                 placeholder="••••••••"

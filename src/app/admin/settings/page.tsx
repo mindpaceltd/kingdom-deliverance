@@ -1,6 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { SettingsForm } from '@/components/admin/settings/settings-form'
-import type { SiteSetting, UserRole } from '@/lib/types'
+import type { SiteSetting } from '@/lib/types'
 
 const SETTINGS_KEYS = [
   'site_name',
@@ -17,20 +17,16 @@ const SETTINGS_KEYS = [
   'contact_phones_json',
   'live_stream_url',
   'donation_instructions',
-  // Branding
   'site_logo',
   'site_icon',
-  // SEO
   'site_meta_title',
   'site_meta_description',
   'site_keywords',
   'site_og_image',
-  // Church Specifics
   'mission',
   'vision',
   'founder_name',
   'founder_bio',
-  // SMTP
   'smtp_host',
   'smtp_port',
   'smtp_user',
@@ -38,7 +34,6 @@ const SETTINGS_KEYS = [
   'smtp_encryption',
   'smtp_from_email',
   'smtp_from_name',
-  // Payments
   'paypal_enabled',
   'paypal_client_id',
   'paypal_secret',
@@ -51,50 +46,29 @@ const SETTINGS_KEYS = [
   'pesapal_consumer_secret',
   'pesapal_mode',
   'pesapal_ipn_id',
-  // Integrations
   'google_pagespeed_api_key',
-  // QR Codes
   'qr_codes_json',
 ] as const
 
+const KDC_DEFAULTS: Partial<Record<(typeof SETTINGS_KEYS)[number], string>> = {
+  site_name: 'Kingdom Deliverance Centre Uganda',
+  tagline: 'Setting the captives free',
+  contact_email: 'info@kdcuganda.org',
+  founder_name: 'Bishop Climate Wiseman Irungu',
+  founder_bio: 'Founder & Lead Pastor, Kingdom Deliverance Centre Uganda',
+  mission: 'To set the captives free through the power of the Gospel',
+  vision: 'A community that is wealthy, healthy, and wise',
+  address: 'Kosovo–Lungujja, Kampala, Uganda',
+  service_times:
+    'Sunday Worship — 10:00 AM\nWednesday Bible Study — 6:00 PM\nFriday Fire Service — 6:00 PM',
+}
+
 export default async function AdminSettingsPage() {
-  const supabase = createClient()
-
-  // Verify current user is admin
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return (
-      <div className="p-6 text-center">
-        <p className="text-muted-foreground">Not authenticated.</p>
-      </div>
-    )
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || (profile.role as UserRole) !== 'admin') {
-    return (
-      <div className="p-6 text-center">
-        <h1 className="text-xl font-bold text-destructive">Not Authorised</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          You do not have permission to manage site settings.
-        </p>
-      </div>
-    )
-  }
-
-  // Fetch current site settings
-  const { data: settings } = await supabase
+  const admin = createAdminClient()
+  const { data: settings } = await admin
     .from('site_settings')
     .select('*')
-    .in('key', SETTINGS_KEYS)
+    .in('key', [...SETTINGS_KEYS])
 
   const settingsMap = new Map<string, string>()
   for (const s of settings ?? []) {
@@ -103,26 +77,19 @@ export default async function AdminSettingsPage() {
 
   const allSettings: SiteSetting[] = SETTINGS_KEYS.map((key) => ({
     key,
-    value: settingsMap.get(key) ?? '',
+    value: settingsMap.get(key) || KDC_DEFAULTS[key] || '',
     updated_at: '',
   }))
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden -m-6 bg-background">
-      <header className="shrink-0 border-b border-border bg-background/95 px-6 py-4 backdrop-blur">
-         <div className="flex items-center justify-between">
-            <div>
-               <h1 className="text-xl font-bold">Site Settings</h1>
-               <p className="text-xs text-muted-foreground">Configure your website's global parameters, payments, and integrations.</p>
-            </div>
-         </div>
-      </header>
-
-      <main className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-4xl mx-auto">
-           <SettingsForm initialSettings={allSettings} />
-        </div>
-      </main>
+    <div className="space-y-4">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Site Settings</h1>
+        <p className="text-sm text-muted-foreground">
+          Configure your website&apos;s global parameters, payments, email, and integrations.
+        </p>
+      </div>
+      <SettingsForm initialSettings={allSettings} />
     </div>
   )
 }

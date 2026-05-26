@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
@@ -34,6 +35,11 @@ import { saveSettings, registerPesapalIPNAction, testSMTPAction } from '@/lib/ac
 import { uploadMediaAction } from '@/lib/actions/media'
 import type { SiteSetting } from '@/lib/types'
 import { cn } from '@/lib/utils'
+import {
+  parseQrCodes,
+  parseSocialLinks,
+  parseStringArray,
+} from '@/lib/settings-json'
 
 // ---------------------------------------------------------------------------
 // Settings Categories
@@ -449,7 +455,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                 </div>
                 <div className="space-y-1.5">
                    <Label>Password</Label>
-                   <Input type="password" value={values.smtp_pass} onChange={e => handleChange('smtp_pass', e.target.value)} />
+                   <PasswordInput value={values.smtp_pass} onChange={e => handleChange('smtp_pass', e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
                    <Label>From Email</Label>
@@ -520,7 +526,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                       </div>
                       <div className="space-y-1.5">
                          <Label className="text-xs">Secret Key</Label>
-                         <Input type="password" value={values.stripe_secret_key} onChange={e => handleChange('stripe_secret_key', e.target.value)} />
+                         <PasswordInput value={values.stripe_secret_key} onChange={e => handleChange('stripe_secret_key', e.target.value)} />
                       </div>
                    </div>
                 )}
@@ -546,7 +552,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                       </div>
                       <div className="space-y-1.5">
                          <Label className="text-xs">Secret</Label>
-                         <Input type="password" value={values.paypal_secret} onChange={e => handleChange('paypal_secret', e.target.value)} />
+                         <PasswordInput value={values.paypal_secret} onChange={e => handleChange('paypal_secret', e.target.value)} />
                       </div>
                       <div className="space-y-1.5">
                          <Label className="text-xs">Environment</Label>
@@ -584,7 +590,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                       </div>
                       <div className="space-y-1.5">
                          <Label className="text-xs">Consumer Secret</Label>
-                         <Input type="password" value={values.pesapal_consumer_secret} onChange={e => handleChange('pesapal_consumer_secret', e.target.value)} />
+                         <PasswordInput value={values.pesapal_consumer_secret} onChange={e => handleChange('pesapal_consumer_secret', e.target.value)} />
                       </div>
                       <div className="space-y-1.5">
                          <Label className="text-xs">IPN Notification ID</Label>
@@ -643,9 +649,8 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                 <div className="grid gap-4 pt-2">
                    <div className="space-y-1.5">
                       <Label className="text-xs">API Key</Label>
-                      <Input 
-                        type="password" 
-                        value={values.google_pagespeed_api_key || ''} 
+                      <PasswordInput
+                        value={values.google_pagespeed_api_key || ''}
                         onChange={e => handleChange('google_pagespeed_api_key', e.target.value)}
                         placeholder="Get your key from Google Cloud Console"
                       />
@@ -677,7 +682,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                         variant="outline" 
                         size="sm"
                         onClick={() => {
-                          const current = values.contact_phones_json ? JSON.parse(values.contact_phones_json) : []
+                          const current = parseStringArray(values.contact_phones_json)
                           handleChange('contact_phones_json', JSON.stringify([...current, '']))
                         }}
                       >
@@ -685,12 +690,12 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                       </Button>
                    </div>
                    <div className="grid gap-3">
-                      {(values.contact_phones_json ? JSON.parse(values.contact_phones_json) : []).map((phone: string, idx: number) => (
+                      {parseStringArray(values.contact_phones_json).map((phone: string, idx: number) => (
                          <div key={idx} className="flex gap-2">
                             <Input 
                               value={phone} 
                               onChange={e => {
-                                 const current = JSON.parse(values.contact_phones_json)
+                                 const current = parseStringArray(values.contact_phones_json)
                                  current[idx] = e.target.value
                                  handleChange('contact_phones_json', JSON.stringify(current))
                               }}
@@ -701,7 +706,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                               variant="ghost" 
                               size="icon" 
                               onClick={() => {
-                                 const current = JSON.parse(values.contact_phones_json)
+                                 const current = parseStringArray(values.contact_phones_json)
                                  current.splice(idx, 1)
                                  handleChange('contact_phones_json', JSON.stringify(current))
                               }}
@@ -711,7 +716,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                             </Button>
                          </div>
                       ))}
-                      {(!values.contact_phones_json || JSON.parse(values.contact_phones_json).length === 0) && (
+                      {parseStringArray(values.contact_phones_json).length === 0 && (
                          <p className="text-xs text-muted-foreground italic">No additional phone numbers added.</p>
                       )}
                    </div>
@@ -726,7 +731,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                         variant="outline" 
                         size="sm"
                         onClick={() => {
-                          const current = values.social_links_json ? JSON.parse(values.social_links_json) : []
+                          const current = parseSocialLinks(values.social_links_json)
                           handleChange('social_links_json', JSON.stringify([...current, { platform: 'Facebook', url: '' }]))
                         }}
                       >
@@ -734,14 +739,14 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                       </Button>
                    </div>
                    <div className="grid gap-4">
-                      {(values.social_links_json ? JSON.parse(values.social_links_json) : []).map((link: any, idx: number) => (
+                      {parseSocialLinks(values.social_links_json).map((link, idx: number) => (
                          <div key={idx} className="grid sm:grid-cols-12 gap-2 items-start p-4 rounded-xl border border-border bg-muted/20">
                             <div className="sm:col-span-4">
                                <Label className="text-[10px] uppercase font-bold text-muted-foreground mb-1 block">Platform</Label>
                                <Input 
                                  value={link.platform} 
                                  onChange={e => {
-                                    const current = JSON.parse(values.social_links_json)
+                                    const current = parseSocialLinks(values.social_links_json)
                                     current[idx].platform = e.target.value
                                     handleChange('social_links_json', JSON.stringify(current))
                                  }}
@@ -753,7 +758,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                                <Input 
                                  value={link.url} 
                                  onChange={e => {
-                                    const current = JSON.parse(values.social_links_json)
+                                    const current = parseSocialLinks(values.social_links_json)
                                     current[idx].url = e.target.value
                                     handleChange('social_links_json', JSON.stringify(current))
                                  }}
@@ -766,7 +771,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                                  variant="ghost" 
                                  size="icon" 
                                  onClick={() => {
-                                    const current = JSON.parse(values.social_links_json)
+                                    const current = parseSocialLinks(values.social_links_json)
                                     current.splice(idx, 1)
                                     handleChange('social_links_json', JSON.stringify(current))
                                  }}
@@ -777,7 +782,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                             </div>
                          </div>
                       ))}
-                      {(!values.social_links_json || JSON.parse(values.social_links_json).length === 0) && (
+                      {parseSocialLinks(values.social_links_json).length === 0 && (
                          <p className="text-xs text-muted-foreground italic">No social media platforms added yet.</p>
                       )}
                    </div>
@@ -803,7 +808,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                      variant="outline"
                      size="sm"
                      onClick={() => {
-                       const current: any[] = values.qr_codes_json ? JSON.parse(values.qr_codes_json) : []
+                       const current = parseQrCodes(values.qr_codes_json)
                        handleChange('qr_codes_json', JSON.stringify([
                          ...current,
                          { id: crypto.randomUUID(), title: '', subtitle: '', value: '', color: '#1a1a2e' }
@@ -815,7 +820,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                 </div>
 
                 <div className="grid gap-4">
-                  {(values.qr_codes_json ? JSON.parse(values.qr_codes_json) : []).map((entry: any, idx: number) => (
+                  {parseQrCodes(values.qr_codes_json).map((entry, idx: number) => (
                     <div key={entry.id || idx} className="p-5 rounded-xl border border-border bg-muted/10 space-y-4">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Entry #{idx + 1}</span>
@@ -824,7 +829,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            const current = JSON.parse(values.qr_codes_json)
+                            const current = parseQrCodes(values.qr_codes_json)
                             current.splice(idx, 1)
                             handleChange('qr_codes_json', JSON.stringify(current))
                           }}
@@ -840,7 +845,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                           <Input
                             value={entry.title}
                             onChange={e => {
-                              const current = JSON.parse(values.qr_codes_json)
+                              const current = parseQrCodes(values.qr_codes_json)
                               current[idx].title = e.target.value
                               handleChange('qr_codes_json', JSON.stringify(current))
                             }}
@@ -852,7 +857,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                           <Input
                             value={entry.subtitle}
                             onChange={e => {
-                              const current = JSON.parse(values.qr_codes_json)
+                              const current = parseQrCodes(values.qr_codes_json)
                               current[idx].subtitle = e.target.value
                               handleChange('qr_codes_json', JSON.stringify(current))
                             }}
@@ -864,7 +869,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                           <Input
                             value={entry.value}
                             onChange={e => {
-                              const current = JSON.parse(values.qr_codes_json)
+                              const current = parseQrCodes(values.qr_codes_json)
                               current[idx].value = e.target.value
                               handleChange('qr_codes_json', JSON.stringify(current))
                             }}
@@ -880,7 +885,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                               type="color"
                               value={entry.color || '#1a1a2e'}
                               onChange={e => {
-                                const current = JSON.parse(values.qr_codes_json)
+                                const current = parseQrCodes(values.qr_codes_json)
                                 current[idx].color = e.target.value
                                 handleChange('qr_codes_json', JSON.stringify(current))
                               }}
@@ -893,7 +898,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                     </div>
                   ))}
 
-                  {(!values.qr_codes_json || JSON.parse(values.qr_codes_json).length === 0) && (
+                  {parseQrCodes(values.qr_codes_json).length === 0 && (
                     <div className="text-center py-10 rounded-xl border border-dashed border-border text-muted-foreground">
                       <QrCodeIcon className="size-8 mx-auto mb-2 opacity-30" />
                       <p className="text-sm">No QR codes yet. Click <strong>Add QR Code</strong> to create your first one.</p>

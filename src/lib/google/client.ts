@@ -12,7 +12,7 @@ export async function getAuthedGoogleClient(userId: string) {
     .from('users_google_integrations')
     .select('*')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
 
   if (error) {
     throw new Error('Failed to load Google integration.');

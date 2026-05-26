@@ -99,6 +99,8 @@ export async function deleteTestimony(
 
 /** Public: approved testimonies for home / testimonies page */
 export async function getApprovedTestimonies(limit = 12) {
+  await seedTestimoniesIfEmpty()
+
   const supabase = createClient()
   const { data, error } = await supabase
     .from('testimonies')

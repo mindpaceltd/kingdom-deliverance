@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { requireAdmin } from '@/lib/authz'
 
@@ -10,10 +10,10 @@ export async function saveSettings(
   const result = await requireAdmin()
   if ('error' in result) return result
 
-  const supabase = createClient()
+  const admin = createAdminClient()
 
   for (const [key, value] of Object.entries(data)) {
-    const { error } = await supabase
+    const { error } = await admin
       .from('site_settings')
       .upsert({ key, value }, { onConflict: 'key' })
 
@@ -26,6 +26,7 @@ export async function saveSettings(
   revalidatePath('/')
   revalidatePath('/contact')
   revalidatePath('/give')
+  revalidatePath('/admin/settings')
 
   return { success: true }
 }
@@ -42,10 +43,9 @@ export async function registerPesapalIPNAction(): Promise<
   const result = await requireAdmin()
   if ('error' in result) return result
 
-  const supabase = createClient()
+  const admin = createAdminClient()
 
-  // Fetch credentials from DB
-  const { data: rows } = await supabase
+  const { data: rows } = await admin
     .from('site_settings')
     .select('key, value')
     .in('key', ['pesapal_consumer_key', 'pesapal_consumer_secret', 'pesapal_mode'])
@@ -76,7 +76,7 @@ export async function registerPesapalIPNAction(): Promise<
     }
 
     // Save to DB
-    await supabase
+    await admin
       .from('site_settings')
       .upsert({ key: 'pesapal_ipn_id', value: String(ipnId) }, { onConflict: 'key' })
 

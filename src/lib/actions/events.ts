@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { indexOnPublish } from '@/lib/seo/google-indexing'
 import { requireRoles } from '@/lib/authz'
@@ -151,18 +151,59 @@ export async function restoreEvent(id: string): Promise<{ success: true } | { er
   return { success: true }
 }
 
-export async function duplicateEvent(id: string): Promise<{ success: true; id: string } | { error: string }> {
+function duplicateEventTitle(title: string): string {
+  const trimmed = title.trim()
+  if (trimmed.startsWith('Copy of ')) return trimmed
+  return `Copy of ${trimmed}`
+}
+
+async function uniqueEventSlug(
+  admin: ReturnType<typeof createAdminClient>,
+  baseSlug: string
+): Promise<string> {
+  let candidate = `${baseSlug}-copy`
+  for (let attempt = 1; attempt <= 99; attempt++) {
+    const { data: existing } = await admin
+      .from('events')
+      .select('id')
+      .eq('slug', candidate)
+      .maybeSingle()
+    if (!existing) return candidate
+    candidate = `${baseSlug}-copy-${attempt}`
+  }
+  throw new Error('Could not generate a unique slug for the duplicate')
+}
+
+export async function duplicateEvent(
+  id: string
+): Promise<{ success: true; id: string } | { error: string }> {
   const result = await requireRoles(ROLES.CONTENT)
   if ('error' in result) return result
-  const supabase = createClient()
-  const { data: source } = await supabase.from('events').select('*').eq('id', id).single()
-  if (!source) return { error: 'Source event not found' }
 
-  const { data: newEvent, error: insertError } = await supabase
+  const admin = createAdminClient()
+  const { data: source, error: fetchError } = await admin
+    .from('events')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (fetchError || !source) {
+    return { error: fetchError?.message ?? 'Source event not found' }
+  }
+
+  const newTitle = duplicateEventTitle(String(source.title ?? 'Event'))
+  let candidateSlug: string
+  try {
+    candidateSlug = await uniqueEventSlug(admin, String(source.slug ?? 'event'))
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Slug generation failed' }
+  }
+
+  const { data: newEvent, error: insertError } = await admin
     .from('events')
     .insert({
-      title: `Copy of ${source.title}`,
-      slug: `${source.slug}-copy-${Date.now().toString(36)}`,
+      title: newTitle,
+      slug: candidateSlug,
       description: source.description,
       content: source.content,
       date: source.date,
@@ -175,7 +216,7 @@ export async function duplicateEvent(id: string): Promise<{ success: true; id: s
       meta_title: source.meta_title,
       meta_description: source.meta_description,
       focus_keyword: source.focus_keyword,
-      seo_score: source.seo_score,
+      seo_score: source.seo_score ?? 0,
       published_at: null,
       scheduled_at: null,
       deleted_at: null,
@@ -184,9 +225,47 @@ export async function duplicateEvent(id: string): Promise<{ success: true; id: s
     .select('id')
     .single()
 
-  if (insertError) return { error: insertError.message }
+  if (insertError) {
+    console.error('[duplicateEvent]', insertError.message)
+    return { error: insertError.message }
+  }
+
   revalidateEventPaths()
   return { success: true, id: newEvent.id }
+}
+
+export async function duplicateEvents(
+  ids: string[]
+): Promise<
+  | { success: true; count: number; ids: string[]; failed?: string[] }
+  | { error: string; count?: number }
+> {
+  if (ids.length === 0) return { success: true, count: 0, ids: [] }
+
+  const created: string[] = []
+  const failed: string[] = []
+
+  for (const id of ids) {
+    const result = await duplicateEvent(id)
+    if ('error' in result) {
+      failed.push(result.error)
+      continue
+    }
+    created.push(result.id)
+  }
+
+  revalidateEventPaths()
+
+  if (created.length === 0) {
+    return { error: failed[0] ?? 'Duplication failed', count: 0 }
+  }
+
+  return {
+    success: true,
+    count: created.length,
+    ids: created,
+    ...(failed.length > 0 ? { failed } : {}),
+  }
 }
 
 export async function deleteEvent(

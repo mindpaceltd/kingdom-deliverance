@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 import { createBrowserClient } from '@supabase/ssr'
 import { Loader2, Check } from 'lucide-react'
@@ -115,8 +116,7 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label className="text-sm font-semibold">New Password</Label>
-            <Input
-              type="password"
+            <PasswordInput
               minLength={6}
               required
               value={passwordForm.new}
@@ -125,8 +125,7 @@ export default function ProfilePage() {
           </div>
           <div className="space-y-1.5">
             <Label className="text-sm font-semibold">Confirm Password</Label>
-            <Input
-              type="password"
+            <PasswordInput
               minLength={6}
               required
               value={passwordForm.confirm}

@@ -13,14 +13,14 @@ export async function GET(request: Request) {
   const siteUrl = `${requestUrl.protocol}//${requestUrl.host}`;
 
   if (!code || !state) {
-    return NextResponse.redirect(`${siteUrl}/admin/analytics?error=missing_code`);
+    return NextResponse.redirect(`${siteUrl}/admin/analytics?tab=settings&error=missing_code`);
   }
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    return NextResponse.redirect(`${siteUrl}/admin/analytics?error=missing_credentials`);
+    return NextResponse.redirect(`${siteUrl}/admin/analytics?tab=settings&error=missing_credentials`);
   }
 
   const oauth2Client = new google.auth.OAuth2(
@@ -52,12 +52,12 @@ export async function GET(request: Request) {
 
     if (error) {
       console.error('Supabase Google Integration Save Error:', error);
-      return NextResponse.redirect(`${siteUrl}/admin/analytics?error=db_save_failed`);
+      return NextResponse.redirect(`${siteUrl}/admin/analytics?tab=settings&error=db_save_failed`);
     }
 
-    return NextResponse.redirect(`${siteUrl}/admin/analytics?success=google_connected`);
+    return NextResponse.redirect(`${siteUrl}/admin/analytics?tab=settings&success=google_connected`);
   } catch (error) {
     console.error('Google Callback Error:', error);
-    return NextResponse.redirect(`${siteUrl}/admin/analytics?error=auth_failed`);
+    return NextResponse.redirect(`${siteUrl}/admin/analytics?tab=settings&error=auth_failed`);
   }
 }

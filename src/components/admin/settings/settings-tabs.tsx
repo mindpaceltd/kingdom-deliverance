@@ -20,7 +20,10 @@ export function SettingsTabs() {
     <div className="border-b border-gray-200 mb-6">
       <nav className="flex gap-1 overflow-x-auto">
         {SETTINGS_TABS.map((tab) => {
-          const isActive = pathname === tab.href
+          const isActive =
+            tab.href === '/admin/settings'
+              ? pathname === '/admin/settings'
+              : pathname === tab.href || pathname.startsWith(`${tab.href}/`)
           return (
             <Link
               key={tab.href}

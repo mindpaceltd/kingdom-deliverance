@@ -1,8 +1,10 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis,
+  AreaChart, Area, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,18 +12,40 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   Users, TrendingUp, Settings, 
   MailIcon, MessageCircle, Eye, Loader2, CheckCircle2,
-  Zap, ExternalLink, Globe, MousePointer2, MapPin,
+  Zap, ExternalLink, Globe, MousePointer2,
   Activity, Search, BarChart3, ShieldCheck, ShieldAlert,
-  ArrowUpRight, ArrowDownRight, RefreshCw, Key
+  RefreshCw
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { createClient } from '@/lib/supabase/client'
 import { cn } from "@/lib/utils"
-import { motion, AnimatePresence } from "framer-motion"
+import { toast } from "sonner"
 import { GoogleConnectionCard } from "./google-connection-card"
 import { GooglePropertySetup } from "./google-property-setup"
 
+const ANALYTICS_TABS = ['overview', 'search-console', 'google-analytics', 'pagespeed', 'settings'] as const
+type AnalyticsTab = (typeof ANALYTICS_TABS)[number]
+
+const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+  missing_code: 'Google sign-in was cancelled or incomplete. Please try again.',
+  missing_credentials: 'Google OAuth is not configured on the server. Contact your developer.',
+  db_save_failed: 'Connected to Google but failed to save tokens. Try again.',
+  auth_failed: 'Google authentication failed. Check your account permissions and try again.',
+}
+
+function parseTab(value: string | null): AnalyticsTab {
+  if (value && ANALYTICS_TABS.includes(value as AnalyticsTab)) {
+    return value as AnalyticsTab
+  }
+  return 'overview'
+}
+
 export function AnalyticsDashboard() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [activeTab, setActiveTab] = React.useState<AnalyticsTab>(() =>
+    parseTab(searchParams.get('tab'))
+  )
   const [loading, setLoading] = React.useState(true)
   const [userId, setUserId] = React.useState<string | null>(null)
   const [dateRange, setDateRange] = React.useState('28')
@@ -125,6 +149,46 @@ export function AnalyticsDashboard() {
   React.useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  React.useEffect(() => {
+    setActiveTab(parseTab(searchParams.get('tab')))
+  }, [searchParams])
+
+  const oauthNoticeHandled = React.useRef(false)
+  React.useEffect(() => {
+    const success = searchParams.get('success')
+    const error = searchParams.get('error')
+    if (!success && !error) {
+      oauthNoticeHandled.current = false
+      return
+    }
+    if (oauthNoticeHandled.current) return
+    oauthNoticeHandled.current = true
+
+    if (success === 'google_connected') {
+      toast.success('Google account connected. Configure your GA4 property and Search Console site below.')
+      void fetchData()
+    } else if (error) {
+      toast.error(OAUTH_ERROR_MESSAGES[error] ?? `Google connection failed: ${error}`)
+    }
+
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('success')
+    params.delete('error')
+    if (!params.get('tab')) params.set('tab', 'settings')
+    const qs = params.toString()
+    router.replace(qs ? `/admin/analytics?${qs}` : '/admin/analytics?tab=settings', { scroll: false })
+  }, [searchParams, router, fetchData])
+
+  function handleTabChange(tab: string) {
+    const next = parseTab(tab)
+    setActiveTab(next)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', next)
+    params.delete('success')
+    params.delete('error')
+    router.replace(`/admin/analytics?${params.toString()}`, { scroll: false })
+  }
 
   async function fetchGaData(range = dateRange) {
     setGaLoading(true)
@@ -233,18 +297,27 @@ export function AnalyticsDashboard() {
   }
 
   async function handleDisconnect() {
-    if (userId) {
-      await Promise.all([
-        supabase.from('users_google_integrations').delete().eq('user_id', userId),
-        supabase.from('analytics_config').delete().eq('user_id', userId),
-        supabase.from('search_console_config').delete().eq('user_id', userId)
-      ])
+    try {
+      const res = await fetch('/api/google/disconnect', { method: 'DELETE' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to disconnect Google account')
+        return
+      }
+      toast.success('Google account disconnected')
+    } catch {
+      toast.error('Failed to disconnect Google account')
+      return
     }
+
     setIsGoogleConnected(false)
     setGoogleUserEmail(null)
+    setGaConfigured(false)
+    setScConfigured(false)
     setGaData(null)
     setScData(null)
-    setPsData(null)
+    setGaError(null)
+    setScError(null)
   }
 
   // Parse GA charts data
@@ -373,7 +446,7 @@ export function AnalyticsDashboard() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      <Tabs defaultValue="overview" className="space-y-8">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <TabsList className="bg-primary/5 p-1 border border-primary/10 rounded-2xl h-12">
             <TabsTrigger value="overview" className="gap-2 px-6 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-accent transition-all">
@@ -748,6 +821,15 @@ export function AnalyticsDashboard() {
             <EmptyState icon={<Zap className="size-12 text-primary/20 mb-4" />} title="No PageSpeed Data" desc="Analyze your site's performance and SEO health." />
           ) : (
             <div className="space-y-6">
+              {psData.source === 'local' && (
+                <p className="text-xs text-muted-foreground rounded-xl border border-dashed border-border bg-muted/30 px-4 py-3">
+                  Quick local audit (no API key). For full Lighthouse scores, add a{' '}
+                  <Link href="/admin/settings" className="text-primary font-semibold hover:underline">
+                    PageSpeed API key
+                  </Link>{' '}
+                  under Site Settings → Integrations.
+                </p>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard 
                   title="Performance" 
@@ -895,21 +977,43 @@ function StatCard({ title, value, icon, trend, trendLabel }: { title: string; va
 }
 
 function EmptyState({ icon, title, desc, link, linkLabel }: { icon: React.ReactNode; title: string; desc: string; link?: string; linkLabel?: string }) {
-  const isApiDisabled = !!link || desc.toLowerCase().includes('google cloud console') || desc.includes('googleapis.com')
-  const apiLink = link ?? "https://console.developers.google.com/apis/api/analyticsdata.googleapis.com/overview"
-  const buttonLabel = linkLabel ?? 'Open Google API settings'
+  const isInternalLink = Boolean(link?.startsWith('/'))
+  const showGoogleApiHelp =
+    !isInternalLink &&
+    (desc.toLowerCase().includes('google cloud console') ||
+      desc.includes('googleapis.com') ||
+      desc.toLowerCase().includes('api') && desc.toLowerCase().includes('disabled'))
 
   return (
     <Card className="flex flex-col items-center justify-center py-20 text-center border-dashed border-2 bg-gray-50/30 rounded-3xl animate-in zoom-in-95 duration-500">
       <div className="mb-4 bg-white p-6 rounded-full shadow-sm border border-primary/5">{icon}</div>
       <h3 className="font-bold text-primary text-lg px-6">{title}</h3>
       <p className="text-sm text-muted-foreground max-w-sm mt-2 leading-relaxed px-8">{desc}</p>
-      
-      {isApiDisabled && (
+
+      {link && isInternalLink && (
         <Button asChild className="mt-6 rounded-xl bg-primary hover:bg-primary/90 gap-2 px-8">
-          <a href={apiLink} target="_blank" rel="noopener noreferrer">
+          <Link href={link}>{linkLabel ?? 'Open settings'}</Link>
+        </Button>
+      )}
+
+      {link && !isInternalLink && (
+        <Button asChild className="mt-6 rounded-xl bg-primary hover:bg-primary/90 gap-2 px-8">
+          <a href={link} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="size-4" />
-            {buttonLabel}
+            {linkLabel ?? 'Open link'}
+          </a>
+        </Button>
+      )}
+
+      {!link && showGoogleApiHelp && (
+        <Button asChild className="mt-6 rounded-xl bg-primary hover:bg-primary/90 gap-2 px-8">
+          <a
+            href="https://console.developers.google.com/apis/api/analyticsdata.googleapis.com/overview"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <ExternalLink className="size-4" />
+            Open Google API settings
           </a>
         </Button>
       )}

@@ -66,41 +66,92 @@ export function GooglePropertySetup({ isConnected, userId, onConfigSaved }: Prop
 
   async function fetchAccounts() {
     setLoadingAccounts(true)
-    const res = await fetch('/api/google/analytics/accounts')
-    const data = await res.json()
-    setAccounts(data.accounts || [])
-    setLoadingAccounts(false)
+    setCreateError('')
+    try {
+      const res = await fetch('/api/google/analytics/accounts')
+      const data = await res.json()
+      if (!res.ok) {
+        setCreateError(data.error || 'Failed to load Analytics accounts.')
+        setAccounts([])
+        return
+      }
+      setAccounts(data.accounts || [])
+    } catch {
+      setCreateError('Could not load Analytics accounts. Check your Google connection.')
+      setAccounts([])
+    } finally {
+      setLoadingAccounts(false)
+    }
   }
 
   async function fetchProperties(accountId: string) {
     setLoadingProps(true)
     setSelectedAccount(accountId)
-    const res = await fetch(`/api/google/analytics/properties?accountId=${encodeURIComponent(accountId)}`)
-    const data = await res.json()
-    setProperties(data.properties || [])
-    setLoadingProps(false)
+    setCreateError('')
+    try {
+      const res = await fetch(`/api/google/analytics/properties?accountId=${encodeURIComponent(accountId)}`)
+      const data = await res.json()
+      if (!res.ok) {
+        setCreateError(data.error || 'Failed to load GA4 properties.')
+        setProperties([])
+        return
+      }
+      setProperties(data.properties || [])
+    } catch {
+      setCreateError('Could not load GA4 properties.')
+      setProperties([])
+    } finally {
+      setLoadingProps(false)
+    }
   }
 
   async function fetchSites() {
     setLoadingSites(true)
-    const res = await fetch('/api/google/search-console/sites')
-    const data = await res.json()
-    setSites(data.sites || [])
-    setLoadingSites(false)
+    setCreateError('')
+    try {
+      const res = await fetch('/api/google/search-console/sites')
+      const data = await res.json()
+      if (!res.ok) {
+        setCreateError(data.error || 'Failed to load Search Console sites.')
+        setSites([])
+        return
+      }
+      setSites(data.sites || [])
+    } catch {
+      setCreateError('Could not load Search Console sites.')
+      setSites([])
+    } finally {
+      setLoadingSites(false)
+    }
   }
 
   async function saveAnalyticsConfig() {
+    if (!selectedProperty?.startsWith('properties/')) {
+      setCreateError('Select a valid GA4 property before saving.')
+      return
+    }
     setSaving(true)
+    setCreateError('')
     const supabase = createClient()
-    await supabase.from('analytics_config').upsert({
+    const { error } = await supabase.from('analytics_config').upsert({
       user_id: userId,
       account_id: selectedAccount,
       property_id: selectedProperty,
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id' })
     setSaving(false)
+    if (error) {
+      setCreateError(error.message || 'Failed to save Analytics configuration.')
+      return
+    }
+    setAnalyticsConfig({
+      user_id: userId,
+      account_id: selectedAccount,
+      property_id: selectedProperty,
+    })
     setStep('search-console')
-    fetchSites()
+    onConfigSaved()
+    void fetchSites()
   }
 
   async function createProperty() {
@@ -141,14 +192,24 @@ export function GooglePropertySetup({ isConnected, userId, onConfigSaved }: Prop
   }
 
   async function saveScConfig() {
+    if (!selectedSite?.trim()) {
+      setCreateError('Select a Search Console site before saving.')
+      return
+    }
     setSaving(true)
+    setCreateError('')
     const supabase = createClient()
-    await supabase.from('search_console_config').upsert({
+    const { error } = await supabase.from('search_console_config').upsert({
       user_id: userId,
-      site_url: selectedSite,
+      site_url: selectedSite.trim(),
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id' })
     setSaving(false)
+    if (error) {
+      setCreateError(error.message || 'Failed to save Search Console configuration.')
+      return
+    }
+    setScConfig({ user_id: userId, site_url: selectedSite.trim() })
     onConfigSaved()
   }
 
