@@ -1,9 +1,84 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { generateSlug } from '@/lib/utils'
 import { indexOnPublish } from '@/lib/seo/google-indexing'
+import { requireRoles } from '@/lib/authz'
+import { ROLES } from '@/lib/roles'
+
+type ProductRow = Record<string, unknown>
+
+function duplicateDisplayName(name: string): string {
+  const trimmed = name.trim()
+  if (trimmed.startsWith('Copy of ')) return trimmed
+  return `Copy of ${trimmed}`
+}
+
+async function uniqueProductSlug(
+  admin: ReturnType<typeof createAdminClient>,
+  baseSlug: string
+): Promise<string> {
+  let candidate = `${baseSlug}-copy`
+  let attempt = 1
+
+  while (attempt <= 99) {
+    const { data: existing } = await admin
+      .from('products')
+      .select('id')
+      .eq('slug', candidate)
+      .maybeSingle()
+
+    if (!existing) return candidate
+    attempt++
+    candidate = `${baseSlug}-copy-${attempt}`
+  }
+
+  throw new Error('Could not generate a unique slug for the duplicate')
+}
+
+function buildDuplicateInsert(source: ProductRow, name: string, slug: string) {
+  const row: Record<string, unknown> = {
+    name,
+    slug,
+    status: 'draft',
+    short_description: source.short_description ?? null,
+    description: source.description ?? null,
+    regular_price_usd: source.regular_price_usd ?? 0,
+    sale_price_usd: source.sale_price_usd ?? 0,
+    price_usd: source.price_usd ?? 0,
+    type: source.type ?? 'digital',
+    category_id: source.category_id ?? null,
+    image_url: source.image_url ?? null,
+    image_alt: source.image_alt ?? null,
+    file_url: source.file_url ?? null,
+    weight_kg: source.weight_kg ?? 0,
+    is_active: source.is_active ?? true,
+    is_featured: source.is_featured ?? false,
+    meta_title: source.meta_title ?? null,
+    meta_description: source.meta_description ?? null,
+    stock_status: source.stock_status ?? 'instock',
+    download_limit: source.download_limit ?? -1,
+    download_expiry_days: source.download_expiry_days ?? -1,
+  }
+
+  for (const key of [
+    'length',
+    'width',
+    'height',
+    'book_author',
+    'is_virtual',
+    'manage_stock',
+    'stock_quantity',
+    'total_sales',
+  ] as const) {
+    if (source[key] !== undefined && source[key] !== null) {
+      row[key] = key === 'total_sales' ? 0 : source[key]
+    }
+  }
+
+  return row
+}
 
 export async function saveProduct(data: any) {
   const supabase = createClient()
@@ -11,10 +86,8 @@ export async function saveProduct(data: any) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
-  // Extract gallery and other fields
   const { id, gallery, ...rest } = data
 
-  // Generate slug if not provided
   if (!rest.slug) {
     rest.slug = generateSlug(rest.name)
   }
@@ -39,12 +112,9 @@ export async function saveProduct(data: any) {
     productId = newProd.id
   }
 
-  // Sync Gallery
   if (gallery && Array.isArray(gallery)) {
-    // 1. Delete old gallery images for this product
     await supabase.from('product_gallery').delete().eq('product_id', productId)
     
-    // 2. Insert new gallery images
     if (gallery.length > 0) {
       const galleryInserts = gallery.map((url: string, index: number) => ({
         product_id: productId,
@@ -64,7 +134,6 @@ export async function saveProduct(data: any) {
   revalidatePath('/shop')
   revalidatePath(`/shop/${rest.slug}`)
 
-  const { data: { user } } = await supabase.auth.getUser()
   if (user) {
     await indexOnPublish('product', rest.slug, rest.status, {
       is_active: rest.is_active,
@@ -105,60 +174,81 @@ export async function deleteProducts(ids: string[]) {
   return { success: true }
 }
 
-export async function duplicateProduct(id: string) {
-  const supabase = createClient()
-  
-  // 1. Fetch original
-  const { data: original, error: fetchError } = await supabase
+export async function duplicateProduct(
+  id: string
+): Promise<{ success: true; id: string } | { error: string }> {
+  const auth = await requireRoles(ROLES.CONTENT)
+  if ('error' in auth) return auth
+
+  const admin = createAdminClient()
+
+  const { data: original, error: fetchError } = await admin
     .from('products')
     .select('*, product_gallery(*)')
     .eq('id', id)
     .single()
-    
-  if (fetchError) return { error: fetchError.message }
-  
-  // 2. Create copy
-  const { id: _, created_at: __, updated_at: ___, product_gallery, ...rest } = original
-  const newName = `${rest.name} (Copy)`
-  let newSlug = generateSlug(newName)
-  
-  // Basic uniqueness check for products
-  const { data: existing } = await supabase
-    .from('products')
-    .select('id')
-    .eq('slug', newSlug)
-    .maybeSingle()
-  
-  if (existing) {
-    newSlug = `${newSlug}-${Math.floor(Math.random() * 1000)}`
+
+  if (fetchError || !original) {
+    return { error: fetchError?.message ?? 'Product not found' }
   }
 
-  const copyData = {
-    ...rest,
-    name: newName,
-    slug: newSlug,
-    status: 'draft'
+  const gallery = (original.product_gallery ?? []) as Array<{
+    image_url: string
+    display_order?: number
+    alt_text?: string | null
+  }>
+
+  const newName = duplicateDisplayName(String(original.name ?? 'Product'))
+  const baseSlug = generateSlug(newName)
+  let newSlug: string
+  try {
+    newSlug = await uniqueProductSlug(admin, baseSlug)
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Slug generation failed' }
   }
-  
-  const { data: copy, error: insertError } = await supabase
+
+  const { data: copy, error: insertError } = await admin
     .from('products')
-    .insert(copyData)
-    .select()
+    .insert(buildDuplicateInsert(original as ProductRow, newName, newSlug))
+    .select('id')
     .single()
-    
-  if (insertError) return { error: insertError.message }
-  
-  // 3. Copy Gallery
-  if (product_gallery && product_gallery.length > 0) {
-    const galleryInserts = product_gallery.map((g: any) => ({
+
+  if (insertError) {
+    console.error('[duplicateProduct]', insertError.message)
+    return { error: insertError.message }
+  }
+
+  if (gallery.length > 0) {
+    const galleryInserts = gallery.map((g, index) => ({
       product_id: copy.id,
       image_url: g.image_url,
-      display_order: g.display_order,
-      alt_text: g.alt_text
+      display_order: g.display_order ?? index,
+      alt_text: g.alt_text ?? null,
     }))
-    await supabase.from('product_gallery').insert(galleryInserts)
+    const { error: galleryError } = await admin
+      .from('product_gallery')
+      .insert(galleryInserts)
+    if (galleryError) {
+      console.error('[duplicateProduct] gallery:', galleryError.message)
+    }
   }
-  
+
+  const { data: variants } = await admin
+    .from('product_variants')
+    .select('*')
+    .eq('product_id', id)
+
+  if (variants && variants.length > 0) {
+    const variantInserts = variants.map((v) => ({
+      product_id: copy.id,
+      sku: v.sku ? `${v.sku}-copy` : null,
+      stock_quantity: v.stock_quantity ?? 0,
+      price_modifier: v.price_modifier ?? 0,
+      attribute_value_ids: v.attribute_value_ids ?? [],
+    }))
+    await admin.from('product_variants').insert(variantInserts)
+  }
+
   revalidatePath('/admin/products')
   return { success: true, id: copy.id }
 }
@@ -166,23 +256,33 @@ export async function duplicateProduct(id: string) {
 export async function duplicateProducts(
   ids: string[]
 ): Promise<
-  | { success: true; count: number; ids: string[] }
+  | { success: true; count: number; ids: string[]; failed?: string[] }
   | { error: string; count?: number }
 > {
   if (ids.length === 0) return { success: true, count: 0, ids: [] }
 
   const created: string[] = []
+  const failed: string[] = []
+
   for (const id of ids) {
     const result = await duplicateProduct(id)
     if ('error' in result) {
-      return {
-        error: result.error,
-        count: created.length,
-      }
+      failed.push(result.error)
+      continue
     }
-    if ('id' in result && result.id) created.push(result.id)
+    created.push(result.id)
   }
 
   revalidatePath('/admin/products')
-  return { success: true, count: created.length, ids: created }
+
+  if (created.length === 0) {
+    return { error: failed[0] ?? 'Duplication failed', count: 0 }
+  }
+
+  return {
+    success: true,
+    count: created.length,
+    ids: created,
+    ...(failed.length > 0 ? { failed } : {}),
+  }
 }

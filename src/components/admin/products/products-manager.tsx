@@ -4,7 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Globe } from 'lucide-react'
+import { Globe, Copy, Trash2, Loader2, X } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ProductBulkActions, DuplicateProductButton } from '@/components/admin/products/product-bulk-actions'
 import { deleteProduct, deleteProducts, duplicateProducts } from '@/lib/actions/products'
@@ -96,13 +96,13 @@ export function ProductsManager({ initialProducts }: ProductsManagerProps) {
     const result = await duplicateProducts(Array.from(selectedIds))
     setActionLoading(null)
     if ('error' in result) {
-      alert(
-        result.count
-          ? `Partially duplicated ${result.count} product(s). Error: ${result.error}`
-          : result.error
-      )
+      alert(result.error)
     } else {
-      alert(`Duplicated ${result.count} product(s) as drafts.`)
+      const failedNote =
+        result.failed?.length
+          ? `\n\n${result.failed.length} could not be duplicated (see server logs).`
+          : ''
+      alert(`Duplicated ${result.count} product(s) as drafts.${failedNote}`)
     }
     setSelectedIds(new Set())
     router.refresh()
@@ -181,16 +181,72 @@ export function ProductsManager({ initialProducts }: ProductsManagerProps) {
               Select products to duplicate, delete, or submit to Google in bulk.
             </p>
           </div>
-          <ProductBulkActions
-            selectedCount={selectedIds.size}
-            onBulkDelete={handleBulkDelete}
-            onBulkDuplicate={handleBulkDuplicate}
-            onBulkIndex={handleBulkIndex}
-            actionsDisabled={bulkBusy}
-            onClearSelection={() => setSelectedIds(new Set())}
-          />
+          <ProductBulkActions />
         </div>
       </div>
+
+      {selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 border-b border-primary/20 bg-primary/5 px-4 py-3">
+          <span className="mr-2 text-sm font-medium text-primary">
+            {selectedIds.size} selected
+          </span>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="gap-2"
+            disabled={bulkBusy}
+            onClick={handleBulkDuplicate}
+          >
+            {actionLoading === 'bulk-duplicate' ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+            Duplicate selected
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            disabled={bulkBusy}
+            onClick={handleBulkIndex}
+          >
+            {actionLoading === 'bulk-index' ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Globe className="h-4 w-4" />
+            )}
+            Index in Google
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-2 text-destructive hover:text-destructive"
+            disabled={bulkBusy}
+            onClick={handleBulkDelete}
+          >
+            {actionLoading === 'bulk-delete' ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+            Delete selected
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="gap-1"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            <X className="h-4 w-4" />
+            Clear
+          </Button>
+        </div>
+      )}
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
