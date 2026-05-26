@@ -43,6 +43,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const resolvedSiteOgImage = s.get('site_og_image') || siteOgImage;
 
   return {
+    metadataBase: new URL('https://kdcuganda.org'),
     title: {
       default: resolvedMetaTitle,
       template: `%s | ${resolvedSiteName}`
@@ -80,6 +81,7 @@ export async function generateMetadata(): Promise<Metadata> {
   } catch (err) {
     console.error('[generateMetadata] Failed to load site settings:', err)
     return {
+      metadataBase: new URL('https://kdcuganda.org'),
       title: { default: metaTitle, template: `%s | ${siteName}` },
       description: metaDesc,
       keywords: metaKeywords,

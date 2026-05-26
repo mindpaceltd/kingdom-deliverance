@@ -144,7 +144,10 @@ export function DataTable<T>({
               pageData.map((row, rowIndex) => (
                 <TableRow key={rowIndex}>
                   {columns.map((col) => (
-                    <TableCell key={col.key} className={col.className}>
+                    <TableCell
+                      key={col.key}
+                      className={cn('overflow-hidden', col.className)}
+                    >
                       {col.cell(row)}
                     </TableCell>
                   ))}

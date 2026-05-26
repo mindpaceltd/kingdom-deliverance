@@ -122,9 +122,9 @@ export function EventsManager({ initialEvents }: EventsManagerProps) {
     {
       key: 'title',
       header: 'Event Details',
-      className: 'max-w-[350px]',
+      className: 'w-[38%] min-w-[200px] max-w-[420px] whitespace-normal align-top',
       cell: (event) => (
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-3 min-w-0 max-w-full">
           <div className="mt-1 h-10 w-10 shrink-0 overflow-hidden rounded-lg border bg-muted">
             {event.image_url ? (
               <img src={event.image_url} alt="" className="h-full w-full object-cover" />
@@ -134,22 +134,27 @@ export function EventsManager({ initialEvents }: EventsManagerProps) {
               </div>
             )}
           </div>
-          <div className="flex flex-col min-w-0">
+          <div className="flex min-w-0 flex-1 flex-col gap-1 overflow-hidden">
             <button
               type="button"
               onClick={() => openEdit(event)}
-              className="truncate text-left text-sm font-semibold text-foreground hover:text-accent transition-colors"
+              className="line-clamp-2 text-left text-sm font-semibold text-foreground hover:text-accent transition-colors"
               title={event.title}
             >
               {event.title}
             </button>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="flex items-center gap-1 text-[11px] text-muted-foreground whitespace-nowrap">
-                <MapPin className="size-3" />
-                {event.location || 'Online / TBA'}
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span
+                className="flex min-w-0 items-start gap-1 text-[11px] leading-snug text-muted-foreground"
+                title={event.location || 'Online / TBA'}
+              >
+                <MapPin className="mt-0.5 size-3 shrink-0" />
+                <span className="line-clamp-2 break-words">{event.location || 'Online / TBA'}</span>
               </span>
               {event.is_featured && (
-                <span className="bg-accent/10 text-accent text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-sm">Featured</span>
+                <span className="shrink-0 rounded-sm bg-accent/10 px-1.5 py-0.5 text-[9px] font-bold uppercase text-accent">
+                  Featured
+                </span>
               )}
             </div>
           </div>
@@ -159,13 +164,14 @@ export function EventsManager({ initialEvents }: EventsManagerProps) {
     {
       key: 'date',
       header: 'Date & Time',
+      className: 'w-[18%] min-w-[148px] whitespace-normal align-top',
       cell: (event) => (
-        <div className="flex flex-col">
-          <span className="text-sm font-medium text-foreground" suppressHydrationWarning>
+        <div className="flex min-w-[140px] flex-col gap-0.5">
+          <span className="text-sm font-medium leading-snug text-foreground" suppressHydrationWarning>
             {formatDate(event.date)}
           </span>
           {event.end_date && (
-            <span className="text-[10px] text-muted-foreground" suppressHydrationWarning>
+            <span className="text-[10px] leading-snug text-muted-foreground" suppressHydrationWarning>
               Ends: {formatDate(event.end_date)}
             </span>
           )}
@@ -175,6 +181,7 @@ export function EventsManager({ initialEvents }: EventsManagerProps) {
     {
       key: 'stats',
       header: 'Reach',
+      className: 'w-[88px] whitespace-nowrap align-top',
       cell: (event) => (
         <div className="flex items-center gap-3">
           <div className="flex flex-col">
@@ -187,6 +194,7 @@ export function EventsManager({ initialEvents }: EventsManagerProps) {
     {
       key: 'status',
       header: 'Status',
+      className: 'w-[110px] whitespace-normal align-top',
       cell: (event) => (
         <div className="flex flex-col gap-1">
           <StatusBadge status={event.status} />
@@ -206,6 +214,7 @@ export function EventsManager({ initialEvents }: EventsManagerProps) {
     {
       key: 'seo_score',
       header: 'SEO',
+      className: 'w-[72px] whitespace-nowrap align-top',
       cell: (event) => {
         const score = event.seo_score ?? 0
         return (
@@ -233,9 +242,9 @@ export function EventsManager({ initialEvents }: EventsManagerProps) {
     {
       key: 'actions',
       header: '',
-      className: 'w-[140px]',
+      className: 'w-[120px] whitespace-nowrap align-top',
       cell: (event) => (
-        <div className="flex items-center gap-1 justify-end">
+        <div className="flex items-center justify-end gap-1">
           {event.status === 'trash' ? (
             <>
               <Button
@@ -333,13 +342,14 @@ export function EventsManager({ initialEvents }: EventsManagerProps) {
         </div>
       </div>
 
-      <div className="bg-card rounded-xl border shadow-sm">
+      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
         <DataTable
           columns={columns}
           data={filteredEvents}
           searchPlaceholder="Search events by title, location..."
           filterSlot={filterSlot}
           isLoading={isRefreshing}
+          className="[&_[data-slot=table]]:table-fixed"
         />
       </div>
     </div>

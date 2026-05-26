@@ -4,50 +4,65 @@ import { notFound } from "next/navigation";
 import { Calendar, MapPin, ArrowLeft, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Metadata } from "next";
-import { createSocialImageMetadata } from "@/lib/seo-image-utils";
+import { createSocialImageMetadata, stripHtmlExcerpt } from "@/lib/seo-image-utils";
 import { createCanonicalMetadata } from "@/lib/seo/canonical-utils";
+import { getOrgLogoUrl, getOrgOgImageUrl, getSiteName } from "@/lib/seo/site-branding";
 import { BreadcrumbSchema, generateBreadcrumbs } from "@/components/seo/breadcrumb-schema";
+import { EventSchema } from "@/components/seo/event-schema";
 import { incrementEventViews } from "@/lib/actions/event-views";
 import { EventImage } from "@/components/content/event-image";
+import { ShareButtons } from "@/components/content/share-buttons";
 import { formatSafeDate, normalizeMediaUrl, toValidDate } from "@/lib/media-url";
 
 interface Props { params: { slug: string } }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = createClient();
-  const { data: event } = await supabase
-    .from("events")
-    .select("title, description, meta_title, meta_description, image_url, slug")
-    .eq("slug", params.slug)
-    .single();
-    
+  const [eventResult, orgOgImage, siteName] = await Promise.all([
+    supabase
+      .from("events")
+      .select("title, description, meta_title, meta_description, image_url, slug")
+      .eq("slug", params.slug)
+      .single(),
+    getOrgOgImageUrl(),
+    getSiteName(),
+  ]);
+
+  const event = eventResult.data;
   if (!event) return { title: "Event Not Found" };
 
-  const title = event.meta_title || `${event.title} | KDC Uganda Events`;
-  const description = event.meta_description || event.description || "Join us for this upcoming event at Kingdom Deliverance Centre Uganda.";
+  const ogTitle = event.meta_title || event.title;
+  const excerpt =
+    event.meta_description?.trim() ||
+    stripHtmlExcerpt(event.description, 160) ||
+    "Join us for this upcoming event at Kingdom Deliverance Centre Uganda.";
   const socialImage = createSocialImageMetadata(
-    event.title,
-    description,
-    normalizeMediaUrl(event.image_url),
-    'event'
+    ogTitle,
+    excerpt,
+    event.image_url,
+    "event",
+    orgOgImage
   );
 
+  const pageUrl = `https://kdcuganda.org/events/${event.slug}`;
+
   return {
-    title,
-    description,
+    title: `${ogTitle} | KDC Uganda Events`,
+    description: excerpt,
     ...createCanonicalMetadata(`/events/${event.slug}`),
     openGraph: {
-      title: event.meta_title || event.title,
-      description,
-      url: `https://kdcuganda.org/events/${event.slug}`,
-      siteName: "Kingdom Deliverance Centre Uganda",
+      title: ogTitle,
+      description: excerpt,
+      url: pageUrl,
+      siteName,
       type: "website",
+      locale: "en_US",
       images: [socialImage],
     },
     twitter: {
       card: "summary_large_image",
-      title: event.meta_title || event.title,
-      description,
+      title: ogTitle,
+      description: excerpt,
       images: [socialImage.url],
     },
   };
@@ -69,11 +84,14 @@ function eventStatusLabel(event: { date: string; end_date?: string | null; statu
 
 export default async function EventDetailPage({ params }: Props) {
   const supabase = createClient();
-  const { data: event, error } = await supabase
-    .from("events")
-    .select("*")
-    .eq("slug", params.slug)
-    .maybeSingle();
+  const [eventResult, orgOgImage, orgLogoUrl, siteName] = await Promise.all([
+    supabase.from("events").select("*").eq("slug", params.slug).maybeSingle(),
+    getOrgOgImageUrl(),
+    getOrgLogoUrl(),
+    getSiteName(),
+  ]);
+
+  const { data: event, error } = eventResult;
 
   if (error) {
     console.error('[EventDetailPage] Fetch failed:', error.message)
@@ -85,10 +103,33 @@ export default async function EventDetailPage({ params }: Props) {
 
   const imageUrl = normalizeMediaUrl(event.image_url)
   const statusLabel = eventStatusLabel(event)
+  const excerpt =
+    event.meta_description?.trim() ||
+    stripHtmlExcerpt(event.description, 200) ||
+    ""
+  const eventUrl = `https://kdcuganda.org/events/${event.slug}`
+  const shareImage = createSocialImageMetadata(
+    event.meta_title || event.title,
+    excerpt || stripHtmlExcerpt(event.description, 160) || event.title,
+    event.image_url,
+    "event",
+    orgOgImage
+  )
 
   return (
     <>
       <BreadcrumbSchema items={generateBreadcrumbs('event', event.title, event.slug)} />
+      <EventSchema
+        title={event.meta_title || event.title}
+        description={excerpt || event.title}
+        slug={event.slug}
+        startDate={event.date}
+        endDate={event.end_date}
+        location={event.location}
+        imageUrl={shareImage.url}
+        orgName={siteName}
+        orgLogoUrl={orgLogoUrl}
+      />
       <div className="flex flex-col">
         <section className="py-28 bg-primary text-white relative overflow-hidden">
           {imageUrl && (
@@ -137,14 +178,31 @@ export default async function EventDetailPage({ params }: Props) {
             )}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
               <div className="lg:col-span-2 space-y-6">
-                {event.description && (
+                {excerpt && (
+                  <p className="text-lg font-medium leading-relaxed text-primary/90">{excerpt}</p>
+                )}
+                {event.description && event.description !== excerpt && (
                   <p className="text-primary/80 leading-relaxed text-lg">{event.description}</p>
+                )}
+                {!event.description && !excerpt && (
+                  <p className="text-primary/70 leading-relaxed">
+                    Join us at {siteName} for this special gathering.
+                  </p>
                 )}
                 {event.content && (
                   <div className="prose prose-purple max-w-none" dangerouslySetInnerHTML={{ __html: event.content }} />
                 )}
               </div>
               <div className="space-y-6">
+                <div className="rounded-2xl border border-primary/10 bg-muted/50 p-5">
+                  <ShareButtons
+                    url={eventUrl}
+                    title={event.meta_title || event.title}
+                    text={excerpt || event.title}
+                    label="Share"
+                    className="flex-col items-start gap-2"
+                  />
+                </div>
                 <div className="bg-muted rounded-2xl p-6 space-y-4">
                   <h3 className="font-serif text-lg font-bold text-primary">Event Details</h3>
                   <div className="space-y-3 text-sm">
