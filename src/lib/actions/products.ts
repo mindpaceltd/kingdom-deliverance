@@ -6,8 +6,78 @@ import { generateSlug } from '@/lib/utils'
 import { indexOnPublish } from '@/lib/seo/google-indexing'
 import { requireRoles } from '@/lib/authz'
 import { ROLES } from '@/lib/roles'
+import {
+  PRODUCTS_ADMIN_PAGE_SIZE,
+  PRODUCTS_ADMIN_SELECT,
+  type ProductsAdminPageResult,
+  type ProductsAdminStats,
+} from '@/lib/products/admin-query'
 
 type ProductRow = Record<string, unknown>
+
+export async function getProductsAdminStats(): Promise<
+  ProductsAdminStats | { error: string }
+> {
+  const auth = await requireRoles(ROLES.CONTENT)
+  if ('error' in auth) return auth
+
+  const supabase = createClient()
+  const [totalRes, publishedRes, draftsRes] = await Promise.all([
+    supabase.from('products').select('id', { count: 'exact', head: true }),
+    supabase
+      .from('products')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'published'),
+    supabase
+      .from('products')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'draft'),
+  ])
+
+  if (totalRes.error) return { error: totalRes.error.message }
+
+  return {
+    total: totalRes.count ?? 0,
+    published: publishedRes.count ?? 0,
+    drafts: draftsRes.count ?? 0,
+  }
+}
+
+export async function getProductsAdminPage(options?: {
+  page?: number
+  pageSize?: number
+}): Promise<ProductsAdminPageResult | { error: string }> {
+  const auth = await requireRoles(ROLES.CONTENT)
+  if ('error' in auth) return auth
+
+  const page = Math.max(0, options?.page ?? 0)
+  const pageSize = options?.pageSize ?? PRODUCTS_ADMIN_PAGE_SIZE
+  const from = page * pageSize
+  const to = from + pageSize - 1
+
+  const supabase = createClient()
+  const { data, error, count } = await supabase
+    .from('products')
+    .select(PRODUCTS_ADMIN_SELECT, { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(from, to)
+
+  if (error) {
+    console.error('[getProductsAdminPage]', error.message)
+    return { error: error.message }
+  }
+
+  const total = count ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+
+  return {
+    data: data ?? [],
+    total,
+    page,
+    pageSize,
+    totalPages,
+  }
+}
 
 function duplicateDisplayName(name: string): string {
   const trimmed = name.trim()

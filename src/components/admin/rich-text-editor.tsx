@@ -55,6 +55,10 @@ interface RichTextEditorProps {
   onChange: (html: string) => void
   placeholder?: string
   disabled?: boolean
+  /** Hide video embed; suited for email templates */
+  compact?: boolean
+  /** Tailwind min-height class for editor body */
+  editorMinHeight?: string
 }
 
 // ---------------------------------------------------------------------------
@@ -235,6 +239,8 @@ export function RichTextEditor({
   onChange,
   placeholder,
   disabled = false,
+  compact = false,
+  editorMinHeight = 'min-h-[320px]',
 }: RichTextEditorProps) {
   const [popover, setPopover] = React.useState<PopoverType>(null)
   const toolbarRef = React.useRef<HTMLDivElement>(null)
@@ -258,7 +264,9 @@ export function RichTextEditor({
         HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
       }),
       Image.configure({ inline: false, allowBase64: false }),
-      Youtube.configure({ width: 640, height: 360, nocookie: true }),
+      ...(compact
+        ? []
+        : [Youtube.configure({ width: 640, height: 360, nocookie: true })]),
       TextStyle,
       Color,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
@@ -275,7 +283,8 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          'prose prose-sm dark:prose-invert max-w-none min-h-[320px] px-4 py-3 focus:outline-none',
+          'prose prose-sm dark:prose-invert max-w-none px-4 py-3 focus:outline-none',
+          editorMinHeight,
           disabled && 'opacity-60 cursor-not-allowed'
         ),
       },
@@ -590,15 +599,16 @@ export function RichTextEditor({
           <ImageIcon className="size-3.5" />
         </ToolbarBtn>
 
-        {/* YouTube */}
-        <ToolbarBtn
-          active={popover === 'youtube'}
-          disabled={disabled}
-          onClick={() => setPopover(popover === 'youtube' ? null : 'youtube')}
-          title="Embed YouTube Video"
-        >
-          <YtIcon className="size-3.5" />
-        </ToolbarBtn>
+        {!compact && (
+          <ToolbarBtn
+            active={popover === 'youtube'}
+            disabled={disabled}
+            onClick={() => setPopover(popover === 'youtube' ? null : 'youtube')}
+            title="Embed YouTube Video"
+          >
+            <YtIcon className="size-3.5" />
+          </ToolbarBtn>
+        )}
 
         <Sep />
 

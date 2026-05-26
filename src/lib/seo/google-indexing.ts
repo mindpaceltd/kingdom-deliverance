@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { getAuthedGoogleClient } from '@/lib/google/client'
+import { publishUrlsToGoogleIndexing } from '@/lib/google/publish-indexing'
 import {
   buildPublicContentUrl,
   type PublicContentKind,
@@ -29,7 +29,7 @@ function shouldAutoIndex(
   }
 }
 
-/** Submit URLs to Google Indexing API (requires connected Google account). */
+/** Submit URLs to Google Indexing API (requires connected Google account + indexing scope). */
 export async function requestGoogleIndexing(
   urls: string[]
 ): Promise<{ submitted: number; skipped?: boolean; error?: string }> {
@@ -45,24 +45,17 @@ export async function requestGoogleIndexing(
       return { submitted: 0, error: 'Not authenticated' }
     }
 
-    const auth = await getAuthedGoogleClient(user.id)
-    let submitted = 0
-
-    for (const url of unique) {
-      try {
-        new URL(url)
-        await auth.request({
-          url: 'https://indexing.googleapis.com/v3/urlNotifications:publish',
-          method: 'POST',
-          data: { url, type: 'URL_UPDATED' },
-        })
-        submitted++
-      } catch (err) {
-        console.warn('[google-indexing] URL failed:', url, err)
+    const outcome = await publishUrlsToGoogleIndexing(user.id, unique)
+    if (outcome.needsReauth) {
+      return { submitted: 0, skipped: true, error: outcome.error }
+    }
+    if (outcome.submitted === 0) {
+      return {
+        submitted: 0,
+        error: outcome.error || outcome.results[0]?.error || 'No URLs accepted by Google',
       }
     }
-
-    return { submitted }
+    return { submitted: outcome.submitted }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     if (

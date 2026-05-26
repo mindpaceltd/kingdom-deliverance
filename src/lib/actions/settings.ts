@@ -3,6 +3,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { requireAdmin } from '@/lib/authz'
+import { ensurePaymentGateways } from '@/lib/payments/ensure-payment-gateways'
 
 export async function saveSettings(
   data: Record<string, string>
@@ -27,6 +28,21 @@ export async function saveSettings(
   revalidatePath('/contact')
   revalidatePath('/give')
   revalidatePath('/admin/settings')
+
+  const paymentKeys = [
+    'pesapal_enabled',
+    'pesapal_consumer_key',
+    'pesapal_consumer_secret',
+    'pesapal_mode',
+    'paypal_enabled',
+    'paypal_client_id',
+    'paypal_secret',
+    'paypal_mode',
+  ]
+  if (Object.keys(data).some((k) => paymentKeys.includes(k))) {
+    await ensurePaymentGateways(admin)
+    revalidatePath('/admin/settings/payments')
+  }
 
   return { success: true }
 }

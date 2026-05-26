@@ -287,19 +287,13 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
       toast.error('No published sermons with a slug selected.')
       return
     }
-    const res = await fetch('/api/google/search-console/index-url', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ urls }),
-    })
-    const data = await res.json()
-    if (!res.ok) {
-      toast.error(data.error || 'Indexing request failed')
+    const { submitGoogleIndexing } = await import('@/lib/seo/submit-google-indexing-client')
+    const result = await submitGoogleIndexing(urls)
+    if (!result.ok) {
+      toast.error(result.message, { description: result.hint })
       return
     }
-    const ok =
-      data.results?.filter((r: { success?: boolean }) => r.success).length ?? urls.length
-    toast.success(`Submitted ${ok} URL(s) to Google for indexing`)
+    toast.success(result.message)
   }
 
   async function handleSingleIndex(sermon: Sermon) {

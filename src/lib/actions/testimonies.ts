@@ -59,6 +59,85 @@ export async function getTestimoniesForAdmin(): Promise<
   return { data: (data ?? []) as TestimonyRecord[] }
 }
 
+export type TestimonyInput = {
+  name: string
+  email?: string | null
+  phone?: string | null
+  location?: string | null
+  testimony: string
+  media_url?: string | null
+  media_type?: string | null
+  status: 'pending' | 'approved' | 'rejected'
+}
+
+function normalizeTestimonyInput(input: TestimonyInput) {
+  const name = input.name.trim()
+  const testimony = input.testimony.trim()
+  if (!name) return { error: 'Name is required' } as const
+  if (!testimony) return { error: 'Testimony text is required' } as const
+  return {
+    name,
+    email: input.email?.trim() || null,
+    phone: input.phone?.trim() || null,
+    location: input.location?.trim() || null,
+    testimony,
+    media_url: input.media_url?.trim() || null,
+    media_type: input.media_type?.trim() || null,
+    status: input.status,
+    updated_at: new Date().toISOString(),
+  } as const
+}
+
+export async function createTestimony(
+  input: TestimonyInput
+): Promise<{ data: TestimonyRecord } | { error: string }> {
+  const auth = await requireRoles(ROLES.CONTENT)
+  if ('error' in auth) return auth
+
+  const row = normalizeTestimonyInput(input)
+  if ('error' in row) return row
+
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('testimonies')
+    .insert(row)
+    .select('*')
+    .single()
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/admin/testimonies')
+  revalidatePath('/testimonies')
+  revalidatePath('/')
+  return { data: data as TestimonyRecord }
+}
+
+export async function updateTestimony(
+  id: string,
+  input: TestimonyInput
+): Promise<{ data: TestimonyRecord } | { error: string }> {
+  const auth = await requireRoles(ROLES.CONTENT)
+  if ('error' in auth) return auth
+
+  const row = normalizeTestimonyInput(input)
+  if ('error' in row) return row
+
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('testimonies')
+    .update(row)
+    .eq('id', id)
+    .select('*')
+    .single()
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/admin/testimonies')
+  revalidatePath('/testimonies')
+  revalidatePath('/')
+  return { data: data as TestimonyRecord }
+}
+
 export async function updateTestimonyStatus(
   id: string,
   status: 'approved' | 'rejected' | 'pending'

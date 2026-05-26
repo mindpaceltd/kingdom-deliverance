@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { google } from 'googleapis'
 import { createClient } from '@/lib/supabase/server'
 import { getAuthedGoogleClient } from '@/lib/google/client'
+import { hasGoogleIndexingScope } from '@/lib/google/scopes'
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,12 @@ export async function GET(request: Request) {
   }
 
   try {
+    const { data: integration } = await supabase
+      .from('users_google_integrations')
+      .select('scope')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
     const oauth2Client = await getAuthedGoogleClient(user.id)
     const oauth2 = google.oauth2({ auth: oauth2Client, version: 'v2' })
     const { data } = await oauth2.userinfo.get()
@@ -22,6 +29,7 @@ export async function GET(request: Request) {
       email: data.email || null,
       name: data.name || null,
       picture: data.picture || null,
+      hasIndexingScope: hasGoogleIndexingScope(integration?.scope),
     })
   } catch (error: any) {
     console.error('Google profile fetch failed:', error)

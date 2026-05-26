@@ -16,6 +16,7 @@ const pageTitles: Record<string, string> = {
   '/admin/sermons': 'Sermons',
   '/admin/events': 'Events',
   '/admin/ministries': 'Ministries',
+  '/admin/pages': 'Pages',
   '/admin/media': 'Media Library',
   '/admin/gallery': 'Gallery',
   '/admin/inbox': 'Inbox',

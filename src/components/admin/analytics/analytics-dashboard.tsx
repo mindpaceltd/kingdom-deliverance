@@ -56,6 +56,7 @@ export function AnalyticsDashboard() {
 
   // Google Integration Status
   const [isGoogleConnected, setIsGoogleConnected] = React.useState(false)
+  const [hasIndexingScope, setHasIndexingScope] = React.useState(true)
   const [googleUserEmail, setGoogleUserEmail] = React.useState<string | null>(null)
   const [gaConfigured, setGaConfigured] = React.useState(false)
   const [scConfigured, setScConfigured] = React.useState(false)
@@ -127,9 +128,12 @@ export function AnalyticsDashboard() {
         if (connected) {
           // Fetch Google User Email
           fetch('/api/google/info')
-            .then(res => res.json())
-            .then(data => setGoogleUserEmail(data.email || null))
-            .catch(err => console.error("Error fetching Google email info:", err))
+            .then((res) => res.json())
+            .then((data) => {
+              setGoogleUserEmail(data.email || null)
+              setHasIndexingScope(data.hasIndexingScope !== false)
+            })
+            .catch((err) => console.error('Error fetching Google email info:', err))
 
           // Trigger parallel data fetches
           fetchGaData(dateRange)
@@ -911,6 +915,22 @@ export function AnalyticsDashboard() {
                   userEmail={googleUserEmail}
                   onDisconnect={handleDisconnect}
                 />
+                {isGoogleConnected && !hasIndexingScope && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+                    <p className="font-semibold">Google Indexing API not authorized</p>
+                    <p className="mt-1 text-amber-900/90">
+                      &quot;Index in Google&quot; was showing success but submitting 0 URLs because your
+                      connection is missing the Indexing API scope. Disconnect Google below, then reconnect
+                      and approve all permissions. Also enable the Indexing API in your Google Cloud project.
+                    </p>
+                    <a
+                      href="/api/google/auth"
+                      className="mt-3 inline-flex text-sm font-semibold text-amber-950 underline"
+                    >
+                      Reconnect Google now
+                    </a>
+                  </div>
+                )}
               </section>
 
               <div className="grid gap-6 sm:grid-cols-2">

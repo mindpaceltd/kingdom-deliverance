@@ -1,202 +1,208 @@
 'use client'
 
 import * as React from 'react'
-import { PlusIcon, PencilIcon, Trash2Icon } from 'lucide-react'
-import { DataTable, type ColumnDef } from '@/components/admin/data-table'
-import { StatusBadge } from '@/components/admin/status-badge'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { PlusIcon, PencilIcon, RefreshCw, FileStack } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { createClient } from '@/lib/supabase/client'
-import { createPage, deletePage, updatePage } from '@/lib/actions/pages'
+import { StatusBadge } from '@/components/admin/status-badge'
+import { DataTable, type ColumnDef } from '@/components/admin/data-table'
+import { ensureSystemPages } from '@/lib/actions/pages'
+import {
+  pagePathFromSlug,
+  pageTypeLabel,
+  parsePageContent,
+} from '@/lib/cms/page-content'
 import type { CmsPage } from '@/lib/types'
+import { toast } from 'sonner'
 
 interface PagesManagerProps {
   initialPages: CmsPage[]
 }
 
-interface PageFormProps {
-  page?: CmsPage
-  onCancel: () => void
-  onSuccess: () => void
-}
-
-const DEFAULT_JSON = '{\n  "sections": []\n}'
-
-function PageForm({ page, onCancel, onSuccess }: PageFormProps) {
-  const [title, setTitle] = React.useState(page?.title ?? '')
-  const [slug, setSlug] = React.useState(page?.slug ?? '')
-  const [status, setStatus] = React.useState<'draft' | 'published'>(page?.status ?? 'draft')
-  const [jsonText, setJsonText] = React.useState(
-    page ? JSON.stringify(page.content_json, null, 2) : DEFAULT_JSON
-  )
-  const [error, setError] = React.useState<string | null>(null)
-  const [isSaving, setIsSaving] = React.useState(false)
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError(null)
-    setIsSaving(true)
-
-    let parsed: Record<string, unknown>
-    try {
-      parsed = JSON.parse(jsonText) as Record<string, unknown>
-    } catch {
-      setError('content_json must be valid JSON.')
-      setIsSaving(false)
-      return
-    }
-
-    const payload = { title, slug, status, content_json: parsed }
-    const result = page ? await updatePage(page.id, payload) : await createPage(payload)
-    if ('error' in result) {
-      setError(result.error)
-      setIsSaving(false)
-      return
-    }
-
-    onSuccess()
-  }
-
-  return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="page-title">Title</Label>
-        <Input id="page-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="page-slug">Slug</Label>
-        <Input id="page-slug" value={slug} onChange={(e) => setSlug(e.target.value)} required />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="page-status">Status</Label>
-        <select
-          id="page-status"
-          value={status}
-          onChange={(e) => setStatus(e.target.value as 'draft' | 'published')}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-        >
-          <option value="draft">Draft</option>
-          <option value="published">Published</option>
-        </select>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="page-json">Content JSON</Label>
-        <Textarea
-          id="page-json"
-          value={jsonText}
-          onChange={(e) => setJsonText(e.target.value)}
-          className="min-h-[260px] font-mono text-xs"
-          required
-        />
-      </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSaving}>
-          {isSaving ? 'Saving...' : page ? 'Save Changes' : 'Create Page'}
-        </Button>
-      </div>
-    </form>
-  )
-}
-
 export function PagesManager({ initialPages }: PagesManagerProps) {
-  const [pages, setPages] = React.useState<CmsPage[]>(initialPages)
-  const [sheetOpen, setSheetOpen] = React.useState(false)
-  const [editingPage, setEditingPage] = React.useState<CmsPage | null>(null)
+  const router = useRouter()
+  const [pages, setPages] = React.useState(initialPages)
+  const [search, setSearch] = React.useState('')
+  const [filter, setFilter] = React.useState<'all' | 'system' | 'custom'>('all')
+  const [syncing, setSyncing] = React.useState(false)
 
-  const refreshPages = React.useCallback(async () => {
-    const supabase = createClient()
-    const { data } = await supabase.from('pages').select('*').order('updated_at', { ascending: false })
-    if (data) setPages(data as CmsPage[])
-  }, [])
+  React.useEffect(() => {
+    setPages(initialPages)
+  }, [initialPages])
 
-  function openNew() {
-    setEditingPage(null)
-    setSheetOpen(true)
+  async function handleSyncSystemPages() {
+    setSyncing(true)
+    const result = await ensureSystemPages()
+    setSyncing(false)
+    if ('error' in result) {
+      toast.error(result.error)
+      return
+    }
+    toast.success(`Synced ${result.synced} system page(s)`)
+    router.refresh()
   }
 
-  function openEdit(page: CmsPage) {
-    setEditingPage(page)
-    setSheetOpen(true)
-  }
-
-  async function handleDelete(page: CmsPage) {
-    if (!window.confirm(`Delete "${page.title}"?`)) return
-    const result = await deletePage(page.id)
-    if (!('error' in result)) await refreshPages()
-  }
+  const filtered = pages.filter((page) => {
+    const content = parsePageContent(page.content_json)
+    if (filter === 'system' && !content.isSystem) return false
+    if (filter === 'custom' && content.isSystem) return false
+    if (!search.trim()) return true
+    const q = search.toLowerCase()
+    return (
+      page.title.toLowerCase().includes(q) ||
+      page.slug.toLowerCase().includes(q) ||
+      pageTypeLabel(content.pageType, content.listingTarget).toLowerCase().includes(q)
+    )
+  })
 
   const columns: ColumnDef<CmsPage>[] = [
     {
       key: 'title',
       header: 'Title',
-      cell: (page) => (
-        <button
-          type="button"
-          onClick={() => openEdit(page)}
-          className="text-left text-sm font-medium hover:underline"
-        >
-          {page.title}
-        </button>
+      cell: (p) => {
+        const content = parsePageContent(p.content_json)
+        return (
+          <div>
+            <Link
+              href={`/admin/pages/${p.id}`}
+              className="font-medium text-primary hover:underline"
+            >
+              {p.title}
+            </Link>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {pageTypeLabel(content.pageType, content.listingTarget)}
+              {content.isSystem ? ' · System' : ' · Custom'}
+            </p>
+          </div>
+        )
+      },
+    },
+    {
+      key: 'path',
+      header: 'URL (planned)',
+      cell: (p) => (
+        <code className="text-xs text-muted-foreground">
+          {pagePathFromSlug(p.slug === 'home' ? '' : p.slug)}
+        </code>
       ),
     },
-    { key: 'slug', header: 'Slug', cell: (page) => <span className="text-sm text-muted-foreground">/{page.slug}</span> },
-    { key: 'status', header: 'Status', cell: (page) => <StatusBadge status={page.status} /> },
+    {
+      key: 'status',
+      header: 'Status',
+      cell: (p) => <StatusBadge status={p.status} />,
+    },
+    {
+      key: 'updated',
+      header: 'Last updated',
+      cell: (p) => (
+        <span className="text-sm text-muted-foreground">
+          {new Date(p.updated_at).toLocaleDateString('en-UG', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          })}
+        </span>
+      ),
+    },
     {
       key: 'actions',
       header: '',
-      className: 'w-[90px]',
-      cell: (page) => (
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon-sm" onClick={() => openEdit(page)}>
+      className: 'w-[80px]',
+      cell: (p) => (
+        <Button variant="ghost" size="icon-sm" asChild>
+          <Link href={`/admin/pages/${p.id}`}>
             <PencilIcon className="size-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon-sm" className="text-destructive" onClick={() => handleDelete(page)}>
-            <Trash2Icon className="size-3.5" />
-          </Button>
-        </div>
+          </Link>
+        </Button>
       ),
     },
   ]
 
+  const systemCount = pages.filter((p) => parsePageContent(p.content_json).isSystem).length
+  const customCount = pages.length - systemCount
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold">Pages</h1>
-          <p className="text-sm text-muted-foreground">Manage structured page content JSON.</p>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <FileStack className="size-7 text-primary" />
+            Pages
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1 max-w-xl">
+            WordPress-style page manager for your public site. Edit heroes, body copy, and SEO
+            here first — front-end display will be connected in a later step.
+          </p>
         </div>
-        <Button onClick={openNew} size="sm">
-          <PlusIcon />
-          New Page
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={syncing}
+            onClick={() => void handleSyncSystemPages()}
+          >
+            <RefreshCw className={`mr-2 size-4 ${syncing ? 'animate-spin' : ''}`} />
+            Sync system pages
+          </Button>
+          <Button size="sm" asChild>
+            <Link href="/admin/pages/new">
+              <PlusIcon className="mr-2 size-4" />
+              Add page
+            </Link>
+          </Button>
+        </div>
       </div>
 
-      <DataTable columns={columns} data={pages} searchPlaceholder="Search pages..." />
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border bg-card p-4 shadow-sm">
+          <p className="text-sm text-muted-foreground">All pages</p>
+          <p className="text-2xl font-bold">{pages.length}</p>
+        </div>
+        <div className="rounded-xl border bg-card p-4 shadow-sm">
+          <p className="text-sm text-muted-foreground">System pages</p>
+          <p className="text-2xl font-bold">{systemCount}</p>
+        </div>
+        <div className="rounded-xl border bg-card p-4 shadow-sm">
+          <p className="text-sm text-muted-foreground">Custom pages</p>
+          <p className="text-2xl font-bold">{customCount}</p>
+        </div>
+      </div>
 
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
-          <SheetHeader>
-            <SheetTitle>{editingPage ? 'Edit Page' : 'New Page'}</SheetTitle>
-          </SheetHeader>
-          <div className="px-4 pb-6">
-            <PageForm
-              page={editingPage ?? undefined}
-              onCancel={() => setSheetOpen(false)}
-              onSuccess={async () => {
-                setSheetOpen(false)
-                await refreshPages()
-              }}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex gap-1 rounded-lg border p-1 bg-muted/30">
+          {(['all', 'system', 'custom'] as const).map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setFilter(f)}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium capitalize transition-colors ${
+                filter === f
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+        <Input
+          placeholder="Search pages…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
+      </div>
+
+      <DataTable
+        columns={columns}
+        data={filtered}
+        hideSearch
+        pageSize={15}
+        searchPlaceholder=""
+      />
     </div>
   )
 }

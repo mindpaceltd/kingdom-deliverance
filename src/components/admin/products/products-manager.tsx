@@ -26,11 +26,25 @@ export interface ProductRow {
 
 interface ProductsManagerProps {
   initialProducts: ProductRow[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
 }
 
-export function ProductsManager({ initialProducts }: ProductsManagerProps) {
+export function ProductsManager({
+  initialProducts,
+  total,
+  page,
+  pageSize,
+  totalPages,
+}: ProductsManagerProps) {
   const router = useRouter()
   const [products, setProducts] = React.useState<ProductRow[]>(initialProducts)
+
+  React.useEffect(() => {
+    setProducts(initialProducts)
+  }, [initialProducts])
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set())
   const [actionLoading, setActionLoading] = React.useState<string | null>(null)
 
@@ -60,6 +74,16 @@ export function ProductsManager({ initialProducts }: ProductsManagerProps) {
     })
   }
 
+  const currentPage = page + 1
+  const pageStart = total === 0 ? 0 : page * pageSize + 1
+  const pageEnd = Math.min((page + 1) * pageSize, total)
+
+  function goToPage(nextPage: number) {
+    const clamped = Math.max(1, Math.min(nextPage, totalPages))
+    setSelectedIds(new Set())
+    router.push(clamped === 1 ? '/admin/products' : `/admin/products?page=${clamped}`)
+  }
+
   async function handleDelete(id: string, name: string) {
     if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return
     setActionLoading(`delete-${id}`)
@@ -70,7 +94,11 @@ export function ProductsManager({ initialProducts }: ProductsManagerProps) {
       next.delete(id)
       return next
     })
-    router.refresh()
+    if (products.length === 1 && currentPage > 1) {
+      goToPage(currentPage - 1)
+    } else {
+      router.refresh()
+    }
   }
 
   async function handleBulkDelete() {
@@ -125,17 +153,12 @@ export function ProductsManager({ initialProducts }: ProductsManagerProps) {
 
     setActionLoading('bulk-index')
     try {
-      const res = await fetch('/api/google/search-console/index-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ urls }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        const ok = data.results?.filter((r: { success?: boolean }) => r.success).length ?? urls.length
-        alert(`Submitted ${ok} product URL(s) to Google for indexing.`)
+      const { submitGoogleIndexing } = await import('@/lib/seo/submit-google-indexing-client')
+      const result = await submitGoogleIndexing(urls)
+      if (!result.ok) {
+        alert(result.message + (result.hint ? `\n\n${result.hint}` : ''))
       } else {
-        alert(`Failed: ${data.error || 'Unknown error'}`)
+        alert(result.message)
       }
     } catch (err) {
       alert(`Error: ${err instanceof Error ? err.message : 'Request failed'}`)
@@ -150,18 +173,14 @@ export function ProductsManager({ initialProducts }: ProductsManagerProps) {
     }
     setActionLoading(`index-${product.id}`)
     try {
-      const res = await fetch('/api/google/search-console/index-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          urls: [buildPublicContentUrl('product', product.slug)],
-        }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        alert('Submitted to Google for indexing.')
+      const { submitGoogleIndexing } = await import('@/lib/seo/submit-google-indexing-client')
+      const result = await submitGoogleIndexing([
+        buildPublicContentUrl('product', product.slug),
+      ])
+      if (!result.ok) {
+        alert(result.message + (result.hint ? `\n\n${result.hint}` : ''))
       } else {
-        alert(`Failed: ${data.error || 'Unknown error'}`)
+        alert(result.message)
       }
     } catch (err) {
       alert(`Error: ${err instanceof Error ? err.message : 'Request failed'}`)
@@ -343,6 +362,37 @@ export function ProductsManager({ initialProducts }: ProductsManagerProps) {
           </tbody>
         </table>
       </div>
+
+      {total > 0 && (
+        <div className="flex flex-col gap-3 border-t bg-muted/30 px-4 py-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            Showing {pageStart}–{pageEnd} of {total}
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={currentPage <= 1}
+              onClick={() => goToPage(currentPage - 1)}
+            >
+              Previous
+            </Button>
+            <span className="px-2 text-xs font-medium text-foreground">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={currentPage >= totalPages}
+              onClick={() => goToPage(currentPage + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

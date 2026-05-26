@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import {
   FileText,
@@ -10,41 +11,44 @@ import {
   Trash2,
   Upload,
   X,
-  ExternalLink,
   Copy,
   Check,
+  Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { UploadZone } from '@/components/admin/upload-zone'
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetDescription,
-  SheetFooter,
 } from '@/components/ui/sheet'
-import { deleteMedia, updateMedia } from '@/lib/actions/media'
-import { createClient } from '@/lib/supabase/client'
+import { deleteMedia, getMediaLibraryPage, updateMedia } from '@/lib/actions/media'
+import type { MediaLibraryFilter } from '@/lib/media/library-query'
+import { LazyMediaThumb } from '@/components/admin/media/lazy-media-thumb'
+import { MediaLibrarySkeleton } from '@/components/admin/media/media-library-skeleton'
 import type { MediaAsset } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-type FilterType = 'all' | 'image' | 'audio' | 'video' | 'document'
+const UploadZone = dynamic(
+  () => import('@/components/admin/upload-zone').then((m) => ({ default: m.UploadZone })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-32 items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/20">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    ),
+  }
+)
 
 interface MediaLibraryProps {
   initialMedia: MediaAsset[]
+  initialTotal: number
+  initialHasMore: boolean
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function formatBytes(bytes: number | null): string {
   if (bytes === null || bytes === 0) return '—'
@@ -56,27 +60,33 @@ function formatBytes(bytes: number | null): string {
 function TypeIcon({ type, className }: { type: MediaAsset['type']; className?: string }) {
   switch (type) {
     case 'audio':
-      return <Music className={cn("size-10 text-muted-foreground", className)} />
+      return <Music className={cn('size-10 text-muted-foreground', className)} />
     case 'video':
-      return <Video className={cn("size-10 text-muted-foreground", className)} />
+      return <Video className={cn('size-10 text-muted-foreground', className)} />
     case 'document':
-      return <FileText className={cn("size-10 text-muted-foreground", className)} />
+      return <FileText className={cn('size-10 text-muted-foreground', className)} />
     default:
-      return <File className={cn("size-10 text-muted-foreground", className)} />
+      return <File className={cn('size-10 text-muted-foreground', className)} />
   }
 }
 
-// ---------------------------------------------------------------------------
-// MediaLibrary (main Client Component)
-// ---------------------------------------------------------------------------
+const FILTERS: MediaLibraryFilter[] = ['all', 'image', 'audio', 'video', 'document']
 
-export function MediaLibrary({ initialMedia }: MediaLibraryProps) {
+export function MediaLibrary({
+  initialMedia,
+  initialTotal,
+  initialHasMore,
+}: MediaLibraryProps) {
   const [media, setMedia] = React.useState<MediaAsset[]>(initialMedia)
-  const [activeFilter, setActiveFilter] = React.useState<FilterType>('all')
+  const [total, setTotal] = React.useState(initialTotal)
+  const [hasMore, setHasMore] = React.useState(initialHasMore)
+  const [page, setPage] = React.useState(0)
+  const [activeFilter, setActiveFilter] = React.useState<MediaLibraryFilter>('all')
+  const [filterLoading, setFilterLoading] = React.useState(false)
+  const [loadingMore, setLoadingMore] = React.useState(false)
   const [uploadOpen, setUploadOpen] = React.useState(false)
   const [selectedAsset, setSelectedAsset] = React.useState<MediaAsset | null>(null)
-  
-  // Edit state for the sidebar
+
   const [editForm, setEditForm] = React.useState({
     filename: '',
     alt_text: '',
@@ -86,7 +96,8 @@ export function MediaLibrary({ initialMedia }: MediaLibraryProps) {
   const [deleting, setDeleting] = React.useState(false)
   const [copied, setCopied] = React.useState(false)
 
-  // Sync edit form when selection changes
+  const loadMoreRef = React.useRef<HTMLDivElement>(null)
+
   React.useEffect(() => {
     if (selectedAsset) {
       setEditForm({
@@ -98,14 +109,74 @@ export function MediaLibrary({ initialMedia }: MediaLibraryProps) {
     }
   }, [selectedAsset])
 
-  const refreshMedia = React.useCallback(async () => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('media')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (data) setMedia(data as MediaAsset[])
-  }, [])
+  const fetchPage = React.useCallback(
+    async (pageIndex: number, filter: MediaLibraryFilter, append: boolean) => {
+      const result = await getMediaLibraryPage({ page: pageIndex, type: filter })
+      if ('error' in result) {
+        alert(result.error)
+        return null
+      }
+      if (append) {
+        setMedia((prev) => {
+          const seen = new Set(prev.map((a) => a.id))
+          const next = result.data.filter((a) => !seen.has(a.id))
+          return [...prev, ...next]
+        })
+      } else {
+        setMedia(result.data)
+      }
+      setTotal(result.total)
+      setHasMore(result.hasMore)
+      setPage(pageIndex)
+      return result
+    },
+    []
+  )
+
+  async function handleFilterChange(filter: MediaLibraryFilter) {
+    if (filter === activeFilter) return
+    setActiveFilter(filter)
+    setFilterLoading(true)
+    setSelectedAsset(null)
+    await fetchPage(0, filter, false)
+    setFilterLoading(false)
+  }
+
+  const loadMoreStateRef = React.useRef({
+    hasMore,
+    loadingMore,
+    filterLoading,
+    page,
+    activeFilter,
+  })
+  loadMoreStateRef.current = { hasMore, loadingMore, filterLoading, page, activeFilter }
+
+  const handleLoadMore = React.useCallback(async () => {
+    const s = loadMoreStateRef.current
+    if (!s.hasMore || s.loadingMore || s.filterLoading) return
+    setLoadingMore(true)
+    await fetchPage(s.page + 1, s.activeFilter, true)
+    setLoadingMore(false)
+  }, [fetchPage])
+
+  React.useEffect(() => {
+    const sentinel = loadMoreRef.current
+    if (!sentinel) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) void handleLoadMore()
+      },
+      { rootMargin: '400px' }
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [handleLoadMore, hasMore])
+
+  async function refreshAfterUpload() {
+    await fetchPage(0, activeFilter, false)
+    setUploadOpen(false)
+  }
 
   async function handleSaveMetadata() {
     if (!selectedAsset) return
@@ -113,8 +184,10 @@ export function MediaLibrary({ initialMedia }: MediaLibraryProps) {
     const result = await updateMedia(selectedAsset.id, editForm)
     setSaving(false)
     if ('success' in result) {
-      setMedia(prev => prev.map(a => a.id === selectedAsset.id ? { ...a, ...editForm } : a))
-      setSelectedAsset(prev => prev ? { ...prev, ...editForm } : null)
+      setMedia((prev) =>
+        prev.map((a) => (a.id === selectedAsset.id ? { ...a, ...editForm } : a))
+      )
+      setSelectedAsset((prev) => (prev ? { ...prev, ...editForm } : null))
     } else {
       alert(result.error)
     }
@@ -126,7 +199,8 @@ export function MediaLibrary({ initialMedia }: MediaLibraryProps) {
     const result = await deleteMedia(selectedAsset.id)
     setDeleting(false)
     if ('success' in result) {
-      setMedia(prev => prev.filter(a => a.id !== selectedAsset.id))
+      setMedia((prev) => prev.filter((a) => a.id !== selectedAsset.id))
+      setTotal((t) => Math.max(0, t - 1))
       setSelectedAsset(null)
     } else {
       alert(result.error)
@@ -140,15 +214,18 @@ export function MediaLibrary({ initialMedia }: MediaLibraryProps) {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const filtered = activeFilter === 'all' ? media : media.filter((a) => a.type === activeFilter)
+  const showingCount = media.length
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-foreground">Media Library</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Manage your images, videos, and documents.</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            {total > 0
+              ? `Showing ${showingCount} of ${total} files — images load as you scroll.`
+              : 'Manage your images, videos, and documents.'}
+          </p>
         </div>
         <Button
           variant={uploadOpen ? 'outline' : 'default'}
@@ -160,23 +237,26 @@ export function MediaLibrary({ initialMedia }: MediaLibraryProps) {
         </Button>
       </div>
 
-      {/* Upload zone */}
       {uploadOpen && (
         <UploadZone
-          onUploadComplete={() => { refreshMedia(); setUploadOpen(false); }}
+          onUploadComplete={refreshAfterUpload}
           className="rounded-xl border-2 border-dashed border-border bg-muted/20 p-8 transition-colors hover:bg-muted/30"
         />
       )}
 
-      {/* Filter tabs */}
       <div className="flex gap-1 border-b border-border">
-        {['all', 'image', 'audio', 'video', 'document'].map((filter) => (
+        {FILTERS.map((filter) => (
           <button
             key={filter}
-            onClick={() => setActiveFilter(filter as FilterType)}
+            type="button"
+            onClick={() => handleFilterChange(filter)}
+            disabled={filterLoading}
             className={cn(
-              "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px capitalize",
-              activeFilter === filter ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              '-mb-px border-b-2 px-4 py-2 text-sm font-medium capitalize transition-colors',
+              activeFilter === filter
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground',
+              filterLoading && 'opacity-60'
             )}
           >
             {filter}
@@ -184,56 +264,59 @@ export function MediaLibrary({ initialMedia }: MediaLibraryProps) {
         ))}
       </div>
 
-      {/* Media grid */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-        {filtered.map((asset) => (
-          <button
-            key={asset.id}
-            type="button"
-            onClick={() => setSelectedAsset(asset)}
-            className={cn(
-              "group relative flex flex-col aspect-square overflow-hidden rounded-lg border-2 bg-muted transition-all hover:ring-2 hover:ring-primary/20",
-              selectedAsset?.id === asset.id ? "border-primary ring-2 ring-primary/20" : "border-transparent"
-            )}
-          >
-            {asset.type === 'image' ? (
-              <Image
-                src={asset.url}
-                alt={asset.alt_text ?? asset.filename}
-                fill
-                className="object-cover"
-                sizes="(max-width: 640px) 50vw, 20vw"
+      {filterLoading ? (
+        <MediaLibrarySkeleton count={18} />
+      ) : media.length === 0 ? (
+        <div className="rounded-xl border border-dashed py-16 text-center text-sm text-muted-foreground">
+          No {activeFilter === 'all' ? '' : `${activeFilter} `}files yet.
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {media.map((asset) => (
+              <LazyMediaThumb
+                key={asset.id}
+                asset={asset}
+                selected={selectedAsset?.id === asset.id}
+                onSelect={() => setSelectedAsset(asset)}
               />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center">
-                <TypeIcon type={asset.type} className="size-8 opacity-40" />
-              </div>
-            )}
-            <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 flex items-center justify-center">
-               <span className="text-[10px] font-medium text-white px-2 py-1 bg-black/60 rounded-full">Select</span>
-            </div>
-          </button>
-        ))}
-      </div>
+            ))}
+          </div>
 
-      {/* WordPress-style details sheet */}
+          <div ref={loadMoreRef} className="flex min-h-12 items-center justify-center py-4">
+            {loadingMore && (
+              <Loader2 className="size-6 animate-spin text-muted-foreground" aria-label="Loading more" />
+            )}
+            {hasMore && !loadingMore && (
+              <Button variant="outline" size="sm" onClick={handleLoadMore}>
+                Load more
+              </Button>
+            )}
+            {!hasMore && showingCount > 0 && (
+              <p className="text-xs text-muted-foreground">All files loaded</p>
+            )}
+          </div>
+        </>
+      )}
+
       <Sheet open={!!selectedAsset} onOpenChange={(open) => !open && setSelectedAsset(null)}>
-        <SheetContent className="w-full sm:max-w-md overflow-y-auto px-0">
-          <SheetHeader className="px-6 pb-4 border-b border-border">
+        <SheetContent className="w-full overflow-y-auto px-0 sm:max-w-md">
+          <SheetHeader className="border-b border-border px-6 pb-4">
             <SheetTitle>Attachment Details</SheetTitle>
           </SheetHeader>
 
           {selectedAsset && (
             <div className="flex flex-col">
-              {/* Preview Area */}
-              <div className="p-6 bg-muted/30 flex items-center justify-center min-h-[240px] border-b border-border">
-                <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-border shadow-sm bg-white">
+              <div className="flex min-h-[240px] items-center justify-center border-b border-border bg-muted/30 p-6">
+                <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-white shadow-sm">
                   {selectedAsset.type === 'image' ? (
                     <Image
                       src={selectedAsset.url}
                       alt={selectedAsset.alt_text ?? selectedAsset.filename}
                       fill
                       className="object-contain"
+                      sizes="400px"
+                      priority
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center">
@@ -243,58 +326,74 @@ export function MediaLibrary({ initialMedia }: MediaLibraryProps) {
                 </div>
               </div>
 
-              {/* Metadata area */}
-              <div className="p-6 space-y-6">
+              <div className="space-y-6 p-6">
                 <div className="grid grid-cols-2 gap-4 text-xs">
-                   <div>
-                     <p className="text-muted-foreground">Type</p>
-                     <p className="font-medium uppercase">{selectedAsset.mime_type?.split('/')[1] || selectedAsset.type}</p>
-                   </div>
-                   <div>
-                     <p className="text-muted-foreground">File Size</p>
-                     <p className="font-medium">{formatBytes(selectedAsset.size_bytes)}</p>
-                   </div>
-                   <div>
-                     <p className="text-muted-foreground">Uploaded On</p>
-                     <p className="font-medium">{new Date(selectedAsset.created_at).toLocaleDateString()}</p>
-                   </div>
-                   <div>
-                     <p className="text-muted-foreground">ID</p>
-                     <p className="font-medium truncate" title={selectedAsset.id}>...{selectedAsset.id.slice(-8)}</p>
-                   </div>
+                  <div>
+                    <p className="text-muted-foreground">Type</p>
+                    <p className="font-medium uppercase">
+                      {selectedAsset.mime_type?.split('/')[1] || selectedAsset.type}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">File Size</p>
+                    <p className="font-medium">{formatBytes(selectedAsset.size_bytes)}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Uploaded On</p>
+                    <p className="font-medium">
+                      {new Date(selectedAsset.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">ID</p>
+                    <p className="truncate font-medium" title={selectedAsset.id}>
+                      ...{selectedAsset.id.slice(-8)}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="pt-2">
-                   <Button variant="outline" size="sm" className="w-full h-8 gap-2" onClick={copyUrl}>
-                      {copied ? <Check className="size-3.5 text-green-600" /> : <Copy className="size-3.5" />}
-                      {copied ? 'Copied' : 'Copy Public URL'}
-                   </Button>
-                </div>
+                <Button variant="outline" size="sm" className="h-8 w-full gap-2" onClick={copyUrl}>
+                  {copied ? (
+                    <Check className="size-3.5 text-green-600" />
+                  ) : (
+                    <Copy className="size-3.5" />
+                  )}
+                  {copied ? 'Copied' : 'Copy Public URL'}
+                </Button>
 
-                <div className="border-t border-border pt-6 space-y-4">
+                <div className="space-y-4 border-t border-border pt-6">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Alt Text (Alternative Text)</Label>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Alt Text
+                    </Label>
                     <Input
                       value={editForm.alt_text}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, alt_text: e.target.value }))}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({ ...prev, alt_text: e.target.value }))
+                      }
                       placeholder="Describe the image for SEO..."
                     />
-                    <p className="text-[10px] text-muted-foreground italic">Important for accessibility and SEO ranking.</p>
                   </div>
-
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Title / Filename</Label>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Title / Filename
+                    </Label>
                     <Input
                       value={editForm.filename}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, filename: e.target.value }))}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({ ...prev, filename: e.target.value }))
+                      }
                     />
                   </div>
-
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Caption</Label>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Caption
+                    </Label>
                     <Textarea
                       value={editForm.caption}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, caption: e.target.value }))}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({ ...prev, caption: e.target.value }))
+                      }
                       rows={3}
                       className="resize-none"
                     />
@@ -302,13 +401,19 @@ export function MediaLibrary({ initialMedia }: MediaLibraryProps) {
                 </div>
               </div>
 
-              <div className="sticky bottom-0 bg-background p-6 border-t border-border flex items-center justify-between gap-3">
-                 <Button variant="destructive" size="sm" onClick={handleDelete} disabled={deleting}>
-                   {deleting ? 'Deleting...' : <><Trash2 className="mr-2 size-4" /> Delete Permanently</>}
-                 </Button>
-                 <Button size="sm" onClick={handleSaveMetadata} disabled={saving}>
-                   {saving ? 'Saving...' : 'Save Changes'}
-                 </Button>
+              <div className="sticky bottom-0 flex items-center justify-between gap-3 border-t border-border bg-background p-6">
+                <Button variant="destructive" size="sm" onClick={handleDelete} disabled={deleting}>
+                  {deleting ? (
+                    'Deleting...'
+                  ) : (
+                    <>
+                      <Trash2 className="mr-2 size-4" /> Delete Permanently
+                    </>
+                  )}
+                </Button>
+                <Button size="sm" onClick={handleSaveMetadata} disabled={saving}>
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
               </div>
             </div>
           )}

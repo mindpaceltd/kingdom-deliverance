@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard,
   FileText,
+  FileStack,
   Video,
   Calendar,
   Users2,
@@ -52,6 +53,7 @@ const allNavLinks: NavLink[] = [
   },
   { href: '/admin/events', label: 'Events', icon: Calendar, adminOnly: false },
   { href: '/admin/ministries', label: 'Ministries', icon: Users2, adminOnly: false },
+  { href: '/admin/pages', label: 'Pages', icon: FileStack, adminOnly: false },
   { href: '/admin/media', label: 'Media Library', icon: Images, adminOnly: false },
   { href: '/admin/gallery', label: 'Gallery', icon: GalleryHorizontal, adminOnly: false },
   { 

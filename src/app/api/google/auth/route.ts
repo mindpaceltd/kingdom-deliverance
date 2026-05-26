@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { createClient } from '@/lib/supabase/server';
+import { GOOGLE_OAUTH_SCOPES } from '@/lib/google/scopes';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,17 +28,7 @@ export async function GET(request: Request) {
     `${siteUrl}/api/google/callback`
   );
 
-  const scopes = [
-    'https://www.googleapis.com/auth/analytics.readonly',
-    'https://www.googleapis.com/auth/analytics.edit',
-    'https://www.googleapis.com/auth/webmasters.readonly',
-    'https://www.googleapis.com/auth/webmasters',
-    'https://www.googleapis.com/auth/siteverification',
-    'https://www.googleapis.com/auth/siteverification.verify_only',
-    'openid',
-    'profile',
-    'email'
-  ];
+  const scopes = [...GOOGLE_OAUTH_SCOPES]
 
   const url = oauth2Client.generateAuthUrl({
     access_type: 'offline',

@@ -7,6 +7,13 @@ import { requireRole } from '@/lib/actions/auth-helpers'
 import { requireAdmin, requireRoles } from '@/lib/authz'
 import { ROLES } from '@/lib/roles'
 import { uploadFile, deleteFile, getKeyFromUrl } from '@/lib/services/r2-storage'
+import {
+  MEDIA_LIBRARY_PAGE_SIZE,
+  MEDIA_LIBRARY_SELECT,
+  type MediaLibraryFilter,
+  type MediaLibraryPageResult,
+} from '@/lib/media/library-query'
+import type { MediaAsset } from '@/lib/types'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -72,6 +79,53 @@ export async function createMediaRecord(
     const msg = e instanceof Error ? e.message : String(e)
     console.error('[createMediaRecord] unexpected error:', msg)
     return { error: `Server error: ${msg}` }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// getMediaLibraryPage — paginated list for admin media library
+// ---------------------------------------------------------------------------
+
+export async function getMediaLibraryPage(options?: {
+  page?: number
+  pageSize?: number
+  type?: MediaLibraryFilter
+}): Promise<MediaLibraryPageResult | { error: string }> {
+  const auth = await requireRoles(ROLES.CONTENT)
+  if ('error' in auth) return auth
+
+  const page = Math.max(0, options?.page ?? 0)
+  const pageSize = options?.pageSize ?? MEDIA_LIBRARY_PAGE_SIZE
+  const type = options?.type ?? 'all'
+  const from = page * pageSize
+  const to = from + pageSize - 1
+
+  const supabase = createClient()
+  let query = supabase
+    .from('media')
+    .select(MEDIA_LIBRARY_SELECT, { count: 'exact' })
+    .order('created_at', { ascending: false })
+
+  if (type !== 'all') {
+    query = query.eq('type', type)
+  }
+
+  const { data, error, count } = await query.range(from, to)
+
+  if (error) {
+    console.error('[getMediaLibraryPage]', error.message)
+    return { error: error.message }
+  }
+
+  const total = count ?? 0
+  const rows = (data ?? []) as MediaAsset[]
+
+  return {
+    data: rows,
+    total,
+    page,
+    pageSize,
+    hasMore: from + rows.length < total,
   }
 }
 

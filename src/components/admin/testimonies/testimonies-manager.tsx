@@ -19,12 +19,17 @@ import {
   Loader2,
   XCircle,
   MapPin,
+  Pencil,
+  Plus,
+  RotateCcw,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import {
   deleteTestimony,
   updateTestimonyStatus,
   type TestimonyRecord,
 } from '@/lib/actions/testimonies'
+import { TestimonyFormDialog } from '@/components/admin/testimonies/testimony-form-dialog'
 
 interface TestimoniesManagerProps {
   initialTestimonies: TestimonyRecord[]
@@ -57,21 +62,43 @@ export function TestimoniesManager({ initialTestimonies }: TestimoniesManagerPro
   const router = useRouter()
   const [testimonies, setTestimonies] = useState(initialTestimonies)
   const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editing, setEditing] = useState<TestimonyRecord | null>(null)
 
   const pendingCount = testimonies.filter((t) => t.status === 'pending').length
   const approvedCount = testimonies.filter((t) => t.status === 'approved').length
+
+  function openCreate() {
+    setEditing(null)
+    setDialogOpen(true)
+  }
+
+  function openEdit(t: TestimonyRecord) {
+    setEditing(t)
+    setDialogOpen(true)
+  }
+
+  function handleSaved(record: TestimonyRecord, mode: 'create' | 'update') {
+    if (mode === 'create') {
+      setTestimonies((prev) => [record, ...prev])
+    } else {
+      setTestimonies((prev) => prev.map((t) => (t.id === record.id ? record : t)))
+    }
+    router.refresh()
+  }
 
   async function handleApprove(id: string) {
     setLoadingId(id)
     const res = await updateTestimonyStatus(id, 'approved')
     setLoadingId(null)
     if ('error' in res) {
-      alert(res.error)
+      toast.error(res.error)
       return
     }
     setTestimonies((prev) =>
       prev.map((t) => (t.id === id ? { ...t, status: 'approved' as const } : t))
     )
+    toast.success('Testimony approved')
     router.refresh()
   }
 
@@ -80,12 +107,28 @@ export function TestimoniesManager({ initialTestimonies }: TestimoniesManagerPro
     const res = await updateTestimonyStatus(id, 'rejected')
     setLoadingId(null)
     if ('error' in res) {
-      alert(res.error)
+      toast.error(res.error)
       return
     }
     setTestimonies((prev) =>
       prev.map((t) => (t.id === id ? { ...t, status: 'rejected' as const } : t))
     )
+    toast.success('Testimony rejected')
+    router.refresh()
+  }
+
+  async function handlePending(id: string) {
+    setLoadingId(id)
+    const res = await updateTestimonyStatus(id, 'pending')
+    setLoadingId(null)
+    if ('error' in res) {
+      toast.error(res.error)
+      return
+    }
+    setTestimonies((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, status: 'pending' as const } : t))
+    )
+    toast.success('Moved to pending')
     router.refresh()
   }
 
@@ -95,28 +138,35 @@ export function TestimoniesManager({ initialTestimonies }: TestimoniesManagerPro
     const res = await deleteTestimony(id)
     setLoadingId(null)
     if ('error' in res) {
-      alert(res.error)
+      toast.error(res.error)
       return
     }
     setTestimonies((prev) => prev.filter((t) => t.id !== id))
+    toast.success('Testimony deleted')
     router.refresh()
   }
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <p className="text-sm text-muted-foreground">Total</p>
-          <p className="text-2xl font-bold text-primary">{testimonies.length}</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="grid flex-1 gap-4 sm:grid-cols-3">
+          <div className="rounded-xl border bg-card p-4 shadow-sm">
+            <p className="text-sm text-muted-foreground">Total</p>
+            <p className="text-2xl font-bold text-primary">{testimonies.length}</p>
+          </div>
+          <div className="rounded-xl border bg-card p-4 shadow-sm">
+            <p className="text-sm text-muted-foreground">Pending review</p>
+            <p className="text-2xl font-bold text-yellow-600">{pendingCount}</p>
+          </div>
+          <div className="rounded-xl border bg-card p-4 shadow-sm">
+            <p className="text-sm text-muted-foreground">Published (front-end)</p>
+            <p className="text-2xl font-bold text-green-600">{approvedCount}</p>
+          </div>
         </div>
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <p className="text-sm text-muted-foreground">Pending review</p>
-          <p className="text-2xl font-bold text-yellow-600">{pendingCount}</p>
-        </div>
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <p className="text-sm text-muted-foreground">Published (front-end)</p>
-          <p className="text-2xl font-bold text-green-600">{approvedCount}</p>
-        </div>
+        <Button onClick={openCreate} className="shrink-0">
+          <Plus className="mr-2 h-4 w-4" />
+          Add testimony
+        </Button>
       </div>
 
       <p className="text-sm text-muted-foreground">
@@ -124,116 +174,157 @@ export function TestimoniesManager({ initialTestimonies }: TestimoniesManagerPro
         <a href="/testimonies" className="text-accent underline" target="_blank" rel="noreferrer">
           /testimonies
         </a>{' '}
-        and the home page carousel. Fields match the public submit form: name, email, phone,
-        location, testimony, and optional media.
+        and the home page carousel.
       </p>
 
-      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-        <Table>
+      <div className="overflow-hidden rounded-xl border bg-card shadow-sm [&_[data-slot=table-container]]:overflow-x-visible">
+        <Table className="table-fixed w-full">
+          <colgroup>
+            <col className="w-[88px]" />
+            <col className="w-[min(140px,18%)]" />
+            <col />
+            <col className="w-[min(110px,14%)]" />
+            <col className="w-[56px]" />
+            <col className="w-[92px]" />
+            <col className="w-[132px]" />
+          </colgroup>
           <TableHeader className="bg-muted/50">
             <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Submitter</TableHead>
-              <TableHead className="min-w-[220px]">Testimony</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Media</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="whitespace-normal">Date</TableHead>
+              <TableHead className="whitespace-normal">Submitter</TableHead>
+              <TableHead className="whitespace-normal">Testimony</TableHead>
+              <TableHead className="whitespace-normal">Location</TableHead>
+              <TableHead className="whitespace-normal">Media</TableHead>
+              <TableHead className="whitespace-normal">Status</TableHead>
+              <TableHead className="whitespace-normal text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {testimonies.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                  No testimonies yet. Run the latest database migration to seed sample stories,
-                  or wait for submissions from the public form.
+                <TableCell
+                  colSpan={7}
+                  className="h-32 whitespace-normal text-center text-muted-foreground"
+                >
+                  No testimonies yet. Click <strong>Add testimony</strong> or wait for public
+                  submissions.
                 </TableCell>
               </TableRow>
             ) : (
               testimonies.map((t) => {
                 const busy = loadingId === t.id
                 return (
-                  <TableRow key={t.id}>
-                    <TableCell className="whitespace-nowrap text-sm">
+                  <TableRow key={t.id} className="align-top">
+                    <TableCell className="whitespace-normal text-xs text-muted-foreground">
                       {new Date(t.created_at).toLocaleDateString('en-UG', {
                         year: 'numeric',
                         month: 'short',
                         day: 'numeric',
                       })}
                     </TableCell>
-                    <TableCell>
-                      <div className="font-medium text-primary">{t.name}</div>
+                    <TableCell className="max-w-0 whitespace-normal">
+                      <div className="truncate font-medium text-primary" title={t.name}>
+                        {t.name}
+                      </div>
                       {t.phone && (
-                        <div className="text-xs text-muted-foreground">{t.phone}</div>
+                        <div className="truncate text-xs text-muted-foreground" title={t.phone}>
+                          {t.phone}
+                        </div>
                       )}
                       {t.email && (
-                        <div className="text-xs text-muted-foreground">{t.email}</div>
+                        <div className="truncate text-xs text-muted-foreground" title={t.email}>
+                          {t.email}
+                        </div>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="max-w-0 whitespace-normal">
                       <p
-                        className="line-clamp-4 text-sm text-muted-foreground"
+                        className="line-clamp-3 break-words text-sm text-muted-foreground"
                         title={t.testimony}
                       >
                         {t.testimony}
                       </p>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="max-w-0 whitespace-normal">
                       {t.location ? (
-                        <span className="flex items-start gap-1 text-xs text-muted-foreground">
+                        <span
+                          className="flex items-start gap-1 text-xs text-muted-foreground"
+                          title={t.location}
+                        >
                           <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
-                          {t.location}
+                          <span className="line-clamp-2 break-words">{t.location}</span>
                         </span>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-normal">
                       {t.media_url ? (
                         <a
                           href={t.media_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-xs text-accent hover:underline"
+                          className="inline-flex items-center gap-0.5 text-xs text-accent hover:underline"
+                          title="Open media"
                         >
-                          <ExternalLink className="h-3 w-3" />
-                          View
+                          <ExternalLink className="h-3 w-3 shrink-0" />
+                          <span className="sr-only">View</span>
                         </a>
                       ) : (
-                        <span className="text-xs text-muted-foreground">None</span>
+                        <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell>{statusBadge(t.status)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
+                    <TableCell className="whitespace-normal">{statusBadge(t.status)}</TableCell>
+                    <TableCell className="whitespace-normal text-right">
+                      <div className="flex flex-wrap justify-end gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          disabled={busy}
+                          title="Edit"
+                          onClick={() => openEdit(t)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         {t.status !== 'approved' && (
                           <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 border-green-200 text-green-700 hover:bg-green-50"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-green-700 hover:bg-green-50"
                             disabled={busy}
+                            title="Approve"
                             onClick={() => handleApprove(t.id)}
                           >
                             {busy ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
-                              <>
-                                <Check className="mr-1 h-4 w-4" />
-                                Approve
-                              </>
+                              <Check className="h-4 w-4" />
                             )}
                           </Button>
                         )}
-                        {t.status !== 'rejected' && t.status !== 'approved' && (
+                        {t.status === 'approved' && (
                           <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
                             disabled={busy}
+                            title="Unpublish (pending)"
+                            onClick={() => handlePending(t.id)}
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {t.status !== 'rejected' && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-amber-700 hover:bg-amber-50"
+                            disabled={busy}
+                            title={t.status === 'approved' ? 'Reject' : 'Reject'}
                             onClick={() => handleReject(t.id)}
                           >
-                            <XCircle className="mr-1 h-4 w-4" />
-                            Reject
+                            <XCircle className="h-4 w-4" />
                           </Button>
                         )}
                         <Button
@@ -241,6 +332,7 @@ export function TestimoniesManager({ initialTestimonies }: TestimoniesManagerPro
                           size="icon"
                           className="h-8 w-8 text-destructive hover:bg-red-50"
                           disabled={busy}
+                          title="Delete"
                           onClick={() => handleDelete(t.id)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -254,6 +346,13 @@ export function TestimoniesManager({ initialTestimonies }: TestimoniesManagerPro
           </TableBody>
         </Table>
       </div>
+
+      <TestimonyFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        testimony={editing}
+        onSaved={handleSaved}
+      />
     </div>
   )
 }

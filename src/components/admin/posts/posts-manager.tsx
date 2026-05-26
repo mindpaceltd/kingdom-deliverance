@@ -195,30 +195,31 @@ export function PostsManager({ initialPosts, initialFilter }: PostsManagerProps)
   async function handleSingleIndex(post: Post) {
     setActionLoading(`index-${post.id}`)
     try {
-      const url = `https://kdcuganda.org/blog/${post.slug}`
-      const res = await fetch('/api/google/search-console/index-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ urls: [url] })
-      })
-      const data = await res.json()
-      if (res.ok) {
-        alert('Successfully submitted to Google for indexing!')
+      const { buildPublicContentUrl } = await import('@/lib/seo/public-content-urls')
+      const { submitGoogleIndexing } = await import('@/lib/seo/submit-google-indexing-client')
+      const result = await submitGoogleIndexing([buildPublicContentUrl('post', post.slug)])
+      if (!result.ok) {
+        alert(result.message + (result.hint ? `\n\n${result.hint}` : ''))
       } else {
-        alert('Failed: ' + (data.error || 'Unknown error'))
+        alert(result.message)
       }
-    } catch (err: any) {
-      alert('Error: ' + err.message)
+    } catch (err: unknown) {
+      alert('Error: ' + (err instanceof Error ? err.message : 'Request failed'))
     }
     setActionLoading(null)
   }
 
   async function handleBulkIndex() {
     setActionLoading('bulk')
-    const urlsToSubmit = Array.from(selectedIds).map(id => {
-      const post = posts.find(p => p.id === id)
-      return post && post.status === 'published' ? `https://kdcuganda.org/blog/${post.slug}` : null
-    }).filter(Boolean)
+    const { buildPublicContentUrl } = await import('@/lib/seo/public-content-urls')
+    const urlsToSubmit = Array.from(selectedIds)
+      .map((id) => {
+        const post = posts.find((p) => p.id === id)
+        return post && post.status === 'published'
+          ? buildPublicContentUrl('post', post.slug)
+          : null
+      })
+      .filter((u): u is string => Boolean(u))
 
     if (urlsToSubmit.length === 0) {
       alert('No published posts selected.')
@@ -227,19 +228,15 @@ export function PostsManager({ initialPosts, initialFilter }: PostsManagerProps)
     }
 
     try {
-      const res = await fetch('/api/google/search-console/index-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ urls: urlsToSubmit })
-      })
-      const data = await res.json()
-      if (res.ok) {
-        alert(`Successfully submitted ${urlsToSubmit.length} post(s) to Google!`)
+      const { submitGoogleIndexing } = await import('@/lib/seo/submit-google-indexing-client')
+      const result = await submitGoogleIndexing(urlsToSubmit)
+      if (!result.ok) {
+        alert(result.message + (result.hint ? `\n\n${result.hint}` : ''))
       } else {
-        alert('Failed: ' + (data.error || 'Unknown error'))
+        alert(result.message)
       }
-    } catch (err: any) {
-      alert('Error: ' + err.message)
+    } catch (err: unknown) {
+      alert('Error: ' + (err instanceof Error ? err.message : 'Request failed'))
     }
     setSelectedIds(new Set())
     setActionLoading(null)

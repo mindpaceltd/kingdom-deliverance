@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/authz'
 import { revalidatePath } from 'next/cache'
+import { ensurePaymentGateways } from '@/lib/payments/ensure-payment-gateways'
 
 function revalidateSettings() {
   revalidatePath('/admin/settings')
@@ -171,14 +172,53 @@ export async function togglePaymentGateway(
   if ('error' in auth) return auth
 
   const admin = createAdminClient()
+
+  const { data: gateway } = await admin
+    .from('payment_gateways')
+    .select('gateway_name')
+    .eq('id', id)
+    .maybeSingle()
+
   const { error } = await admin
     .from('payment_gateways')
     .update({ is_active: isActive, updated_at: new Date().toISOString() })
     .eq('id', id)
 
   if (error) return { error: error.message }
+
+  if (gateway?.gateway_name === 'pesapal' || gateway?.gateway_name === 'paypal') {
+    const settingsKey = `${gateway.gateway_name}_enabled`
+    await admin.from('site_settings').upsert(
+      {
+        key: settingsKey,
+        value: String(isActive),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'key' }
+    )
+  }
+
   revalidateSettings()
+  revalidatePath('/admin/settings')
   return { success: true }
+}
+
+/** Sync payment_gateways table from site_settings (Pesapal/PayPal in General). */
+export async function syncPaymentGatewaysFromSettings(): Promise<
+  { success: true } | { error: string }
+> {
+  const auth = await requireAdmin()
+  if ('error' in auth) return auth
+
+  try {
+    const admin = createAdminClient()
+    await ensurePaymentGateways(admin)
+    revalidateSettings()
+    return { success: true }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Sync failed'
+    return { error: msg }
+  }
 }
 
 // ---------------------------------------------------------------------------

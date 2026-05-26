@@ -1,14 +1,31 @@
 'use client'
 
 import * as React from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
+import { EMAIL_TEMPLATE_STARTER_HTML } from '@/lib/email/template-starter-html'
+
+const RichTextEditor = dynamic(
+  () =>
+    import('@/components/admin/rich-text-editor').then((m) => ({
+      default: m.RichTextEditor,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex min-h-[280px] items-center justify-center rounded-md border border-input bg-muted/30">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    ),
+  }
+)
 import {
   Select,
   SelectContent,
@@ -58,7 +75,9 @@ export function EmailTemplateForm({ initial }: { initial?: EmailTemplateRow }) {
   const [templateName, setTemplateName] = React.useState(initial?.template_name ?? '')
   const [displayName, setDisplayName] = React.useState(initial?.display_name ?? '')
   const [subject, setSubject] = React.useState(initial?.subject ?? '')
-  const [htmlContent, setHtmlContent] = React.useState(initial?.html_content ?? '')
+  const [htmlContent, setHtmlContent] = React.useState(
+    initial?.html_content ?? (!isEdit ? EMAIL_TEMPLATE_STARTER_HTML : '')
+  )
   const [textContent, setTextContent] = React.useState(initial?.text_content ?? '')
   const [templateType, setTemplateType] = React.useState(
     initial?.template_type ?? 'order_confirmation'
@@ -133,7 +152,7 @@ export function EmailTemplateForm({ initial }: { initial?: EmailTemplateRow }) {
 
       <form
         onSubmit={handleSubmit}
-        className="max-w-2xl space-y-5 rounded-2xl border border-border bg-card p-6 shadow-sm"
+        className="max-w-3xl space-y-5 rounded-2xl border border-border bg-card p-6 shadow-sm"
       >
         <div className="space-y-1.5">
           <Label htmlFor="et-display">Display name</Label>
@@ -200,15 +219,19 @@ export function EmailTemplateForm({ initial }: { initial?: EmailTemplateRow }) {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="et-html">HTML content</Label>
-          <Textarea
-            id="et-html"
+          <Label>Email body (HTML)</Label>
+          <p className="text-xs text-muted-foreground">
+            Design your template with headings, links, and images. Use variables like{' '}
+            <code className="rounded bg-muted px-1">{'{{customer_name}}'}</code> in the
+            subject or body.
+          </p>
+          <RichTextEditor
             value={htmlContent}
-            onChange={(e) => setHtmlContent(e.target.value)}
-            rows={12}
-            className="font-mono text-xs"
-            required
+            onChange={setHtmlContent}
+            placeholder="Write your email content…"
             disabled={submitting}
+            compact
+            editorMinHeight="min-h-[280px]"
           />
         </div>
 
