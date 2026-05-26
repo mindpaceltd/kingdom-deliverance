@@ -14,11 +14,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { 
-  createGalleryItem, 
-  deleteGalleryItem, 
-  reorderGallery, 
-  updateGalleryItem 
+import {
+  createGalleryItemsBulk,
+  deleteGalleryItem,
+  reorderGallery,
+  updateGalleryItem,
 } from '@/lib/actions/gallery'
 import { createClient } from '@/lib/supabase/client'
 import type { GalleryItem } from '@/lib/types'
@@ -65,16 +65,17 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
     if (data) setItems(data as GalleryItem[])
   }, [])
 
-  async function handleUploadComplete(url: string) {
-    const nextOrder = items.length > 0 ? Math.max(...items.map((i) => i.display_order)) + 1 : 1
+  async function handleBulkUpload(urls: string[]) {
+    if (urls.length === 0) return
     setSaving(true)
-    const result = await createGalleryItem({ image_url: url, album: 'General', display_order: nextOrder })
+    const result = await createGalleryItemsBulk(urls, 'General')
     setSaving(false)
     if ('error' in result) {
       alert(result.error)
       return
     }
     await refreshItems()
+    setShowUpload(false)
   }
 
   async function handleDelete() {
@@ -130,15 +131,33 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
           <p className="text-sm text-muted-foreground">Manage gallery images and albums. Drag cards to reorder.</p>
         </div>
         <Button onClick={() => setShowUpload((v) => !v)} size="sm" variant={showUpload ? 'secondary' : 'default'}>
-          {showUpload ? <><XIcon className="mr-2 size-4" /> Cancel</> : <><UploadIcon className="mr-2 size-4" /> Add Images</>}
+          {showUpload ? (
+            <>
+              <XIcon className="mr-2 size-4" /> Cancel
+            </>
+          ) : (
+            <>
+              <UploadIcon className="mr-2 size-4" /> Bulk Upload
+            </>
+          )}
         </Button>
       </div>
 
       {showUpload && (
         <div className="rounded-xl border-2 border-dashed border-border p-8 bg-muted/20">
-          <p className="mb-4 text-sm font-medium">Upload images — they will be added to the &quot;General&quot; album by default.</p>
-          <UploadZone accept="image/*" onUploadComplete={handleUploadComplete} />
-          {saving && <p className="mt-3 text-xs text-primary animate-pulse font-medium">Processing upload…</p>}
+          <p className="mb-4 text-sm font-medium">
+            Bulk upload — select or drag many images at once. They are added to the &quot;General&quot; album.
+          </p>
+          <UploadZone
+            accept="image/*"
+            onBatchComplete={handleBulkUpload}
+            hint="Select multiple images (Cmd/Ctrl+click or Shift+click) — max 50 MB each."
+          />
+          {saving && (
+            <p className="mt-3 text-xs font-medium text-primary animate-pulse">
+              Saving gallery images…
+            </p>
+          )}
         </div>
       )}
 
@@ -152,7 +171,7 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
           </Button>
         </div>
       ) : (
-        <ul role="list" className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        <ul role="list" className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12">
           {items.map((item, index) => (
             <li
               key={item.id}
@@ -163,7 +182,7 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
               onDrop={(e) => handleDrop(e, index)}
               onDragEnd={handleDragEnd}
               className={cn(
-                'group relative flex flex-col aspect-square overflow-hidden rounded-lg border-2 bg-card transition-all cursor-pointer',
+                'group relative flex aspect-square cursor-pointer flex-col overflow-hidden rounded-md border bg-card transition-all',
                 dragOverIndex === index ? 'ring-2 ring-primary border-primary' : 'border-transparent hover:border-primary/20',
                 selectedItem?.id === item.id ? 'ring-2 ring-primary border-primary' : ''
               )}

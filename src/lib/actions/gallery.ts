@@ -49,6 +49,43 @@ export async function createGalleryItem(
   return { success: true, id: data.id }
 }
 
+export async function createGalleryItemsBulk(
+  urls: string[],
+  album = 'General'
+): Promise<{ success: true; count: number } | { error: string }> {
+  const cleaned = urls.map((u) => u.trim()).filter(Boolean)
+  if (cleaned.length === 0) return { error: 'No images to add' }
+
+  const result = await requireRoles(ROLES.CONTENT)
+  if ('error' in result) return result
+
+  const supabase = createClient()
+  const { data: last } = await supabase
+    .from('gallery')
+    .select('display_order')
+    .order('display_order', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  let nextOrder = (last?.display_order ?? 0) + 1
+  const rows = cleaned.map((image_url) => ({
+    image_url,
+    album,
+    title: null,
+    description: null,
+    display_order: nextOrder++,
+  }))
+
+  const { error } = await supabase.from('gallery').insert(rows)
+  if (error) {
+    console.error('[createGalleryItemsBulk]', error.message)
+    return { error: error.message }
+  }
+
+  revalidateGalleryPaths()
+  return { success: true, count: cleaned.length }
+}
+
 export async function updateGalleryItem(
   id: string,
   payload: UpdateGalleryItemPayload

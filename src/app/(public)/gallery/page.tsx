@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getGallery } from "@/lib/supabase/queries";
 import { normalizeMediaUrl } from "@/lib/media-url";
 import { DEFAULT_ABOUT_HERO_URL } from "@/lib/seo/page-hero";
-import { GalleryImage } from "@/components/content/gallery-image";
+import { GalleryLightboxGrid } from "@/components/gallery/gallery-lightbox-grid";
 
 export const metadata: Metadata = {
   title: "Gallery | Kingdom Deliverance Centre Uganda",
@@ -55,38 +55,20 @@ export default async function GalleryPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
-              {items.map((item) => {
-                const title = item.title?.trim() || formatAlbum(item.album);
-                const category = formatAlbum(item.album);
-
-                return (
-                  <article
-                    key={item.id}
-                    className="group overflow-hidden rounded-2xl border border-primary/10 shadow-sm transition-all hover:shadow-lg"
-                  >
-                    <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-                      <GalleryImage
-                        src={item.image_url}
-                        alt={title}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    </div>
-                    <div className="space-y-2 p-5">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-accent">
-                        {category}
-                      </span>
-                      <h2 className="font-serif text-xl font-bold text-primary">{title}</h2>
-                      {item.description?.trim() && (
-                        <p className="text-sm leading-relaxed text-primary/70 line-clamp-3">
-                          {item.description}
-                        </p>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
+            <>
+              <p className="mb-6 text-center text-sm text-primary/60">
+                Tap any photo to view full size — use arrows to browse. Order shuffles on each visit.
+              </p>
+              <GalleryLightboxGrid
+                items={items.map((item) => ({
+                  id: item.id,
+                  image_url: item.image_url,
+                  title: item.title?.trim() || formatAlbum(item.album),
+                  category: formatAlbum(item.album),
+                  description: item.description,
+                }))}
+              />
+            </>
           )}
         </div>
       </section>

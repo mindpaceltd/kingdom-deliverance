@@ -1,5 +1,6 @@
 'use client'
 
+import * as React from 'react'
 import { useRef, useState, useCallback } from 'react'
 import { UploadCloud, X, CheckCircle, AlertCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -39,9 +40,12 @@ function getMimeCategory(
 
 interface UploadZoneProps {
   onUploadComplete?: (url: string) => void
+  /** Called once when every file in the current batch has finished (success or error). */
+  onBatchComplete?: (urls: string[]) => void
   onUploadError?: (error: string) => void
   accept?: string
   className?: string
+  hint?: string
 }
 
 interface FileUploadState {
@@ -57,13 +61,16 @@ interface FileUploadState {
 
 export function UploadZone({
   onUploadComplete,
+  onBatchComplete,
   onUploadError,
   accept = ACCEPT_STRING,
   className,
+  hint,
 }: UploadZoneProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [uploads, setUploads] = useState<FileUploadState[]>([])
+  const batchNotifiedRef = useRef(false)
 
   // ── Validation ────────────────────────────────────────────────────────────
 
@@ -131,15 +138,35 @@ export function UploadZone({
           i === index ? { ...u, status: 'done', url: publicUrl } : u
         )
       )
-      onUploadComplete?.(publicUrl)
+      if (!onBatchComplete) {
+        onUploadComplete?.(publicUrl)
+      }
     },
-    [onUploadComplete, onUploadError]
+    [onUploadComplete, onBatchComplete, onUploadError]
   )
+
+  React.useEffect(() => {
+    if (!onBatchComplete || uploads.length === 0) {
+      batchNotifiedRef.current = false
+      return
+    }
+    const inFlight = uploads.some(
+      (u) => u.status === 'pending' || u.status === 'uploading'
+    )
+    if (inFlight) return
+    const urls = uploads
+      .filter((u) => u.status === 'done' && u.url)
+      .map((u) => u.url as string)
+    if (urls.length === 0 || batchNotifiedRef.current) return
+    batchNotifiedRef.current = true
+    onBatchComplete(urls)
+  }, [uploads, onBatchComplete])
 
   // ── File processing ───────────────────────────────────────────────────────
 
   const processFiles = useCallback(
     (files: FileList | File[]) => {
+      batchNotifiedRef.current = false
       const fileArray = Array.from(files)
       const newUploads: FileUploadState[] = fileArray.map((file) => {
         const error = validateFile(file)
@@ -221,7 +248,7 @@ export function UploadZone({
             Click to upload or drag and drop
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Images, audio, video, PDF — max 50 MB each
+            {hint ?? 'Images, audio, video, PDF — max 50 MB each. Hold Shift or Cmd to select many files.'}
           </p>
         </div>
       </div>
