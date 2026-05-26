@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ImageIcon } from 'lucide-react'
 import { getMediaProxyUrl, normalizeMediaUrl } from '@/lib/media-url'
 

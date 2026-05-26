@@ -133,6 +133,7 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
 
             <div className="flex max-h-[50vh] w-full max-w-5xl items-center justify-center sm:max-h-[58vh] md:max-h-[62vh]">
               <GalleryImage
+                key={current.id}
                 src={current.image_url}
                 alt={current.caption}
                 className="max-h-[50vh] max-w-full object-contain sm:max-h-[58vh] md:max-h-[62vh]"
