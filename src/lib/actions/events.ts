@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { indexOnPublish } from '@/lib/seo/google-indexing'
 import { requireRoles } from '@/lib/authz'
 import { ROLES } from '@/lib/roles'
 
@@ -68,6 +69,7 @@ export async function createEvent(
     return { error: error.message }
   }
   revalidateEventPaths()
+  await indexOnPublish('event', data.slug, data.status)
   return { success: true, id: event.id }
 }
 
@@ -119,6 +121,7 @@ export async function updateEvent(
     return { error: error.message }
   }
   revalidateEventPaths()
+  await indexOnPublish('event', data.slug, data.status)
   return { success: true }
 }
 

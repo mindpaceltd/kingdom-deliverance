@@ -4,8 +4,9 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Users, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Metadata } from "next";
-import { createSocialImageMetadata } from "@/lib/seo-image-utils";
+import { createSocialImageMetadata, stripHtmlExcerpt } from "@/lib/seo-image-utils";
 import { createCanonicalMetadata } from "@/lib/seo/canonical-utils";
+import { getOrgOgImageUrl, getSiteName } from "@/lib/seo/site-branding";
 
 import { incrementMinistryViews } from "@/lib/actions/event-views";
 
@@ -13,35 +14,50 @@ interface Props { params: { slug: string } }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = createClient();
-  const { data } = await supabase
-    .from("ministries")
-    .select("name, description, meta_title, meta_description, image_url, slug")
-    .eq("slug", params.slug)
-    .single();
+  const [ministryResult, orgOgImage, siteName] = await Promise.all([
+    supabase
+      .from("ministries")
+      .select("name, description, meta_title, meta_description, image_url, slug")
+      .eq("slug", params.slug)
+      .single(),
+    getOrgOgImageUrl(),
+    getSiteName(),
+  ]);
 
+  const data = ministryResult.data;
   if (!data) return { title: "Ministry Not Found" };
 
-  const title = data.meta_title || `${data.name} | KDC Uganda Ministries`;
-  const description = data.meta_description || data.description || "Discover the ministries of Kingdom Deliverance Centre Uganda.";
-  const url = `https://kdcuganda.org/ministries/${data.slug}`;
-  const socialImage = createSocialImageMetadata(data.name, description, data.image_url, 'ministry');
+  const ogTitle = data.meta_title?.trim() || data.name;
+  const excerpt =
+    data.meta_description?.trim() ||
+    stripHtmlExcerpt(data.description, 160) ||
+    "Discover the ministries of Kingdom Deliverance Centre Uganda.";
+  const pageUrl = `https://kdcuganda.org/ministries/${data.slug}`;
+  const socialImage = createSocialImageMetadata(
+    ogTitle,
+    excerpt,
+    data.image_url,
+    "ministry",
+    orgOgImage
+  );
 
   return {
-    title,
-    description,
+    title: `${ogTitle} | KDC Uganda Ministries`,
+    description: excerpt,
     ...createCanonicalMetadata(`/ministries/${data.slug}`),
     openGraph: {
-      title: data.meta_title || data.name,
-      description,
-      url,
-      siteName: "Kingdom Deliverance Centre Uganda",
+      title: ogTitle,
+      description: excerpt,
+      url: pageUrl,
+      siteName,
       type: "website",
+      locale: "en_UG",
       images: [socialImage],
     },
     twitter: {
       card: "summary_large_image",
-      title: data.meta_title || data.name,
-      description,
+      title: ogTitle,
+      description: excerpt,
       images: [socialImage.url],
     },
   };

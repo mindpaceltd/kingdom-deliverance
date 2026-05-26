@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { generateSlug } from '@/lib/utils'
+import { indexOnPublish } from '@/lib/seo/google-indexing'
 
 export async function saveProduct(data: any) {
   const supabase = createClient()
@@ -62,6 +63,14 @@ export async function saveProduct(data: any) {
   revalidatePath('/admin/products')
   revalidatePath('/shop')
   revalidatePath(`/shop/${rest.slug}`)
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    await indexOnPublish('product', rest.slug, rest.status, {
+      is_active: rest.is_active,
+    })
+  }
+
   return { success: true, id: productId }
 }
 
@@ -152,4 +161,28 @@ export async function duplicateProduct(id: string) {
   
   revalidatePath('/admin/products')
   return { success: true, id: copy.id }
+}
+
+export async function duplicateProducts(
+  ids: string[]
+): Promise<
+  | { success: true; count: number; ids: string[] }
+  | { error: string; count?: number }
+> {
+  if (ids.length === 0) return { success: true, count: 0, ids: [] }
+
+  const created: string[] = []
+  for (const id of ids) {
+    const result = await duplicateProduct(id)
+    if ('error' in result) {
+      return {
+        error: result.error,
+        count: created.length,
+      }
+    }
+    if ('id' in result && result.id) created.push(result.id)
+  }
+
+  revalidatePath('/admin/products')
+  return { success: true, count: created.length, ids: created }
 }

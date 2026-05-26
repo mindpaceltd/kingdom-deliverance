@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { Button } from '@/components/ui/button'
-import { Download, Upload, Loader2, FileSpreadsheet, Copy } from 'lucide-react'
+import { Download, Upload, Loader2, FileSpreadsheet, Copy, Trash2, Globe } from 'lucide-react'
 import { exportProductsToCSV, importProductsFromCSV } from '@/lib/actions/bulk-products'
 import Papa from 'papaparse'
 import { useRouter } from 'next/navigation'
@@ -17,6 +17,9 @@ import {
 interface ProductBulkActionsProps {
   selectedCount?: number
   onBulkDelete?: () => void
+  onBulkDuplicate?: () => void
+  onBulkIndex?: () => void
+  actionsDisabled?: boolean
   onClearSelection?: () => void
 }
 
@@ -119,6 +122,9 @@ function remapRows(rows: any[], fieldMap: Record<string, string>) {
 export function ProductBulkActions({
   selectedCount = 0,
   onBulkDelete,
+  onBulkDuplicate,
+  onBulkIndex,
+  actionsDisabled = false,
   onClearSelection,
 }: ProductBulkActionsProps) {
   const [loading, setLoading] = React.useState(false)
@@ -243,15 +249,39 @@ export function ProductBulkActions({
           </Button>
         </div>
         <div className="flex gap-2 flex-wrap items-center justify-end">
+          {selectedCount > 0 && onBulkDuplicate && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onBulkDuplicate}
+              disabled={loading || importLoading || actionsDisabled}
+              className="gap-2"
+            >
+              <Copy className="h-4 w-4" />
+              Duplicate {selectedCount} selected
+            </Button>
+          )}
+          {selectedCount > 0 && onBulkIndex && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onBulkIndex}
+              disabled={loading || importLoading || actionsDisabled}
+              className="gap-2"
+            >
+              <Globe className="h-4 w-4" />
+              Index {selectedCount} in Google
+            </Button>
+          )}
           {selectedCount > 0 && onBulkDelete && (
             <Button
               variant="outline"
               size="sm"
               onClick={onBulkDelete}
-              disabled={loading || importLoading}
+              disabled={loading || importLoading || actionsDisabled}
               className="gap-2 text-destructive hover:text-destructive"
             >
-              <FileSpreadsheet className="h-4 w-4" />
+              <Trash2 className="h-4 w-4" />
               Delete {selectedCount} selected
             </Button>
           )}

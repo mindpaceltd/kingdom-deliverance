@@ -8,6 +8,9 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { incrementPostViews } from "@/lib/actions/post-views";
 import { autoPublishScheduled } from "@/lib/actions/post-utils";
+import { createSocialImageMetadata, stripHtmlExcerpt } from "@/lib/seo-image-utils";
+import { createCanonicalMetadata } from "@/lib/seo/canonical-utils";
+import { getOrgOgImageUrl, getSiteName } from "@/lib/seo/site-branding";
 
 interface Props { params: { slug: string } }
 
@@ -17,43 +20,52 @@ interface Props { params: { slug: string } }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = createClient();
-  const { data } = await supabase
-    .from("posts")
-    .select("title, excerpt, featured_image, meta_title, meta_description, slug")
-    .eq("slug", params.slug)
-    .single();
+  const [postResult, orgOgImage, siteName] = await Promise.all([
+    supabase
+      .from("posts")
+      .select("title, excerpt, featured_image, meta_title, meta_description, slug")
+      .eq("slug", params.slug)
+      .single(),
+    getOrgOgImageUrl(),
+    getSiteName(),
+  ]);
 
+  const data = postResult.data;
   if (!data) return { title: "Post Not Found" };
 
-  const title = data.meta_title || data.title;
-  const description = data.meta_description || data.excerpt || "Read this post on KDC Uganda.";
-  const url = `https://kdcuganda.org/blog/${data.slug}`;
-  const isHeic = data.featured_image?.toLowerCase().endsWith('.heic') || data.featured_image?.toLowerCase().endsWith('.heif');
-  
-  let image = (data.featured_image && !isHeic)
-    ? data.featured_image
-    : `https://kdcuganda.org/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description.slice(0, 120))}`;
-  
-  if (image && !image.startsWith('http')) {
-    image = `https://kdcuganda.org${image.startsWith('/') ? '' : '/'}${image}`;
-  }
+  const ogTitle = data.meta_title?.trim() || data.title;
+  const excerpt =
+    data.meta_description?.trim() ||
+    data.excerpt?.trim() ||
+    stripHtmlExcerpt(data.excerpt, 160) ||
+    "Read this post on Kingdom Deliverance Centre Uganda.";
+  const pageUrl = `https://kdcuganda.org/blog/${data.slug}`;
+  const socialImage = createSocialImageMetadata(
+    ogTitle,
+    excerpt,
+    data.featured_image,
+    "blog",
+    orgOgImage
+  );
 
   return {
-    title: `${title} | KDC Uganda`,
-    description,
+    title: `${ogTitle} | KDC Uganda`,
+    description: excerpt,
+    ...createCanonicalMetadata(`/blog/${data.slug}`),
     openGraph: {
-      title,
-      description,
-      url,
-      siteName: "Kingdom Deliverance Centre Uganda",
+      title: ogTitle,
+      description: excerpt,
+      url: pageUrl,
+      siteName,
       type: "article",
-      images: [{ url: image, width: 1200, height: 630, alt: title }],
+      locale: "en_UG",
+      images: [socialImage],
     },
     twitter: {
       card: "summary_large_image",
-      title,
-      description,
-      images: [image],
+      title: ogTitle,
+      description: excerpt,
+      images: [socialImage.url],
     },
   };
 }

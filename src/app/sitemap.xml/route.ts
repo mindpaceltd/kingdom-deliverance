@@ -4,11 +4,16 @@ export async function GET() {
   const supabase = createClient()
   
   // Get all published posts, sermons, events, ministries
-  const [posts, sermons, events, ministries] = await Promise.all([
+  const [posts, sermons, events, ministries, products] = await Promise.all([
     supabase.from('posts').select('slug, updated_at').eq('status', 'published'),
     supabase.from('sermons').select('slug, updated_at').eq('status', 'published'),
-    supabase.from('events').select('slug, updated_at').eq('status', 'upcoming'),
-    supabase.from('ministries').select('slug, updated_at').eq('is_active', true)
+    supabase.from('events').select('slug, updated_at').in('status', ['published', 'upcoming', 'ongoing']),
+    supabase.from('ministries').select('slug, updated_at').eq('is_active', true).eq('status', 'published'),
+    supabase
+      .from('products')
+      .select('slug, updated_at')
+      .eq('status', 'published')
+      .eq('is_active', true),
   ])
 
   const baseUrl = 'https://kdcuganda.org'
@@ -21,6 +26,7 @@ export async function GET() {
     { url: '/ministries', lastmod: new Date().toISOString() },
     { url: '/blog', lastmod: new Date().toISOString() },
     { url: '/gallery', lastmod: new Date().toISOString() },
+    { url: '/shop', lastmod: new Date().toISOString() },
     { url: '/contact', lastmod: new Date().toISOString() },
     { url: '/donations', lastmod: new Date().toISOString() },
     { url: '/prayer', lastmod: new Date().toISOString() },
@@ -67,6 +73,14 @@ export async function GET() {
     <lastmod>${ministry.updated_at}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+  </url>`).join('') || ''}
+
+  ${products.data?.map(product => `
+  <url>
+    <loc>${baseUrl}/shop/${product.slug}</loc>
+    <lastmod>${product.updated_at}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>`).join('') || ''}
 </urlset>`
 

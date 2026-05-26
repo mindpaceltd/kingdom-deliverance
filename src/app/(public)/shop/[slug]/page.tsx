@@ -7,39 +7,62 @@ import { ProductMediaGallery } from '@/components/shop/product-media-gallery'
 import { ProductTabs } from '@/components/shop/product-tabs'
 import { QuantitySelector } from '@/components/shop/quantity-selector'
 import { FormatSelector } from '@/components/shop/format-selector'
-import { createSocialImageMetadata } from '@/lib/seo-image-utils'
+import { createSocialImageMetadata, stripHtmlExcerpt } from '@/lib/seo-image-utils'
 import { createCanonicalMetadata } from '@/lib/seo/canonical-utils'
+import { getOrgOgImageUrl, getSiteName } from '@/lib/seo/site-branding'
 import { ProductPrice } from '@/components/shop/product-price'
+import type { Metadata } from 'next'
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   try {
     const supabase = createClient()
-    const { data: product } = await supabase
-      .from('products')
-      .select('*')
-      .eq('slug', params.slug)
-      .single()
+    const [productResult, orgOgImage, siteName] = await Promise.all([
+      supabase
+        .from('products')
+        .select('name, slug, description, short_description, meta_title, meta_description, image_url')
+        .eq('slug', params.slug)
+        .eq('status', 'published')
+        .eq('is_active', true)
+        .single(),
+      getOrgOgImageUrl(),
+      getSiteName(),
+    ])
 
-    if (!product) return {}
+    const product = productResult.data
+    if (!product) return { title: 'Product Not Found' }
 
-    const title = product.meta_title || `${product.name} | KDC Uganda Store`
-    const description = product.meta_description || product.short_description || product.description?.replace(/<[^>]*>?/gm, '').substring(0, 160)
-    const socialImage = createSocialImageMetadata(product.name, description, product.image_url, 'product')
+    const ogTitle = product.meta_title?.trim() || product.name
+    const excerpt =
+      product.meta_description?.trim() ||
+      product.short_description?.trim() ||
+      stripHtmlExcerpt(product.description, 160) ||
+      `Shop ${product.name} at Kingdom Deliverance Centre Uganda.`
+    const socialImage = createSocialImageMetadata(
+      ogTitle,
+      excerpt,
+      product.image_url,
+      'product',
+      orgOgImage
+    )
+    const pageUrl = `https://kdcuganda.org/shop/${product.slug}`
 
     return {
-      title,
-      description,
+      title: `${ogTitle} | KDC Uganda Store`,
+      description: excerpt,
       ...createCanonicalMetadata(`/shop/${product.slug}`),
       openGraph: {
-        title,
-        description,
-        siteName: "Kingdom Deliverance Centre Uganda",
+        title: ogTitle,
+        description: excerpt,
+        url: pageUrl,
+        siteName,
+        type: 'website',
+        locale: 'en_UG',
         images: [socialImage],
       },
       twitter: {
-        card: "summary_large_image",
-        title,
-        description,
+        card: 'summary_large_image',
+        title: ogTitle,
+        description: excerpt,
         images: [socialImage.url],
       },
     }
@@ -47,6 +70,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     return {}
   }
 }
+
+export const revalidate = 3600
 
 const RATE = 3800
 
@@ -65,6 +90,8 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
       .from('products')
       .select(`*, category:product_categories(*), product_gallery(*)`)
       .eq('slug', params.slug)
+      .eq('status', 'published')
+      .eq('is_active', true)
       .single()
 
     product = productRes.data
@@ -74,6 +101,8 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
       .from('products')
       .select('*, category:product_categories(name)')
       .eq('category_id', product.category_id)
+      .eq('status', 'published')
+      .eq('is_active', true)
       .neq('id', product.id)
       .limit(4)
 

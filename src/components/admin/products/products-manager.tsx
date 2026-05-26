@@ -4,14 +4,17 @@ import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { Globe } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ProductBulkActions, DuplicateProductButton } from '@/components/admin/products/product-bulk-actions'
-import { deleteProduct, deleteProducts } from '@/lib/actions/products'
+import { deleteProduct, deleteProducts, duplicateProducts } from '@/lib/actions/products'
+import { buildPublicContentUrl } from '@/lib/seo/public-content-urls'
 import { formatPrice } from '@/lib/utils'
 
 export interface ProductRow {
   id: string
   name: string
+  slug?: string
   type?: string
   status?: string
   image_url?: string
@@ -80,17 +83,110 @@ export function ProductsManager({ initialProducts }: ProductsManagerProps) {
     router.refresh()
   }
 
+  async function handleBulkDuplicate() {
+    if (selectedIds.size === 0) return
+    if (
+      !window.confirm(
+        `Duplicate ${selectedIds.size} selected product(s)? Copies will be saved as drafts.`
+      )
+    ) {
+      return
+    }
+    setActionLoading('bulk-duplicate')
+    const result = await duplicateProducts(Array.from(selectedIds))
+    setActionLoading(null)
+    if ('error' in result) {
+      alert(
+        result.count
+          ? `Partially duplicated ${result.count} product(s). Error: ${result.error}`
+          : result.error
+      )
+    } else {
+      alert(`Duplicated ${result.count} product(s) as drafts.`)
+    }
+    setSelectedIds(new Set())
+    router.refresh()
+  }
+
+  async function handleBulkIndex() {
+    const urls = products
+      .filter(
+        (p) =>
+          selectedIds.has(p.id) &&
+          p.status === 'published' &&
+          p.slug
+      )
+      .map((p) => buildPublicContentUrl('product', p.slug!))
+
+    if (urls.length === 0) {
+      alert('Select published products to submit to Google.')
+      return
+    }
+
+    setActionLoading('bulk-index')
+    try {
+      const res = await fetch('/api/google/search-console/index-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urls }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        const ok = data.results?.filter((r: { success?: boolean }) => r.success).length ?? urls.length
+        alert(`Submitted ${ok} product URL(s) to Google for indexing.`)
+      } else {
+        alert(`Failed: ${data.error || 'Unknown error'}`)
+      }
+    } catch (err) {
+      alert(`Error: ${err instanceof Error ? err.message : 'Request failed'}`)
+    }
+    setActionLoading(null)
+  }
+
+  async function handleSingleIndex(product: ProductRow) {
+    if (product.status !== 'published' || !product.slug) {
+      alert('Only published products can be indexed.')
+      return
+    }
+    setActionLoading(`index-${product.id}`)
+    try {
+      const res = await fetch('/api/google/search-console/index-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          urls: [buildPublicContentUrl('product', product.slug)],
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        alert('Submitted to Google for indexing.')
+      } else {
+        alert(`Failed: ${data.error || 'Unknown error'}`)
+      }
+    } catch (err) {
+      alert(`Error: ${err instanceof Error ? err.message : 'Request failed'}`)
+    }
+    setActionLoading(null)
+  }
+
+  const bulkBusy = Boolean(actionLoading?.startsWith('bulk-'))
+
   return (
     <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
       <div className="border-b bg-muted/50 p-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold">Products</h2>
-            <p className="text-sm text-muted-foreground">Select products to delete individually or in bulk.</p>
+            <p className="text-sm text-muted-foreground">
+              Select products to duplicate, delete, or submit to Google in bulk.
+            </p>
           </div>
           <ProductBulkActions
             selectedCount={selectedIds.size}
             onBulkDelete={handleBulkDelete}
+            onBulkDuplicate={handleBulkDuplicate}
+            onBulkIndex={handleBulkIndex}
+            actionsDisabled={bulkBusy}
             onClearSelection={() => setSelectedIds(new Set())}
           />
         </div>
@@ -150,6 +246,19 @@ export function ProductsManager({ initialProducts }: ProductsManagerProps) {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {product.status === 'published' && product.slug && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                            title="Submit to Google Indexing"
+                            disabled={Boolean(actionLoading)}
+                            onClick={() => handleSingleIndex(product)}
+                          >
+                            <Globe className="h-4 w-4" />
+                          </Button>
+                        )}
                         <DuplicateProductButton productId={product.id} />
                         <Button variant="outline" size="sm" asChild className="h-8">
                           <Link href={`/admin/products/${product.id}`}>Edit</Link>

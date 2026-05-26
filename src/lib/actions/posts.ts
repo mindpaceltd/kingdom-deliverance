@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { indexOnPublish } from '@/lib/seo/google-indexing'
 import { requireRole } from '@/lib/actions/auth-helpers'
 import { generateSlug } from '@/lib/utils'
 import type { PostData } from '@/lib/types'
@@ -75,6 +76,9 @@ export async function createPost(
   }
 
   revalidatePostPaths()
+  if (data.status === 'published') {
+    await indexOnPublish('post', data.slug, data.status)
+  }
   return { success: true, id: post.id }
 }
 
@@ -151,6 +155,9 @@ export async function updatePost(
   }
 
   revalidatePostPaths()
+  if (data.status === 'published') {
+    await indexOnPublish('post', data.slug, data.status)
+  }
   return { success: true }
 }
 

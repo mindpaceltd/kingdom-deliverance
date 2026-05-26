@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { indexOnPublish } from '@/lib/seo/google-indexing'
 import { requireRoles } from '@/lib/authz'
 import { ROLES } from '@/lib/roles'
 import type { SermonData } from '@/lib/types'
@@ -70,6 +71,9 @@ export async function createSermon(
   }
 
   revalidateSermonPaths()
+  if (data.status === 'published') {
+    await indexOnPublish('sermon', data.slug, data.status)
+  }
   return { success: true, id: sermon.id }
 }
 
@@ -140,6 +144,9 @@ export async function updateSermon(
   }
 
   revalidateSermonPaths()
+  if (data.status === 'published') {
+    await indexOnPublish('sermon', data.slug, data.status)
+  }
   return { success: true }
 }
 

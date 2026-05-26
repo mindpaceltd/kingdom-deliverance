@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { indexOnPublish } from '@/lib/seo/google-indexing'
 import { requireRoles } from '@/lib/authz'
 import { ROLES } from '@/lib/roles'
 
@@ -70,6 +71,11 @@ export async function createMinistry(
   }
 
   revalidateMinistryPaths()
+  if (data.status === 'published' && data.is_active) {
+    await indexOnPublish('ministry', data.slug, data.status, {
+      is_active: data.is_active,
+    })
+  }
   return { success: true, id: ministry.id }
 }
 
@@ -123,6 +129,11 @@ export async function updateMinistry(
   }
 
   revalidateMinistryPaths()
+  if (data.status === 'published') {
+    await indexOnPublish('ministry', data.slug, data.status, {
+      is_active: data.is_active,
+    })
+  }
   return { success: true }
 }
 
