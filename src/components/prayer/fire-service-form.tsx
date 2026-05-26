@@ -82,6 +82,7 @@ export function FireServiceForm() {
   const [success, setSuccess] = useState(false)
   
   const [creditBalance, setCreditBalance] = useState<number>(0)
+  const [balanceLoaded, setBalanceLoaded] = useState(false)
   const [serviceCost, setServiceCost] = useState<number>(270)
   const [packages, setPackages] = useState<any[]>([])
   const [showPackages, setShowPackages] = useState(false)
@@ -173,9 +174,25 @@ export function FireServiceForm() {
   // Check balance when email changes or step 4 is reached
   useEffect(() => {
     if (form.email && form.email.includes('@')) {
-      getUserCreditBalance(form.email).then(setCreditBalance)
+      setBalanceLoaded(false)
+      getUserCreditBalance(form.email).then((bal) => {
+        setCreditBalance(bal)
+        setBalanceLoaded(true)
+      })
     }
   }, [form.email, step])
+
+  // If the user is on Step 4 and doesn't have enough credits, open the "Buy Credits" picker immediately.
+  useEffect(() => {
+    if (
+      step === 4 &&
+      balanceLoaded &&
+      form.selectedSeed > 0 &&
+      creditBalance < form.selectedSeed
+    ) {
+      setShowPackages(true)
+    }
+  }, [step, balanceLoaded, creditBalance, form.selectedSeed])
 
   const nextStep = () => {
     if (step === 1 && (!form.firstName || !form.email)) return
