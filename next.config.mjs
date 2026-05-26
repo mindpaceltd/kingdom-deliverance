@@ -35,6 +35,14 @@ const nextConfig = {
         protocol: "https",
         hostname: "*.kdcuganda.org",
       },
+      {
+        protocol: "https",
+        hostname: "pub-6299bd19a8614368b611590ccf05ac14.r2.dev",
+      },
+      {
+        protocol: "https",
+        hostname: "pub-2f08fcf0958c4e15a15b48f6805de2be.r2.dev",
+      },
     ],
   },
 };

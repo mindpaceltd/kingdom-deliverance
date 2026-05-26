@@ -18,10 +18,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing filename or contentType' }, { status: 400 })
     }
 
-    // Always resolve the correct configured bucket from environment variables
+    const isWebFacingMedia =
+      contentType.startsWith('image/') ||
+      contentType.startsWith('video/') ||
+      isTestimony
+
+    // Public site assets must land in the public R2 bucket so r2.dev URLs work
     const bucket = (passedBucket && passedBucket !== 'media')
       ? passedBucket
-      : (process.env.R2_BUCKET_NAME || 'kdc-media')
+      : isWebFacingMedia
+        ? (process.env.R2_PUBLIC_BUCKET_NAME || 'kdc-media-public')
+        : (process.env.R2_BUCKET_NAME || 'kdc-media-storage')
 
     // Determine path based on type
     let prefix = 'uploads'

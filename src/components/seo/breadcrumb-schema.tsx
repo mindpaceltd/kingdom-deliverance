@@ -1,5 +1,3 @@
-'use client'
-
 interface BreadcrumbItem {
   name: string
   url: string

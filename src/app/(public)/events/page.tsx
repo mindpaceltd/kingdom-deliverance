@@ -1,9 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
-import { format } from "date-fns";
 import Link from "next/link";
 import { Calendar, MapPin, Clock, ArrowRight, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Metadata } from "next";
+import { EventImage } from "@/components/content/event-image";
+import { formatSafeDate } from "@/lib/media-url";
 
 export const metadata: Metadata = {
   title: "Events | Kingdom Deliverance Centre Uganda",
@@ -89,13 +90,13 @@ export default async function EventsPage() {
                 <div className="mt-8 space-y-2.5 text-sm text-white/65">
                   <div className="flex items-center gap-2.5">
                     <Calendar className="w-4 h-4 text-accent shrink-0" />
-                    {format(new Date(featured.date), "EEEE, MMMM d, yyyy")}
+                    {formatSafeDate(featured.date, "EEEE, MMMM d, yyyy")}
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Clock className="w-4 h-4 text-accent shrink-0" />
-                    {format(new Date(featured.date), "h:mm a")}
+                    {formatSafeDate(featured.date, "h:mm a")}
                     {featured.end_date &&
-                      ` – ${format(new Date(featured.end_date), "h:mm a")}`}
+                      ` – ${formatSafeDate(featured.end_date, "h:mm a")}`}
                   </div>
                   {featured.location && (
                     <div className="flex items-center gap-2.5">
@@ -118,7 +119,7 @@ export default async function EventsPage() {
               <div className="md:col-span-2 min-h-56 relative overflow-hidden flex flex-col items-center justify-center">
                 {featured.image_url ? (
                   <>
-                    <img
+                    <EventImage
                       src={featured.image_url}
                       alt={featured.title}
                       className="absolute inset-0 w-full h-full object-cover"
@@ -126,13 +127,13 @@ export default async function EventsPage() {
                     {/* Date overlay */}
                     <div className="relative z-10 bg-black/50 backdrop-blur-sm rounded-2xl px-8 py-6 text-center">
                       <div className="text-7xl font-serif font-black text-white leading-none">
-                        {format(new Date(featured.date), "dd")}
+                        {formatSafeDate(featured.date, "dd")}
                       </div>
                       <div className="text-xl font-bold text-accent mt-1">
-                        {format(new Date(featured.date), "MMMM yyyy")}
+                        {formatSafeDate(featured.date, "MMMM yyyy")}
                       </div>
                       <div className="mt-1 text-sm text-white/70 font-medium">
-                        {format(new Date(featured.date), "EEEE")}
+                        {formatSafeDate(featured.date, "EEEE")}
                       </div>
                     </div>
                   </>
@@ -140,13 +141,13 @@ export default async function EventsPage() {
                   <div className="bg-gradient-to-br from-accent/15 via-accent/5 to-white w-full h-full flex items-center justify-center p-10">
                     <div className="text-center">
                       <div className="text-8xl font-serif font-black text-primary leading-none">
-                        {format(new Date(featured.date), "dd")}
+                        {formatSafeDate(featured.date, "dd")}
                       </div>
                       <div className="text-2xl font-bold text-accent mt-2">
-                        {format(new Date(featured.date), "MMMM yyyy")}
+                        {formatSafeDate(featured.date, "MMMM yyyy")}
                       </div>
                       <div className="mt-3 text-sm text-primary/50 font-medium">
-                        {format(new Date(featured.date), "EEEE")}
+                        {formatSafeDate(featured.date, "EEEE")}
                       </div>
                     </div>
                   </div>
@@ -197,7 +198,7 @@ export default async function EventsPage() {
                   className="group bg-white rounded-2xl p-5 border border-primary/8 hover:border-accent/30 hover:shadow-md transition-all"
                 >
                   <p className="text-xs text-muted-foreground font-medium">
-                    {format(new Date(event.date), "MMMM d, yyyy")}
+                    {formatSafeDate(event.date, "MMMM d, yyyy")}
                   </p>
                   <h3 className="font-semibold text-primary mt-1.5 line-clamp-2 group-hover:text-accent transition-colors text-sm leading-snug">
                     {event.title}
@@ -240,7 +241,7 @@ function EventCard({
       {/* Image or gradient banner */}
       {event.image_url ? (
         <div className="h-44 overflow-hidden">
-          <img
+          <EventImage
             src={event.image_url}
             alt={event.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -255,10 +256,10 @@ function EventCard({
         <div className="flex items-start gap-4">
           <div className="text-center bg-primary/5 rounded-xl px-3 py-2 min-w-[56px] shrink-0 border border-primary/10">
             <div className="font-serif text-2xl font-black text-primary leading-none">
-              {format(new Date(event.date), "dd")}
+              {formatSafeDate(event.date, "dd")}
             </div>
             <div className="text-[10px] font-bold text-accent uppercase tracking-wide mt-0.5">
-              {format(new Date(event.date), "MMM")}
+              {formatSafeDate(event.date, "MMM")}
             </div>
           </div>
           <h3 className="font-serif text-lg font-bold text-primary group-hover:text-accent transition-colors line-clamp-2 leading-snug pt-1">
@@ -275,9 +276,9 @@ function EventCard({
         <div className="space-y-1.5 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <Clock className="w-3 h-3 shrink-0" />
-            {format(new Date(event.date), "h:mm a")}
+            {formatSafeDate(event.date, "h:mm a")}
             {event.end_date &&
-              ` – ${format(new Date(event.end_date), "h:mm a")}`}
+              ` – ${formatSafeDate(event.end_date, "h:mm a")}`}
           </div>
           {event.location && (
             <div className="flex items-center gap-1.5">
