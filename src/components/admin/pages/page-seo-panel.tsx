@@ -52,7 +52,20 @@ export function PageSeoPanel({
     const result = await submitGoogleIndexing([canonical])
     setIndexing(false)
     if (!result.ok) {
-      toast.error(result.message, { description: result.hint })
+      if (result.needsReauth) {
+        toast.error(result.message, {
+          description: result.hint,
+          action: {
+            label: 'Reconnect Google',
+            onClick: () => {
+              window.location.href = '/api/google/auth?reconnect=1'
+            },
+          },
+          duration: 12000,
+        })
+      } else {
+        toast.error(result.message, { description: result.hint })
+      }
       return
     }
     toast.success(result.message)
@@ -159,8 +172,11 @@ export function PageSeoPanel({
           <h3 className="text-sm font-semibold text-foreground">Google instant indexing</h3>
         </div>
         <p className="text-xs text-muted-foreground">
-          Notify Google to crawl this URL after you publish. Requires Google connected in Settings
-          → Analytics with the Indexing API scope.
+          Notify Google to crawl this URL after you publish. Requires Google connected under{' '}
+          <a href="/admin/analytics?tab=settings" className="font-medium text-primary underline">
+            Admin → Analytics → Settings
+          </a>{' '}
+          with Indexing API scope approved.
         </p>
         <p className="text-xs font-mono text-muted-foreground break-all">{publicUrl}</p>
         <Button

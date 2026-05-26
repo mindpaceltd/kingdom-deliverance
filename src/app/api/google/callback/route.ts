@@ -1,8 +1,28 @@
 import { NextResponse } from 'next/server';
 import { google } from 'googleapis';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
+import { hasGoogleIndexingScope } from '@/lib/google/scopes';
 
 export const dynamic = 'force-dynamic';
+
+async function resolveGrantedScope(
+  oauth2Client: InstanceType<typeof google.auth.OAuth2>,
+  accessToken: string | null | undefined,
+  scopeFromToken?: string | null
+): Promise<string> {
+  if (scopeFromToken?.trim()) return scopeFromToken.trim();
+
+  if (!accessToken) return '';
+
+  try {
+    const info = await oauth2Client.getTokenInfo(accessToken);
+    if (info.scopes?.length) return info.scopes.join(' ');
+  } catch (err) {
+    console.warn('Google tokeninfo scope lookup failed:', err);
+  }
+
+  return '';
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -31,24 +51,38 @@ export async function GET(request: Request) {
 
   try {
     const { tokens } = await oauth2Client.getToken(code);
-    
-    const supabase = createClient();
-    
-    const payload: any = {
+    const scope = await resolveGrantedScope(oauth2Client, tokens.access_token, tokens.scope);
+
+    if (!hasGoogleIndexingScope(scope)) {
+      console.error('Google OAuth completed without indexing scope:', scope);
+      return NextResponse.redirect(
+        `${siteUrl}/admin/analytics?tab=settings&error=missing_indexing_scope`
+      );
+    }
+
+    const payload: {
+      user_id: string;
+      access_token: string | null | undefined;
+      expiry_date: number | null | undefined;
+      scope: string;
+      updated_at: string;
+      refresh_token?: string;
+    } = {
       user_id: state,
       access_token: tokens.access_token,
       expiry_date: tokens.expiry_date,
-      scope: tokens.scope,
+      scope,
       updated_at: new Date().toISOString(),
-    }
+    };
 
     if (tokens.refresh_token) {
-      payload.refresh_token = tokens.refresh_token
+      payload.refresh_token = tokens.refresh_token;
     }
 
-    // Save to DB
-    // We do an upsert so if they reconnect, it updates their tokens
-    const { error } = await supabase.from('users_google_integrations').upsert(payload, { onConflict: 'user_id' });
+    const admin = createAdminClient();
+    const { error } = await admin
+      .from('users_google_integrations')
+      .upsert(payload, { onConflict: 'user_id' });
 
     if (error) {
       console.error('Supabase Google Integration Save Error:', error);

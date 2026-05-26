@@ -9,9 +9,15 @@ interface GoogleConnectionCardProps {
   isConnected: boolean
   userEmail?: string | null
   onDisconnect: () => void
+  needsIndexingScope?: boolean
 }
 
-export function GoogleConnectionCard({ isConnected, userEmail, onDisconnect }: GoogleConnectionCardProps) {
+export function GoogleConnectionCard({
+  isConnected,
+  userEmail,
+  onDisconnect,
+  needsIndexingScope = false,
+}: GoogleConnectionCardProps) {
   const [disconnecting, setDisconnecting] = React.useState(false)
 
   async function handleDisconnect() {
@@ -70,18 +76,32 @@ export function GoogleConnectionCard({ isConnected, userEmail, onDisconnect }: G
             </div>
           </div>
 
-          <div className="shrink-0">
+          <div className="shrink-0 flex flex-wrap gap-2">
             {isConnected ? (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleDisconnect} 
-                disabled={disconnecting}
-                className="rounded-xl border-gray-200 hover:bg-destructive/5 hover:text-destructive hover:border-destructive/20 transition-all gap-2"
-              >
-                <LogOut className="size-3.5" />
-                {disconnecting ? "Disconnecting..." : "Disconnect"}
-              </Button>
+              <>
+                {needsIndexingScope && (
+                  <Button
+                    size="sm"
+                    className="rounded-xl gap-2"
+                    onClick={() => {
+                      window.location.href = '/api/google/auth?reconnect=1'
+                    }}
+                  >
+                    <LogIn className="size-3.5" />
+                    Reconnect for indexing
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDisconnect}
+                  disabled={disconnecting}
+                  className="rounded-xl border-gray-200 hover:bg-destructive/5 hover:text-destructive hover:border-destructive/20 transition-all gap-2"
+                >
+                  <LogOut className="size-3.5" />
+                  {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+                </Button>
+              </>
             ) : (
               <Button 
                 onClick={() => window.location.href = '/api/google/auth'}

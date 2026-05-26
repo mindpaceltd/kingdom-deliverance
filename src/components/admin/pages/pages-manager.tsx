@@ -51,7 +51,20 @@ export function PagesManager({ initialPages }: PagesManagerProps) {
     const result = await submitGoogleIndexing([url])
     setIndexingId(null)
     if (!result.ok) {
-      toast.error(result.message, { description: result.hint })
+      if (result.needsReauth) {
+        toast.error(result.message, {
+          description: result.hint,
+          action: {
+            label: 'Reconnect Google',
+            onClick: () => {
+              window.location.href = '/api/google/auth?reconnect=1'
+            },
+          },
+          duration: 12000,
+        })
+      } else {
+        toast.error(result.message, { description: result.hint })
+      }
       return
     }
     toast.success(result.message)

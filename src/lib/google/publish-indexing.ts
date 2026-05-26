@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getAuthedGoogleClient } from '@/lib/google/client'
 import { hasGoogleIndexingScope } from '@/lib/google/scopes'
+import { GOOGLE_ANALYTICS_SETTINGS_PATH, GOOGLE_RECONNECT_AUTH_PATH } from '@/lib/google/reconnect'
 import { alignUrlToSiteOrigin, siteUrlToOrigin } from '@/lib/seo/public-content-urls'
 
 export type IndexingResultItem = {
@@ -59,8 +60,8 @@ export async function publishUrlsToGoogleIndexing(
       results: [],
       needsReauth: true,
       error:
-        'Google Indexing permission missing. Disconnect and reconnect Google in Admin → Analytics → Settings.',
-      hint: 'Reconnecting grants the Indexing API scope required for URL submissions.',
+        'Google Indexing permission missing. Reconnect Google to approve URL indexing access.',
+      hint: `Open ${GOOGLE_ANALYTICS_SETTINGS_PATH}, click Reconnect Google (or visit ${GOOGLE_RECONNECT_AUTH_PATH}), and approve all permissions. In Google Cloud Console, enable the Indexing API and add its scope to your OAuth consent screen.`,
     }
   }
 

@@ -13,9 +13,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const requestUrl = new URL(request.url);
+  const reconnect = requestUrl.searchParams.get('reconnect') === '1';
+
+  if (reconnect) {
+    await supabase.from('users_google_integrations').delete().eq('user_id', user.id);
+  }
+
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const requestUrl = new URL(request.url);
   const siteUrl = `${requestUrl.protocol}//${requestUrl.host}`;
 
   if (!clientId || !clientSecret) {

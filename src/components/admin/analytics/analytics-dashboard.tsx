@@ -31,6 +31,8 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
   missing_credentials: 'Google OAuth is not configured on the server. Contact your developer.',
   db_save_failed: 'Connected to Google but failed to save tokens. Try again.',
   auth_failed: 'Google authentication failed. Check your account permissions and try again.',
+  missing_indexing_scope:
+    'Google connected without URL Indexing permission. Click Reconnect Google on this page, approve all checkboxes, and ensure the Indexing API is enabled in your Google Cloud project.',
 }
 
 function parseTab(value: string | null): AnalyticsTab {
@@ -914,6 +916,7 @@ export function AnalyticsDashboard() {
                   isConnected={isGoogleConnected}
                   userEmail={googleUserEmail}
                   onDisconnect={handleDisconnect}
+                  needsIndexingScope={isGoogleConnected && !hasIndexingScope}
                 />
                 {isGoogleConnected && !hasIndexingScope && (
                   <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
@@ -924,8 +927,8 @@ export function AnalyticsDashboard() {
                       and approve all permissions. Also enable the Indexing API in your Google Cloud project.
                     </p>
                     <a
-                      href="/api/google/auth"
-                      className="mt-3 inline-flex text-sm font-semibold text-amber-950 underline"
+                      href="/api/google/auth?reconnect=1"
+                      className="mt-3 inline-flex rounded-lg bg-amber-900 px-4 py-2 text-sm font-semibold text-amber-50 hover:bg-amber-950"
                     >
                       Reconnect Google now
                     </a>
