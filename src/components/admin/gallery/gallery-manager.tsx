@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { UploadZone } from '@/components/admin/upload-zone'
+import { GalleryBulkUpload } from '@/components/admin/gallery/gallery-bulk-upload'
 import {
   Sheet,
   SheetContent,
@@ -21,7 +21,7 @@ import {
   updateGalleryItem,
 } from '@/lib/actions/gallery'
 import { GalleryCaptionOverlay } from '@/components/gallery/gallery-caption-overlay'
-import { resolveGalleryCaption, titleFromFilename } from '@/lib/gallery-caption'
+import { resolveGalleryCaption } from '@/lib/gallery-caption'
 import { createClient } from '@/lib/supabase/client'
 import type { GalleryItem } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -34,7 +34,6 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
   const [items, setItems] = React.useState<GalleryItem[]>(initialItems)
   const [showUpload, setShowUpload] = React.useState(false)
   const [reordering, setReordering] = React.useState(false)
-  const [saving, setSaving] = React.useState(false)
   const [selectedItem, setSelectedItem] = React.useState<GalleryItem | null>(null)
   
   // Edit state
@@ -66,25 +65,6 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
       .order('display_order', { ascending: true })
     if (data) setItems(data as GalleryItem[])
   }, [])
-
-  async function handleBulkUpload(
-    uploaded: { url: string; filename: string }[]
-  ) {
-    if (uploaded.length === 0) return
-    setSaving(true)
-    const entries = uploaded.map(({ url, filename }) => ({
-      url,
-      title: titleFromFilename(filename),
-    }))
-    const result = await createGalleryItemsBulk(entries, 'General')
-    setSaving(false)
-    if ('error' in result) {
-      alert(result.error)
-      return
-    }
-    await refreshItems()
-    setShowUpload(false)
-  }
 
   async function handleDelete() {
     if (!selectedItem || !window.confirm(`Permanently delete this gallery image?`)) return
@@ -156,16 +136,12 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
           <p className="mb-4 text-sm font-medium">
             Bulk upload — select or drag many images at once. They are added to the &quot;General&quot; album.
           </p>
-          <UploadZone
-            accept="image/*"
-            onBatchComplete={handleBulkUpload}
-            hint="Select multiple images (Cmd/Ctrl+click or Shift+click) — max 50 MB each."
+          <GalleryBulkUpload
+            onComplete={async () => {
+              await refreshItems()
+              setShowUpload(false)
+            }}
           />
-          {saving && (
-            <p className="mt-3 text-xs font-medium text-primary animate-pulse">
-              Saving gallery images…
-            </p>
-          )}
         </div>
       )}
 
