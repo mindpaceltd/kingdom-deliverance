@@ -34,33 +34,9 @@ export default function TestimoniesPage() {
 
       // 1. Upload File if present
       if (file) {
-        // Get presigned URL
-        const presignRes = await fetch('/api/admin/storage/presign', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            filename: file.name,
-            contentType: file.type || 'application/octet-stream',
-            bucket: 'media',
-            isTestimony: true,
-          }),
-        });
-        
-        const presignData = await presignRes.json();
-        if (!presignRes.ok) throw new Error(presignData.error || 'Failed to initialize upload.');
-
-        // Upload directly to R2
-        const uploadRes = await fetch(presignData.uploadUrl, {
-          method: 'PUT',
-          body: file,
-          headers: {
-            'Content-Type': file.type || 'application/octet-stream',
-          },
-        });
-        
-        if (!uploadRes.ok) throw new Error('Failed to upload media to server.');
-          
-        mediaUrl = presignData.publicUrl;
+        const { uploadFileViaApi } = await import('@/lib/storage/client-upload')
+        const result = await uploadFileViaApi(file, { isTestimony: true })
+        mediaUrl = result.publicUrl
       }
 
       // 2. Insert into DB

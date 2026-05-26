@@ -161,47 +161,21 @@ function MediaPickerModal({
           ? 'video'
           : 'document'
 
-    setUploadState({ status: 'uploading', filename: file.name, progress: 30 })
+    setUploadState({ status: 'uploading', filename: file.name, progress: 40 })
 
-    // Step 1: Get Presigned URL
-    let presignData
+    let publicUrl: string
     try {
-      const presignRes = await fetch('/api/admin/storage/presign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type || 'application/octet-stream',
-          bucket: 'media',
-        }),
-      })
-      presignData = await presignRes.json()
-      if (!presignRes.ok) throw new Error(presignData.error || 'Failed to get upload URL')
-    } catch (e: any) {
-      setUploadState({ status: 'error', message: e.message })
-      return
-    }
-
-    // Step 2: Direct PUT to Cloudflare R2
-    setUploadState({ status: 'uploading', filename: file.name, progress: 50 })
-    try {
-      const uploadRes = await fetch(presignData.uploadUrl, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type || 'application/octet-stream',
-        },
-      })
-      if (!uploadRes.ok) throw new Error(`R2 Upload failed: HTTP ${uploadRes.status}`)
-    } catch (e: any) {
-      console.error('[upload] R2 error:', e)
-      setUploadState({ status: 'error', message: `Storage upload failed: ${e.message}` })
+      const { uploadFileViaApi } = await import('@/lib/storage/client-upload')
+      const result = await uploadFileViaApi(file, { bucket: 'media' })
+      publicUrl = result.publicUrl
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Storage upload failed'
+      console.error('[upload] R2 error:', message)
+      setUploadState({ status: 'error', message })
       return
     }
 
     setUploadState({ status: 'uploading', filename: file.name, progress: 80 })
-
-    const publicUrl = presignData.publicUrl
 
     // Use API route directly — more reliable than server action in production
     let recordError: string | null = null

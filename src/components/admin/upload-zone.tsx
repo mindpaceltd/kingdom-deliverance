@@ -90,22 +90,13 @@ export function UploadZone({
         )
       )
 
-      // 1. Get Presigned URL
-      let presignData
+      let publicUrl: string
       try {
-        const presignRes = await fetch('/api/admin/storage/presign', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            filename: file.name,
-            contentType: file.type || 'application/octet-stream',
-            bucket: 'media',
-          }),
-        })
-        presignData = await presignRes.json()
-        if (!presignRes.ok) throw new Error(presignData.error || 'Failed to get upload URL')
-      } catch (e: any) {
-        const msg = e.message
+        const { uploadFileViaApi } = await import('@/lib/storage/client-upload')
+        const result = await uploadFileViaApi(file, { bucket: 'media' })
+        publicUrl = result.publicUrl
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : 'Cloudflare R2 upload failed'
         setUploads((prev) =>
           prev.map((u, i) =>
             i === index ? { ...u, status: 'error', error: msg } : u
@@ -114,29 +105,6 @@ export function UploadZone({
         onUploadError?.(msg)
         return
       }
-
-      // 2. Direct PUT to Cloudflare R2
-      try {
-        const uploadRes = await fetch(presignData.uploadUrl, {
-          method: 'PUT',
-          body: file,
-          headers: {
-            'Content-Type': file.type || 'application/octet-stream',
-          },
-        })
-        if (!uploadRes.ok) throw new Error(`R2 Upload failed: HTTP ${uploadRes.status}`)
-      } catch (e: any) {
-        const msg = `Cloudflare R2 Upload failed: ${e.message}`
-        setUploads((prev) =>
-          prev.map((u, i) =>
-            i === index ? { ...u, status: 'error', error: msg } : u
-          )
-        )
-        onUploadError?.(msg)
-        return
-      }
-
-      const publicUrl = presignData.publicUrl
 
       // 3. Create media record in DB
       const result = await createMediaRecord({

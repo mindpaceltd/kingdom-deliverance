@@ -1,5 +1,5 @@
 // scripts/configure-r2-cors.ts
-// Run with: npx ts-node scripts/configure-r2-cors.ts
+// Run with: npx tsx scripts/configure-r2-cors.ts
 
 import { S3Client, PutBucketCorsCommand } from '@aws-sdk/client-s3'
 import * as dotenv from 'dotenv'
@@ -16,30 +16,48 @@ const r2Client = new S3Client({
   forcePathStyle: true,
 })
 
-async function run() {
-  const buckets = ['media', process.env.R2_BUCKET_NAME || 'kdc-media-storage']
-  console.log('Starting R2 CORS configuration for buckets:', buckets)
+const ALLOWED_ORIGINS = [
+  'https://kdcuganda.org',
+  'https://www.kdcuganda.org',
+  'http://localhost:3000',
+  'http://localhost:3005',
+  'http://127.0.0.1:3000',
+]
 
-  for (const bucket of buckets) {
+async function run() {
+  const buckets = [
+    process.env.R2_PUBLIC_BUCKET_NAME || 'kdc-media-public',
+    process.env.R2_BUCKET_NAME || 'kdc-media-storage',
+    'media',
+    'kdc-media',
+  ]
+
+  const uniqueBuckets = [...new Set(buckets)]
+  console.log('Configuring R2 CORS for buckets:', uniqueBuckets)
+  console.log('Allowed origins:', ALLOWED_ORIGINS)
+
+  for (const bucket of uniqueBuckets) {
     try {
-      await r2Client.send(new PutBucketCorsCommand({
-        Bucket: bucket,
-        CORSConfiguration: {
-          CORSRules: [
-            {
-              AllowedHeaders: ["*"],
-              AllowedMethods: ["GET", "PUT", "POST", "DELETE", "HEAD"],
-              AllowedOrigins: ["*"], // Allow uploads from both local dev and custom production domains
-              ExposeHeaders: ["ETag"],
-              MaxAgeSeconds: 3000
-            }
-          ]
-        }
-      }))
-      console.log(`[Success] Configured CORS policy on Cloudflare R2 bucket: "${bucket}"`)
-    } catch (err: any) {
-      console.error(`[Error] Failed to configure CORS for bucket "${bucket}":`, err.message)
-      console.log('Make sure your R2 Access Key has Admin/Write permissions, and the bucket exists in Cloudflare.')
+      await r2Client.send(
+        new PutBucketCorsCommand({
+          Bucket: bucket,
+          CORSConfiguration: {
+            CORSRules: [
+              {
+                AllowedHeaders: ['*'],
+                AllowedMethods: ['GET', 'PUT', 'POST', 'DELETE', 'HEAD'],
+                AllowedOrigins: ALLOWED_ORIGINS,
+                ExposeHeaders: ['ETag'],
+                MaxAgeSeconds: 3600,
+              },
+            ],
+          },
+        })
+      )
+      console.log(`[Success] CORS configured on bucket: "${bucket}"`)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error(`[Error] Failed for bucket "${bucket}":`, message)
     }
   }
 }

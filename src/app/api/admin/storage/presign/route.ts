@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getPresignedUploadUrl } from '@/lib/services/r2-storage'
+import { buildUploadKey, resolveUploadBucket } from '@/lib/storage/r2-upload-params'
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,32 +19,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing filename or contentType' }, { status: 400 })
     }
 
-    const isWebFacingMedia =
-      contentType.startsWith('image/') ||
-      contentType.startsWith('video/') ||
-      isTestimony
-
-    // Public site assets must land in the public R2 bucket so r2.dev URLs work
-    const bucket = (passedBucket && passedBucket !== 'media')
-      ? passedBucket
-      : isWebFacingMedia
-        ? (process.env.R2_PUBLIC_BUCKET_NAME || 'kdc-media-public')
-        : (process.env.R2_BUCKET_NAME || 'kdc-media-storage')
-
-    // Determine path based on type
-    let prefix = 'uploads'
-    if (contentType.startsWith('image/')) prefix = 'images'
-    if (contentType.startsWith('video/')) prefix = 'videos'
-    if (contentType.startsWith('audio/')) prefix = 'audio'
-    if (passedBucket && passedBucket !== 'media') prefix = passedBucket // e.g. organization-images
-    
-    // Force prefix for public testimony uploads
-    if (isTestimony) {
-      prefix = 'testimonies'
-    }
-
-    const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, '_')
-    const key = `${prefix}/${Date.now()}-${safeName}`
+    const bucket = resolveUploadBucket(contentType, passedBucket, isTestimony)
+    const key = buildUploadKey(filename, contentType, passedBucket, isTestimony)
 
     // Get Presigned URL valid for 1 hour (3600 seconds)
     const result = await getPresignedUploadUrl(key, contentType, 3600, bucket)
