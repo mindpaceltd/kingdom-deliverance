@@ -4,6 +4,7 @@ import * as React from 'react'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { GalleryImage } from '@/components/content/gallery-image'
 import { GalleryCaptionOverlay } from '@/components/gallery/gallery-caption-overlay'
+import { GalleryLightboxImage } from '@/components/gallery/gallery-lightbox-image'
 import { cn } from '@/lib/utils'
 
 export interface GalleryGridItem {
@@ -31,9 +32,13 @@ interface GalleryLightboxGridProps {
 export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
   const shuffled = React.useMemo(() => shuffle(items), [items])
   const [openIndex, setOpenIndex] = React.useState<number | null>(null)
+  const thumbRefs = React.useRef<(HTMLButtonElement | null)[]>([])
 
   const total = shuffled.length
-  const current = openIndex !== null ? shuffled[openIndex] : null
+  const current =
+    openIndex !== null && openIndex >= 0 && openIndex < total
+      ? shuffled[openIndex]
+      : null
 
   const go = React.useCallback(
     (delta: number) => {
@@ -60,17 +65,13 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
     }
   }, [openIndex, go])
 
-  if (total === 0) return null
+  React.useEffect(() => {
+    if (openIndex === null) return
+    const el = thumbRefs.current[openIndex]
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+  }, [openIndex])
 
-  const thumbStrip =
-    total > 1
-      ? Array.from({ length: Math.min(total, 7) }, (_, i) => {
-          const offset = i - Math.floor(Math.min(total, 7) / 2)
-          return (openIndex! + offset + total) % total
-        })
-      : openIndex !== null
-        ? [openIndex]
-        : []
+  if (total === 0) return null
 
   return (
     <>
@@ -132,12 +133,11 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
             )}
 
             <div className="flex max-h-[50vh] w-full max-w-5xl items-center justify-center sm:max-h-[58vh] md:max-h-[62vh]">
-              <GalleryImage
-                key={current.id}
-                src={current.image_url}
+              <GalleryLightboxImage
+                key={`${current.id}-${current.image_url}`}
+                imageUrl={current.image_url}
                 alt={current.caption}
                 className="max-h-[50vh] max-w-full object-contain sm:max-h-[58vh] md:max-h-[62vh]"
-                fallbackClassName="flex h-40 w-40 items-center justify-center rounded-lg bg-white/10 sm:h-48 sm:w-48"
               />
             </div>
 
@@ -165,25 +165,30 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
               )}
           </div>
 
-          {thumbStrip.length > 0 && (
+          {total > 0 && (
             <div className="shrink-0 overflow-x-auto border-t border-white/10 px-3 py-3 sm:px-4">
               <div className="flex min-w-min items-center justify-center gap-2">
-                {thumbStrip.map((idx) => {
-                  const item = shuffled[idx]
+                {shuffled.map((item, idx) => {
                   const isActive = idx === openIndex
                   return (
                     <button
-                      key={`${item.id}-${idx}`}
+                      key={item.id}
+                      ref={(el) => {
+                        thumbRefs.current[idx] = el
+                      }}
                       type="button"
                       onClick={() => setOpenIndex(idx)}
+                      aria-label={`View ${item.caption}`}
+                      aria-current={isActive ? 'true' : undefined}
                       className={cn(
                         'relative shrink-0 overflow-hidden rounded-md border-2 transition-all',
                         isActive
-                          ? 'h-16 w-24 border-accent sm:h-20 sm:w-28'
+                          ? 'h-16 w-24 border-accent ring-2 ring-accent/50 sm:h-20 sm:w-28'
                           : 'h-12 w-16 border-white/25 opacity-80 hover:opacity-100 sm:h-14 sm:w-20'
                       )}
                     >
                       <GalleryImage
+                        key={`thumb-${item.id}`}
                         src={item.image_url}
                         alt={item.caption}
                         className="h-full w-full object-cover"

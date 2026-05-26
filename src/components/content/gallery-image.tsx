@@ -22,7 +22,15 @@ export function GalleryImage({
   const [imgSrc, setImgSrc] = useState(normalized)
   const [failed, setFailed] = useState(!normalized)
 
-  if (!normalized || failed) {
+  useEffect(() => {
+    const next = normalizeMediaUrl(src)
+    setImgSrc(next)
+    setFailed(!next)
+  }, [src])
+
+  const activeUrl = normalizeMediaUrl(src)
+
+  if (!activeUrl || failed) {
     return (
       <div className={fallbackClassName}>
         <ImageIcon className="h-10 w-10 text-primary/25" />
@@ -32,12 +40,13 @@ export function GalleryImage({
 
   return (
     <img
-      src={imgSrc || undefined}
+      src={imgSrc || activeUrl || undefined}
       alt={alt}
       className={className}
       onError={() => {
         if (proxyUrl && imgSrc !== proxyUrl) {
           setImgSrc(proxyUrl)
+          setFailed(false)
         } else {
           setFailed(true)
         }
