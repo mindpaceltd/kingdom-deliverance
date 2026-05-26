@@ -75,18 +75,18 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
+      <div className="columns-2 gap-3 sm:columns-3 md:columns-4 lg:columns-5 [column-gap:0.75rem]">
         {shuffled.map((item, index) => (
           <button
             key={item.id}
             type="button"
             onClick={() => setOpenIndex(index)}
-            className="relative aspect-[4/3] w-full min-w-0 overflow-hidden rounded-lg border border-primary/10 bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="group relative mb-3 block w-full break-inside-avoid overflow-hidden rounded-xl border border-primary/10 bg-muted shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             <GalleryImage
               src={item.image_url}
               alt={item.caption}
-              className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+              className="h-auto w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
             />
             <GalleryCaptionOverlay caption={item.caption} />
           </button>

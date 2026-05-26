@@ -56,11 +56,7 @@ export default async function GalleryPage() {
               </p>
             </div>
           ) : (
-            <>
-              <p className="mb-6 text-center text-sm text-primary/60">
-                Tap any photo to view full size — use arrows to browse. Order shuffles on each visit.
-              </p>
-              <GalleryLightboxGrid
+            <GalleryLightboxGrid
                 items={items.map((item) => {
                   const albumLabel = formatAlbum(item.album);
                   const caption = resolveGalleryCaption({
@@ -79,7 +75,6 @@ export default async function GalleryPage() {
                   };
                 })}
               />
-            </>
           )}
         </div>
       </section>
