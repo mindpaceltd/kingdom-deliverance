@@ -33,6 +33,16 @@ export type PublicContentKind =
   | 'ministry'
   | 'product'
 
+/** Public URL for a CMS-managed static page (home → site root). */
+export function buildPublicPageUrl(slug: string, origin?: string): string {
+  const base = (origin ?? getDefaultPublicOrigin()).replace(/\/$/, '')
+  const normalized = slug.trim().toLowerCase()
+  if (!normalized || normalized === 'home' || normalized === '/') {
+    return `${base}/`
+  }
+  return `${base}/${normalized.replace(/^\/+/, '')}`
+}
+
 export function buildPublicContentUrl(
   kind: PublicContentKind,
   slug: string,

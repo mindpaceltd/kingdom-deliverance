@@ -3,7 +3,9 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { PlusIcon, PencilIcon, RefreshCw, FileStack } from 'lucide-react'
+import { PlusIcon, PencilIcon, RefreshCw, FileStack, Radar } from 'lucide-react'
+import { buildPublicPageUrl } from '@/lib/seo/public-content-urls'
+import { submitGoogleIndexing } from '@/lib/seo/submit-google-indexing-client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StatusBadge } from '@/components/admin/status-badge'
@@ -27,10 +29,32 @@ export function PagesManager({ initialPages }: PagesManagerProps) {
   const [search, setSearch] = React.useState('')
   const [filter, setFilter] = React.useState<'all' | 'system' | 'custom'>('all')
   const [syncing, setSyncing] = React.useState(false)
+  const [indexingId, setIndexingId] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     setPages(initialPages)
   }, [initialPages])
+
+  async function handleIndexPage(page: CmsPage) {
+    const content = parsePageContent(page.content_json)
+    if (page.status !== 'published') {
+      toast.error('Publish the page before submitting to Google.')
+      return
+    }
+    if (content.seo?.noIndex) {
+      toast.error('Page is set to noindex.')
+      return
+    }
+    setIndexingId(page.id)
+    const url = content.seo?.canonicalUrl?.trim() || buildPublicPageUrl(page.slug)
+    const result = await submitGoogleIndexing([url])
+    setIndexingId(null)
+    if (!result.ok) {
+      toast.error(result.message, { description: result.hint })
+      return
+    }
+    toast.success(result.message)
+  }
 
   async function handleSyncSystemPages() {
     setSyncing(true)
@@ -109,14 +133,32 @@ export function PagesManager({ initialPages }: PagesManagerProps) {
     {
       key: 'actions',
       header: '',
-      className: 'w-[80px]',
-      cell: (p) => (
-        <Button variant="ghost" size="icon-sm" asChild>
-          <Link href={`/admin/pages/${p.id}`}>
-            <PencilIcon className="size-3.5" />
-          </Link>
-        </Button>
-      ),
+      className: 'w-[100px]',
+      cell: (p) => {
+        const content = parsePageContent(p.content_json)
+        const canIndex = p.status === 'published' && !content.seo?.noIndex
+        return (
+          <div className="flex items-center justify-end gap-0.5">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              title="Submit to Google for indexing"
+              disabled={!canIndex || indexingId === p.id}
+              onClick={() => void handleIndexPage(p)}
+            >
+              <Radar
+                className={`size-3.5 ${indexingId === p.id ? 'animate-pulse text-primary' : ''}`}
+              />
+            </Button>
+            <Button variant="ghost" size="icon-sm" asChild>
+              <Link href={`/admin/pages/${p.id}`}>
+                <PencilIcon className="size-3.5" />
+              </Link>
+            </Button>
+          </div>
+        )
+      },
     },
   ]
 
@@ -132,8 +174,8 @@ export function PagesManager({ initialPages }: PagesManagerProps) {
             Pages
           </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-xl">
-            WordPress-style page manager for your public site. Edit heroes, body copy, and SEO
-            here first — front-end display will be connected in a later step.
+            Manage heroes, full SEO, sized images, and Google indexing for every public page.
+            Front-end rendering from CMS is still being connected.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

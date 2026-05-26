@@ -18,8 +18,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { SlugInput } from '@/components/admin/slug-input'
-import { SeoPanel } from '@/components/admin/posts/seo-panel'
-import { MediaPicker } from '@/components/admin/media-picker'
+import { CmsSizedImageField } from '@/components/admin/pages/cms-sized-image-field'
+import { PageSeoPanel, indexCmsPageUrl } from '@/components/admin/pages/page-seo-panel'
+import {
+  BODY_IMAGE_SPEC,
+  getPageHeroImageSpec,
+} from '@/lib/cms/page-image-specs'
+import { buildPublicPageUrl } from '@/lib/seo/public-content-urls'
 import { createPage, updatePageFromEditor } from '@/lib/actions/pages'
 import {
   buildContentJson,
@@ -65,6 +70,8 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
 
   const isSystem = content.isSystem === true
   const publicPath = pagePathFromSlug(slug === 'home' ? '' : slug)
+  const publicUrl = buildPublicPageUrl(slug === 'home' ? 'home' : slug)
+  const heroImageSpec = getPageHeroImageSpec(content.pageType)
 
   function patchContent(patch: Partial<CmsPageContent>) {
     setContent((prev) => ({ ...prev, ...patch }))
@@ -126,6 +133,15 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
     }
 
     toast.success(isEdit ? 'Page saved' : 'Page created')
+
+    if (status === 'published' && !content.seo?.noIndex) {
+      const savedSlug = slug === 'home' ? 'home' : slug
+      await indexCmsPageUrl(
+        buildPublicPageUrl(savedSlug),
+        content.seo?.canonicalUrl?.trim()
+      )
+    }
+
     if (!isEdit && 'id' in result) {
       router.push(`/admin/pages/${result.id}`)
     } else {
@@ -232,13 +248,13 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
                   disabled={saving}
                 />
               </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label>Hero background image</Label>
-                <MediaPicker
+              <div className="sm:col-span-2">
+                <CmsSizedImageField
+                  spec={heroImageSpec}
                   value={hero.imageUrl ?? ''}
-                  onSelect={(url) => patchHero({ imageUrl: url })}
-                  accept="image"
-                  label="Hero image"
+                  onChange={(url) => patchHero({ imageUrl: url })}
+                  disabled={saving}
+                  pickerLabel="Hero background"
                 />
               </div>
             </div>
@@ -345,7 +361,12 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
 
           {!['contact', 'give'].includes(content.pageType) && (
             <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
-              <h2 className="text-lg font-semibold">Main content</h2>
+              <div>
+                <h2 className="text-lg font-semibold">Main content</h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {BODY_IMAGE_SPEC.label}: {BODY_IMAGE_SPEC.width}px+ wide — {BODY_IMAGE_SPEC.hint}
+                </p>
+              </div>
               <RichTextEditor
                 value={content.bodyHtml ?? ''}
                 onChange={(html) => patchContent({ bodyHtml: html })}
@@ -368,8 +389,8 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
             </div>
             <p className="text-xs text-muted-foreground">
               {status === 'published'
-                ? 'Marked published in CMS (not yet live on site).'
-                : 'Draft — hidden until you publish and connect the front-end.'}
+                ? 'Published in CMS. Saving submits the public URL to Google for indexing (unless noindex).'
+                : 'Draft — publish to enable Google indexing.'}
             </p>
             <Button type="submit" className="w-full" disabled={saving}>
               {saving ? (
@@ -383,17 +404,15 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
             </Button>
           </div>
 
-          <SeoPanel
-            focusKeyword={seo.focusKeyword ?? ''}
-            seoTitle={seo.metaTitle ?? title}
-            metaDescription={seo.metaDescription ?? ''}
-            content={content.bodyHtml ?? ''}
+          <PageSeoPanel
+            seo={seo}
+            title={title}
             slug={slug}
-            featuredImage={hero.imageUrl ?? ''}
-            publicUrl={`https://kdcuganda.org${publicPath}`}
-            onFocusKeywordChange={(v) => patchSeo({ focusKeyword: v })}
-            onSeoTitleChange={(v) => patchSeo({ metaTitle: v })}
-            onMetaDescriptionChange={(v) => patchSeo({ metaDescription: v })}
+            bodyHtml={content.bodyHtml ?? ''}
+            heroImageUrl={hero.imageUrl ?? ''}
+            publicUrl={publicUrl}
+            isPublished={status === 'published'}
+            onChange={(patch) => patchSeo(patch)}
             disabled={saving}
           />
         </div>

@@ -31,6 +31,15 @@ export interface CmsPageSeo {
   metaTitle?: string
   metaDescription?: string
   focusKeyword?: string
+  /** Open Graph title (defaults to meta title on front-end) */
+  ogTitle?: string
+  ogDescription?: string
+  /** 1200×630 recommended — separate from hero background */
+  ogImageUrl?: string
+  /** Override canonical URL; empty = default public path */
+  canonicalUrl?: string
+  /** When true, ask search engines not to index this page */
+  noIndex?: boolean
 }
 
 export interface CmsPageContent {
@@ -62,7 +71,7 @@ export function parsePageContent(raw: unknown): CmsPageContent {
     hero: o.hero as CmsPageHero | undefined,
     excerpt: typeof o.excerpt === 'string' ? o.excerpt : undefined,
     bodyHtml: typeof o.bodyHtml === 'string' ? o.bodyHtml : undefined,
-    seo: o.seo as CmsPageSeo | undefined,
+    seo: parsePageSeo(o.seo),
     missionTitle: typeof o.missionTitle === 'string' ? o.missionTitle : undefined,
     missionHtml: typeof o.missionHtml === 'string' ? o.missionHtml : undefined,
     contactIntroHtml:
@@ -74,6 +83,21 @@ export function parsePageContent(raw: unknown): CmsPageContent {
     ctaUrl: typeof o.ctaUrl === 'string' ? o.ctaUrl : undefined,
     isSystem: Boolean(o.isSystem),
   }
+}
+
+function parsePageSeo(raw: unknown): CmsPageSeo | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  const s = raw as Record<string, unknown>
+  const seo: CmsPageSeo = {}
+  if (typeof s.metaTitle === 'string') seo.metaTitle = s.metaTitle
+  if (typeof s.metaDescription === 'string') seo.metaDescription = s.metaDescription
+  if (typeof s.focusKeyword === 'string') seo.focusKeyword = s.focusKeyword
+  if (typeof s.ogTitle === 'string') seo.ogTitle = s.ogTitle
+  if (typeof s.ogDescription === 'string') seo.ogDescription = s.ogDescription
+  if (typeof s.ogImageUrl === 'string') seo.ogImageUrl = s.ogImageUrl
+  if (typeof s.canonicalUrl === 'string') seo.canonicalUrl = s.canonicalUrl
+  if (typeof s.noIndex === 'boolean') seo.noIndex = s.noIndex
+  return Object.keys(seo).length > 0 ? seo : undefined
 }
 
 export function buildContentJson(content: CmsPageContent): Record<string, unknown> {
