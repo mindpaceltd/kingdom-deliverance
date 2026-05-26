@@ -77,3 +77,51 @@ export async function getEventsHeroUrl(
 
   return DEFAULT_ABOUT_HERO_URL
 }
+
+const HERO_TYPES_BLOG = ['church_building', 'leadership'] as const
+
+/**
+ * Blog listing hero: featured post image, then org photos, then worship fallback.
+ */
+export async function getBlogHeroUrl(
+  featuredImage?: string | null
+): Promise<string> {
+  const fromPost = normalizeMediaUrl(featuredImage)
+  if (fromPost) return fromPost
+
+  try {
+    const supabase = createClient()
+    const { data: topPost } = await supabase
+      .from('posts')
+      .select('featured_image')
+      .eq('status', 'published')
+      .not('featured_image', 'is', null)
+      .order('published_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    const fromLatest = normalizeMediaUrl(topPost?.featured_image)
+    if (fromLatest) return fromLatest
+
+    for (const type of HERO_TYPES_BLOG) {
+      const { data, error } = await supabase
+        .from('organization_images')
+        .select('url')
+        .eq('type', type)
+        .eq('is_active', true)
+        .maybeSingle()
+
+      if (error) {
+        console.error(`[getBlogHeroUrl] ${type} fetch failed:`, error.message)
+        continue
+      }
+
+      const normalized = normalizeMediaUrl(data?.url)
+      if (normalized) return normalized
+    }
+  } catch (err) {
+    console.error('[getBlogHeroUrl] Unexpected error:', err)
+  }
+
+  return DEFAULT_ABOUT_HERO_URL
+}

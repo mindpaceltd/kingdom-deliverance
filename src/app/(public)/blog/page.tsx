@@ -4,6 +4,7 @@ import Image from "next/image";
 import { format } from "date-fns";
 import { ArrowRight, BookOpen, Search, Clock, Send } from "lucide-react";
 import type { Metadata } from "next";
+import { getBlogHeroUrl } from "@/lib/seo/page-hero";
 
 export const metadata: Metadata = {
   title: "Blog & News | Kingdom Deliverance Centre Uganda",
@@ -92,20 +93,21 @@ export default async function BlogPage({ searchParams }: Props) {
 
   const tags = ["Faith", "Prayer", "Prophecy", "Deliverance", "Healing", "Miracles", "Kingdom", "Bible", "Wisdom", "Leadership"];
 
+  const heroUrl = await getBlogHeroUrl(featured?.featured_image);
+
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
       {/* ------------------------------------------------------------------ */}
       {/* HERO SECTION                                                        */}
       {/* ------------------------------------------------------------------ */}
-      <section className="relative py-24 md:py-0 md:h-[450px] flex items-center overflow-hidden">
-        <Image
-          src="https://images.unsplash.com/photo-1504052434569-70ad5836ab65?auto=format&fit=crop&q=80"
-          alt="Hero Background"
-          fill
-          className="object-cover"
-          priority
+      <section className="relative flex min-h-[320px] items-center overflow-hidden py-24 md:h-[450px] md:py-0">
+        <div
+          className="absolute inset-0 scale-105 bg-cover bg-center"
+          style={{ backgroundImage: `url('${heroUrl}')` }}
+          role="img"
+          aria-label="Blog hero background"
         />
-        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0d1b3e]/90 via-[#0d1b3e]/75 to-[#0d1b3e]/95" />
         <div className="container relative z-10 px-4 max-w-7xl mx-auto text-white text-center">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 text-[#eab308]">Blog & News</h1>
           <p className="text-sm sm:text-base md:text-xl text-white/80 max-w-2xl mx-auto mb-6 md:mb-10 leading-relaxed">
