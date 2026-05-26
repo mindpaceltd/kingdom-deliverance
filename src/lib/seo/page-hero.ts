@@ -37,3 +37,43 @@ export async function getAboutHeroUrl(): Promise<string> {
 
   return DEFAULT_ABOUT_HERO_URL
 }
+
+const HERO_TYPES_EVENTS = ['church_building', 'leadership'] as const
+
+/**
+ * Events listing hero: featured/upcoming event poster, then org photos, then worship fallback.
+ */
+export async function getEventsHeroUrl(
+  events?: { is_featured?: boolean; image_url?: string | null }[]
+): Promise<string> {
+  const featured = events?.find((e) => e.is_featured && e.image_url)
+  const withImage = events?.find((e) => e.image_url)
+  for (const candidate of [featured, withImage]) {
+    const normalized = normalizeMediaUrl(candidate?.image_url)
+    if (normalized) return normalized
+  }
+
+  try {
+    const supabase = createClient()
+    for (const type of HERO_TYPES_EVENTS) {
+      const { data, error } = await supabase
+        .from('organization_images')
+        .select('url')
+        .eq('type', type)
+        .eq('is_active', true)
+        .maybeSingle()
+
+      if (error) {
+        console.error(`[getEventsHeroUrl] ${type} fetch failed:`, error.message)
+        continue
+      }
+
+      const normalized = normalizeMediaUrl(data?.url)
+      if (normalized) return normalized
+    }
+  } catch (err) {
+    console.error('[getEventsHeroUrl] Unexpected error:', err)
+  }
+
+  return DEFAULT_ABOUT_HERO_URL
+}

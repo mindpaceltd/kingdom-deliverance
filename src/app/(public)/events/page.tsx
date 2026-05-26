@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import type { Metadata } from "next";
 import { EventImage } from "@/components/content/event-image";
 import { formatSafeDate } from "@/lib/media-url";
+import { getEventsHeroUrl } from "@/lib/seo/page-hero";
 
 export const metadata: Metadata = {
   title: "Events | Kingdom Deliverance Centre Uganda",
@@ -34,6 +35,7 @@ export default async function EventsPage() {
 
   const featured = events?.find((e) => e.is_featured);
   const upcoming = events?.filter((e) => !e.is_featured) ?? [];
+  const heroUrl = await getEventsHeroUrl(events ?? []);
 
   return (
     <div className="flex flex-col">
@@ -41,12 +43,9 @@ export default async function EventsPage() {
       <section className="relative py-20 md:py-36 text-white overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center scale-105"
-          style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=2069&auto=format&fit=crop')",
-          }}
+          style={{ backgroundImage: `url('${heroUrl}')` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/60 to-black/80" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0d1b3e]/90 via-[#0d1b3e]/75 to-[#0d1b3e]/95" />
         <div className="container relative z-10 text-center px-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-5 py-2 text-sm font-semibold text-accent mb-8">
             <Calendar className="w-4 h-4" />
