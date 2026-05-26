@@ -36,7 +36,7 @@ const AlertDialogContent = React.forwardRef<
     <AlertDialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-white/10 bg-[#0d1b3e] p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=fade-out-0]:fade-out-0 data-[state=fade-in-0]:fade-in-0 data-[state=zoom-out-95]:zoom-out-95 data-[state=zoom-in-95]:zoom-in-95 data-[state=slide-out-to-left-1/2]:slide-out-to-left-1/2 data-[state=slide-out-to-top-[48%]]:slide-out-to-top-[48%] data-[state=slide-in-from-left-1/2]:slide-in-from-left-1/2 data-[state=slide-in-from-top-[48%]]:slide-in-from-top-[48%] sm:rounded-2xl",
+        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-white/15 bg-[#0d1b3e] p-6 text-white shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=fade-out-0]:fade-out-0 data-[state=fade-in-0]:fade-in-0 data-[state=zoom-out-95]:zoom-out-95 data-[state=zoom-in-95]:zoom-in-95 data-[state=slide-out-to-left-1/2]:slide-out-to-left-1/2 data-[state=slide-out-to-top-[48%]]:slide-out-to-top-[48%] data-[state=slide-in-from-left-1/2]:slide-in-from-left-1/2 data-[state=slide-in-from-top-[48%]]:slide-in-from-top-[48%] sm:rounded-2xl",
         className
       )}
       {...props}
@@ -79,7 +79,7 @@ const AlertDialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Title
     ref={ref}
-    className={cn("text-lg font-semibold", className)}
+    className={cn("text-lg font-semibold text-white", className)}
     {...props}
   />
 ))
@@ -91,7 +91,10 @@ const AlertDialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Description
     ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
+    className={cn(
+      "text-sm leading-relaxed text-white/85 [&_strong]:font-semibold [&_strong]:text-white",
+      className
+    )}
     {...props}
   />
 ))
@@ -118,7 +121,7 @@ const AlertDialogCancel = React.forwardRef<
     ref={ref}
     className={cn(
       buttonVariants({ variant: "outline" }),
-      "mt-2 sm:mt-0",
+      "mt-2 border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white sm:mt-0",
       className
     )}
     {...props}
