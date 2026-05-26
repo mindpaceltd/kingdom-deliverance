@@ -26,9 +26,18 @@ import {
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { Check, ChevronsUpDown } from "lucide-react"
+import { createClient } from '@/lib/supabase/client'
 
 // Steps
 type Step = 1 | 2 | 3 | 4
+
+function splitFullName(fullName: string): { firstName: string; lastName: string } {
+  const trimmed = fullName.trim()
+  if (!trimmed) return { firstName: '', lastName: '' }
+  const parts = trimmed.split(/\s+/)
+  if (parts.length === 1) return { firstName: parts[0], lastName: '' }
+  return { firstName: parts[0], lastName: parts.slice(1).join(' ') }
+}
 
 const PRAYER_AREAS = [
   'Delay & Stagnation',
@@ -76,9 +85,12 @@ export function FireServiceForm() {
     selectedSeed: 270, // Default credit amount
   })
   const [countryOpen, setCountryOpen] = useState(false)
+  const [accountPrefilled, setAccountPrefilled] = useState(false)
 
-  // Load initial data
+  // Load pricing, packages, and prefill from logged-in account (or geo for guests)
   useEffect(() => {
+    const supabase = createClient()
+
     async function loadData() {
       const cost = await getServicePricing('fire_service')
       if (cost) {
@@ -87,28 +99,58 @@ export function FireServiceForm() {
       }
       const pkgs = await getCreditPackages()
       setPackages(pkgs)
-    }
-    loadData()
 
-    // Try to detect user country
-    fetch('https://get.geojs.io/v1/ip/country.json')
-      .then(res => res.json())
-      .then(data => {
-        if (data.country) {
-          const detectedCountry = countries.find(c => c.code === data.country)
-          if (detectedCountry) {
-            setForm(f => ({
-              ...f,
-              country: detectedCountry.name,
-              countryCode: detectedCountry.code,
-              phone: detectedCountry.dial_code
-            }))
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name, phone')
+          .eq('id', user.id)
+          .maybeSingle()
+
+        const displayName =
+          (user.user_metadata?.full_name as string | undefined) ||
+          profile?.name ||
+          ''
+        const { firstName, lastName } = splitFullName(displayName)
+        const phone =
+          (user.user_metadata?.phone as string | undefined) ||
+          profile?.phone ||
+          ''
+
+        setForm(f => ({
+          ...f,
+          firstName: firstName || f.firstName,
+          lastName: lastName || f.lastName,
+          email: user.email || f.email,
+          phone: phone || f.phone,
+        }))
+        setAccountPrefilled(true)
+        return
+      }
+
+      // Guests only: try to detect country from IP
+      fetch('https://get.geojs.io/v1/ip/country.json')
+        .then(res => res.json())
+        .then(data => {
+          if (data.country) {
+            const detectedCountry = countries.find(c => c.code === data.country)
+            if (detectedCountry) {
+              setForm(f => ({
+                ...f,
+                country: detectedCountry.name,
+                countryCode: detectedCountry.code,
+                phone: detectedCountry.dial_code,
+              }))
+            }
           }
-        }
-      })
-      .catch(() => {
-        // Fallback to Uganda is already set in initial state
-      })
+        })
+        .catch(() => {
+          // Fallback to Uganda is already set in initial state
+        })
+    }
+
+    loadData()
   }, [])
 
   // Check balance when email changes or step 4 is reached
@@ -222,6 +264,11 @@ export function FireServiceForm() {
           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <h3 className="text-xl font-bold text-white mb-4">Step 1: Personal Details</h3>
             <p className="text-sm text-white/70 mb-6">This is your prophetic agreement to enter your case into the FIRE ALTAR. What you submit here will be presented before God.</p>
+            {accountPrefilled && (
+              <p className="text-sm text-accent/90 bg-accent/10 border border-accent/20 rounded-lg px-4 py-3 mb-2">
+                We&apos;ve filled in your account details below. You can edit any field before continuing.
+              </p>
+            )}
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
