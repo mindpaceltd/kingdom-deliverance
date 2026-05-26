@@ -242,11 +242,11 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
               <div className="p-6 space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Title</Label>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Image title</Label>
                     <Input
                       value={editForm.title}
                       onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                      placeholder="Display title (optional)"
+                      placeholder="Shown as caption if no description is set"
                     />
                   </div>
 
@@ -260,11 +260,11 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Caption / Description</Label>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Caption</Label>
                     <Textarea
                       value={editForm.description}
                       onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Detailed caption for the gallery..."
+                      placeholder="Public caption (preferred). Leave empty to use image title above."
                       rows={4}
                     />
                   </div>

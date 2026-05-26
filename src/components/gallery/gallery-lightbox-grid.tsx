@@ -7,10 +7,18 @@ import { cn } from '@/lib/utils'
 
 export interface GalleryGridItem {
   id: string
-  title: string
-  category: string
+  /** DB title (optional) */
+  title?: string | null
+  /** DB caption / description (optional) */
   description?: string | null
+  /** Caption shown to visitors: description, else title, else album label */
+  caption: string
+  category: string
   image_url: string
+}
+
+function itemCaption(item: GalleryGridItem): string {
+  return item.caption.trim() || item.category
 }
 
 function shuffle<T>(items: T[]): T[] {
@@ -76,9 +84,14 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
           >
             <GalleryImage
               src={item.image_url}
-              alt={item.title}
+              alt={itemCaption(item)}
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
             />
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+              <p className="line-clamp-2 text-left text-[9px] font-medium leading-tight text-white sm:text-[10px]">
+                {itemCaption(item)}
+              </p>
+            </div>
           </button>
         ))}
       </div>
@@ -92,7 +105,9 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
         >
           <div className="flex items-center justify-between px-4 py-3 text-white">
             <div className="min-w-0 flex-1 pr-4">
-              <p className="truncate font-semibold">{current.title}</p>
+              <p className="truncate text-lg font-semibold md:text-xl">
+                {itemCaption(current)}
+              </p>
               <p className="text-xs text-white/60">
                 {openIndex + 1} of {total}
                 {current.category ? ` · ${current.category}` : ''}
@@ -121,7 +136,7 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
             <div className="relative flex h-[min(70vh,720px)] w-full max-w-5xl items-center justify-center">
               <GalleryImage
                 src={current.image_url}
-                alt={current.title}
+                alt={itemCaption(current)}
                 className="max-h-[min(70vh,720px)] max-w-full object-contain"
                 fallbackClassName="flex h-48 w-48 items-center justify-center rounded-lg bg-white/10"
               />
@@ -138,8 +153,8 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
           </div>
 
           {current.description?.trim() && (
-            <p className="mx-auto max-w-3xl px-6 pb-2 text-center text-sm text-white/80">
-              {current.description}
+            <p className="mx-auto max-w-3xl px-6 pb-3 text-center text-sm leading-relaxed text-white/85 md:text-base">
+              {current.description.trim()}
             </p>
           )}
 
@@ -161,7 +176,7 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
                 >
                   <GalleryImage
                     src={item.image_url}
-                    alt={item.title}
+                    alt={itemCaption(item)}
                     className="h-full w-full object-cover"
                   />
                 </button>

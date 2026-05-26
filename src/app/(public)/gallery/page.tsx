@@ -60,13 +60,20 @@ export default async function GalleryPage() {
                 Tap any photo to view full size — use arrows to browse. Order shuffles on each visit.
               </p>
               <GalleryLightboxGrid
-                items={items.map((item) => ({
-                  id: item.id,
-                  image_url: item.image_url,
-                  title: item.title?.trim() || formatAlbum(item.album),
-                  category: formatAlbum(item.album),
-                  description: item.description,
-                }))}
+                items={items.map((item) => {
+                  const albumLabel = formatAlbum(item.album);
+                  const title = item.title?.trim() || null;
+                  const caption =
+                    item.description?.trim() || title || albumLabel;
+                  return {
+                    id: item.id,
+                    image_url: item.image_url,
+                    title,
+                    description: item.description,
+                    caption,
+                    category: albumLabel,
+                  };
+                })}
               />
             </>
           )}
