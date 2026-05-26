@@ -41,18 +41,29 @@ const timeline = [
 
 import { createClient } from '@/lib/supabase/server';
 
-export default async function AboutPage() {
-  const supabase = createClient();
-  
-  // Fetch hero image from organization_images
-  const { data: heroImage } = await supabase
-    .from('organization_images')
-    .select('url')
-    .eq('type', 'hero')
-    .eq('is_active', true)
-    .maybeSingle();
+const DEFAULT_HERO_URL =
+  'https://images.unsplash.com/photo-1493397212122-2b85dda8106b?q=80&w=2071&auto=format&fit=crop';
 
-  const heroUrl = heroImage?.url || 'https://images.unsplash.com/photo-1493397212122-2b85dda8106b?q=80&w=2071&auto=format&fit=crop';
+export default async function AboutPage() {
+  let heroUrl = DEFAULT_HERO_URL;
+
+  try {
+    const supabase = createClient();
+    const { data: heroImage, error } = await supabase
+      .from('organization_images')
+      .select('url')
+      .eq('type', 'hero')
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[AboutPage] Hero image fetch failed:', error.message);
+    } else if (heroImage?.url) {
+      heroUrl = heroImage.url;
+    }
+  } catch (err) {
+    console.error('[AboutPage] Unexpected error loading hero image:', err);
+  }
 
   return (
     <div className="flex flex-col">

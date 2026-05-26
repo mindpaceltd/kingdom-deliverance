@@ -9,7 +9,6 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Flame, ArrowRight, ArrowLeft, Upload, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 import { getUserCreditBalance, getCreditPackages, getServicePricing, purchaseCredits } from '@/lib/actions/credits'
 import { submitFireServiceRequest } from '@/lib/actions/fire-service'
-import { useSearchParams } from 'next/navigation'
 import { countries, Country } from '@/lib/countries'
 import {
   Command,
@@ -52,16 +51,31 @@ const PRAYER_AREAS = [
   'Restoration of Lost Opportunities',
 ]
 
-const SEED_PACKAGES = [
+const CUSTOM_SEED_ID = 'custom'
+
+/** Verse after ":" wins (108:13 → 13); otherwise use chapter number (Psalms 68 → 68). */
+function seedCreditsFromDescription(desc: string): number {
+  const verseAfterColon = desc.match(/:(\d+)\b/)
+  if (verseAfterColon) return Math.max(1, parseInt(verseAfterColon[1], 10))
+  const chapterOnly = desc.match(/(?:Psalms?|Ps|Isaiah)\s+(\d+)\b/i)
+  if (chapterOnly) return Math.max(1, parseInt(chapterOnly[1], 10))
+  return 1
+}
+
+const SEED_PACKAGE_DEFS = [
   { id: 'light', name: 'LIGHT & SALVATION SEED', desc: 'Ps 27:1 The Lord is my light and my salvation — whom shall I fear? To break fear, confusion, and darkness.' },
   { id: 'victory', name: 'NO WEAPON VICTORY SEED', desc: 'Isaiah 54:17 No weapon formed against me shall prosper. To cancel attacks, witchcraft, and spiritual opposition.' },
   { id: 'fire', name: 'CONSUMING FIRE SEED', desc: 'Psalms 68 Let God arise, let His enemies be scattered. To destroy stubborn enemies and spiritual resistance.' },
   { id: 'protection', name: 'DIVINE PROTECTION SEED', desc: 'Psalms 91 To secure protection, preservation, and covering. To break cycles of danger.' },
-  { id: 'total', name: 'TOTAL VICTORY & RESTORATION SEED', desc: 'Ps 108:13 Through God we will do valiantly. To recover lost opportunities, restore what was stolen.' }
-]
+  { id: 'total', name: 'TOTAL VICTORY & RESTORATION SEED', desc: 'Ps 108:13 Through God we will do valiantly. To recover lost opportunities, restore what was stolen.' },
+] as const
+
+const SEED_PACKAGES = SEED_PACKAGE_DEFS.map((pkg) => ({
+  ...pkg,
+  credits: seedCreditsFromDescription(pkg.desc),
+}))
 
 export function FireServiceForm() {
-  const searchParams = useSearchParams()
   const [step, setStep] = useState<Step>(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -82,7 +96,9 @@ export function FireServiceForm() {
     attendance: 'online', // online, in_person
     focusAreas: [] as string[],
     details: '',
-    selectedSeed: 270, // Default credit amount
+    selectedSeedId: SEED_PACKAGES[0].id,
+    selectedSeed: SEED_PACKAGES[0].credits,
+    customSeedAmount: '',
   })
   const [countryOpen, setCountryOpen] = useState(false)
   const [accountPrefilled, setAccountPrefilled] = useState(false)
@@ -93,20 +109,21 @@ export function FireServiceForm() {
 
     async function loadData() {
       const cost = await getServicePricing('fire_service')
-      if (cost) {
-        setServiceCost(cost)
-        setForm(f => ({ ...f, selectedSeed: cost }))
-      }
+      if (cost) setServiceCost(cost)
       const pkgs = await getCreditPackages()
       setPackages(pkgs)
 
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('name, phone')
           .eq('id', user.id)
           .maybeSingle()
+
+        if (profileError) {
+          console.warn('[FireServiceForm] Profile fetch failed:', profileError.message)
+        }
 
         const displayName =
           (user.user_metadata?.full_name as string | undefined) ||
@@ -192,6 +209,14 @@ export function FireServiceForm() {
   }
 
   const handleFinalSubmit = async (method: 'credits' | 'vow') => {
+    if (form.selectedSeed < 1) {
+      setError(
+        form.selectedSeedId === CUSTOM_SEED_ID
+          ? 'Please enter how many credits you want to give for your custom seed.'
+          : 'Please select a seed offering before submitting.'
+      )
+      return
+    }
     setLoading(true)
     setError(null)
     const result = await submitFireServiceRequest({
@@ -435,34 +460,129 @@ export function FireServiceForm() {
             </div>
 
             <div className="space-y-3">
-              {SEED_PACKAGES.map(pkg => (
-                <div 
-                  key={pkg.id} 
-                  className={`flex flex-col md:flex-row items-start md:items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    form.selectedSeed === serviceCost ? 'border-accent bg-accent/10' : 'border-white/10 bg-[#1D2845] hover:border-white/30'
-                  }`}
-                  onClick={() => setForm({...form, selectedSeed: serviceCost})}
-                >
-                  <div className="flex gap-4 items-start pr-4">
-                    <div className={`mt-1 flex items-center justify-center w-5 h-5 rounded-full border-2 ${form.selectedSeed === serviceCost ? 'border-accent' : 'border-white/30'}`}>
-                      {form.selectedSeed === serviceCost && <div className="w-2.5 h-2.5 rounded-full bg-accent" />}
+              {SEED_PACKAGES.map(pkg => {
+                const isSelected = form.selectedSeedId === pkg.id
+                return (
+                  <div
+                    key={pkg.id}
+                    role="radio"
+                    aria-checked={isSelected}
+                    className={`flex flex-col md:flex-row items-start md:items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      isSelected ? 'border-accent bg-accent/10' : 'border-white/10 bg-[#1D2845] hover:border-white/30'
+                    }`}
+                    onClick={() =>
+                      setForm({
+                        ...form,
+                        selectedSeedId: pkg.id,
+                        selectedSeed: pkg.credits,
+                      })
+                    }
+                  >
+                    <div className="flex gap-4 items-start pr-4">
+                      <div
+                        className={`mt-1 flex items-center justify-center w-5 h-5 rounded-full border-2 shrink-0 ${
+                          isSelected ? 'border-accent' : 'border-white/30'
+                        }`}
+                      >
+                        {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-accent" />}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white">{pkg.name}</h4>
+                        <p className="text-xs text-white/60 mt-1">{pkg.desc}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-white">{pkg.name}</h4>
-                      <p className="text-xs text-white/60 mt-1">{pkg.desc}</p>
+                    <div className="mt-4 md:mt-0 font-bold text-lg text-accent whitespace-nowrap pl-9 md:pl-0">
+                      {pkg.credits} Credits
                     </div>
                   </div>
-                  <div className="mt-4 md:mt-0 font-bold text-lg text-accent whitespace-nowrap">
-                    {serviceCost} Credits
+                )
+              })}
+
+              {/* Custom seed offering */}
+              <div
+                role="radio"
+                aria-checked={form.selectedSeedId === CUSTOM_SEED_ID}
+                className={`flex flex-col gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                  form.selectedSeedId === CUSTOM_SEED_ID
+                    ? 'border-accent bg-accent/10'
+                    : 'border-white/10 bg-[#1D2845] hover:border-white/30'
+                }`}
+                onClick={() => {
+                  const parsed = parseInt(form.customSeedAmount, 10)
+                  setForm({
+                    ...form,
+                    selectedSeedId: CUSTOM_SEED_ID,
+                    selectedSeed: Number.isFinite(parsed) && parsed > 0 ? parsed : 0,
+                  })
+                }}
+              >
+                <div className="flex gap-4 items-start">
+                  <div
+                    className={`mt-1 flex items-center justify-center w-5 h-5 rounded-full border-2 shrink-0 ${
+                      form.selectedSeedId === CUSTOM_SEED_ID ? 'border-accent' : 'border-white/30'
+                    }`}
+                  >
+                    {form.selectedSeedId === CUSTOM_SEED_ID && (
+                      <div className="w-2.5 h-2.5 rounded-full bg-accent" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-white">CUSTOM SEED OFFERING</h4>
+                    <p className="text-xs text-white/60 mt-1">
+                      Choose your own seed amount in credits — as the Lord leads you.
+                    </p>
                   </div>
                 </div>
-              ))}
+                <div
+                  className="pl-9 md:pl-14"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Label htmlFor="custom-seed-credits" className="text-xs text-white/70">
+                    Credits to give
+                  </Label>
+                  <Input
+                    id="custom-seed-credits"
+                    type="number"
+                    min={1}
+                    placeholder="e.g. 50"
+                    value={form.customSeedAmount}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      const parsed = parseInt(value, 10)
+                      setForm({
+                        ...form,
+                        customSeedAmount: value,
+                        selectedSeedId: CUSTOM_SEED_ID,
+                        selectedSeed:
+                          Number.isFinite(parsed) && parsed > 0 ? parsed : 0,
+                      })
+                    }}
+                    onFocus={() => {
+                      const parsed = parseInt(form.customSeedAmount, 10)
+                      setForm({
+                        ...form,
+                        selectedSeedId: CUSTOM_SEED_ID,
+                        selectedSeed:
+                          Number.isFinite(parsed) && parsed > 0 ? parsed : 0,
+                      })
+                    }}
+                    className="mt-1.5 bg-[#1D2845] border-white/10 max-w-[200px]"
+                  />
+                  {form.selectedSeedId === CUSTOM_SEED_ID && form.selectedSeed > 0 && (
+                    <p className="text-sm font-bold text-accent mt-2">
+                      {form.selectedSeed} Credits
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="bg-[#1D2845] p-6 rounded-xl border border-white/10 mt-6">
-              <h4 className="font-bold mb-4 text-white text-center md:text-left">Complete Submission ({serviceCost} Credits Required)</h4>
+              <h4 className="font-bold mb-4 text-white text-center md:text-left">
+                Complete Submission ({form.selectedSeed > 0 ? form.selectedSeed : '—'} Credits Required)
+              </h4>
               
-              {creditBalance >= serviceCost ? (
+              {creditBalance >= form.selectedSeed && form.selectedSeed > 0 ? (
                 <Button 
                   onClick={() => handleFinalSubmit('credits')}
                   disabled={loading}
@@ -471,14 +591,16 @@ export function FireServiceForm() {
                   {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (
                     <>
                       <CheckCircle2 className="w-5 h-5 mr-2" />
-                      Submit Request & Deduct {serviceCost} Credits
+                      Submit Request & Deduct {form.selectedSeed} Credits
                     </>
                   )}
                 </Button>
               ) : (
                 <div className="space-y-4">
                   <p className="text-sm text-red-400 font-medium text-center md:text-left">
-                    ⚠️ You need {serviceCost - creditBalance} more credits to submit this request.
+                    {form.selectedSeed < 1
+                      ? '⚠️ Select a seed offering and enter a valid credit amount to continue.'
+                      : `⚠️ You need ${form.selectedSeed - creditBalance} more credits to submit this request.`}
                   </p>
                   
                   {showPackages ? (

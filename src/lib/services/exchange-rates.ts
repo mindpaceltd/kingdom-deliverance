@@ -84,13 +84,19 @@ export async function getExchangeRates(): Promise<Record<string, number>> {
       // Task 1.4: cache query failure — proceed to API fetch
       console.error('[exchange-rates] Supabase cache read failed:', error.message)
     } else if (data?.value) {
-      const cached: RateCache = JSON.parse(data.value as string)
-      if (isCacheFresh(cached.fetchedAt)) {
-        // Cache hit — return without hitting the API
-        return cached.rates
+      try {
+        const raw = data.value
+        const cached: RateCache =
+          typeof raw === 'string' ? JSON.parse(raw) : (raw as RateCache)
+        if (cached?.rates && isCacheFresh(cached.fetchedAt)) {
+          // Cache hit — return without hitting the API
+          return cached.rates
+        }
+        // Cache is stale — keep it as a fallback in case the API fails
+        if (cached?.rates) staleCache = cached.rates
+      } catch (parseErr) {
+        console.error('[exchange-rates] Invalid cache JSON:', parseErr)
       }
-      // Cache is stale — keep it as a fallback in case the API fails
-      staleCache = cached.rates
     }
   } catch (err) {
     console.error('[exchange-rates] Unexpected error reading cache:', err)

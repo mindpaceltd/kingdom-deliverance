@@ -5,6 +5,7 @@ interface OrganizationSchemaProps {
 }
 
 export async function OrganizationSchema({ type = 'Church' }: OrganizationSchemaProps) {
+  try {
   const supabase = createClient()
   
   // Get both settings and organization images
@@ -96,4 +97,8 @@ export async function OrganizationSchema({ type = 'Church' }: OrganizationSchema
       dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationData) }}
     />
   )
+  } catch (err) {
+    console.error('[OrganizationSchema] Failed to render:', err)
+    return null
+  }
 }

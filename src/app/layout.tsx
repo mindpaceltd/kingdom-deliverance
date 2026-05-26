@@ -18,6 +18,14 @@ const poppins = Poppins({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
+  const siteName = "Kingdom Deliverance Centre Uganda";
+  const metaTitle = siteName;
+  const metaDesc = "Experience God's love, healing, and deliverance in our vibrant church community in Uganda.";
+  const metaKeywords = "church Uganda, Kingdom Deliverance Centre, Bishop Climate Wiseman, Christian ministry, deliverance, healing, Kampala church";
+  const siteIcon = "/favicon.ico";
+  const siteOgImage = "https://images.unsplash.com/photo-1493397212122-2b85dda8106b?q=80&w=2071&auto=format&fit=crop";
+
+  try {
   const supabase = createClient();
   
   const { data: settings } = await supabase
@@ -27,48 +35,72 @@ export async function generateMetadata(): Promise<Metadata> {
 
   const s = new Map(settings?.map(i => [i.key, i.value]) || []);
 
-  const siteName = s.get('site_name') || "Kingdom Deliverance Centre Uganda";
-  const metaTitle = s.get('site_meta_title') || siteName;
-  const metaDesc = s.get('site_meta_description') || "Experience God's love, healing, and deliverance in our vibrant church community in Uganda.";
-  const metaKeywords = s.get('site_meta_keywords') || "church Uganda, Kingdom Deliverance Centre, Bishop Climate Wiseman, Christian ministry, deliverance, healing, Kampala church";
-  const siteIcon = s.get('site_icon') || "/favicon.ico";
-  const siteOgImage = s.get('site_og_image') || "https://images.unsplash.com/photo-1493397212122-2b85dda8106b?q=80&w=2071&auto=format&fit=crop";
+  const resolvedSiteName = s.get('site_name') || siteName;
+  const resolvedMetaTitle = s.get('site_meta_title') || resolvedSiteName;
+  const resolvedMetaDesc = s.get('site_meta_description') || metaDesc;
+  const resolvedMetaKeywords = s.get('site_meta_keywords') || metaKeywords;
+  const resolvedSiteIcon = s.get('site_icon') || siteIcon;
+  const resolvedSiteOgImage = s.get('site_og_image') || siteOgImage;
 
   return {
     title: {
-      default: metaTitle,
-      template: `%s | ${siteName}`
+      default: resolvedMetaTitle,
+      template: `%s | ${resolvedSiteName}`
     },
-    description: metaDesc,
-    keywords: metaKeywords,
+    description: resolvedMetaDesc,
+    keywords: resolvedMetaKeywords,
     icons: {
-      icon: siteIcon,
-      shortcut: siteIcon,
-      apple: siteIcon,
+      icon: resolvedSiteIcon,
+      shortcut: resolvedSiteIcon,
+      apple: resolvedSiteIcon,
     },
     openGraph: {
       type: "website",
       locale: "en_US",
       url: "https://kdcuganda.org",
-      title: metaTitle,
-      description: metaDesc,
-      siteName: siteName,
+      title: resolvedMetaTitle,
+      description: resolvedMetaDesc,
+      siteName: resolvedSiteName,
       images: [
         {
-          url: siteOgImage,
+          url: resolvedSiteOgImage,
           width: 1200,
           height: 630,
-          alt: siteName,
+          alt: resolvedSiteName,
         }
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: metaTitle,
-      description: metaDesc,
-      images: [siteOgImage],
+      title: resolvedMetaTitle,
+      description: resolvedMetaDesc,
+      images: [resolvedSiteOgImage],
     },
   };
+  } catch (err) {
+    console.error('[generateMetadata] Failed to load site settings:', err)
+    return {
+      title: { default: metaTitle, template: `%s | ${siteName}` },
+      description: metaDesc,
+      keywords: metaKeywords,
+      icons: { icon: siteIcon, shortcut: siteIcon, apple: siteIcon },
+      openGraph: {
+        type: "website",
+        locale: "en_US",
+        url: "https://kdcuganda.org",
+        title: metaTitle,
+        description: metaDesc,
+        siteName,
+        images: [{ url: siteOgImage, width: 1200, height: 630, alt: siteName }],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: metaTitle,
+        description: metaDesc,
+        images: [siteOgImage],
+      },
+    }
+  }
 }
 
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
@@ -85,7 +117,6 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <OrganizationSchema />
       </head>
       <body className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden relative">
         {/* Google Analytics (gtag.js) */}
@@ -118,6 +149,7 @@ export default function RootLayout({
           `}
         </Script>
         <div className="flex-1 flex flex-col w-full max-w-full overflow-x-hidden relative">
+          <OrganizationSchema />
           {children}
         </div>
         <ScrollToTop />
