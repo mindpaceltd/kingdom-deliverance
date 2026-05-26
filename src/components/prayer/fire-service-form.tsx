@@ -188,10 +188,10 @@ export function FireServiceForm() {
       
       <div className="text-center mb-8">
         <h2 className="text-2xl md:text-3xl font-serif font-bold text-white mb-2">
-          All-Night Prayer + Fire Service
+          Fire Service Prayer
         </h2>
         <p className="text-accent text-sm md:text-base font-medium tracking-wide">
-          (Global Fire Altar Submission)
+          Global Fire Altar · 10:00 PM — 12:00 Midnight
         </p>
       </div>
 

@@ -33,14 +33,10 @@ const leaders = [
 ];
 
 const timeline = [
-  { year: "2008", event: "Kingdom Deliverance Centre Uganda founded by Bishop Climate Wiseman in Kampala." },
-  { year: "2010", event: "First permanent church building acquired. Membership grows to over 500 families." },
-  { year: "2012", event: "Launch of the Youth Ministry and Wednesday Bible Study programs." },
-  { year: "2015", event: "Official affiliation with Kingdom Temple established. Major revival conference draws thousands." },
-  { year: "2018", event: "Children's Church and Deliverance Ministry launched. Community outreach programs begin." },
-  { year: "2021", event: "Online services launched during COVID-19. Digital ministry reaches thousands across Africa." },
-  { year: "2024", event: "New sanctuary construction begins. Membership exceeds 3,000 registered members." },
-  { year: "2026", event: "Kingdom Deliverance Centre celebrates 18 years of ministry impact across Uganda." },
+  { year: "2025", event: "The Uganda branch of Kingdom Deliverance Centre opens in Kampala under Kingdom Temple, led by Bishop Climate Wiseman." },
+  { year: "2025", event: "Weekly worship and teaching established — Sunday, Wednesday, and Friday services at the KDC Centre in Kosovo–Lungujja." },
+  { year: "2026", event: "Fire Service ministry and the Global Fire Altar expand, reaching families across Kampala and online." },
+  { year: "2026", event: "The Uganda branch continues to grow as a community rooted in faith, prayer, and deliverance." },
 ];
 
 import { createClient } from '@/lib/supabase/server';
@@ -180,7 +176,7 @@ export default async function AboutPage() {
           <FadeInSection className="text-center mb-16">
             <div className="inline-flex items-center gap-2 rounded-full bg-accent/20 px-6 py-3 text-sm font-medium text-accent mb-6">
               <Calendar className="w-4 h-4" />
-              18 Years of Faith
+              In Uganda Since 2025
             </div>
             <h2 className="font-serif text-4xl md:text-5xl font-bold text-white">
               Our Journey

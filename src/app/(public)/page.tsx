@@ -241,7 +241,7 @@ export default async function Home() {
                   <span>{featuredSermon?.preacher ?? "Bishop Climate Wiseman"}</span>
                 </div>
                 <span>·</span>
-                <span>{featuredSermon ? new Date(featuredSermon.date).toLocaleDateString() : "April 24, 2026"}</span>
+                <span>{featuredSermon ? new Date(featuredSermon.date).toLocaleDateString() : "Recent"}</span>
               </div>
               <Button
                 asChild
@@ -351,7 +351,7 @@ export default async function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.2)_0%,transparent_100%)] mix-blend-multiply" />
         <div className="container px-4 text-center space-y-6 relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold font-serif text-white">
-            🔥 The Fire Service: April 24, 2026 🔥
+            🔥 The Fire Service: Friday, May 29, 2026 🔥
           </h2>
           <p className="text-white/90 text-base md:text-xl max-w-2xl mx-auto font-medium">
             There is a matter in your life that will not respond until it is brought into the place of fire. Submit your case to the Fire Altar tonight.

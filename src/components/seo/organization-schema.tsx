@@ -61,7 +61,7 @@ export async function OrganizationSchema({ type = 'Church' }: OrganizationSchema
       "addressCountry": "UG",
       "addressLocality": "Kampala"
     } : undefined,
-    "foundingDate": "2008",
+    "foundingDate": "2025",
     "founder": {
       "@type": "Person",
       "name": "Bishop Climate Wiseman Irungu"

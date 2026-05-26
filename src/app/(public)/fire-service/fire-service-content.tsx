@@ -59,7 +59,7 @@ export function FireServiceContent() {
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 text-accent text-sm font-semibold mb-12 backdrop-blur-md"
           >
             <Flame className="h-4 w-4 animate-bounce" />
-            A Prophetic All-Night Encounter
+            A Prophetic Fire Encounter
           </motion.div>
           
           <motion.h1
@@ -169,14 +169,14 @@ export function FireServiceContent() {
                   <Calendar className="shrink-0 h-6 w-6 opacity-80" />
                   <div>
                     <p className="text-sm opacity-70 uppercase tracking-widest font-bold">Date</p>
-                    <p className="text-xl font-bold">April 24, 2026</p>
+                    <p className="text-xl font-bold">Friday, May 29, 2026</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
                   <Clock className="shrink-0 h-6 w-6 opacity-80" />
                   <div>
                     <p className="text-sm opacity-70 uppercase tracking-widest font-bold">Time</p>
-                    <p className="text-xl font-bold">10PM — ALL NIGHT</p>
+                    <p className="text-xl font-bold">10:00 PM — 12:00 Midnight</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
