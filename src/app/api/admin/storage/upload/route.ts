@@ -6,7 +6,8 @@ import { buildUploadKey, resolveUploadBucket } from '@/lib/storage/r2-upload-par
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
-const MAX_BYTES = 50 * 1024 * 1024 // 50 MB
+// Match Vercel serverless body limit (~4.5 MB). Larger files use presigned browser upload.
+const MAX_BYTES = 4 * 1024 * 1024
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,7 +29,10 @@ export async function POST(req: NextRequest) {
 
     if (file.size > MAX_BYTES) {
       return NextResponse.json(
-        { error: `File too large. Maximum size is ${MAX_BYTES / (1024 * 1024)}MB.` },
+        {
+          error: `File is too large for server upload (${(file.size / (1024 * 1024)).toFixed(1)}MB). Use direct upload — refresh and try again.`,
+          usePresigned: true,
+        },
         { status: 413 }
       )
     }
