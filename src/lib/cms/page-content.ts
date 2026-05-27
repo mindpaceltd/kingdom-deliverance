@@ -27,6 +27,39 @@ export interface CmsPageHero {
   imageUrl?: string
 }
 
+/** About page sections (managed under Pages → About Us). */
+export interface CmsAboutFoundationCard {
+  label: string
+  text: string
+}
+
+export interface CmsAboutLeader {
+  name: string
+  title: string
+  bio: string
+  imageUrl?: string
+}
+
+export interface CmsAboutTimelineItem {
+  year: string
+  event: string
+}
+
+export interface CmsAboutDetails {
+  foundationBadge?: string
+  foundationTitle?: string
+  foundationCards?: CmsAboutFoundationCard[]
+  leadershipBadge?: string
+  leadershipTitle?: string
+  leaders?: CmsAboutLeader[]
+  timelineBadge?: string
+  timelineTitle?: string
+  timeline?: CmsAboutTimelineItem[]
+  affiliationBadge?: string
+  affiliationTitle?: string
+  affiliationText?: string
+}
+
 /** Contact page sidebar, map, and form copy (managed under Pages → Contact). */
 export interface CmsContactDetails {
   findUsTitle?: string
@@ -68,6 +101,7 @@ export interface CmsPageContent {
   seo?: CmsPageSeo
   missionTitle?: string
   missionHtml?: string
+  about?: CmsAboutDetails
   contact?: CmsContactDetails
   /** Optional rich text above the contact grid */
   contactIntroHtml?: string
@@ -93,6 +127,7 @@ export function parsePageContent(raw: unknown): CmsPageContent {
     seo: parsePageSeo(o.seo),
     missionTitle: typeof o.missionTitle === 'string' ? o.missionTitle : undefined,
     missionHtml: typeof o.missionHtml === 'string' ? o.missionHtml : undefined,
+    about: parseAboutDetails(o.about),
     contact: parseContactDetails(o.contact),
     contactIntroHtml:
       typeof o.contactIntroHtml === 'string' ? o.contactIntroHtml : undefined,
@@ -103,6 +138,56 @@ export function parsePageContent(raw: unknown): CmsPageContent {
     ctaUrl: typeof o.ctaUrl === 'string' ? o.ctaUrl : undefined,
     isSystem: Boolean(o.isSystem),
   }
+}
+
+function parseAboutDetails(raw: unknown): CmsAboutDetails | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  const a = raw as Record<string, unknown>
+  const details: CmsAboutDetails = {}
+  const strings = [
+    'foundationBadge',
+    'foundationTitle',
+    'leadershipBadge',
+    'leadershipTitle',
+    'timelineBadge',
+    'timelineTitle',
+    'affiliationBadge',
+    'affiliationTitle',
+    'affiliationText',
+  ] as const
+  for (const key of strings) {
+    if (typeof a[key] === 'string') details[key] = a[key]
+  }
+  if (Array.isArray(a.foundationCards)) {
+    details.foundationCards = a.foundationCards
+      .filter((x): x is Record<string, unknown> => Boolean(x && typeof x === 'object'))
+      .map((c) => ({
+        label: String(c.label ?? ''),
+        text: String(c.text ?? ''),
+      }))
+      .filter((c) => c.label.trim() || c.text.trim())
+  }
+  if (Array.isArray(a.leaders)) {
+    details.leaders = a.leaders
+      .filter((x): x is Record<string, unknown> => Boolean(x && typeof x === 'object'))
+      .map((l) => ({
+        name: String(l.name ?? ''),
+        title: String(l.title ?? ''),
+        bio: String(l.bio ?? ''),
+        imageUrl: typeof l.imageUrl === 'string' ? l.imageUrl : undefined,
+      }))
+      .filter((l) => l.name.trim())
+  }
+  if (Array.isArray(a.timeline)) {
+    details.timeline = a.timeline
+      .filter((x): x is Record<string, unknown> => Boolean(x && typeof x === 'object'))
+      .map((t) => ({
+        year: String(t.year ?? ''),
+        event: String(t.event ?? ''),
+      }))
+      .filter((t) => t.year.trim() || t.event.trim())
+  }
+  return Object.keys(details).length > 0 ? details : undefined
 }
 
 function parseContactDetails(raw: unknown): CmsContactDetails | undefined {

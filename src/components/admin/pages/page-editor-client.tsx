@@ -27,6 +27,8 @@ import {
 import { buildPublicPageUrl } from '@/lib/seo/public-content-urls'
 import { createPage, updatePageFromEditor } from '@/lib/actions/pages'
 import { defaultContactDetails } from '@/lib/cms/contact-page-defaults'
+import { defaultAboutDetails } from '@/lib/cms/about-page-defaults'
+import { AboutPageEditorFields } from '@/components/admin/pages/about-page-editor-fields'
 import {
   buildContentJson,
   pagePathFromSlug,
@@ -268,24 +270,22 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
             </div>
           </div>
 
-          {(content.pageType === 'about' || content.pageType === 'custom') && (
-            <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
-              <h2 className="text-lg font-semibold">Mission block (About)</h2>
-              <Input
-                value={content.missionTitle ?? ''}
-                onChange={(e) => patchContent({ missionTitle: e.target.value })}
-                placeholder="Mission heading"
-                disabled={saving}
-              />
-              <RichTextEditor
-                value={content.missionHtml ?? ''}
-                onChange={(html) => patchContent({ missionHtml: html })}
-                placeholder="Mission statement…"
-                disabled={saving}
-                compact
-                editorMinHeight="min-h-[160px]"
-              />
-            </div>
+          {content.pageType === 'about' && (
+            <AboutPageEditorFields
+              content={content}
+              onChange={(patch) => {
+                if (patch.about) {
+                  setContent((prev) => ({
+                    ...prev,
+                    ...patch,
+                    about: { ...defaultAboutDetails(), ...prev.about, ...patch.about },
+                  }))
+                } else {
+                  patchContent(patch)
+                }
+              }}
+              disabled={saving}
+            />
           )}
 
           {content.pageType === 'contact' && (
@@ -542,7 +542,7 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
             </div>
           )}
 
-          {!['contact', 'give'].includes(content.pageType) && (
+          {!['contact', 'give', 'about'].includes(content.pageType) && (
             <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
               <div>
                 <h2 className="text-lg font-semibold">Main content</h2>

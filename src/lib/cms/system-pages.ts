@@ -42,13 +42,76 @@ export const SYSTEM_PAGE_DEFINITIONS: SystemPageDefinition[] = [
         badge: 'Our Story',
         title: 'About Kingdom Deliverance Centre',
         subtitle:
-          'Learn our history, vision, and leadership under Bishop Climate Wiseman.',
+          'A movement of faith, power, and transformation — rooted in the Word of God and led by the Holy Spirit to impact lives across Uganda and beyond.',
       },
-      missionTitle: 'Our mission',
-      missionHtml:
-        '<p>Kingdom Deliverance Centre Uganda exists to set captives free through the power of the Gospel, vibrant worship, and Spirit-led teaching.</p>',
-      bodyHtml:
-        '<p>Share your story, leadership highlights, and what makes KDC unique. This content will appear on the public About page when CMS rendering is enabled.</p>',
+      about: {
+        foundationBadge: 'Our Foundation',
+        foundationTitle: 'Built on Purpose',
+        foundationCards: [
+          {
+            label: 'Our Mission',
+            text: 'To set the captives free — bringing salvation, healing, and deliverance to every soul through the power of Jesus Christ.',
+          },
+          {
+            label: 'Our Vision',
+            text: 'To cultivate a community that is wealthy, healthy and wise, grounded in the Word of God and empowered for total transformation.',
+          },
+          {
+            label: 'Our Values',
+            text: 'Faith, Prayer, Integrity, Community, Excellence in Worship, and unwavering commitment to the authority of Scripture.',
+          },
+        ],
+        leadershipBadge: 'Meet The Team',
+        leadershipTitle: 'Our Leadership',
+        leaders: [
+          {
+            name: 'Bishop Climate Wiseman Irungu',
+            title: 'Senior Pastor & Founder',
+            bio: 'Bishop Climate Wiseman Irungu is the visionary leader and founder of Kingdom Deliverance Centre Uganda. With a heart for the people of Uganda, he leads with power and authority to set the captives free. He is also the head of Kingdom Temple network.',
+            imageUrl: '/images/bishop.jpg',
+          },
+          {
+            name: 'Pastor Clear',
+            title: 'Co-Founder & Kingdom Temple UK',
+            bio: 'Pastor Clear brings an anointed word from the UK and co-pioneered the work of Kingdom Deliverance alongside Bishop Climate. Together, they are building a community that is wealthy, healthy, and wise.',
+            imageUrl: '/images/pastor-clear.jpg',
+          },
+          {
+            name: 'Pastor Grace Wiseman',
+            title: 'Lead Pastor',
+            bio: 'An anointed minister and teacher of the Word, Pastor Grace leads the daily operations of the ministry in Uganda, seeing families restored and walking in their God-given destiny.',
+            imageUrl: '/images/co-pastor.jpg',
+          },
+        ],
+        timelineBadge: 'In Uganda Since 2025',
+        timelineTitle: 'Our Journey',
+        timeline: [
+          {
+            year: '2025',
+            event:
+              'The Uganda branch of Kingdom Deliverance Centre opens in Kampala under Kingdom Temple, led by Bishop Climate Wiseman.',
+          },
+          {
+            year: '2025',
+            event:
+              'Weekly worship and teaching established — Sunday, Wednesday, and Friday services at the KDC Centre in Kosovo–Lungujja.',
+          },
+          {
+            year: '2026',
+            event:
+              'Fire Service ministry and the Global Fire Altar expand, reaching families across Kampala and online.',
+          },
+          {
+            year: '2026',
+            event:
+              'The Uganda branch continues to grow as a community rooted in faith, prayer, and deliverance.',
+          },
+        ],
+        affiliationBadge: 'Our Network',
+        affiliationTitle: 'Part of Kingdom Temple',
+        affiliationText:
+          'Kingdom Deliverance Centre Uganda is proudly affiliated with Kingdom Temple, a global ministry network founded and led by Bishop Climate Wiseman. Kingdom Temple has branches across East Africa and is committed to spreading the Gospel and demonstrating the power of God in every nation.',
+      },
       seo: {
         metaTitle: 'About Us | Kingdom Deliverance Centre Uganda',
         metaDescription:

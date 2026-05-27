@@ -11,6 +11,7 @@ import {
   parsePageContent,
   type CmsPageContent,
 } from '@/lib/cms/page-content'
+import { defaultAboutDetails } from '@/lib/cms/about-page-defaults'
 import { defaultContactDetails } from '@/lib/cms/contact-page-defaults'
 import { SYSTEM_PAGE_DEFINITIONS } from '@/lib/cms/system-pages'
 
@@ -193,6 +194,9 @@ export async function updatePageFromEditor(
   const content = { ...input.content }
   if (content.pageType === 'contact') {
     content.contact = { ...defaultContactDetails(), ...content.contact }
+  }
+  if (content.pageType === 'about') {
+    content.about = { ...defaultAboutDetails(), ...content.about }
   }
   if (content.isSystem) {
     const def = SYSTEM_PAGE_DEFINITIONS.find(
