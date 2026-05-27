@@ -1,20 +1,36 @@
 'use client'
 
 import * as React from 'react'
-import { 
-  UserXIcon, 
-  UserPlusIcon, 
-  MailIcon, 
-  ShieldIcon, 
-  CalendarIcon, 
+import dynamic from 'next/dynamic'
+import Link from 'next/link'
+import {
+  UserPlusIcon,
+  MailIcon,
+  CalendarIcon,
   PhoneIcon,
   UserIcon,
   SearchIcon,
-  FilterIcon,
   MoreVerticalIcon,
   Trash2Icon,
-  CheckCircleIcon
+  LoaderIcon,
+  SaveIcon,
+  ExternalLinkIcon,
 } from 'lucide-react'
+
+const RichTextEditor = dynamic(
+  () =>
+    import('@/components/admin/rich-text-editor').then((m) => ({
+      default: m.RichTextEditor,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex min-h-[160px] items-center justify-center rounded-md border border-white/20 bg-white/5">
+        <LoaderIcon className="size-5 animate-spin text-white/60" />
+      </div>
+    ),
+  }
+)
 import { 
   DataTable, 
   type ColumnDef 
@@ -41,7 +57,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { inviteUser, updateUserRole, deactivateUser } from '@/lib/actions/users'
+import {
+  inviteUser,
+  updateUserRole,
+  deactivateUser,
+  updateUserProfileAsAdmin,
+} from '@/lib/actions/users'
 import type { Profile, UserRole } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -104,6 +125,21 @@ export function UsersManager({ initialUsers, currentUserId }: UsersManagerProps)
   // Role change loading state
   const [roleChanging, setRoleChanging] = React.useState<Record<string, boolean>>({})
 
+  // Profile edit state (user detail sheet)
+  const [editName, setEditName] = React.useState('')
+  const [editPhone, setEditPhone] = React.useState('')
+  const [editBio, setEditBio] = React.useState('')
+  const [profileSaving, setProfileSaving] = React.useState(false)
+  const [profileMsg, setProfileMsg] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    if (!selectedUser) return
+    setEditName(selectedUser.name ?? '')
+    setEditPhone(selectedUser.phone ?? '')
+    setEditBio(selectedUser.bio ?? '')
+    setProfileMsg(null)
+  }, [selectedUser])
+
   // Handlers
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault()
@@ -130,6 +166,31 @@ export function UsersManager({ initialUsers, currentUserId }: UsersManagerProps)
       alert(result.error)
     }
     setRoleChanging(prev => ({ ...prev, [userId]: false }))
+  }
+
+  async function handleSaveProfile() {
+    if (!selectedUser) return
+    setProfileMsg(null)
+    setProfileSaving(true)
+    const result = await updateUserProfileAsAdmin(selectedUser.id, {
+      name: editName,
+      phone: editPhone,
+      bio: editBio,
+    })
+    setProfileSaving(false)
+    if ('error' in result) {
+      setProfileMsg(result.error)
+      return
+    }
+    const updated = {
+      ...selectedUser,
+      name: editName.trim(),
+      phone: editPhone.trim() || null,
+      bio: editBio.trim() || null,
+    }
+    setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)))
+    setSelectedUser(updated)
+    setProfileMsg('Profile saved.')
   }
 
   async function handleDeactivate(user: UserRow) {
@@ -333,103 +394,202 @@ export function UsersManager({ initialUsers, currentUserId }: UsersManagerProps)
       </Sheet>
 
       {/* User Details Sidebar */}
-      <Sheet open={!!selectedUser} onOpenChange={open => !open && setSelectedUser(null)}>
-        <SheetContent className="w-full sm:max-w-md px-0">
-           <SheetHeader className="px-6 border-b border-border pb-4 flex flex-row items-center justify-between">
-              <SheetTitle>User Profile</SheetTitle>
-              {selectedUser?.id !== currentUserId && (
-                 <Button variant="ghost" size="icon-sm" className="text-destructive" onClick={() => handleDeactivate(selectedUser!)}>
-                    <Trash2Icon className="size-4" />
-                 </Button>
-              )}
-           </SheetHeader>
+      <Sheet open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+        <SheetContent className="flex h-full w-full flex-col gap-0 overflow-hidden px-0 sm:max-w-lg">
+          <SheetHeader className="flex shrink-0 flex-row items-center justify-between border-b border-white/10 px-6 pb-4">
+            <SheetTitle>User Profile</SheetTitle>
+            {selectedUser?.id !== currentUserId && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="text-red-400 hover:text-red-300"
+                onClick={() => handleDeactivate(selectedUser!)}
+              >
+                <Trash2Icon className="size-4" />
+              </Button>
+            )}
+          </SheetHeader>
 
-           {selectedUser && (
-              <div className="flex flex-col">
-                 <div className="p-8 flex flex-col items-center justify-center text-center bg-muted/20 border-b border-border gap-3">
-                    <div className="size-20 rounded-full bg-muted border-4 border-background shadow-md overflow-hidden flex items-center justify-center">
-                       {selectedUser.avatar_url ? (
-                         <img src={selectedUser.avatar_url} alt="" className="size-full object-cover" />
-                       ) : (
-                         <UserIcon className="size-10 text-muted-foreground/50" />
-                       )}
-                    </div>
-                    <div>
-                       <h3 className="text-lg font-bold">{selectedUser.name || 'Untitled'}</h3>
-                       <p className="text-xs text-muted-foreground">{selectedUser.email}</p>
-                    </div>
-                    <span className={cn(
-                      "mt-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
+          {selectedUser && (
+            <>
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                <div className="flex flex-col items-center gap-3 border-b border-white/10 bg-white/5 p-6 text-center">
+                  <div className="flex size-20 items-center justify-center overflow-hidden rounded-full border-4 border-white/20 bg-white/10 shadow-md">
+                    {selectedUser.avatar_url ? (
+                      <img
+                        src={selectedUser.avatar_url}
+                        alt=""
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      <UserIcon className="size-10 text-white/40" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">
+                      {selectedUser.name || 'Untitled'}
+                    </h3>
+                    <p className="text-xs text-white/60">{selectedUser.email}</p>
+                  </div>
+                  <span
+                    className={cn(
+                      'mt-1 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest',
                       ROLE_COLORS[selectedUser.role]
-                    )}>
-                       {ROLE_LABELS[selectedUser.role]}
-                    </span>
-                 </div>
-
-                 <div className="p-6 space-y-6">
-                    <div className="grid grid-cols-1 gap-6">
-                       <div className="space-y-1.5">
-                          <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">User ID</Label>
-                          <p className="text-xs font-mono bg-muted p-2 rounded truncate">{selectedUser.id}</p>
-                       </div>
-
-                       <div className="space-y-1.5">
-                          <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Role Management</Label>
-                          <Select
-                            disabled={selectedUser.id === currentUserId || roleChanging[selectedUser.id]}
-                            value={selectedUser.role}
-                            onValueChange={v => handleRoleChange(selectedUser.id, v as UserRole)}
-                          >
-                             <SelectTrigger>
-                                <SelectValue />
-                             </SelectTrigger>
-                             <SelectContent>
-                                {ROLES.map(r => (
-                                  <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
-                                ))}
-                             </SelectContent>
-                          </Select>
-                          {selectedUser.id === currentUserId && <p className="text-[10px] text-muted-foreground italic">You cannot change your own role.</p>}
-                       </div>
-
-                       <div className="space-y-4 pt-4 border-t border-border">
-                          <div className="flex items-center gap-3 text-sm">
-                             <MailIcon className="size-4 text-muted-foreground" />
-                             <span>{selectedUser.email}</span>
-                          </div>
-                          <div className="flex items-center gap-3 text-sm">
-                             <PhoneIcon className="size-4 text-muted-foreground" />
-                             <span>{selectedUser.phone || 'No phone provided'}</span>
-                          </div>
-                          <div className="flex items-center gap-3 text-sm">
-                             <CalendarIcon className="size-4 text-muted-foreground" />
-                             <span>Joined {formatDate(selectedUser.created_at)}</span>
-                          </div>
-                       </div>
-
-                       <div className="space-y-2">
-                          <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Biography</Label>
-                          {selectedUser.bio ? (
-                            <div
-                              className="prose prose-sm dark:prose-invert max-w-none text-sm text-muted-foreground"
-                              dangerouslySetInnerHTML={{ __html: selectedUser.bio }}
-                            />
-                          ) : (
-                            <p className="text-sm text-muted-foreground leading-relaxed italic">
-                              This user hasn&apos;t provided a bio yet.
-                            </p>
-                          )}
-                       </div>
-                    </div>
-                 </div>
-
-                 <div className="sticky bottom-0 bg-background p-6 border-t border-border">
-                    <Button variant="outline" className="w-full" onClick={() => setSelectedUser(null)}>
-                       Close Profile
+                    )}
+                  >
+                    {ROLE_LABELS[selectedUser.role]}
+                  </span>
+                  {selectedUser.id === currentUserId && (
+                    <Button variant="outline" size="sm" className="mt-1 border-white/20" asChild>
+                      <Link href="/admin/profile">
+                        <ExternalLinkIcon className="mr-2 size-3.5" />
+                        Avatar &amp; password
+                      </Link>
                     </Button>
-                 </div>
+                  )}
+                </div>
+
+                <div className="space-y-5 p-6">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-white/50">
+                        Full name
+                      </Label>
+                      <Input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        disabled={profileSaving}
+                        className="border-white/20 bg-white/10 text-white placeholder:text-white/40"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-white/50">
+                        Phone
+                      </Label>
+                      <Input
+                        value={editPhone}
+                        onChange={(e) => setEditPhone(e.target.value)}
+                        disabled={profileSaving}
+                        placeholder="+256 …"
+                        className="border-white/20 bg-white/10 text-white placeholder:text-white/40"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-white/50">
+                        Email
+                      </Label>
+                      <Input
+                        value={selectedUser.email ?? ''}
+                        disabled
+                        className="cursor-not-allowed border-white/10 bg-white/5 text-white/60"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-white/50">
+                      Bio
+                    </Label>
+                    <p className="text-xs text-white/50">
+                      Rich text shown on blog author boxes. Use headings, links, and emphasis.
+                    </p>
+                    <div className="overflow-hidden rounded-lg border border-white/15 bg-white text-foreground shadow-sm">
+                      <RichTextEditor
+                        value={editBio}
+                        onChange={setEditBio}
+                        placeholder="Write a biography…"
+                        disabled={profileSaving}
+                        compact
+                        editorMinHeight="min-h-[200px]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-white/50">
+                      Role
+                    </Label>
+                    <Select
+                      disabled={
+                        selectedUser.id === currentUserId || roleChanging[selectedUser.id]
+                      }
+                      value={selectedUser.role}
+                      onValueChange={(v) => handleRoleChange(selectedUser.id, v as UserRole)}
+                    >
+                      <SelectTrigger className="border-white/20 bg-white/10 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROLES.map((r) => (
+                          <SelectItem key={r} value={r}>
+                            {ROLE_LABELS[r]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedUser.id === currentUserId && (
+                      <p className="text-[10px] italic text-white/50">
+                        You cannot change your own role.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-3 border-t border-white/10 pt-4 text-sm text-white/80">
+                    <div className="flex items-center gap-3">
+                      <MailIcon className="size-4 shrink-0 text-white/50" />
+                      <span className="truncate">{selectedUser.email}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CalendarIcon className="size-4 shrink-0 text-white/50" />
+                      <span>Joined {formatDate(selectedUser.created_at)}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-white/50">
+                      User ID
+                    </Label>
+                    <p className="truncate rounded bg-white/10 p-2 font-mono text-xs text-white/70">
+                      {selectedUser.id}
+                    </p>
+                  </div>
+
+                  {profileMsg && (
+                    <p
+                      className={cn(
+                        'text-sm',
+                        profileMsg === 'Profile saved.' ? 'text-green-400' : 'text-red-400'
+                      )}
+                    >
+                      {profileMsg}
+                    </p>
+                  )}
+                </div>
               </div>
-           )}
+
+              <div className="flex shrink-0 flex-col gap-2 border-t border-white/10 bg-[#0d1b3e] p-4">
+                <Button
+                  className="w-full gap-2"
+                  disabled={profileSaving || !editName.trim()}
+                  onClick={() => void handleSaveProfile()}
+                >
+                  {profileSaving ? (
+                    <LoaderIcon className="size-4 animate-spin" />
+                  ) : (
+                    <SaveIcon className="size-4" />
+                  )}
+                  {profileSaving ? 'Saving…' : 'Save profile'}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full border-white/20 text-white hover:bg-white/10"
+                  onClick={() => setSelectedUser(null)}
+                >
+                  Close
+                </Button>
+              </div>
+            </>
+          )}
         </SheetContent>
       </Sheet>
     </div>

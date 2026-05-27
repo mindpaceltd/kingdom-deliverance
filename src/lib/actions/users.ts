@@ -1,8 +1,15 @@
 'use server'
 
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
 import type { UserRole } from '@/lib/types'
 import { requireAdmin } from '@/lib/authz'
+
+export interface AdminUserProfilePayload {
+  name: string
+  phone?: string
+  bio?: string
+}
 
 export async function inviteUser(
   email: string,
@@ -54,6 +61,40 @@ export async function updateUserRole(
     return { error: error.message }
   }
 
+  revalidatePath('/admin/users')
+  return { success: true }
+}
+
+export async function updateUserProfileAsAdmin(
+  userId: string,
+  payload: AdminUserProfilePayload
+): Promise<{ success: true } | { error: string }> {
+  const result = await requireAdmin()
+  if ('error' in result) return result
+
+  const name = payload.name.trim()
+  if (!name) return { error: 'Name is required' }
+
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      name,
+      phone: payload.phone?.trim() || null,
+      bio: payload.bio?.trim() || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', userId)
+
+  if (error) {
+    console.error('[updateUserProfileAsAdmin]', error.message)
+    return { error: error.message }
+  }
+
+  revalidatePath('/admin/users')
+  revalidatePath('/admin/profile')
+  revalidatePath('/blog')
+  revalidatePath('/blog/[slug]')
   return { success: true }
 }
 

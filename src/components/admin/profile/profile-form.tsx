@@ -10,6 +10,15 @@ import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import {
+  CameraIcon,
+  SaveIcon,
+  KeyIcon,
+  LoaderIcon,
+  CheckCircleIcon,
+  AlertCircleIcon,
+  UserIcon,
+} from 'lucide-react'
 
 const RichTextEditor = dynamic(
   () =>
@@ -25,15 +34,6 @@ const RichTextEditor = dynamic(
     ),
   }
 )
-import {
-  CameraIcon,
-  SaveIcon,
-  KeyIcon,
-  LoaderIcon,
-  CheckCircleIcon,
-  AlertCircleIcon,
-  UserIcon,
-} from 'lucide-react'
 import type { Profile } from '@/lib/types'
 
 interface ProfileFormProps {
