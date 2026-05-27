@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
     ? parsePageContent(pageRes.data.content_json)
     : null
 
-  return buildCmsPageMetadata({
+  const base = await buildCmsPageMetadata({
     slug: 'about',
     path: '/about',
     defaultTitle: 'About Us | Kingdom Deliverance Centre Uganda',
@@ -31,6 +31,22 @@ export async function generateMetadata(): Promise<Metadata> {
     content,
     heroImageUrl,
   })
+
+  // Force a same-origin OG image endpoint for WhatsApp unfurl reliability.
+  const forcedOgImage =
+    'https://kdcuganda.org/og?title=About%20Us%20%7C%20Kingdom%20Deliverance%20Centre%20Uganda&type=default&v=4'
+
+  return {
+    ...base,
+    openGraph: {
+      ...base.openGraph,
+      images: [{ url: forcedOgImage, width: 1200, height: 630, alt: 'About Us | KDC Uganda' }],
+    },
+    twitter: {
+      ...base.twitter,
+      images: [forcedOgImage],
+    },
+  }
 }
 
 export default async function AboutPage() {
