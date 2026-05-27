@@ -4,7 +4,9 @@ import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
-import { PlusIcon, PencilIcon, RefreshCw, FileStack, Radar, XIcon } from 'lucide-react'
+import { PlusIcon, PencilIcon, RefreshCw, FileStack, Radar, XIcon, Users } from 'lucide-react'
+import { getSeoScoreColor } from '@/lib/posts-helpers'
+import { computePageSeoScore } from '@/lib/cms/page-seo-score'
 import { submitGoogleIndexing } from '@/lib/seo/submit-google-indexing-client'
 import {
   collectIndexablePageUrls,
@@ -23,10 +25,34 @@ import {
 } from '@/lib/cms/page-content'
 import type { CmsPage } from '@/lib/types'
 import { formatAdminDate } from '@/lib/format-admin-date'
+import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
 interface PagesManagerProps {
   initialPages: CmsPage[]
+  visitorsByPath?: Record<string, number>
+  analyticsConnected?: boolean
+}
+
+function SeoScoreBadge({ score }: { score: number }) {
+  const color = getSeoScoreColor(score)
+  const colorClass = {
+    red: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20',
+    yellow: 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20',
+    green: 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20',
+  }[color]
+
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums',
+        colorClass
+      )}
+      aria-label={`SEO score: ${score}`}
+    >
+      {score}
+    </span>
+  )
 }
 
 function reportIndexingResult(result: Awaited<ReturnType<typeof submitGoogleIndexing>>) {
@@ -51,7 +77,11 @@ function reportIndexingResult(result: Awaited<ReturnType<typeof submitGoogleInde
   return true
 }
 
-export function PagesManager({ initialPages }: PagesManagerProps) {
+export function PagesManager({
+  initialPages,
+  visitorsByPath = {},
+  analyticsConnected = false,
+}: PagesManagerProps) {
   const router = useRouter()
   const [pages, setPages] = React.useState(initialPages)
   const [search, setSearch] = React.useState('')
@@ -192,6 +222,32 @@ export function PagesManager({ initialPages }: PagesManagerProps) {
       key: 'status',
       header: 'Status',
       cell: (p) => <StatusBadge status={p.status} />,
+    },
+    {
+      key: 'visitors',
+      header: 'Visitors (28d)',
+      cell: (p) => {
+        const path = pagePathFromSlug(p.slug === 'home' ? '' : p.slug)
+        const views = visitorsByPath[path]
+        if (!analyticsConnected) {
+          return (
+            <span className="text-xs text-muted-foreground" title="Connect Google Analytics in Admin → Analytics">
+              —
+            </span>
+          )
+        }
+        return (
+          <span className="inline-flex items-center gap-1 text-sm font-medium tabular-nums text-foreground">
+            <Users className="size-3.5 text-muted-foreground" />
+            {(views ?? 0).toLocaleString('en-US')}
+          </span>
+        )
+      },
+    },
+    {
+      key: 'seo',
+      header: 'SEO',
+      cell: (p) => <SeoScoreBadge score={computePageSeoScore(p)} />,
     },
     {
       key: 'updated',
