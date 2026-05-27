@@ -88,9 +88,9 @@ export function LazyMediaThumb({
       </span>
 
       {inView ? (
-        <MediaFilePreview asset={asset} active={inView} variant="thumb" />
+        <MediaFilePreview asset={asset} active={inView} variant="thumb" className="z-0" />
       ) : (
-        <div className="absolute inset-0 animate-pulse bg-muted-foreground/10" aria-hidden />
+        <div className="absolute inset-0 z-0 animate-pulse bg-muted-foreground/10" aria-hidden />
       )}
       <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
         <span className="rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white">

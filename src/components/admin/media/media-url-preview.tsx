@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { ImageIcon } from 'lucide-react'
-import { getMediaProxyUrl, normalizeMediaUrl } from '@/lib/media-url'
+import { getMediaImageSourcesFromUrl } from '@/lib/media/media-preview'
 import { cn } from '@/lib/utils'
 
 interface MediaUrlPreviewProps {
@@ -12,23 +12,25 @@ interface MediaUrlPreviewProps {
   imgClassName?: string
 }
 
-/** Renders a stored media URL with CDN normalization and `/api/media/asset` fallback. */
+/** Renders a stored media URL with CDN-first loading and proxy fallback. */
 export function MediaUrlPreview({
   url,
   alt = '',
   className,
   imgClassName,
 }: MediaUrlPreviewProps) {
-  const normalized = normalizeMediaUrl(url) ?? url
-  const [src, setSrc] = React.useState(normalized)
+  const sources = React.useMemo(() => getMediaImageSourcesFromUrl(url), [url])
+  const [sourceIndex, setSourceIndex] = React.useState(0)
   const [failed, setFailed] = React.useState(false)
 
   React.useEffect(() => {
-    setSrc(normalized)
+    setSourceIndex(0)
     setFailed(false)
-  }, [url, normalized])
+  }, [url])
 
-  if (!url?.trim() || failed) {
+  const src = sources[sourceIndex] ?? ''
+
+  if (!url?.trim() || failed || !src) {
     return (
       <div
         className={cn(
@@ -50,9 +52,8 @@ export function MediaUrlPreview({
       decoding="async"
       className={cn('h-full w-full object-cover', imgClassName, className)}
       onError={() => {
-        const proxy = getMediaProxyUrl(url)
-        if (proxy && src !== proxy) {
-          setSrc(proxy)
+        if (sourceIndex < sources.length - 1) {
+          setSourceIndex((i) => i + 1)
           return
         }
         setFailed(true)

@@ -4,9 +4,9 @@ import * as React from 'react'
 import { File, FileText, Music, Video } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { MediaAsset } from '@/lib/types'
-import { getMediaProxyUrl } from '@/lib/media-url'
 import {
   getFileExtension,
+  getMediaImageSources,
   getMediaPreviewUrl,
   getShortFilename,
   resolveMediaDisplayKind,
@@ -42,15 +42,18 @@ export function MediaFilePreview({
 }: MediaFilePreviewProps) {
   const kind = resolveMediaDisplayKind(asset)
   const previewUrl = getMediaPreviewUrl(asset)
-  const [imageSrc, setImageSrc] = React.useState(previewUrl)
+  const imageSources = React.useMemo(() => getMediaImageSources(asset), [asset.url])
+  const [sourceIndex, setSourceIndex] = React.useState(0)
   const [imageFailed, setImageFailed] = React.useState(false)
 
   React.useEffect(() => {
-    setImageSrc(previewUrl)
+    setSourceIndex(0)
     setImageFailed(false)
-  }, [asset.id, asset.url, previewUrl])
+  }, [asset.id, asset.url])
 
-  const showImage = kind === 'image' && active && !imageFailed
+  const imageSrc = imageSources[sourceIndex] ?? previewUrl
+
+  const showImage = kind === 'image' && active && !imageFailed && Boolean(imageSrc)
   const showPdf = kind === 'pdf' && active
   const showVideo = kind === 'video' && active
 
@@ -72,7 +75,7 @@ export function MediaFilePreview({
   )
 
   return (
-    <div className={cn('relative h-full w-full', className)}>
+    <div className={cn('absolute inset-0 overflow-hidden', className)}>
       {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -81,11 +84,10 @@ export function MediaFilePreview({
           loading="lazy"
           decoding="async"
           fetchPriority="low"
-          className="absolute inset-0 h-full w-full object-cover"
+          className="h-full w-full object-cover"
           onError={() => {
-            const proxy = getMediaProxyUrl(asset.url)
-            if (proxy && imageSrc !== proxy) {
-              setImageSrc(proxy)
+            if (sourceIndex < imageSources.length - 1) {
+              setSourceIndex((i) => i + 1)
               return
             }
             setImageFailed(true)

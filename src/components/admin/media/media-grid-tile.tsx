@@ -25,16 +25,16 @@ export function MediaGridTile({ asset, onSelect, className }: MediaGridTileProps
       type="button"
       onClick={onSelect}
       className={cn(
-        'group flex flex-col overflow-hidden rounded-lg border border-border bg-muted/30 text-left transition-colors',
-        'hover:border-primary hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'group flex flex-col overflow-hidden rounded-lg border border-border bg-card text-left transition-colors',
+        'hover:border-primary hover:ring-2 hover:ring-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         className
       )}
       title={asset.alt_text ?? asset.filename}
     >
-      <div className="relative aspect-square w-full overflow-hidden bg-muted">
+      <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-muted">
         <MediaFilePreview asset={asset} active variant="thumb" />
       </div>
-      <div className="border-t border-border/60 bg-background/80 px-2 py-1.5">
+      <div className="min-h-[2.75rem] border-t border-border/60 bg-background px-2 py-1.5">
         <p className="truncate text-xs font-medium leading-tight text-foreground">
           {getShortFilename(asset, 32)}
         </p>

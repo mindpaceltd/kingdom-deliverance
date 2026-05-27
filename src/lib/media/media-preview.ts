@@ -47,11 +47,29 @@ export function resolveMediaDisplayKind(asset: MediaAsset): MediaDisplayKind {
   return 'document'
 }
 
+/** Direct public CDN URL (preferred for <img> thumbnails). */
+export function getMediaDirectUrl(asset: MediaAsset): string {
+  return normalizeMediaUrl(asset.url) ?? asset.url ?? ''
+}
+
+/** Ordered fallbacks for image thumbnails: CDN first, then same-origin proxy. */
+export function getMediaImageSourcesFromUrl(url: string): string[] {
+  const direct = normalizeMediaUrl(url) ?? url
+  const proxy = getMediaProxyUrl(url)
+  const out: string[] = []
+  if (direct.trim()) out.push(direct)
+  if (proxy && !out.includes(proxy)) out.push(proxy)
+  return out
+}
+
+export function getMediaImageSources(asset: MediaAsset): string[] {
+  return getMediaImageSourcesFromUrl(asset.url)
+}
+
 /** Public or same-origin URL suitable for previews (embeds, video, img). */
 export function getMediaPreviewUrl(asset: MediaAsset): string {
-  const normalized = normalizeMediaUrl(asset.url) ?? asset.url
-  const proxy = getMediaProxyUrl(asset.url)
-  return proxy ?? normalized
+  const sources = getMediaImageSources(asset)
+  return sources[0] ?? ''
 }
 
 export function getFileExtension(asset: MediaAsset): string {
