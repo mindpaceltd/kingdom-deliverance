@@ -11,7 +11,16 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table'
+import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
+
+export interface RowSelectionConfig<T> {
+  getRowId: (row: T) => string
+  selectedIds: Set<string>
+  onSelectionChange: (ids: Set<string>) => void
+  /** When true, row cannot be selected (e.g. draft / noindex). */
+  isRowDisabled?: (row: T) => boolean
+}
 
 export interface ColumnDef<T> {
   key: string
@@ -31,6 +40,7 @@ interface DataTableProps<T> {
   hideSearch?: boolean
   className?: string
   isLoading?: boolean
+  rowSelection?: RowSelectionConfig<T>
 }
 
 const DEFAULT_PAGE_SIZE = 10
@@ -47,6 +57,7 @@ export function DataTable<T>({
   hideSearch = false,
   className,
   isLoading = false,
+  rowSelection,
 }: DataTableProps<T>) {
   const [internalSearch, setInternalSearch] = React.useState('')
   const [currentPage, setCurrentPage] = React.useState(1)
@@ -101,6 +112,40 @@ export function DataTable<T>({
 
   const pageNumbers = getPageNumbers(safePage, totalPages)
 
+  const selectablePageIds = rowSelection
+    ? pageData
+        .filter((row) => !rowSelection.isRowDisabled?.(row))
+        .map((row) => rowSelection.getRowId(row))
+    : []
+
+  const allPageSelected =
+    selectablePageIds.length > 0 &&
+    selectablePageIds.every((id) => rowSelection!.selectedIds.has(id))
+
+  const somePageSelected =
+    selectablePageIds.some((id) => rowSelection!.selectedIds.has(id)) && !allPageSelected
+
+  function toggleSelectAllOnPage() {
+    if (!rowSelection) return
+    const next = new Set(rowSelection.selectedIds)
+    if (allPageSelected) {
+      selectablePageIds.forEach((id) => next.delete(id))
+    } else {
+      selectablePageIds.forEach((id) => next.add(id))
+    }
+    rowSelection.onSelectionChange(next)
+  }
+
+  function toggleSelectRow(id: string) {
+    if (!rowSelection) return
+    const next = new Set(rowSelection.selectedIds)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    rowSelection.onSelectionChange(next)
+  }
+
+  const colSpan = columns.length + (rowSelection ? 1 : 0)
+
   return (
     <div className={cn('space-y-4', className)}>
       {!hideSearch && (
@@ -120,6 +165,17 @@ export function DataTable<T>({
         <Table>
           <TableHeader>
             <TableRow>
+              {rowSelection && (
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={allPageSelected}
+                    indeterminate={somePageSelected}
+                    onChange={toggleSelectAllOnPage}
+                    aria-label="Select all on this page"
+                    disabled={selectablePageIds.length === 0}
+                  />
+                </TableHead>
+              )}
               {columns.map((col) => (
                 <TableHead key={col.key} className={col.className}>
                   {col.header}
@@ -131,15 +187,28 @@ export function DataTable<T>({
             {pageData.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length}
+                  colSpan={colSpan}
                   className="h-24 text-center text-muted-foreground"
                 >
                   No results found.
                 </TableCell>
               </TableRow>
             ) : (
-              pageData.map((row, rowIndex) => (
-                <TableRow key={rowIndex}>
+              pageData.map((row, rowIndex) => {
+                const rowId = rowSelection?.getRowId(row) ?? String(rowIndex)
+                const disabled = rowSelection?.isRowDisabled?.(row) ?? false
+                return (
+                <TableRow key={rowId}>
+                  {rowSelection && (
+                    <TableCell className="w-10">
+                      <Checkbox
+                        checked={rowSelection.selectedIds.has(rowId)}
+                        onChange={() => toggleSelectRow(rowId)}
+                        disabled={disabled}
+                        aria-label="Select row"
+                      />
+                    </TableCell>
+                  )}
                   {columns.map((col) => (
                     <TableCell
                       key={col.key}
@@ -149,7 +218,7 @@ export function DataTable<T>({
                     </TableCell>
                   ))}
                 </TableRow>
-              ))
+              )})
             )}
           </TableBody>
         </Table>

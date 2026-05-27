@@ -3,9 +3,14 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { PlusIcon, PencilIcon, RefreshCw, FileStack, Radar } from 'lucide-react'
-import { buildPublicPageUrl } from '@/lib/seo/public-content-urls'
+import { AnimatePresence, motion } from 'framer-motion'
+import { PlusIcon, PencilIcon, RefreshCw, FileStack, Radar, XIcon } from 'lucide-react'
 import { submitGoogleIndexing } from '@/lib/seo/submit-google-indexing-client'
+import {
+  collectIndexablePageUrls,
+  getPageIndexUrl,
+  isPageIndexable,
+} from '@/lib/cms/page-indexing'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StatusBadge } from '@/components/admin/status-badge'
@@ -24,6 +29,28 @@ interface PagesManagerProps {
   initialPages: CmsPage[]
 }
 
+function reportIndexingResult(result: Awaited<ReturnType<typeof submitGoogleIndexing>>) {
+  if (!result.ok) {
+    if (result.needsReauth) {
+      toast.error(result.message, {
+        description: result.hint,
+        action: {
+          label: 'Reconnect Google',
+          onClick: () => {
+            window.location.href = '/api/google/auth?reconnect=1'
+          },
+        },
+        duration: 12000,
+      })
+    } else {
+      toast.error(result.message, { description: result.hint })
+    }
+    return false
+  }
+  toast.success(result.message)
+  return true
+}
+
 export function PagesManager({ initialPages }: PagesManagerProps) {
   const router = useRouter()
   const [pages, setPages] = React.useState(initialPages)
@@ -31,43 +58,91 @@ export function PagesManager({ initialPages }: PagesManagerProps) {
   const [filter, setFilter] = React.useState<'all' | 'system' | 'custom'>('all')
   const [syncing, setSyncing] = React.useState(false)
   const [indexingId, setIndexingId] = React.useState<string | null>(null)
+  const [bulkIndexing, setBulkIndexing] = React.useState(false)
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set())
 
   React.useEffect(() => {
     setPages(initialPages)
   }, [initialPages])
 
-  async function handleIndexPage(page: CmsPage) {
-    const content = parsePageContent(page.content_json)
-    if (page.status !== 'published') {
-      toast.error('Publish the page before submitting to Google.')
+  const filtered = React.useMemo(
+    () =>
+      pages.filter((page) => {
+        const content = parsePageContent(page.content_json)
+        if (filter === 'system' && !content.isSystem) return false
+        if (filter === 'custom' && content.isSystem) return false
+        if (!search.trim()) return true
+        const q = search.toLowerCase()
+        return (
+          page.title.toLowerCase().includes(q) ||
+          page.slug.toLowerCase().includes(q) ||
+          pageTypeLabel(content.pageType, content.listingTarget).toLowerCase().includes(q)
+        )
+      }),
+    [pages, filter, search]
+  )
+
+  const indexableInFilter = React.useMemo(
+    () => filtered.filter(isPageIndexable),
+    [filtered]
+  )
+
+  async function submitPageUrls(urls: string[]) {
+    if (urls.length === 0) {
+      toast.error('No published pages to index (draft or noindex pages are skipped).')
       return
     }
-    if (content.seo?.noIndex) {
-      toast.error('Page is set to noindex.')
+    const result = await submitGoogleIndexing(urls)
+    reportIndexingResult(result)
+  }
+
+  async function handleIndexPage(page: CmsPage) {
+    if (!isPageIndexable(page)) {
+      toast.error('Only published pages that are not set to noindex can be submitted.')
       return
     }
     setIndexingId(page.id)
-    const url = content.seo?.canonicalUrl?.trim() || buildPublicPageUrl(page.slug)
-    const result = await submitGoogleIndexing([url])
+    await submitPageUrls([getPageIndexUrl(page)])
     setIndexingId(null)
-    if (!result.ok) {
-      if (result.needsReauth) {
-        toast.error(result.message, {
-          description: result.hint,
-          action: {
-            label: 'Reconnect Google',
-            onClick: () => {
-              window.location.href = '/api/google/auth?reconnect=1'
-            },
-          },
-          duration: 12000,
-        })
-      } else {
-        toast.error(result.message, { description: result.hint })
-      }
+  }
+
+  async function handleBulkIndex() {
+    const selected = pages.filter((p) => selectedIds.has(p.id))
+    const urls = collectIndexablePageUrls(selected)
+    if (urls.length === 0) {
+      toast.error('Selected pages include no published, indexable URLs.')
       return
     }
-    toast.success(result.message)
+    setBulkIndexing(true)
+    await submitPageUrls(urls)
+    setBulkIndexing(false)
+    setSelectedIds(new Set())
+  }
+
+  async function handleIndexAllPublished() {
+    const urls = collectIndexablePageUrls(filtered)
+    if (urls.length === 0) {
+      toast.error('No published pages in the current list to index.')
+      return
+    }
+    if (
+      !window.confirm(
+        `Submit ${urls.length} published page URL(s) to Google for indexing?`
+      )
+    ) {
+      return
+    }
+    setBulkIndexing(true)
+    await submitPageUrls(urls)
+    setBulkIndexing(false)
+  }
+
+  function handleSelectAllIndexable() {
+    const ids = new Set(indexableInFilter.map((p) => p.id))
+    setSelectedIds(ids)
+    if (ids.size === 0) {
+      toast.message('No indexable pages in the current list.')
+    }
   }
 
   async function handleSyncSystemPages() {
@@ -81,19 +156,6 @@ export function PagesManager({ initialPages }: PagesManagerProps) {
     toast.success(`Synced ${result.synced} system page(s)`)
     router.refresh()
   }
-
-  const filtered = pages.filter((page) => {
-    const content = parsePageContent(page.content_json)
-    if (filter === 'system' && !content.isSystem) return false
-    if (filter === 'custom' && content.isSystem) return false
-    if (!search.trim()) return true
-    const q = search.toLowerCase()
-    return (
-      page.title.toLowerCase().includes(q) ||
-      page.slug.toLowerCase().includes(q) ||
-      pageTypeLabel(content.pageType, content.listingTarget).toLowerCase().includes(q)
-    )
-  })
 
   const columns: ColumnDef<CmsPage>[] = [
     {
@@ -145,8 +207,7 @@ export function PagesManager({ initialPages }: PagesManagerProps) {
       header: '',
       className: 'w-[100px]',
       cell: (p) => {
-        const content = parsePageContent(p.content_json)
-        const canIndex = p.status === 'published' && !content.seo?.noIndex
+        const canIndex = isPageIndexable(p)
         return (
           <div className="flex items-center justify-end gap-0.5">
             <Button
@@ -154,7 +215,7 @@ export function PagesManager({ initialPages }: PagesManagerProps) {
               variant="ghost"
               size="icon-sm"
               title="Submit to Google for indexing"
-              disabled={!canIndex || indexingId === p.id}
+              disabled={!canIndex || indexingId === p.id || bulkIndexing}
               onClick={() => void handleIndexPage(p)}
             >
               <Radar
@@ -174,9 +235,10 @@ export function PagesManager({ initialPages }: PagesManagerProps) {
 
   const systemCount = pages.filter((p) => parsePageContent(p.content_json).isSystem).length
   const customCount = pages.length - systemCount
+  const bulkBusy = bulkIndexing || indexingId !== null
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6 pb-24">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
@@ -189,6 +251,16 @@ export function PagesManager({ initialPages }: PagesManagerProps) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={bulkBusy || indexableInFilter.length === 0}
+            onClick={() => void handleIndexAllPublished()}
+          >
+            <Radar className={`mr-2 size-4 ${bulkIndexing ? 'animate-pulse' : ''}`} />
+            Index all published ({indexableInFilter.length})
+          </Button>
           <Button
             type="button"
             variant="outline"
@@ -224,21 +296,33 @@ export function PagesManager({ initialPages }: PagesManagerProps) {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-1 rounded-lg border p-1 bg-muted/30">
-          {(['all', 'system', 'custom'] as const).map((f) => (
-            <button
-              key={f}
-              type="button"
-              onClick={() => setFilter(f)}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium capitalize transition-colors ${
-                filter === f
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {f}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex gap-1 rounded-lg border p-1 bg-muted/30">
+            {(['all', 'system', 'custom'] as const).map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setFilter(f)}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium capitalize transition-colors ${
+                  filter === f
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-xs"
+            onClick={handleSelectAllIndexable}
+            disabled={indexableInFilter.length === 0}
+          >
+            Select all indexable
+          </Button>
         </div>
         <Input
           placeholder="Search pages…"
@@ -254,7 +338,46 @@ export function PagesManager({ initialPages }: PagesManagerProps) {
         hideSearch
         pageSize={15}
         searchPlaceholder=""
+        rowSelection={{
+          getRowId: (p) => p.id,
+          selectedIds,
+          onSelectionChange: setSelectedIds,
+          isRowDisabled: (p) => !isPageIndexable(p),
+        }}
       />
+
+      <AnimatePresence>
+        {selectedIds.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            className="fixed bottom-6 left-1/2 z-50 flex items-center gap-3 px-5 py-2.5 rounded-full bg-primary text-primary-foreground shadow-xl"
+          >
+            <span className="text-sm font-bold border-r border-white/20 pr-3">
+              {selectedIds.size} selected
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 hover:bg-white/10"
+              disabled={bulkBusy}
+              onClick={() => void handleBulkIndex()}
+            >
+              <Radar className={`size-3.5 mr-1.5 ${bulkIndexing ? 'animate-pulse' : ''}`} />
+              Index on Google
+            </Button>
+            <button
+              type="button"
+              className="p-1 rounded-full hover:bg-white/10"
+              aria-label="Clear selection"
+              onClick={() => setSelectedIds(new Set())}
+            >
+              <XIcon className="size-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
