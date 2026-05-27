@@ -5,10 +5,13 @@ import { Coins, History, TrendingUp, Users, ArrowUpRight, ArrowDownRight } from 
 import { format } from 'date-fns'
 import Link from 'next/link'
 import { CreditAdjustmentDialog } from '@/components/admin/credits/adjustment-dialog'
+import { CreditSettingsPanel } from '@/components/admin/credits/credit-settings-panel'
+import { getCreditSettings } from '@/lib/credits/settings'
 import { cn } from '@/lib/utils'
 
 export default async function AdminCreditsPage() {
   const adminClient = createAdminClient()
+  const creditSettings = await getCreditSettings()
 
   // 1. Fetch all auth users (the source of truth for emails)
   const { data: authData } = await adminClient.auth.admin.listUsers()
@@ -90,6 +93,8 @@ export default async function AdminCreditsPage() {
           </Button>
         </div>
       </div>
+
+      <CreditSettingsPanel initial={creditSettings} />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">

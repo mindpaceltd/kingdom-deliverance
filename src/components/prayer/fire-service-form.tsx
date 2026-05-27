@@ -7,7 +7,9 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Flame, ArrowRight, ArrowLeft, Upload, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
-import { getUserCreditBalance, getCreditPackages, getServicePricing, purchaseCredits } from '@/lib/actions/credits'
+import { getUserCreditBalance, getCreditPackages, getCreditPricingContext, getServicePricing, purchaseCredits, purchaseCustomCredits, type CreditPackageWithPricing } from '@/lib/actions/credits'
+import { gbpToUsdAmount } from '@/lib/credits/pricing'
+import { useCurrency } from '@/lib/currency-context'
 import { submitFireServiceRequest } from '@/lib/actions/fire-service'
 import { countries, Country } from '@/lib/countries'
 import {
@@ -53,12 +55,10 @@ const PRAYER_AREAS = [
 
 const CUSTOM_SEED_ID = 'custom'
 
-/** Verse after ":" wins (108:13 → 13); otherwise use chapter number (Psalms 68 → 68). */
+/** Chapter number from reference (Ps 27:1 → 27, Isaiah 54:17 → 54, Psalms 68 → 68). */
 function seedCreditsFromDescription(desc: string): number {
-  const verseAfterColon = desc.match(/:(\d+)\b/)
-  if (verseAfterColon) return Math.max(1, parseInt(verseAfterColon[1], 10))
-  const chapterOnly = desc.match(/(?:Psalms?|Ps|Isaiah)\s+(\d+)\b/i)
-  if (chapterOnly) return Math.max(1, parseInt(chapterOnly[1], 10))
+  const chapter = desc.match(/(?:Psalms?|Ps|Isaiah)\s+(\d+)\b/i)
+  if (chapter) return Math.max(1, parseInt(chapter[1], 10))
   return 1
 }
 
@@ -76,6 +76,7 @@ const SEED_PACKAGES = SEED_PACKAGE_DEFS.map((pkg) => ({
 }))
 
 export function FireServiceForm() {
+  const { formatPrice, rates } = useCurrency()
   const [step, setStep] = useState<Step>(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -84,8 +85,14 @@ export function FireServiceForm() {
   const [creditBalance, setCreditBalance] = useState<number>(0)
   const [balanceLoaded, setBalanceLoaded] = useState(false)
   const [serviceCost, setServiceCost] = useState<number>(270)
-  const [packages, setPackages] = useState<any[]>([])
+  const [packages, setPackages] = useState<CreditPackageWithPricing[]>([])
+  const [pricePerCreditGbp, setPricePerCreditGbp] = useState(1)
   const [showPackages, setShowPackages] = useState(false)
+
+  const formatCreditsAsMoney = (credits: number) => {
+    const gbpTotal = credits * pricePerCreditGbp
+    return formatPrice(gbpToUsdAmount(gbpTotal, rates))
+  }
   
   const [form, setForm] = useState({
     firstName: '',
@@ -109,10 +116,14 @@ export function FireServiceForm() {
     const supabase = createClient()
 
     async function loadData() {
-      const cost = await getServicePricing('fire_service')
+      const [cost, pkgs, pricing] = await Promise.all([
+        getServicePricing('fire_service'),
+        getCreditPackages(),
+        getCreditPricingContext(),
+      ])
       if (cost) setServiceCost(cost)
-      const pkgs = await getCreditPackages()
       setPackages(pkgs)
+      setPricePerCreditGbp(pricing.settings.pricePerCreditGbp)
 
       const { data: { session } } = await supabase.auth.getSession()
       const user = session?.user ?? null
@@ -218,6 +229,22 @@ export function FireServiceForm() {
     }
     setLoading(true)
     const result = await purchaseCredits({ email: form.email, packageId })
+    if (result.success && result.paymentUrl) {
+      window.location.href = result.paymentUrl
+    } else {
+      setError(result.error || "Failed to initiate payment.")
+      setLoading(false)
+    }
+  }
+
+  const handleBuyCustomCredits = async (credits: number) => {
+    if (!form.email) {
+      setError("Please enter your email in Step 1 first.")
+      setStep(1)
+      return
+    }
+    setLoading(true)
+    const result = await purchaseCustomCredits({ email: form.email, credits })
     if (result.success && result.paymentUrl) {
       window.location.href = result.paymentUrl
     } else {
@@ -622,7 +649,26 @@ export function FireServiceForm() {
                   </p>
                   
                   {showPackages ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in zoom-in-95 duration-300">
+                    <div className="space-y-4 animate-in fade-in zoom-in-95 duration-300">
+                      {form.selectedSeed > creditBalance && (
+                        <Button
+                          type="button"
+                          onClick={() =>
+                            handleBuyCustomCredits(form.selectedSeed - creditBalance)
+                          }
+                          disabled={loading}
+                          className="w-full h-auto py-4 flex flex-col gap-1 bg-accent hover:bg-accent/90 text-[#111A30] font-bold"
+                        >
+                          <span className="text-lg">
+                            Buy {form.selectedSeed - creditBalance} Credits (exact amount needed)
+                          </span>
+                          <span className="text-xs opacity-80">
+                            {formatCreditsAsMoney(form.selectedSeed - creditBalance)} · £
+                            {(form.selectedSeed - creditBalance) * pricePerCreditGbp} GBP
+                          </span>
+                        </Button>
+                      )}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {packages.map(pkg => (
                         <Button 
                           key={pkg.id} 
@@ -632,10 +678,13 @@ export function FireServiceForm() {
                           className="h-auto py-4 flex flex-col gap-1 border-white/10 bg-[#1D2845] hover:bg-accent hover:text-primary transition-all"
                         >
                           <span className="font-bold text-lg">{pkg.credits_amount} Credits</span>
-                          <span className="text-xs opacity-70">${pkg.price_usd} USD</span>
+                          <span className="text-xs opacity-70">
+                            {formatCreditsAsMoney(pkg.credits_amount)} · £{pkg.gbp_total.toFixed(2)} GBP
+                          </span>
                         </Button>
                       ))}
-                      <Button variant="ghost" onClick={() => setShowPackages(false)} className="sm:col-span-2 text-white/50 text-xs">Cancel</Button>
+                      </div>
+                      <Button variant="ghost" onClick={() => setShowPackages(false)} className="w-full text-white/50 text-xs">Cancel</Button>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
