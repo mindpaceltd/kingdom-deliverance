@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Plus, Edit2, Truck } from 'lucide-react'
 import { SettingsRowDelete } from '@/components/admin/settings/settings-row-delete'
 import { deleteShippingRate } from '@/lib/actions/settings-shop'
+import { formatShippingRate } from '@/lib/shop/currency'
 
 export default async function ShippingSettingsPage() {
   const admin = createAdminClient()
@@ -38,7 +39,7 @@ export default async function ShippingSettingsPage() {
                   Name
                 </th>
                 <th className="text-left px-5 py-3 font-semibold text-xs uppercase text-muted-foreground">
-                  Rate (USD)
+                  Rate (USD / UGX)
                 </th>
                 <th className="text-left px-5 py-3 font-semibold text-xs uppercase text-muted-foreground">
                   Countries
@@ -53,10 +54,12 @@ export default async function ShippingSettingsPage() {
               {shippingRates.map((rate) => (
                 <tr key={rate.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-5 py-4 font-medium">{rate.name}</td>
-                  <td className="px-5 py-4">${rate.rate_usd}</td>
+                  <td className="px-5 py-4 text-sm tabular-nums">
+                    {formatShippingRate(Number(rate.rate_usd))}
+                  </td>
                   <td className="px-5 py-4 text-muted-foreground">
                     {rate.countries?.length > 0
-                      ? `${rate.countries.length} countries`
+                      ? rate.countries.join(', ')
                       : 'All countries'}
                   </td>
                   <td className="px-5 py-4">

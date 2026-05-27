@@ -35,6 +35,8 @@ interface TestimoniesManagerProps {
   initialTestimonies: TestimonyRecord[]
 }
 
+type TestimonyFilter = 'pending' | 'approved' | 'trash' | 'all'
+
 function statusBadge(status: string) {
   switch (status) {
     case 'approved':
@@ -67,6 +69,11 @@ export function TestimoniesManager({ initialTestimonies }: TestimoniesManagerPro
 
   const pendingCount = testimonies.filter((t) => t.status === 'pending').length
   const approvedCount = testimonies.filter((t) => t.status === 'approved').length
+  const trashCount = testimonies.filter((t) => t.status === 'rejected').length
+
+  // Submissions start as "pending" (draft-like), admin corrects and then approves.
+  // Rejected items are treated as "trash".
+  const [filter, setFilter] = useState<TestimonyFilter>('pending')
 
   function openCreate() {
     setEditing(null)
@@ -146,6 +153,20 @@ export function TestimoniesManager({ initialTestimonies }: TestimoniesManagerPro
     router.refresh()
   }
 
+  function filteredTestimonies(): TestimonyRecord[] {
+    switch (filter) {
+      case 'pending':
+        return testimonies.filter((t) => t.status === 'pending')
+      case 'approved':
+        return testimonies.filter((t) => t.status === 'approved')
+      case 'trash':
+        return testimonies.filter((t) => t.status === 'rejected')
+      case 'all':
+      default:
+        return testimonies
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -155,12 +176,16 @@ export function TestimoniesManager({ initialTestimonies }: TestimoniesManagerPro
             <p className="text-2xl font-bold text-primary">{testimonies.length}</p>
           </div>
           <div className="rounded-xl border bg-card p-4 shadow-sm">
-            <p className="text-sm text-muted-foreground">Pending review</p>
+            <p className="text-sm text-muted-foreground">Pending / Draft</p>
             <p className="text-2xl font-bold text-yellow-600">{pendingCount}</p>
           </div>
           <div className="rounded-xl border bg-card p-4 shadow-sm">
             <p className="text-sm text-muted-foreground">Published (front-end)</p>
             <p className="text-2xl font-bold text-green-600">{approvedCount}</p>
+          </div>
+          <div className="rounded-xl border bg-card p-4 shadow-sm hidden sm:block">
+            <p className="text-sm text-muted-foreground">Trash</p>
+            <p className="text-2xl font-bold text-destructive">{trashCount}</p>
           </div>
         </div>
         <Button onClick={openCreate} className="shrink-0">
@@ -176,6 +201,42 @@ export function TestimoniesManager({ initialTestimonies }: TestimoniesManagerPro
         </a>{' '}
         and the home page carousel.
       </p>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          variant={filter === 'all' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setFilter('all')}
+        >
+          All ({testimonies.length})
+        </Button>
+        <Button
+          type="button"
+          variant={filter === 'pending' ? 'default' : 'outline'}
+          size="sm"
+          className="bg-transparent"
+          onClick={() => setFilter('pending')}
+        >
+          Draft / Pending ({pendingCount})
+        </Button>
+        <Button
+          type="button"
+          variant={filter === 'approved' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setFilter('approved')}
+        >
+          Approved ({approvedCount})
+        </Button>
+        <Button
+          type="button"
+          variant={filter === 'trash' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setFilter('trash')}
+        >
+          Trash ({trashCount})
+        </Button>
+      </div>
 
       <div className="overflow-hidden rounded-xl border bg-card shadow-sm [&_[data-slot=table-container]]:overflow-x-visible">
         <Table className="table-fixed w-full">
@@ -200,18 +261,24 @@ export function TestimoniesManager({ initialTestimonies }: TestimoniesManagerPro
             </TableRow>
           </TableHeader>
           <TableBody>
-            {testimonies.length === 0 ? (
+            {filteredTestimonies().length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={7}
                   className="h-32 whitespace-normal text-center text-muted-foreground"
                 >
-                  No testimonies yet. Click <strong>Add testimony</strong> or wait for public
-                  submissions.
+                  {testimonies.length === 0 ? (
+                    <>
+                      No testimonies yet. Click <strong>Add testimony</strong> or wait for public
+                      submissions.
+                    </>
+                  ) : (
+                    <>No testimonies match this filter.</>
+                  )}
                 </TableCell>
               </TableRow>
             ) : (
-              testimonies.map((t) => {
+              filteredTestimonies().map((t) => {
                 const busy = loadingId === t.id
                 return (
                   <TableRow key={t.id} className="align-top">
@@ -309,7 +376,19 @@ export function TestimoniesManager({ initialTestimonies }: TestimoniesManagerPro
                             size="icon"
                             className="h-8 w-8"
                             disabled={busy}
-                            title="Unpublish (pending)"
+                            title="Move to Draft (pending)"
+                            onClick={() => handlePending(t.id)}
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {t.status === 'rejected' && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-amber-800 hover:bg-amber-50"
+                            disabled={busy}
+                            title="Restore to Draft (pending)"
                             onClick={() => handlePending(t.id)}
                           >
                             <RotateCcw className="h-4 w-4" />
@@ -321,7 +400,7 @@ export function TestimoniesManager({ initialTestimonies }: TestimoniesManagerPro
                             size="icon"
                             className="h-8 w-8 text-amber-700 hover:bg-amber-50"
                             disabled={busy}
-                            title={t.status === 'approved' ? 'Reject' : 'Reject'}
+                            title="Move to Trash (rejected)"
                             onClick={() => handleReject(t.id)}
                           >
                             <XCircle className="h-4 w-4" />
