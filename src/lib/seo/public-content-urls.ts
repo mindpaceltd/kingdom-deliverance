@@ -1,7 +1,51 @@
+/** Production domain for SEO, sitemaps, and Search Console. */
+export const CANONICAL_SITE_ORIGIN = 'https://kdcuganda.org'
+
+function normalizeOrigin(value: string): string {
+  const trimmed = value.trim().replace(/\/$/, '')
+  if (!trimmed) return ''
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed
+  }
+  return `https://${trimmed}`
+}
+
+function isCanonicalPublicOrigin(origin: string): boolean {
+  try {
+    const url = new URL(normalizeOrigin(origin))
+    const host = url.hostname.toLowerCase()
+    if (/\.vercel\.app$/i.test(host)) return false
+    if (host === 'localhost' || host.endsWith('.localhost')) return false
+    if (/^127\.\d+\.\d+\.\d+$/.test(host)) return false
+    if (host === '0.0.0.0') return false
+    return true
+  } catch {
+    return false
+  }
+}
+
+function readCanonicalOriginFromEnv(): string | null {
+  const keys = ['CANONICAL_SITE_URL', 'NEXT_PUBLIC_SITE_URL', 'SITE_URL'] as const
+  for (const key of keys) {
+    const raw = process.env[key]?.trim()
+    if (!raw) continue
+    const origin = normalizeOrigin(raw)
+    if (isCanonicalPublicOrigin(origin)) return origin
+  }
+  return null
+}
+
+/** Public site origin for links and metadata (skips Vercel preview / localhost env values). */
 export function getDefaultPublicOrigin(): string {
-  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim()
-  if (fromEnv) return fromEnv.replace(/\/$/, '')
-  return 'https://kdcuganda.org'
+  return readCanonicalOriginFromEnv() ?? CANONICAL_SITE_ORIGIN
+}
+
+/**
+ * Origin used in sitemap.xml — always the production domain so Search Console accepts URLs.
+ * Never uses *.vercel.app even when NEXT_PUBLIC_SITE_URL points at a preview deployment.
+ */
+export function getSitemapOrigin(): string {
+  return CANONICAL_SITE_ORIGIN
 }
 
 /** Map Search Console property URL to canonical site origin for indexing. */

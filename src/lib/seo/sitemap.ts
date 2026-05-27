@@ -1,6 +1,6 @@
 import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/server'
-import { getDefaultPublicOrigin, buildPublicPageUrl } from '@/lib/seo/public-content-urls'
+import { getSitemapOrigin, buildPublicPageUrl } from '@/lib/seo/public-content-urls'
 import { SITEMAP_CACHE_TAG } from '@/lib/seo/revalidate-sitemap'
 
 export type SitemapChangeFreq =
@@ -67,7 +67,7 @@ function pagePathFromSlug(slug: string): string {
 }
 
 export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
-  const baseUrl = getDefaultPublicOrigin()
+  const baseUrl = getSitemapOrigin()
   const admin = createAdminClient()
   const now = new Date().toISOString()
 
@@ -162,7 +162,7 @@ export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
 
 export const getCachedSitemapEntries = unstable_cache(
   buildSitemapEntries,
-  ['sitemap-entries-v2'],
+  ['sitemap-entries-v3-kdcuganda'],
   { tags: [SITEMAP_CACHE_TAG], revalidate: 3600 }
 )
 
