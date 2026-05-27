@@ -33,6 +33,25 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
   const shuffled = React.useMemo(() => shuffle(items), [items])
   const [openIndex, setOpenIndex] = React.useState<number | null>(null)
   const thumbRefs = React.useRef<(HTMLButtonElement | null)[]>([])
+  const [zoom, setZoom] = React.useState(1)
+
+  const ZOOM_MIN = 1
+  const ZOOM_MAX = 3
+  const ZOOM_STEP = 0.25
+
+  const clampZoom = (z: number) => Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z))
+
+  function zoomIn() {
+    setZoom((z) => clampZoom(z + ZOOM_STEP))
+  }
+
+  function zoomOut() {
+    setZoom((z) => clampZoom(z - ZOOM_STEP))
+  }
+
+  function resetZoom() {
+    setZoom(ZOOM_MIN)
+  }
 
   const total = shuffled.length
   const current =
@@ -56,6 +75,9 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
       if (e.key === 'Escape') setOpenIndex(null)
       if (e.key === 'ArrowLeft') go(-1)
       if (e.key === 'ArrowRight') go(1)
+      if (e.key === '+' || e.key === '=') zoomIn()
+      if (e.key === '-' || e.key === '_') zoomOut()
+      if (e.key === '0') resetZoom()
     }
     document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', onKey)
@@ -67,6 +89,7 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
 
   React.useEffect(() => {
     if (openIndex === null) return
+    setZoom(ZOOM_MIN)
     const el = thumbRefs.current[openIndex]
     el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
   }, [openIndex])
@@ -75,7 +98,7 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
 
   return (
     <>
-      <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5">
+      <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6">
         {shuffled.map((item, index) => (
           <button
             key={item.id}
@@ -134,13 +157,59 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
               </button>
             )}
 
-            <div className="flex max-h-[50vh] w-full max-w-5xl items-center justify-center sm:max-h-[58vh] md:max-h-[62vh]">
-              <GalleryLightboxImage
-                key={`${current.id}-${current.image_url}`}
-                imageUrl={current.image_url}
-                alt={current.caption}
-                className="max-h-[50vh] max-w-full object-contain sm:max-h-[58vh] md:max-h-[62vh]"
-              />
+            <div
+              className="relative flex max-h-[50vh] w-full max-w-5xl items-center justify-center sm:max-h-[58vh] md:max-h-[62vh]"
+              onWheel={(e) => {
+                // Prevent page scroll while zooming in the lightbox.
+                e.preventDefault()
+                if (e.deltaY < 0) zoomIn()
+                else zoomOut()
+              }}
+              onDoubleClick={() => setZoom((z) => (z <= ZOOM_MIN ? 2 : ZOOM_MIN))}
+            >
+              <div
+                className="flex w-full items-center justify-center"
+                style={{
+                  transform: `scale(${zoom})`,
+                  transformOrigin: 'center center',
+                  transition: 'transform 120ms ease-out',
+                  willChange: 'transform',
+                }}
+              >
+                <GalleryLightboxImage
+                  key={`${current.id}-${current.image_url}`}
+                  imageUrl={current.image_url}
+                  alt={current.caption}
+                  className="max-h-[50vh] max-w-full object-contain sm:max-h-[58vh] md:max-h-[62vh]"
+                />
+              </div>
+
+              <div className="absolute right-3 top-3 z-30 flex items-center gap-2 rounded-full bg-black/30 px-2 py-1 backdrop-blur-sm">
+                <button
+                  type="button"
+                  onClick={zoomOut}
+                  className="rounded-full bg-white/10 px-2 py-1 text-xs font-semibold text-white hover:bg-white/15"
+                  aria-label="Zoom out"
+                >
+                  -
+                </button>
+                <button
+                  type="button"
+                  onClick={resetZoom}
+                  className="rounded-full bg-white/10 px-2 py-1 text-xs font-semibold text-white hover:bg-white/15"
+                  aria-label="Reset zoom"
+                >
+                  Reset
+                </button>
+                <button
+                  type="button"
+                  onClick={zoomIn}
+                  className="rounded-full bg-white/10 px-2 py-1 text-xs font-semibold text-white hover:bg-white/15"
+                  aria-label="Zoom in"
+                >
+                  +
+                </button>
+              </div>
             </div>
 
             {total > 1 && (
