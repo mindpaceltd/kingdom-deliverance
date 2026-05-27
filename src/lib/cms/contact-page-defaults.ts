@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { parseStringArray } from '@/lib/settings-json'
 import { parsePageContent, type CmsContactDetails, type CmsPageHero } from '@/lib/cms/page-content'
 import { SYSTEM_PAGE_DEFINITIONS } from '@/lib/cms/system-pages'
@@ -30,9 +29,7 @@ export interface ResolvedContactPage {
   submitButtonLabel: string
 }
 
-function pickString(
-  ...candidates: (string | undefined)[]
-): string | undefined {
+function pickString(...candidates: (string | undefined)[]): string | undefined {
   for (const value of candidates) {
     const trimmed = value?.trim()
     if (trimmed) return trimmed
@@ -40,10 +37,7 @@ function pickString(
   return undefined
 }
 
-function mergePhones(
-  contact: CmsContactDetails,
-  settings: Record<string, string>
-): string[] {
+function mergePhones(contact: CmsContactDetails, settings: Record<string, string>): string[] {
   const primary =
     pickString(contact.primaryPhone, settings.contact_phone) ??
     defaultContactDetails().primaryPhone ??
@@ -112,34 +106,4 @@ export function resolveContactPage(
     submitButtonLabel:
       pickString(contact.submitButtonLabel, defaults.submitButtonLabel) ?? 'Send Message',
   }
-}
-
-export async function loadContactPageData(): Promise<ResolvedContactPage> {
-  const supabase = await createClient()
-
-  const [pageRes, settingsRes, heroRes] = await Promise.all([
-    supabase
-      .from('pages')
-      .select('content_json')
-      .eq('slug', 'contact')
-      .eq('status', 'published')
-      .maybeSingle(),
-    supabase.from('site_settings').select('key, value'),
-    supabase
-      .from('organization_images')
-      .select('url')
-      .eq('type', 'hero')
-      .eq('is_active', true)
-      .maybeSingle(),
-  ])
-
-  const settings = Object.fromEntries(
-    (settingsRes.data ?? []).map((row) => [row.key, row.value])
-  )
-
-  const cms = pageRes.data?.content_json
-    ? parsePageContent(pageRes.data.content_json)
-    : null
-
-  return resolveContactPage(cms, settings, heroRes.data?.url ?? null)
 }

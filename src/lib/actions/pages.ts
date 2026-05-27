@@ -11,7 +11,7 @@ import {
   parsePageContent,
   type CmsPageContent,
 } from '@/lib/cms/page-content'
-import { defaultContactDetails } from '@/lib/cms/contact-page-data'
+import { defaultContactDetails } from '@/lib/cms/contact-page-defaults'
 import { SYSTEM_PAGE_DEFINITIONS } from '@/lib/cms/system-pages'
 
 export interface CmsPagePayload {

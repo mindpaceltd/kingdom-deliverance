@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { MapPin, Phone, Mail, Clock } from 'lucide-react'
 import { ContactForm } from '@/components/contact/contact-form'
-import { loadContactPageData } from '@/lib/cms/contact-page-data'
+import { loadContactPageData } from '@/lib/cms/load-contact-page-data'
 import { createClient } from '@/lib/supabase/server'
 import { parsePageContent } from '@/lib/cms/page-content'
 

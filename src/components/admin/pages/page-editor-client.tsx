@@ -26,7 +26,7 @@ import {
 } from '@/lib/cms/page-image-specs'
 import { buildPublicPageUrl } from '@/lib/seo/public-content-urls'
 import { createPage, updatePageFromEditor } from '@/lib/actions/pages'
-import { defaultContactDetails } from '@/lib/cms/contact-page-data'
+import { defaultContactDetails } from '@/lib/cms/contact-page-defaults'
 import {
   buildContentJson,
   pagePathFromSlug,

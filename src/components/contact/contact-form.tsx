@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { CheckCircle, Loader2 } from 'lucide-react'
-import type { ResolvedContactPage } from '@/lib/cms/contact-page-data'
+import type { ResolvedContactPage } from '@/lib/cms/contact-page-defaults'
 
 type ContactFormProps = Pick<
   ResolvedContactPage,
