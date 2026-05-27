@@ -5,6 +5,8 @@ import { useRef, useState, useCallback } from 'react'
 import { UploadCloud, X, CheckCircle, AlertCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { createMediaRecord } from '@/lib/actions/media'
+import { MediaUrlPreview } from '@/components/admin/media/media-url-preview'
+import { inferMediaTypeFromFile } from '@/lib/media/media-preview'
 import { validateFileSize } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
@@ -25,13 +27,8 @@ const ACCEPTED_MIME_TYPES = [
 
 const ACCEPT_STRING = ACCEPTED_MIME_TYPES.join(',')
 
-function getMimeCategory(
-  mime: string
-): 'image' | 'audio' | 'video' | 'document' {
-  if (mime.startsWith('image/')) return 'image'
-  if (mime.startsWith('audio/')) return 'audio'
-  if (mime.startsWith('video/')) return 'video'
-  return 'document'
+function isImageFile(file: File): boolean {
+  return inferMediaTypeFromFile(file) === 'image'
 }
 
 // ---------------------------------------------------------------------------
@@ -71,6 +68,15 @@ export function UploadZone({
   const [isDragging, setIsDragging] = useState(false)
   const [uploads, setUploads] = useState<FileUploadState[]>([])
   const batchNotifiedRef = useRef(false)
+  const objectUrlsRef = useRef<Map<number, string>>(new Map())
+
+  React.useEffect(() => {
+    const urls = objectUrlsRef.current
+    return () => {
+      urls.forEach((u) => URL.revokeObjectURL(u))
+      urls.clear()
+    }
+  }, [])
 
   // ── Validation ────────────────────────────────────────────────────────────
 
@@ -89,7 +95,7 @@ export function UploadZone({
   const uploadFile = useCallback(
     async (file: File, index: number) => {
       const supabase = createClient()
-      const type = getMimeCategory(file.type)
+      const type = inferMediaTypeFromFile(file)
 
       setUploads((prev) =>
         prev.map((u, i) =>
@@ -216,7 +222,23 @@ export function UploadZone({
   }
 
   function removeUpload(index: number) {
+    const blobUrl = objectUrlsRef.current.get(index)
+    if (blobUrl) {
+      URL.revokeObjectURL(blobUrl)
+      objectUrlsRef.current.delete(index)
+    }
     setUploads((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  function previewUrlForUpload(upload: FileUploadState, index: number): string | null {
+    if (upload.status === 'done' && upload.url) return upload.url
+    if (!isImageFile(upload.file)) return null
+    let blob = objectUrlsRef.current.get(index)
+    if (!blob) {
+      blob = URL.createObjectURL(upload.file)
+      objectUrlsRef.current.set(index, blob)
+    }
+    return blob
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -268,11 +290,27 @@ export function UploadZone({
       {/* Upload progress list */}
       {uploads.length > 0 && (
         <ul className="space-y-2" aria-label="Upload progress">
-          {uploads.map((upload, i) => (
+          {uploads.map((upload, i) => {
+            const thumbUrl = previewUrlForUpload(upload, i)
+            return (
             <li
               key={i}
               className="flex items-center gap-3 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm"
             >
+              {thumbUrl ? (
+                <div className="relative size-12 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
+                  {upload.status === 'done' && upload.url ? (
+                    <MediaUrlPreview url={upload.url} alt="" className="absolute inset-0" />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={thumbUrl}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  )}
+                </div>
+              ) : null}
               {/* Status icon */}
               {upload.status === 'uploading' && (
                 <div className="size-4 shrink-0 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -315,7 +353,7 @@ export function UploadZone({
                 </button>
               )}
             </li>
-          ))}
+          )})}
         </ul>
       )}
     </div>

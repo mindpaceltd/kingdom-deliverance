@@ -1,7 +1,7 @@
 'use client'
 
-import Image from 'next/image'
 import { MediaPicker } from '@/components/admin/media-picker'
+import { MediaUrlPreview } from '@/components/admin/media/media-url-preview'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import {
@@ -58,14 +58,7 @@ export function CmsSizedImageField({
             )}
             style={aspectStyle}
           >
-            <Image
-              src={value}
-              alt={spec.label}
-              fill
-              sizes="(max-width: 768px) 100vw, 400px"
-              className="object-cover"
-              unoptimized
-            />
+            <MediaUrlPreview url={value} alt={spec.label} className="absolute inset-0" />
           </div>
           <div className="flex flex-wrap gap-2">
             <MediaPicker

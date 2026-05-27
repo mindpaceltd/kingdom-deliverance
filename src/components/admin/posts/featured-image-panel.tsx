@@ -1,8 +1,8 @@
 'use client'
 
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { MediaPicker } from '@/components/admin/media-picker'
+import { MediaUrlPreview } from '@/components/admin/media/media-url-preview'
 import { XIcon, ImageIcon } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
@@ -37,13 +37,10 @@ export function FeaturedImagePanel({
       {value ? (
         <div className="space-y-2">
           <div className="relative aspect-video w-full overflow-hidden rounded-md border border-border bg-muted">
-            <Image
-              src={value}
+            <MediaUrlPreview
+              url={value}
               alt="Featured image preview"
-              fill
-              sizes="(max-width: 768px) 100vw, 300px"
-              className="object-cover"
-              unoptimized
+              className="absolute inset-0"
             />
           </div>
           <Button

@@ -3,7 +3,20 @@ import { getMediaProxyUrl, normalizeMediaUrl } from '@/lib/media-url'
 
 export type MediaDisplayKind = 'image' | 'pdf' | 'video' | 'audio' | 'document'
 
-const IMAGE_EXT = /\.(jpe?g|png|gif|webp|svg|avif|bmp|ico)(\?|#|$)/i
+const IMAGE_EXT = /\.(jpe?g|png|gif|webp|svg|avif|bmp|ico|heic|heif)(\?|#|$)/i
+
+export function inferMediaTypeFromFile(file: {
+  type: string
+  name: string
+}): MediaAsset['type'] {
+  const mime = (file.type ?? '').toLowerCase()
+  const name = (file.name ?? '').toLowerCase()
+
+  if (mime.startsWith('image/') || IMAGE_EXT.test(name)) return 'image'
+  if (mime.startsWith('audio/')) return 'audio'
+  if (mime.startsWith('video/')) return 'video'
+  return 'document'
+}
 
 export function resolveMediaDisplayKind(asset: MediaAsset): MediaDisplayKind {
   const mime = (asset.mime_type ?? '').toLowerCase()
