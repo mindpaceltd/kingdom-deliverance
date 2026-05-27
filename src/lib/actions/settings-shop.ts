@@ -212,7 +212,8 @@ export async function syncPaymentGatewaysFromSettings(): Promise<
 
   try {
     const admin = createAdminClient()
-    await ensurePaymentGateways(admin)
+    const ensured = await ensurePaymentGateways(admin)
+    if ('error' in ensured) return { error: ensured.error }
     revalidateSettings()
     return { success: true }
   } catch (e) {

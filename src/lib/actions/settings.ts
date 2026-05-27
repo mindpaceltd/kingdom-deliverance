@@ -40,7 +40,10 @@ export async function saveSettings(
     'paypal_mode',
   ]
   if (Object.keys(data).some((k) => paymentKeys.includes(k))) {
-    await ensurePaymentGateways(admin)
+    const synced = await ensurePaymentGateways(admin)
+    if ('error' in synced) {
+      console.warn('[saveSettings] payment gateway sync:', synced.error)
+    }
     revalidatePath('/admin/settings/payments')
   }
 
