@@ -38,7 +38,9 @@ export function toAbsoluteSocialImageUrl(url: string | null | undefined): string
 
   const key = getKeyFromMediaUrl(normalized)
   if (key) {
-    return `${SITE_ORIGIN}/api/media/asset?key=${encodeURIComponent(key)}`
+    // Prefer the direct public media URL for social crawlers (WhatsApp/Meta),
+    // which is more reliable than app proxy routes during link unfurling.
+    return normalized
   }
 
   if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
