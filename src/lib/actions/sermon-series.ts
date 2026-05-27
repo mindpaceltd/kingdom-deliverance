@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { revalidateSitemap } from '@/lib/seo/revalidate-sitemap'
 import { requireRoles } from '@/lib/authz'
 import { ROLES } from '@/lib/roles'
 import type { SermonSeries } from '@/lib/types'
@@ -10,6 +11,7 @@ function revalidateSermonPaths() {
   revalidatePath('/sermons')
   revalidatePath('/admin/sermons/series')
   revalidatePath('/')
+  revalidateSitemap()
 }
 
 export async function createSermonSeries(

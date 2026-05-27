@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { EMAIL_TEMPLATE_STARTER_HTML } from '@/lib/email/template-starter-html'
+import { EmailTemplatePreview } from '@/components/admin/settings/email-template-preview'
 
 const RichTextEditor = dynamic(
   () =>
@@ -135,6 +136,14 @@ export function EmailTemplateForm({ initial }: { initial?: EmailTemplateRow }) {
     router.refresh()
   }
 
+  const previewProps = {
+    subject,
+    htmlContent,
+    textContent,
+    variablesText,
+    displayName: displayName || undefined,
+  }
+
   return (
     <div className="space-y-6">
       <Button variant="ghost" size="sm" asChild className="-ml-2">
@@ -148,120 +157,142 @@ export function EmailTemplateForm({ initial }: { initial?: EmailTemplateRow }) {
         <h1 className="text-2xl font-bold tracking-tight">
           {isEdit ? 'Edit email template' : 'New email template'}
         </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Design your message and check the live preview — sample data fills in{' '}
+          <code className="rounded bg-muted px-1 text-xs">{'{{variables}}'}</code> as you type.
+        </p>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="max-w-3xl space-y-5 rounded-2xl border border-border bg-card p-6 shadow-sm"
-      >
-        <div className="space-y-1.5">
-          <Label htmlFor="et-display">Display name</Label>
-          <Input
-            id="et-display"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            required
-            disabled={submitting}
-          />
-        </div>
+      <div className="grid gap-8 xl:grid-cols-2 xl:items-start">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-5 rounded-2xl border border-border bg-card p-6 shadow-sm"
+        >
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="et-display">Display name</Label>
+              <Input
+                id="et-display"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                required
+                disabled={submitting}
+              />
+            </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="et-key">Template key</Label>
-          <Input
-            id="et-key"
-            value={templateName}
-            onChange={(e) => setTemplateName(e.target.value)}
-            disabled={submitting || isEdit}
-            placeholder="order_confirmation_custom"
-            className="font-mono text-sm"
-          />
-          {!isEdit && (
-            <p className="text-xs text-muted-foreground">Unique identifier; auto-filled from display name.</p>
-          )}
-        </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="et-key">Template key</Label>
+              <Input
+                id="et-key"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                disabled={submitting || isEdit}
+                placeholder="order_confirmation_custom"
+                className="font-mono text-sm"
+              />
+              {!isEdit && (
+                <p className="text-xs text-muted-foreground">
+                  Unique identifier; auto-filled from display name.
+                </p>
+              )}
+            </div>
 
-        <div className="space-y-1.5">
-          <Label>Type</Label>
-          <Select value={templateType} onValueChange={setTemplateType} disabled={submitting}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TEMPLATE_TYPES.map((t) => (
-                <SelectItem key={t.value} value={t.value}>
-                  {t.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+            <div className="space-y-1.5">
+              <Label>Type</Label>
+              <Select value={templateType} onValueChange={setTemplateType} disabled={submitting}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TEMPLATE_TYPES.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="et-subject">Subject</Label>
-          <Input
-            id="et-subject"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            required
-            disabled={submitting}
-          />
-        </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="et-subject">Subject</Label>
+            <Input
+              id="et-subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Order confirmed — {{order_number}}"
+              required
+              disabled={submitting}
+            />
+          </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="et-vars">Variables (comma-separated)</Label>
-          <Input
-            id="et-vars"
-            value={variablesText}
-            onChange={(e) => setVariablesText(e.target.value)}
-            placeholder="customer_name, order_id, total"
-            disabled={submitting}
-          />
-        </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="et-vars">Variables (comma-separated)</Label>
+            <Input
+              id="et-vars"
+              value={variablesText}
+              onChange={(e) => setVariablesText(e.target.value)}
+              placeholder="customer_name, order_number, total_amount"
+              disabled={submitting}
+            />
+            <p className="text-xs text-muted-foreground">
+              Listed variables and any {'{{name}}'} in the subject or body appear in the preview
+              with realistic sample values.
+            </p>
+          </div>
 
-        <div className="space-y-1.5">
-          <Label>Email body (HTML)</Label>
-          <p className="text-xs text-muted-foreground">
-            Design your template with headings, links, and images. Use variables like{' '}
-            <code className="rounded bg-muted px-1">{'{{customer_name}}'}</code> in the
-            subject or body.
-          </p>
-          <RichTextEditor
-            value={htmlContent}
-            onChange={setHtmlContent}
-            placeholder="Write your email content…"
-            disabled={submitting}
-            compact
-            editorMinHeight="min-h-[280px]"
-          />
-        </div>
+          <div className="space-y-1.5">
+            <Label>Email body (HTML)</Label>
+            <RichTextEditor
+              value={htmlContent}
+              onChange={setHtmlContent}
+              placeholder="Write your email content…"
+              disabled={submitting}
+              compact
+              editorMinHeight="min-h-[320px]"
+            />
+          </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="et-text">Plain text (optional)</Label>
-          <Textarea
-            id="et-text"
-            value={textContent}
-            onChange={(e) => setTextContent(e.target.value)}
-            rows={6}
-            disabled={submitting}
-          />
-        </div>
+          <div className="space-y-1.5 xl:hidden">
+            <EmailTemplatePreview {...previewProps} />
+          </div>
 
-        <div className="flex items-center justify-between rounded-lg border border-border p-4">
-          <Label>Active</Label>
-          <Switch checked={isActive} onCheckedChange={setIsActive} disabled={submitting} />
-        </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="et-text">Plain text (optional)</Label>
+            <Textarea
+              id="et-text"
+              value={textContent}
+              onChange={(e) => setTextContent(e.target.value)}
+              rows={5}
+              placeholder="Fallback for clients that do not support HTML…"
+              disabled={submitting}
+            />
+          </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+          <div className="flex items-center justify-between rounded-lg border border-border p-4">
+            <div>
+              <Label>Active</Label>
+              <p className="text-xs text-muted-foreground">Inactive templates are not sent.</p>
+            </div>
+            <Switch checked={isActive} onCheckedChange={setIsActive} disabled={submitting} />
+          </div>
 
-        <div className="flex gap-3 pt-2">
-          <Button type="submit" disabled={submitting}>
-            {submitting ? 'Saving…' : isEdit ? 'Save template' : 'Create template'}
-          </Button>
-          <Button type="button" variant="outline" asChild disabled={submitting}>
-            <Link href="/admin/settings/emails">Cancel</Link>
-          </Button>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <div className="flex flex-wrap gap-3 pt-2">
+            <Button type="submit" disabled={submitting}>
+              {submitting ? 'Saving…' : isEdit ? 'Save template' : 'Create template'}
+            </Button>
+            <Button type="button" variant="outline" asChild disabled={submitting}>
+              <Link href="/admin/settings/emails">Cancel</Link>
+            </Button>
+          </div>
+        </form>
+
+        <div className="hidden xl:block xl:sticky xl:top-6">
+          <EmailTemplatePreview {...previewProps} className="min-h-[640px]" />
         </div>
-      </form>
+      </div>
     </div>
   )
 }

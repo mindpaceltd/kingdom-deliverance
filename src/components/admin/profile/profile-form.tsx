@@ -1,15 +1,30 @@
 'use client'
 
 import * as React from 'react'
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { updateProfile, updatePassword, saveAvatarUrl, uploadAvatarAction } from '@/lib/actions/profile'
+import { updateProfile, updatePassword, uploadAvatarAction } from '@/lib/actions/profile'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
+
+const RichTextEditor = dynamic(
+  () =>
+    import('@/components/admin/rich-text-editor').then((m) => ({
+      default: m.RichTextEditor,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex min-h-[200px] items-center justify-center rounded-md border border-input bg-muted/30">
+        <LoaderIcon className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    ),
+  }
+)
 import {
   CameraIcon,
   SaveIcon,
@@ -232,13 +247,17 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
 
           <div className="space-y-1.5">
             <Label htmlFor="profile-bio">Bio</Label>
-            <Textarea
-              id="profile-bio"
+            <p className="text-xs text-muted-foreground">
+              Format your bio with headings, links, and emphasis. Shown on blog posts and your
+              public author profile.
+            </p>
+            <RichTextEditor
               value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="A short bio about yourself…"
-              rows={3}
-              className="resize-none"
+              onChange={setBio}
+              placeholder="Write your bio…"
+              disabled={profileSaving}
+              compact
+              editorMinHeight="min-h-[220px]"
             />
           </div>
 

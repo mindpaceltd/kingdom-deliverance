@@ -396,9 +396,17 @@ export default async function BlogPostPage({ params }: Props) {
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold uppercase tracking-widest text-amber-500 mb-1">About the Author</p>
                     <p className="font-bold text-primary text-lg leading-tight">{authorName || "Kingdom Deliverance Centre Uganda"}</p>
-                    <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-                      {authorBio || "Spreading faith, transformation, and community impact across Uganda and the world through the power of the Gospel."}
-                    </p>
+                    {authorBio ? (
+                      <div
+                        className="prose prose-sm prose-neutral dark:prose-invert mt-2 max-w-none text-muted-foreground"
+                        dangerouslySetInnerHTML={{ __html: authorBio }}
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                        Spreading faith, transformation, and community impact across Uganda and
+                        the world through the power of the Gospel.
+                      </p>
+                    )}
                     <div className="flex items-center gap-3 mt-4">
                       <a href="https://facebook.com/kdcuganda" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-white hover:bg-red-700 transition-colors">
                         <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>

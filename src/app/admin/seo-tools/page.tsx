@@ -89,7 +89,7 @@ export default function SEOToolsPage() {
             <div className="p-4 border rounded-lg">
               <h4 className="font-medium mb-2">Sitemap</h4>
               <p className="text-sm text-gray-600 mb-2">
-                XML sitemap is being generated
+                XML sitemap updates automatically when you publish posts, sermons, events, pages, and shop products
               </p>
               <div className="text-xs text-green-600">
                 ✓ Available at /sitemap.xml

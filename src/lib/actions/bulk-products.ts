@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { revalidateSitemap } from '@/lib/seo/revalidate-sitemap'
 import { generateSlug } from '@/lib/utils'
 
 function getValue(row: any, ...keys: string[]) {
@@ -270,6 +271,7 @@ export async function importProductsFromCSV(csvData: any[]) {
   }
 
   revalidatePath('/admin/products')
+  revalidateSitemap()
   return {
     success: true,
     count: upsertedProducts?.length ?? 0,

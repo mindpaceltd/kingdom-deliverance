@@ -1,11 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { revalidateSitemap } from '@/lib/seo/revalidate-sitemap'
 
 function revalidatePostPaths() {
   revalidatePath('/blog')
   revalidatePath('/blog/[slug]')
   revalidatePath('/admin/posts')
   revalidatePath('/')
+  revalidateSitemap()
 }
 
 export async function autoPublishScheduled(): Promise<void> {

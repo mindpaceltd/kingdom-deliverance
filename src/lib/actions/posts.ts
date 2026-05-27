@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { revalidateSitemap } from '@/lib/seo/revalidate-sitemap'
 import { indexOnPublish } from '@/lib/seo/google-indexing'
 import { requireRole } from '@/lib/actions/auth-helpers'
 import { generateSlug } from '@/lib/utils'
@@ -15,6 +16,7 @@ function revalidatePostPaths() {
   revalidatePath('/blog')
   revalidatePath('/blog/[slug]')
   revalidatePath('/')
+  revalidateSitemap()
 }
 
 // ---------------------------------------------------------------------------

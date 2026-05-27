@@ -409,9 +409,16 @@ export function UsersManager({ initialUsers, currentUserId }: UsersManagerProps)
 
                        <div className="space-y-2">
                           <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Biography</Label>
-                          <p className="text-sm text-muted-foreground leading-relaxed italic">
-                             {selectedUser.bio || 'This user hasn\'t provided a bio yet.'}
-                          </p>
+                          {selectedUser.bio ? (
+                            <div
+                              className="prose prose-sm dark:prose-invert max-w-none text-sm text-muted-foreground"
+                              dangerouslySetInnerHTML={{ __html: selectedUser.bio }}
+                            />
+                          ) : (
+                            <p className="text-sm text-muted-foreground leading-relaxed italic">
+                              This user hasn&apos;t provided a bio yet.
+                            </p>
+                          )}
                        </div>
                     </div>
                  </div>

@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { revalidateSitemap } from '@/lib/seo/revalidate-sitemap'
 import { requireRoles } from '@/lib/authz'
 import { ROLES } from '@/lib/roles'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
@@ -26,6 +27,7 @@ function normalizeSlug(slug: string): string {
 
 function revalidateAdminPages() {
   revalidatePath('/admin/pages')
+  revalidateSitemap()
 }
 
 export async function ensureSystemPages(): Promise<{ synced: number } | { error: string }> {

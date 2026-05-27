@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { revalidateSitemap } from '@/lib/seo/revalidate-sitemap'
 import { generateSlug } from '@/lib/utils'
 import { indexOnPublish } from '@/lib/seo/google-indexing'
 import { requireRoles } from '@/lib/authz'
@@ -15,6 +16,13 @@ import {
 import { computeProductSeoScore } from '@/lib/products/product-seo-score'
 
 type ProductRow = Record<string, unknown>
+
+function revalidateProductPaths(slug?: string) {
+  revalidatePath('/admin/products')
+  revalidatePath('/shop')
+  if (slug) revalidatePath(`/shop/${slug}`)
+  revalidateSitemap()
+}
 
 export async function getProductsAdminStats(): Promise<
   ProductsAdminStats | { error: string }
@@ -209,9 +217,7 @@ export async function saveProduct(data: any) {
     }
   }
 
-  revalidatePath('/admin/products')
-  revalidatePath('/shop')
-  revalidatePath(`/shop/${rest.slug}`)
+  revalidateProductPaths(rest.slug)
 
   if (user) {
     await indexOnPublish('product', rest.slug, rest.status, {
@@ -232,7 +238,7 @@ export async function deleteProduct(id: string) {
 
   if (error) return { error: error.message }
 
-  revalidatePath('/admin/products')
+  revalidateProductPaths()
   return { success: true }
 }
 
@@ -249,7 +255,7 @@ export async function deleteProducts(ids: string[]) {
 
   if (error) return { error: error.message }
 
-  revalidatePath('/admin/products')
+  revalidateProductPaths()
   return { success: true }
 }
 
@@ -328,7 +334,7 @@ export async function duplicateProduct(
     await admin.from('product_variants').insert(variantInserts)
   }
 
-  revalidatePath('/admin/products')
+  revalidateProductPaths(newSlug)
   return { success: true, id: copy.id }
 }
 
@@ -352,7 +358,7 @@ export async function duplicateProducts(
     created.push(result.id)
   }
 
-  revalidatePath('/admin/products')
+  revalidateProductPaths()
 
   if (created.length === 0) {
     return { error: failed[0] ?? 'Duplication failed', count: 0 }

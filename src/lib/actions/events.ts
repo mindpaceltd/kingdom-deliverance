@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { revalidateSitemap } from '@/lib/seo/revalidate-sitemap'
 import { indexOnPublish } from '@/lib/seo/google-indexing'
 import { requireRoles } from '@/lib/authz'
 import { ROLES } from '@/lib/roles'
@@ -30,6 +31,7 @@ function revalidateEventPaths() {
   revalidatePath('/events/[slug]')
   revalidatePath('/admin/events')
   revalidatePath('/')
+  revalidateSitemap()
 }
 
 export async function createEvent(
