@@ -239,13 +239,11 @@ function MediaPickerModal({
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <div
-              key={i}
-              className="aspect-square animate-pulse rounded-lg bg-muted"
-              aria-hidden
-            />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="overflow-hidden rounded-lg bg-muted" aria-hidden>
+              <div className="w-full pb-[100%] animate-pulse bg-muted-foreground/10" />
+            </div>
           ))}
         </div>
       ) : visibleAssets.length === 0 ? (
@@ -264,11 +262,12 @@ function MediaPickerModal({
           </Button>
         </div>
       ) : (
-        <div className="grid max-h-[400px] grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-4 md:grid-cols-5">
+        <div className="grid max-h-[min(70vh,560px)] grid-cols-2 gap-3 overflow-y-auto pr-1 sm:grid-cols-3 lg:grid-cols-4">
           {visibleAssets.map((asset) => (
             <MediaGridTile
               key={asset.id}
               asset={asset}
+              metaOverlay
               onSelect={() => {
                 onSelect(asset.url)
                 onClose()
@@ -293,7 +292,7 @@ export function MediaPicker({
     <Dialog open={open} onOpenChange={setOpen}>
       <div className="flex items-center gap-2">
         {value && (
-          <div className="relative size-10 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
+          <div className="relative size-14 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
             <MediaUrlPreview url={value} alt="Selected" className="absolute inset-0" />
           </div>
         )}
@@ -307,7 +306,10 @@ export function MediaPicker({
         />
       </div>
 
-      <DialogContent className="sm:max-w-3xl" aria-describedby={undefined}>
+      <DialogContent
+        className="flex max-h-[90vh] flex-col gap-0 overflow-hidden sm:max-w-4xl lg:max-w-5xl"
+        aria-describedby={undefined}
+      >
         <DialogHeader>
           <DialogTitle>Media Library</DialogTitle>
         </DialogHeader>
