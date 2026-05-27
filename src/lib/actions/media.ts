@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 import { requireRole } from '@/lib/actions/auth-helpers'
 import { requireAdmin, requireRoles } from '@/lib/authz'
 import { ROLES } from '@/lib/roles'
@@ -73,7 +73,7 @@ export async function createMediaRecord(
       return { error: error.message }
     }
 
-    revalidatePath('/admin/media')
+    revalidateMediaLibraryCache()
     return { success: true, id: data.id }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
@@ -86,6 +86,52 @@ export async function createMediaRecord(
 // getMediaLibraryPage — paginated list for admin media library
 // ---------------------------------------------------------------------------
 
+function revalidateMediaLibraryCache() {
+  revalidatePath('/admin/media')
+  revalidateTag('media-library')
+}
+
+const fetchMediaLibraryPageCached = unstable_cache(
+  async (
+    page: number,
+    pageSize: number,
+    type: MediaLibraryFilter
+  ): Promise<MediaLibraryPageResult | { error: string }> => {
+    const from = page * pageSize
+    const to = from + pageSize - 1
+
+    const supabase = createAdminClient()
+    let query = supabase
+      .from('media')
+      .select(MEDIA_LIBRARY_SELECT, { count: 'exact' })
+      .order('created_at', { ascending: false })
+
+    if (type !== 'all') {
+      query = query.eq('type', type)
+    }
+
+    const { data, error, count } = await query.range(from, to)
+
+    if (error) {
+      console.error('[fetchMediaLibraryPageCached]', error.message)
+      return { error: error.message }
+    }
+
+    const total = count ?? 0
+    const rows = (data ?? []) as MediaAsset[]
+
+    return {
+      data: rows,
+      total,
+      page,
+      pageSize,
+      hasMore: from + rows.length < total,
+    }
+  },
+  ['media-library-page'],
+  { revalidate: 60, tags: ['media-library'] }
+)
+
 export async function getMediaLibraryPage(options?: {
   page?: number
   pageSize?: number
@@ -97,36 +143,8 @@ export async function getMediaLibraryPage(options?: {
   const page = Math.max(0, options?.page ?? 0)
   const pageSize = options?.pageSize ?? MEDIA_LIBRARY_PAGE_SIZE
   const type = options?.type ?? 'all'
-  const from = page * pageSize
-  const to = from + pageSize - 1
 
-  const supabase = createClient()
-  let query = supabase
-    .from('media')
-    .select(MEDIA_LIBRARY_SELECT, { count: 'exact' })
-    .order('created_at', { ascending: false })
-
-  if (type !== 'all') {
-    query = query.eq('type', type)
-  }
-
-  const { data, error, count } = await query.range(from, to)
-
-  if (error) {
-    console.error('[getMediaLibraryPage]', error.message)
-    return { error: error.message }
-  }
-
-  const total = count ?? 0
-  const rows = (data ?? []) as MediaAsset[]
-
-  return {
-    data: rows,
-    total,
-    page,
-    pageSize,
-    hasMore: from + rows.length < total,
-  }
+  return fetchMediaLibraryPageCached(page, pageSize, type)
 }
 
 // ---------------------------------------------------------------------------
@@ -157,7 +175,7 @@ export async function updateMedia(
     return { error: error.message }
   }
 
-  revalidatePath('/admin/media')
+  revalidateMediaLibraryCache()
   return { success: true }
 }
 
@@ -221,7 +239,7 @@ export async function deleteMedia(
     return { error: deleteError.message }
   }
 
-  revalidatePath('/admin/media')
+  revalidateMediaLibraryCache()
   return { success: true }
 }
 

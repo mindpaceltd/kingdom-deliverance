@@ -33,13 +33,15 @@ export async function GET(req: NextRequest) {
 
       const bytes = await result.Body.transformToByteArray()
       const contentType = result.ContentType || 'application/octet-stream'
+      const headers: Record<string, string> = {
+        'Content-Type': contentType,
+        'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
+      }
+      if (contentType === 'application/pdf') {
+        headers['Content-Disposition'] = 'inline'
+      }
 
-      return new NextResponse(bytes, {
-        headers: {
-          'Content-Type': contentType,
-          'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
-        },
-      })
+      return new NextResponse(bytes, { headers })
     } catch {
       // Try next bucket
     }

@@ -2,19 +2,7 @@
 
 import * as React from 'react'
 import dynamic from 'next/dynamic'
-import Image from 'next/image'
-import {
-  FileText,
-  Music,
-  Video,
-  File,
-  Trash2,
-  Upload,
-  X,
-  Copy,
-  Check,
-  Loader2,
-} from 'lucide-react'
+import { Trash2, Upload, X, Copy, Check, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -28,7 +16,13 @@ import {
 import { deleteMedia, getMediaLibraryPage, updateMedia } from '@/lib/actions/media'
 import type { MediaLibraryFilter } from '@/lib/media/library-query'
 import { LazyMediaThumb } from '@/components/admin/media/lazy-media-thumb'
+import { MediaFilePreview } from '@/components/admin/media/media-file-preview'
 import { MediaLibrarySkeleton } from '@/components/admin/media/media-library-skeleton'
+import {
+  getClientLibraryCache,
+  invalidateClientLibraryCache,
+  setClientLibraryCache,
+} from '@/lib/media/library-client-cache'
 import type { MediaAsset } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -55,19 +49,6 @@ function formatBytes(bytes: number | null): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
-function TypeIcon({ type, className }: { type: MediaAsset['type']; className?: string }) {
-  switch (type) {
-    case 'audio':
-      return <Music className={cn('size-10 text-muted-foreground', className)} />
-    case 'video':
-      return <Video className={cn('size-10 text-muted-foreground', className)} />
-    case 'document':
-      return <FileText className={cn('size-10 text-muted-foreground', className)} />
-    default:
-      return <File className={cn('size-10 text-muted-foreground', className)} />
-  }
 }
 
 const FILTERS: MediaLibraryFilter[] = ['all', 'image', 'audio', 'video', 'document']
@@ -111,11 +92,27 @@ export function MediaLibrary({
 
   const fetchPage = React.useCallback(
     async (pageIndex: number, filter: MediaLibraryFilter, append: boolean) => {
+      if (!append) {
+        const cached = getClientLibraryCache(pageIndex, filter)
+        if (cached) {
+          setMedia(cached.data)
+          setTotal(cached.total)
+          setHasMore(cached.hasMore)
+          setPage(pageIndex)
+          return cached
+        }
+      }
+
       const result = await getMediaLibraryPage({ page: pageIndex, type: filter })
       if ('error' in result) {
         alert(result.error)
         return null
       }
+
+      if (!append) {
+        setClientLibraryCache(pageIndex, filter, result)
+      }
+
       if (append) {
         setMedia((prev) => {
           const seen = new Set(prev.map((a) => a.id))
@@ -136,8 +133,18 @@ export function MediaLibrary({
   async function handleFilterChange(filter: MediaLibraryFilter) {
     if (filter === activeFilter) return
     setActiveFilter(filter)
-    setFilterLoading(true)
     setSelectedAsset(null)
+
+    const cached = getClientLibraryCache(0, filter)
+    if (cached) {
+      setMedia(cached.data)
+      setTotal(cached.total)
+      setHasMore(cached.hasMore)
+      setPage(0)
+      return
+    }
+
+    setFilterLoading(true)
     await fetchPage(0, filter, false)
     setFilterLoading(false)
   }
@@ -167,13 +174,14 @@ export function MediaLibrary({
       ([entry]) => {
         if (entry.isIntersecting) void handleLoadMore()
       },
-      { rootMargin: '400px' }
+      { rootMargin: '280px' }
     )
     observer.observe(sentinel)
     return () => observer.disconnect()
   }, [handleLoadMore, hasMore])
 
   async function refreshAfterUpload() {
+    invalidateClientLibraryCache()
     await fetchPage(0, activeFilter, false)
     setUploadOpen(false)
   }
@@ -199,6 +207,7 @@ export function MediaLibrary({
     const result = await deleteMedia(selectedAsset.id)
     setDeleting(false)
     if ('success' in result) {
+      invalidateClientLibraryCache()
       setMedia((prev) => prev.filter((a) => a.id !== selectedAsset.id))
       setTotal((t) => Math.max(0, t - 1))
       setSelectedAsset(null)
@@ -308,21 +317,13 @@ export function MediaLibrary({
           {selectedAsset && (
             <div className="flex flex-col">
               <div className="flex min-h-[240px] items-center justify-center border-b border-border bg-muted/30 p-6">
-                <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-white shadow-sm">
-                  {selectedAsset.type === 'image' ? (
-                    <Image
-                      src={selectedAsset.url}
-                      alt={selectedAsset.alt_text ?? selectedAsset.filename}
-                      fill
-                      className="object-contain"
-                      sizes="400px"
-                      priority
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <TypeIcon type={selectedAsset.type} className="size-16" />
-                    </div>
-                  )}
+                <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-border bg-white shadow-sm dark:bg-muted">
+                  <MediaFilePreview
+                    asset={selectedAsset}
+                    active
+                    variant="detail"
+                    className="min-h-[200px]"
+                  />
                 </div>
               </div>
 

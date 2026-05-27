@@ -1,7 +1,19 @@
 import { Suspense } from 'react'
-import { MediaLibrary } from '@/components/admin/media-library'
+import dynamic from 'next/dynamic'
 import { MediaLibrarySkeleton } from '@/components/admin/media/media-library-skeleton'
 import { getMediaLibraryPage } from '@/lib/actions/media'
+
+const MediaLibrary = dynamic(
+  () => import('@/components/admin/media-library').then((m) => ({ default: m.MediaLibrary })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex flex-col gap-6 p-6">
+        <MediaLibrarySkeleton count={18} />
+      </div>
+    ),
+  }
+)
 
 async function MediaLibraryLoader() {
   const result = await getMediaLibraryPage({ page: 0 })

@@ -135,11 +135,10 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
     toast.success(isEdit ? 'Page saved' : 'Page created')
 
     if (status === 'published' && !content.seo?.noIndex) {
-      const savedSlug = slug === 'home' ? 'home' : slug
-      await indexCmsPageUrl(
-        buildPublicPageUrl(savedSlug),
-        content.seo?.canonicalUrl?.trim()
-      )
+      const url =
+        content.seo?.canonicalUrl?.trim() ||
+        buildPublicPageUrl(slug === 'home' ? 'home' : slug)
+      await indexCmsPageUrl(url)
     }
 
     if (!isEdit && 'id' in result) {
