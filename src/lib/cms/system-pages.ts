@@ -65,11 +65,29 @@ export const SYSTEM_PAGE_DEFINITIONS: SystemPageDefinition[] = [
       pageType: 'contact',
       isSystem: true,
       hero: {
+        badge: 'Get In Touch',
         title: 'Contact Us',
-        subtitle: 'We would love to hear from you. Reach out for prayer, visits, or general enquiries.',
+        subtitle:
+          'We would love to hear from you. Reach out with any questions, prayer requests, or to learn more about our church.',
       },
-      contactIntroHtml:
-        '<p>Office hours and map details still come from <strong>Settings → General</strong>. Edit the intro text shown above the contact form here.</p>',
+      contact: {
+        findUsTitle: 'Find Us',
+        address: 'Kingdom Deliverance Centre Uganda\nKampala, Uganda',
+        primaryPhone: '+256 700 000 000',
+        additionalPhones: [],
+        email: 'info@kdcuganda.org',
+        serviceTimes:
+          'Sunday: 10:00 AM (EAT)\nWednesday: 6:00 PM (EAT)\nFriday: 6:00 PM (EAT)',
+        mapEmbedUrl:
+          'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.7573!2d32.5825!3d0.3136!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x177dbc0f9d74b39b%3A0x4099d33b10770b2!2sKingdom+Deliverance+Centre+Uganda!5e0!3m2!1sen!2sug!4v1714000000000',
+        mapLinkUrl: 'https://maps.app.goo.gl/RrBd8tDxEDky8D6N7',
+        mapLinkLabel: 'Open in Google Maps',
+        formTitle: 'Send a Message',
+        formSuccessTitle: 'Message Sent!',
+        formSuccessMessage:
+          'Thank you for reaching out. We will get back to you as soon as possible.',
+        submitButtonLabel: 'Send Message',
+      },
       seo: {
         metaTitle: 'Contact | Kingdom Deliverance Centre Uganda',
         metaDescription: 'Get in touch with Kingdom Deliverance Centre Uganda in Kampala.',

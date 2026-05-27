@@ -7,9 +7,11 @@ import { ROLES } from '@/lib/roles'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import {
   buildContentJson,
+  pagePathFromSlug,
   parsePageContent,
   type CmsPageContent,
 } from '@/lib/cms/page-content'
+import { defaultContactDetails } from '@/lib/cms/contact-page-data'
 import { SYSTEM_PAGE_DEFINITIONS } from '@/lib/cms/system-pages'
 
 export interface CmsPagePayload {
@@ -30,10 +32,18 @@ function revalidateAdminPages() {
   revalidateSitemap()
 }
 
-export async function ensureSystemPages(): Promise<{ synced: number } | { error: string }> {
+function revalidatePublicPage(slug: string) {
+  revalidatePath(pagePathFromSlug(slug))
+}
+
+export async function ensureSystemPages(options?: {
+  /** Replace content with built-in defaults (manual sync only). */
+  overwrite?: boolean
+}): Promise<{ synced: number } | { error: string }> {
   const auth = await requireRoles(ROLES.MANAGE_STRUCTURE)
   if ('error' in auth) return auth
 
+  const overwrite = options?.overwrite === true
   const admin = createAdminClient()
   let synced = 0
 
@@ -50,18 +60,20 @@ export async function ensureSystemPages(): Promise<{ synced: number } | { error:
     const { data: existing } = await existingQuery.maybeSingle()
 
     if (existing?.id) {
-      const { error } = await admin
-        .from('pages')
-        .update({
-          title: def.title,
-          slug,
-          content_json,
-          status: def.status,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existing.id)
+      if (overwrite) {
+        const { error } = await admin
+          .from('pages')
+          .update({
+            title: def.title,
+            slug,
+            content_json,
+            status: def.status,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existing.id)
 
-      if (!error) synced++
+        if (!error) synced++
+      }
     } else {
       const { error } = await admin.from('pages').insert({
         title: def.title,
@@ -74,6 +86,11 @@ export async function ensureSystemPages(): Promise<{ synced: number } | { error:
   }
 
   revalidateAdminPages()
+  if (overwrite || synced > 0) {
+    for (const def of SYSTEM_PAGE_DEFINITIONS) {
+      revalidatePublicPage(def.slug)
+    }
+  }
   return { synced }
 }
 
@@ -113,6 +130,7 @@ export async function createPage(
   }
 
   revalidateAdminPages()
+  revalidatePublicPage(slug)
   return { success: true, id: data.id }
 }
 
@@ -158,6 +176,7 @@ export async function updatePage(
   }
 
   revalidateAdminPages()
+  revalidatePublicPage(slug)
   revalidatePath(`/admin/pages/${id}`)
   return { success: true }
 }
@@ -172,6 +191,9 @@ export async function updatePageFromEditor(
   }
 ): Promise<{ success: true } | { error: string }> {
   const content = { ...input.content }
+  if (content.pageType === 'contact') {
+    content.contact = { ...defaultContactDetails(), ...content.contact }
+  }
   if (content.isSystem) {
     const def = SYSTEM_PAGE_DEFINITIONS.find(
       (d) => normalizeSlug(d.slug) === normalizeSlug(input.slug)
@@ -203,7 +225,7 @@ export async function deletePage(id: string): Promise<{ success: true } | { erro
   const supabase = createClient()
   const { data: existing } = await supabase
     .from('pages')
-    .select('content_json')
+    .select('slug, content_json')
     .eq('id', id)
     .maybeSingle()
 
@@ -216,5 +238,6 @@ export async function deletePage(id: string): Promise<{ success: true } | { erro
   if (error) return { error: error.message }
 
   revalidateAdminPages()
+  if (existing?.slug) revalidatePublicPage(existing.slug)
   return { success: true }
 }

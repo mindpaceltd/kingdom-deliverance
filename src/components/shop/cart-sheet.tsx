@@ -24,8 +24,12 @@ export function CartSheet() {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <button className="relative p-2 text-white hover:text-accent transition-colors group">
-          <ShoppingCart className="w-6 h-6" />
+        <button
+          type="button"
+          className="relative p-2 text-white transition-colors hover:text-accent group min-h-11 min-w-11 flex items-center justify-center"
+          aria-label={totalItems > 0 ? `Open cart, ${totalItems} items` : 'Open shopping cart'}
+        >
+          <ShoppingCart className="h-6 w-6" aria-hidden />
           {totalItems > 0 && (
             <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-white shadow-lg shadow-accent/30 animate-in zoom-in duration-300">
               {totalItems}

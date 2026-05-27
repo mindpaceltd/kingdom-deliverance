@@ -27,6 +27,23 @@ export interface CmsPageHero {
   imageUrl?: string
 }
 
+/** Contact page sidebar, map, and form copy (managed under Pages → Contact). */
+export interface CmsContactDetails {
+  findUsTitle?: string
+  address?: string
+  primaryPhone?: string
+  additionalPhones?: string[]
+  email?: string
+  serviceTimes?: string
+  mapEmbedUrl?: string
+  mapLinkUrl?: string
+  mapLinkLabel?: string
+  formTitle?: string
+  formSuccessTitle?: string
+  formSuccessMessage?: string
+  submitButtonLabel?: string
+}
+
 export interface CmsPageSeo {
   metaTitle?: string
   metaDescription?: string
@@ -51,6 +68,8 @@ export interface CmsPageContent {
   seo?: CmsPageSeo
   missionTitle?: string
   missionHtml?: string
+  contact?: CmsContactDetails
+  /** Optional rich text above the contact grid */
   contactIntroHtml?: string
   donationIntroHtml?: string
   liveStreamUrl?: string
@@ -74,6 +93,7 @@ export function parsePageContent(raw: unknown): CmsPageContent {
     seo: parsePageSeo(o.seo),
     missionTitle: typeof o.missionTitle === 'string' ? o.missionTitle : undefined,
     missionHtml: typeof o.missionHtml === 'string' ? o.missionHtml : undefined,
+    contact: parseContactDetails(o.contact),
     contactIntroHtml:
       typeof o.contactIntroHtml === 'string' ? o.contactIntroHtml : undefined,
     donationIntroHtml:
@@ -83,6 +103,35 @@ export function parsePageContent(raw: unknown): CmsPageContent {
     ctaUrl: typeof o.ctaUrl === 'string' ? o.ctaUrl : undefined,
     isSystem: Boolean(o.isSystem),
   }
+}
+
+function parseContactDetails(raw: unknown): CmsContactDetails | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  const c = raw as Record<string, unknown>
+  const details: CmsContactDetails = {}
+  const strings = [
+    'findUsTitle',
+    'address',
+    'primaryPhone',
+    'email',
+    'serviceTimes',
+    'mapEmbedUrl',
+    'mapLinkUrl',
+    'mapLinkLabel',
+    'formTitle',
+    'formSuccessTitle',
+    'formSuccessMessage',
+    'submitButtonLabel',
+  ] as const
+  for (const key of strings) {
+    if (typeof c[key] === 'string') details[key] = c[key]
+  }
+  if (Array.isArray(c.additionalPhones)) {
+    details.additionalPhones = c.additionalPhones.filter(
+      (x): x is string => typeof x === 'string'
+    )
+  }
+  return Object.keys(details).length > 0 ? details : undefined
 }
 
 function parsePageSeo(raw: unknown): CmsPageSeo | undefined {

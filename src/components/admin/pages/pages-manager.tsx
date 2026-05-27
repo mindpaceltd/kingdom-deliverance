@@ -147,7 +147,7 @@ export function PagesManager({ initialPages }: PagesManagerProps) {
 
   async function handleSyncSystemPages() {
     setSyncing(true)
-    const result = await ensureSystemPages()
+    const result = await ensureSystemPages({ overwrite: true })
     setSyncing(false)
     if ('error' in result) {
       toast.error(result.error)

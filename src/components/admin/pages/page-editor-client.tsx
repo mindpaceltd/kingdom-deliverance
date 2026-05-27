@@ -4,7 +4,7 @@ import * as React from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Loader2, Info } from 'lucide-react'
+import { ArrowLeft, Loader2, Info, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,11 +26,13 @@ import {
 } from '@/lib/cms/page-image-specs'
 import { buildPublicPageUrl } from '@/lib/seo/public-content-urls'
 import { createPage, updatePageFromEditor } from '@/lib/actions/pages'
+import { defaultContactDetails } from '@/lib/cms/contact-page-data'
 import {
   buildContentJson,
   pagePathFromSlug,
   pageTypeLabel,
   parsePageContent,
+  type CmsContactDetails,
   type CmsPageContent,
 } from '@/lib/cms/page-content'
 import type { CmsPage } from '@/lib/types'
@@ -75,6 +77,13 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
 
   function patchContent(patch: Partial<CmsPageContent>) {
     setContent((prev) => ({ ...prev, ...patch }))
+  }
+
+  function patchContact(patch: Partial<CmsContactDetails>) {
+    setContent((prev) => ({
+      ...prev,
+      contact: { ...defaultContactDetails(), ...prev.contact, ...patch },
+    }))
   }
 
   function patchHero(patch: Partial<NonNullable<CmsPageContent['hero']>>) {
@@ -280,20 +289,195 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
           )}
 
           {content.pageType === 'contact' && (
-            <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
-              <h2 className="text-lg font-semibold">Contact intro</h2>
-              <p className="text-xs text-muted-foreground">
-                Phone, email, and map still use Settings → General. This text appears above the
-                form when CMS rendering is enabled.
-              </p>
-              <RichTextEditor
-                value={content.contactIntroHtml ?? ''}
-                onChange={(html) => patchContent({ contactIntroHtml: html })}
-                disabled={saving}
-                compact
-                editorMinHeight="min-h-[160px]"
-              />
-            </div>
+            <>
+              <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+                <h2 className="text-lg font-semibold">Find us & map</h2>
+                <p className="text-xs text-muted-foreground">
+                  All text and links shown on the public contact page. Empty fields fall back to
+                  site defaults until you save.
+                </p>
+                <div className="space-y-1.5">
+                  <Label>Section heading</Label>
+                  <Input
+                    value={content.contact?.findUsTitle ?? defaultContactDetails().findUsTitle ?? ''}
+                    onChange={(e) => patchContact({ findUsTitle: e.target.value })}
+                    disabled={saving}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Address</Label>
+                  <Textarea
+                    value={content.contact?.address ?? defaultContactDetails().address ?? ''}
+                    onChange={(e) => patchContact({ address: e.target.value })}
+                    rows={3}
+                    disabled={saving}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Primary phone</Label>
+                  <Input
+                    value={content.contact?.primaryPhone ?? defaultContactDetails().primaryPhone ?? ''}
+                    onChange={(e) => patchContact({ primaryPhone: e.target.value })}
+                    disabled={saving}
+                  />
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Additional phones</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={saving}
+                      onClick={() => {
+                        const current = content.contact?.additionalPhones ?? []
+                        patchContact({ additionalPhones: [...current, ''] })
+                      }}
+                    >
+                      <Plus className="size-3 mr-1" />
+                      Add phone
+                    </Button>
+                  </div>
+                  {(content.contact?.additionalPhones ?? []).map((phone, idx) => (
+                    <div key={idx} className="flex gap-2">
+                      <Input
+                        value={phone}
+                        onChange={(e) => {
+                          const current = [...(content.contact?.additionalPhones ?? [])]
+                          current[idx] = e.target.value
+                          patchContact({ additionalPhones: current })
+                        }}
+                        placeholder="+256 …"
+                        disabled={saving}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive shrink-0"
+                        disabled={saving}
+                        onClick={() => {
+                          const current = [...(content.contact?.additionalPhones ?? [])]
+                          current.splice(idx, 1)
+                          patchContact({ additionalPhones: current })
+                        }}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={content.contact?.email ?? defaultContactDetails().email ?? ''}
+                    onChange={(e) => patchContact({ email: e.target.value })}
+                    disabled={saving}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Service times</Label>
+                  <Textarea
+                    value={content.contact?.serviceTimes ?? defaultContactDetails().serviceTimes ?? ''}
+                    onChange={(e) => patchContact({ serviceTimes: e.target.value })}
+                    rows={4}
+                    disabled={saving}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Google Maps embed URL</Label>
+                  <Textarea
+                    value={content.contact?.mapEmbedUrl ?? defaultContactDetails().mapEmbedUrl ?? ''}
+                    onChange={(e) => patchContact({ mapEmbedUrl: e.target.value })}
+                    rows={2}
+                    className="font-mono text-xs"
+                    disabled={saving}
+                  />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label>Maps link URL</Label>
+                    <Input
+                      value={content.contact?.mapLinkUrl ?? defaultContactDetails().mapLinkUrl ?? ''}
+                      onChange={(e) => patchContact({ mapLinkUrl: e.target.value })}
+                      disabled={saving}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Maps link label</Label>
+                    <Input
+                      value={content.contact?.mapLinkLabel ?? defaultContactDetails().mapLinkLabel ?? ''}
+                      onChange={(e) => patchContact({ mapLinkLabel: e.target.value })}
+                      disabled={saving}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+                <h2 className="text-lg font-semibold">Contact form</h2>
+                <div className="space-y-1.5">
+                  <Label>Form heading</Label>
+                  <Input
+                    value={content.contact?.formTitle ?? defaultContactDetails().formTitle ?? ''}
+                    onChange={(e) => patchContact({ formTitle: e.target.value })}
+                    disabled={saving}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Success title</Label>
+                  <Input
+                    value={
+                      content.contact?.formSuccessTitle ??
+                      defaultContactDetails().formSuccessTitle ??
+                      ''
+                    }
+                    onChange={(e) => patchContact({ formSuccessTitle: e.target.value })}
+                    disabled={saving}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Success message</Label>
+                  <Textarea
+                    value={
+                      content.contact?.formSuccessMessage ??
+                      defaultContactDetails().formSuccessMessage ??
+                      ''
+                    }
+                    onChange={(e) => patchContact({ formSuccessMessage: e.target.value })}
+                    rows={3}
+                    disabled={saving}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Submit button label</Label>
+                  <Input
+                    value={
+                      content.contact?.submitButtonLabel ??
+                      defaultContactDetails().submitButtonLabel ??
+                      ''
+                    }
+                    onChange={(e) => patchContact({ submitButtonLabel: e.target.value })}
+                    disabled={saving}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+                <h2 className="text-lg font-semibold">Optional intro (rich text)</h2>
+                <p className="text-xs text-muted-foreground">
+                  Shown below the hero and above the contact grid when provided.
+                </p>
+                <RichTextEditor
+                  value={content.contactIntroHtml ?? ''}
+                  onChange={(html) => patchContent({ contactIntroHtml: html })}
+                  disabled={saving}
+                  compact
+                  editorMinHeight="min-h-[120px]"
+                />
+              </div>
+            </>
           )}
 
           {content.pageType === 'give' && (

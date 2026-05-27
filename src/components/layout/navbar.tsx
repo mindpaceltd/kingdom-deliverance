@@ -106,8 +106,12 @@ export function Navbar({ logo }: { logo?: string }) {
                 className="relative py-2"
               >
                 <button
+                  type="button"
+                  aria-haspopup="true"
+                  aria-expanded={activeDropdown === item.name}
+                  aria-label={`${item.name} menu`}
                   className={cn(
-                    "flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 outline-none",
+                    "flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 outline-none min-h-11",
                     item.children.some(
                       (c) => pathname === c.href || (c.href !== "/" && pathname.startsWith(c.href))
                     )

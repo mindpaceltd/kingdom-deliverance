@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { normalizeMediaUrl } from '@/lib/media-url'
 
 interface Product {
   id: string
@@ -123,11 +125,15 @@ export function ProductCarousel({ products, title = "Featured Products", subtitl
                     key={product.id}
                     className="snap-start min-w-[calc((100%-1rem)/2)] sm:min-w-[calc((100%-1rem)/2)] md:min-w-[calc((100%-3rem)/4)] lg:min-w-[calc((100%-4rem)/5)] rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col"
                   >
-                    <div className="relative overflow-hidden rounded-t-2xl bg-gray-50 aspect-[4/5] w-full">
-                      <img
-                        src={product.image_url}
+                    <div className="relative aspect-[4/5] w-full overflow-hidden rounded-t-2xl bg-gray-50">
+                      <Image
+                        src={normalizeMediaUrl(product.image_url) || product.image_url}
                         alt={product.name}
-                        className="w-full h-full object-cover object-top"
+                        fill
+                        sizes="(max-width: 640px) 45vw, (max-width: 1024px) 22vw, 18vw"
+                        quality={70}
+                        loading={index < 3 ? 'eager' : 'lazy'}
+                        className="object-cover object-top"
                       />
                       {hasDiscount && (
                         <div className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">

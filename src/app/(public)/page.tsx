@@ -1,4 +1,6 @@
+import { preload } from "react-dom";
 import { HeroSection } from "@/components/home/hero-section";
+import { getHeroImageSrc } from "@/components/home/hero-background";
 import { PageSection } from "@/components/content/section";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,6 +80,9 @@ export default async function Home() {
 
   const latestPosts: Post[] = (postsRes.data as Post[]) ?? [];
   const featuredProducts = productsRes.data ?? [];
+
+  const heroSrc = getHeroImageSrc(heroImageUrl);
+  preload(heroSrc, { as: "image", fetchPriority: "high" });
 
   return (
     <div className="flex min-h-screen flex-col">
