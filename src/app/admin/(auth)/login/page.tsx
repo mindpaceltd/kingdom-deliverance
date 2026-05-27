@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, ShieldCheck } from "lucide-react";
-import { createBrowserClient } from "@supabase/ssr";
+import { createClient } from "@/lib/supabase/client";
 import { PasswordInput } from "@/components/ui/password-input";
 
 export default function AdminLoginPage() {
@@ -16,10 +16,7 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     async function fetchLogo() {
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
+      const supabase = createClient();
       
       // Check organization_images first, then site_settings
       const [orgLogoRes, settingsLogoRes] = await Promise.all([
@@ -39,12 +36,7 @@ export default function AdminLoginPage() {
     setError(null);
 
     try {
-      // Dynamically import to avoid any server-side module issues
-      const { createBrowserClient } = await import("@supabase/ssr");
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
+      const supabase = createClient();
 
       const { error: authError } = await supabase.auth.signInWithPassword({
         email,

@@ -17,7 +17,7 @@ import {
   RefreshCw
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { createClient } from '@/lib/supabase/client'
+import { createClient, getBrowserSession } from '@/lib/supabase/client'
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { GoogleConnectionCard } from "./google-connection-card"
@@ -82,7 +82,8 @@ export function AnalyticsDashboard() {
 
   const fetchData = React.useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { session } } = await getBrowserSession()
+      const user = session?.user ?? null
       if (user) {
         setUserId(user.id)
       }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { getUserCreditBalance } from '@/lib/actions/credits'
 import { Wallet, Loader2 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, getBrowserSession } from '@/lib/supabase/client'
 import Link from 'next/link'
 
 export function CreditWallet() {
@@ -13,7 +13,8 @@ export function CreditWallet() {
 
   useEffect(() => {
     async function loadBalance() {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { session } } = await getBrowserSession()
+      const user = session?.user ?? null
       if (user?.email) {
         const bal = await getUserCreditBalance(user.email)
         setBalance(bal)

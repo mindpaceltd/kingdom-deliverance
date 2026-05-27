@@ -90,33 +90,35 @@ export function AboutPageView({ data }: { data: ResolvedAboutPage }) {
             <div className="w-20 h-1 bg-accent mx-auto rounded-full mt-4" />
           </FadeInSection>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="flex flex-wrap justify-center gap-8">
             {data.leaders.map((leader, index) => (
-              <FadeInSection key={`${leader.name}-${index}`} delay={index * 0.2}>
-                <div className="group bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                  <div className="h-56 bg-gradient-to-br from-[#0d1b3e] to-[#1a3a6e] flex items-center justify-center relative overflow-hidden">
+              <FadeInSection
+                key={`${leader.name}-${index}`}
+                delay={index * 0.2}
+                className="w-full max-w-sm"
+              >
+                <div className="group flex h-full flex-col items-center rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                  <div className="relative mb-6 size-32 shrink-0 overflow-hidden rounded-full border-4 border-accent/40 bg-gradient-to-br from-[#0d1b3e] to-[#1a3a6e] shadow-lg ring-4 ring-white transition-transform duration-300 group-hover:scale-105 md:size-36">
                     {leader.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={leader.imageUrl}
                         alt={leader.name}
-                        className="absolute inset-0 h-full w-full object-cover object-top"
+                        className="h-full w-full object-cover object-top"
                       />
                     ) : (
-                      <div className="w-28 h-28 rounded-full border-4 border-accent/60 bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <div className="flex h-full w-full items-center justify-center bg-white/10">
                         <div className="text-accent scale-150">
                           {LEADER_FALLBACK_ICONS[index % LEADER_FALLBACK_ICONS.length]}
                         </div>
                       </div>
                     )}
                   </div>
-                  <div className="p-6 space-y-3">
-                    <h3 className="font-serif text-xl font-bold text-primary group-hover:text-accent transition-colors duration-300">
-                      {leader.name}
-                    </h3>
-                    <p className="text-accent text-sm font-semibold">{leader.title}</p>
-                    <p className="text-primary/70 text-sm leading-relaxed">{leader.bio}</p>
-                  </div>
+                  <h3 className="font-serif text-xl font-bold text-primary transition-colors duration-300 group-hover:text-accent">
+                    {leader.name}
+                  </h3>
+                  <p className="mt-1 text-sm font-semibold text-accent">{leader.title}</p>
+                  <p className="mt-3 text-sm leading-relaxed text-primary/70">{leader.bio}</p>
                 </div>
               </FadeInSection>
             ))}

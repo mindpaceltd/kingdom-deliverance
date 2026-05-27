@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient, getBrowserSession } from '@/lib/supabase/client'
 
 
 const SHIPPING_OPTIONS = [
@@ -84,11 +84,9 @@ export default function CheckoutPage() {
 
   // Pre-fill form if user is authenticated
   useEffect(() => {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    const supabase = createClient()
+    getBrowserSession().then(({ data: { session } }) => {
+      const user = session?.user ?? null
       if (user) {
         setCurrentUser(user)
         setFormData(prev => ({
@@ -108,10 +106,7 @@ export default function CheckoutPage() {
     setLoading(true)
     setAuthError('')
 
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
+    const supabase = createClient()
 
     if (createAccount && !currentUser) {
       if (!formData.password || formData.password.length < 6) {
@@ -165,10 +160,7 @@ export default function CheckoutPage() {
     setAuthError('')
 
     try {
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      )
+      const supabase = createClient()
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

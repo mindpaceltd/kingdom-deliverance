@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient, getBrowserSession } from '@/lib/supabase/client'
 import { User, Loader2 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -23,15 +23,12 @@ function LoginForm() {
   const next = searchParams.get('next') || '/account'
 
   // Create supabase client once at the top — before any useEffect
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = createClient()
 
   // Redirect if already logged in
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) router.replace(next)
+    getBrowserSession().then(({ data: { session } }) => {
+      if (session?.user) router.replace(next)
     })
   }, [])
 

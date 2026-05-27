@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { MapPin, Mail, Phone, Heart, ArrowRight, Globe } from "lucide-react";
 import { IconFacebook, IconInstagram, IconYoutube, IconTwitter, IconLinkedin, IconTiktok } from "@/components/icons/social-inline";
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/server';
+import { normalizeExternalHref } from '@/lib/utils/external-url';
 
 const platformIcons: Record<string, any> = {
   facebook: <IconFacebook className="w-4 h-4" />,
@@ -27,9 +28,9 @@ export async function Footer() {
   const additionalPhones = settingsMap.contact_phones_json ? JSON.parse(settingsMap.contact_phones_json) : [];
 
   // Fallback to env or defaults if no dynamic links
-  const socialFacebook = settingsMap.facebook_url || process.env.NEXT_PUBLIC_SOCIAL_FACEBOOK || "#";
-  const socialInstagram = settingsMap.instagram_url || process.env.NEXT_PUBLIC_SOCIAL_INSTAGRAM || "#";
-  const socialYoutube = settingsMap.youtube_url || process.env.NEXT_PUBLIC_SOCIAL_YOUTUBE || "#";
+  const socialFacebook = normalizeExternalHref(settingsMap.facebook_url || process.env.NEXT_PUBLIC_SOCIAL_FACEBOOK || '');
+  const socialInstagram = normalizeExternalHref(settingsMap.instagram_url || process.env.NEXT_PUBLIC_SOCIAL_INSTAGRAM || '');
+  const socialYoutube = normalizeExternalHref(settingsMap.youtube_url || process.env.NEXT_PUBLIC_SOCIAL_YOUTUBE || '');
 
   return (
     <footer className="bg-[#0a1628] text-white">
@@ -66,31 +67,36 @@ export async function Footer() {
                 { href: socialFacebook, icon: <IconFacebook className="w-4 h-4" />, label: "Facebook" },
                 { href: socialInstagram, icon: <IconInstagram className="w-4 h-4" />, label: "Instagram" },
                 { href: socialYoutube, icon: <IconYoutube className="w-4 h-4" />, label: "YouTube" },
-              ].filter(s => s.href !== "#").map((s) => (
-                <Link
+              ].filter((s) => s.href).map((s) => (
+                <a
                   key={s.label}
                   href={s.href}
                   aria-label={s.label}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="w-9 h-9 rounded-full border border-white/15 flex items-center justify-center text-white/60 hover:border-accent hover:text-accent hover:bg-accent/10 transition-all duration-200"
                 >
                   {s.icon}
-                </Link>
+                </a>
               ))}
 
               {/* Dynamic Socials */}
-              {dynamicSocialLinks.map((s: any, idx: number) => {
+              {dynamicSocialLinks.map((s: { platform: string; url: string }, idx: number) => {
+                const href = normalizeExternalHref(s.url)
+                if (!href) return null
                 const platformKey = s.platform.toLowerCase();
                 const icon = platformIcons[platformKey] || <Globe className="w-4 h-4" />;
                 return (
-                  <Link
+                  <a
                     key={`dynamic-${idx}`}
-                    href={s.url}
+                    href={href}
                     aria-label={s.platform}
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="w-9 h-9 rounded-full border border-white/15 flex items-center justify-center text-white/60 hover:border-accent hover:text-accent hover:bg-accent/10 transition-all duration-200"
                   >
                     {icon}
-                  </Link>
+                  </a>
                 );
               })}
             </div>

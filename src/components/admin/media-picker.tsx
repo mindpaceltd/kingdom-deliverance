@@ -239,8 +239,8 @@ function MediaPickerModal({
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+          {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="overflow-hidden rounded-lg bg-muted" aria-hidden>
               <div className="w-full pb-[100%] animate-pulse bg-muted-foreground/10" />
             </div>
@@ -262,7 +262,7 @@ function MediaPickerModal({
           </Button>
         </div>
       ) : (
-        <div className="grid max-h-[min(70vh,560px)] grid-cols-2 gap-3 overflow-y-auto pr-1 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid max-h-[min(70vh,560px)] grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
           {visibleAssets.map((asset) => (
             <MediaGridTile
               key={asset.id}
@@ -307,7 +307,7 @@ export function MediaPicker({
       </div>
 
       <DialogContent
-        className="flex max-h-[90vh] flex-col gap-0 overflow-hidden sm:max-w-4xl lg:max-w-5xl"
+        className="flex max-h-[90vh] flex-col gap-0 overflow-hidden sm:max-w-5xl lg:max-w-6xl"
         aria-describedby={undefined}
       >
         <DialogHeader>

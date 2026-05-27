@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient, getBrowserSession } from '@/lib/supabase/client'
 import { Loader2, Check } from 'lucide-react'
 
 export default function ProfilePage() {
@@ -15,13 +15,11 @@ export default function ProfilePage() {
   const [passwordForm, setPasswordForm] = useState({ current: '', new: '', confirm: '' })
   const [error, setError] = useState('')
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = createClient()
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    getBrowserSession().then(({ data: { session } }) => {
+      const user = session?.user ?? null
       if (user) {
         setForm({
           name: user.user_metadata?.full_name || '',

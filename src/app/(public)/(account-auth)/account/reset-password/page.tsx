@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { Button } from '@/components/ui/button'
 import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient } from '@/lib/supabase/client'
 import { Lock, Loader2, CheckCircle2 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -18,10 +18,7 @@ function ResetPasswordForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = createClient()
 
   // Supabase sends the token in the URL hash — exchange it for a session
   useEffect(() => {

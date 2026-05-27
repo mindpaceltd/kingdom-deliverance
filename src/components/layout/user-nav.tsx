@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient, getBrowserSession } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -18,20 +18,17 @@ export function UserNav() {
   const [credits, setCredits] = useState<number | null>(null)
   const router = useRouter()
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = createClient()
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user)
-      if (user?.email) {
-        // Fetch credit balance
+    getBrowserSession().then(({ data: { session } }) => {
+      const currentUser = session?.user ?? null
+      setUser(currentUser)
+      if (currentUser?.email) {
         supabase
           .from('user_credits')
           .select('balance')
-          .eq('email', user.email)
+          .eq('email', currentUser.email)
           .maybeSingle()
           .then(({ data }) => setCredits(data?.balance ?? 0))
       }

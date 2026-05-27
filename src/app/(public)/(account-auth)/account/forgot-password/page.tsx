@@ -4,7 +4,7 @@ import { useState, Suspense } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient } from '@/lib/supabase/client'
 import { Mail, Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -14,10 +14,7 @@ function ForgotPasswordForm() {
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = createClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

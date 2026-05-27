@@ -114,7 +114,8 @@ export function FireServiceForm() {
       const pkgs = await getCreditPackages()
       setPackages(pkgs)
 
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { session } } = await supabase.auth.getSession()
+      const user = session?.user ?? null
       if (user) {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
