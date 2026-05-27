@@ -28,7 +28,11 @@ import { buildPublicPageUrl } from '@/lib/seo/public-content-urls'
 import { createPage, updatePageFromEditor } from '@/lib/actions/pages'
 import { defaultContactDetails } from '@/lib/cms/contact-page-defaults'
 import { defaultAboutDetails } from '@/lib/cms/about-page-defaults'
+import { defaultHomeDetails } from '@/lib/cms/home-page-defaults'
+import { defaultFaqDetails } from '@/lib/cms/faq-page-defaults'
 import { AboutPageEditorFields } from '@/components/admin/pages/about-page-editor-fields'
+import { HomePageEditorFields } from '@/components/admin/pages/home-page-editor-fields'
+import { FaqPageEditorFields } from '@/components/admin/pages/faq-page-editor-fields'
 import {
   buildContentJson,
   pagePathFromSlug,
@@ -185,9 +189,26 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
 
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
         <Info className="mr-2 inline size-4" />
-        Content is saved in the CMS only. The public site still uses the existing Next.js pages
-        until front-end rendering is connected. Planned URL:{' '}
-        <code className="font-mono text-xs">{publicPath}</code>
+        {content.pageType === 'home' ? (
+          <>
+            Homepage sections, images, and video links are managed here. When this page is{' '}
+            <strong>Published</strong>, <a href="https://kdcuganda.org/">kdcuganda.org</a> uses
+            this content (products, sermons, events, and posts still load from their admin areas).
+          </>
+        ) : content.pageType === 'faq' ? (
+          <>
+            FAQ headings, sections, questions, and the help box are managed here. Set this page
+            to <strong>Published</strong> for changes to appear on{' '}
+            <a href="https://kdcuganda.org/faq">kdcuganda.org/faq</a>. Use the Hero panel above
+            for the page title and background image.
+          </>
+        ) : (
+          <>
+            Content is saved in the CMS only. The public site still uses the existing Next.js
+            pages until front-end rendering is connected. Planned URL:{' '}
+            <code className="font-mono text-xs">{publicPath}</code>
+          </>
+        )}
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
@@ -284,6 +305,34 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
                   patchContent(patch)
                 }
               }}
+              disabled={saving}
+            />
+          )}
+
+          {content.pageType === 'home' && (
+            <HomePageEditorFields
+              content={content}
+              onChange={(patch) =>
+                setContent((prev) => ({
+                  ...prev,
+                  ...patch,
+                  home: { ...defaultHomeDetails(), ...prev.home, ...patch.home },
+                }))
+              }
+              disabled={saving}
+            />
+          )}
+
+          {content.pageType === 'faq' && (
+            <FaqPageEditorFields
+              content={content}
+              onChange={(patch) =>
+                setContent((prev) => ({
+                  ...prev,
+                  ...patch,
+                  faq: { ...defaultFaqDetails(), ...prev.faq, ...patch.faq },
+                }))
+              }
               disabled={saving}
             />
           )}
@@ -512,7 +561,6 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
           )}
 
           {(content.pageType === 'fire_service' ||
-            content.pageType === 'home' ||
             content.pageType === 'custom') && (
             <div className="grid gap-4 sm:grid-cols-2 rounded-2xl border bg-card p-6 shadow-sm">
               <div className="space-y-1.5">
@@ -542,7 +590,7 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
             </div>
           )}
 
-          {!['contact', 'give', 'about'].includes(content.pageType) && (
+          {!['contact', 'give', 'about', 'home', 'faq'].includes(content.pageType) && (
             <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
               <div>
                 <h2 className="text-lg font-semibold">Main content</h2>

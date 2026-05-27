@@ -6,6 +6,7 @@ export interface SupportConversation {
   visitor_token: string
   visitor_name: string | null
   visitor_email: string | null
+  visitor_phone: string | null
   status: SupportConversationStatus
   assigned_to: string | null
   last_message_at: string

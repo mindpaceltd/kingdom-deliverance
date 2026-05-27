@@ -1,4 +1,8 @@
 import type { CmsPageContent } from '@/lib/cms/page-content'
+import {
+  getFaqSystemPageContent,
+  getHomeSystemPageContent,
+} from '@/lib/cms/seed-home-faq-pages'
 
 export interface SystemPageDefinition {
   title: string
@@ -13,23 +17,7 @@ export const SYSTEM_PAGE_DEFINITIONS: SystemPageDefinition[] = [
     title: 'Homepage',
     slug: 'home',
     status: 'published',
-    content: {
-      pageType: 'home',
-      isSystem: true,
-      hero: {
-        badge: 'Kingdom Deliverance Centre Uganda',
-        title: 'Welcome to Kingdom Deliverance Centre',
-        subtitle:
-          'A place of worship, deliverance, and community in Kampala — join us for Sunday, Wednesday, and Friday services.',
-      },
-      excerpt: 'Main landing page for KDC Uganda.',
-      seo: {
-        metaTitle: 'Kingdom Deliverance Centre Uganda',
-        metaDescription:
-          'Join worship, sermons, events, and ministries at Kingdom Deliverance Centre Uganda in Kampala.',
-        focusKeyword: 'Kingdom Deliverance Centre Uganda',
-      },
-    },
+    content: getHomeSystemPageContent(),
   },
   {
     title: 'About Us',
@@ -119,6 +107,12 @@ export const SYSTEM_PAGE_DEFINITIONS: SystemPageDefinition[] = [
         focusKeyword: 'about KDC Uganda',
       },
     },
+  },
+  {
+    title: 'FAQ',
+    slug: 'faq',
+    status: 'published',
+    content: getFaqSystemPageContent(),
   },
   {
     title: 'Contact',

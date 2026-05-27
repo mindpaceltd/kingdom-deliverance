@@ -172,7 +172,7 @@ export function SupportInbox({
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium text-sm truncate">
-                      {c.visitor_name || c.visitor_email || 'Website visitor'}
+                      {c.visitor_name || c.visitor_email || c.visitor_phone || 'Website visitor'}
                     </span>
                     {c.unread_staff_count > 0 && (
                       <span className="shrink-0 text-[10px] font-bold bg-accent text-primary rounded-full px-1.5 py-0.5">
@@ -217,6 +217,12 @@ export function SupportInbox({
                       <span className="text-muted-foreground font-normal">
                         {' '}
                         · {active.visitor_email}
+                      </span>
+                    ) : null}
+                    {!active.visitor_email && active.visitor_phone ? (
+                      <span className="text-muted-foreground font-normal">
+                        {' '}
+                        · {active.visitor_phone}
                       </span>
                     ) : null}
                   </p>

@@ -60,6 +60,15 @@ const HERO_COMPACT: PageImageSpec = {
   hint: 'Smaller header for legal or text-heavy pages.',
 }
 
+/** Featured sermon block on the homepage (16:9 video thumbnail). */
+export const HOME_SERMON_THUMB_SPEC: PageImageSpec = {
+  label: 'Featured sermon thumbnail',
+  width: 1920,
+  height: 1080,
+  aspectRatio: '16:9',
+  hint: 'Background image behind the play button in the Recent Message section.',
+}
+
 export function getPageHeroImageSpec(pageType: CmsPageType): PageImageSpec {
   switch (pageType) {
     case 'home':

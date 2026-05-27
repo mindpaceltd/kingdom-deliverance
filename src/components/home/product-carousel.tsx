@@ -21,11 +21,21 @@ interface Product {
 
 interface ProductCarouselProps {
   products: Product[]
+  badge?: string
   title?: string
   subtitle?: string
+  viewAllLabel?: string
+  viewAllUrl?: string
 }
 
-export function ProductCarousel({ products, title = "Featured Products", subtitle = "Discover resources to enrich your spiritual journey" }: ProductCarouselProps) {
+export function ProductCarousel({
+  products,
+  badge = 'KDC Store',
+  title = 'Featured Products',
+  subtitle = 'Discover resources to enrich your spiritual journey',
+  viewAllLabel = 'View All Products',
+  viewAllUrl = '/shop',
+}: ProductCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const trackRef = useRef<HTMLDivElement | null>(null)
   const [isPaused, setIsPaused] = useState(false)
@@ -98,7 +108,7 @@ export function ProductCarousel({ products, title = "Featured Products", subtitl
         <div className="mb-8 text-center space-y-3">
           <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/8 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-accent">
             <ShoppingCart className="h-3 w-3" />
-            KDC Store
+            {badge}
           </div>
           <h2 className="text-3xl font-bold md:text-4xl font-serif text-primary">{title}</h2>
           <p className="text-sm text-primary/60 max-w-xl mx-auto">{subtitle}</p>
@@ -229,8 +239,8 @@ export function ProductCarousel({ products, title = "Featured Products", subtitl
         {/* View All Button */}
         <div className="text-center mt-8">
           <Button asChild size="sm" className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white px-6">
-            <Link href="/shop">
-              View All Products
+            <Link href={viewAllUrl}>
+              {viewAllLabel}
             </Link>
           </Button>
         </div>

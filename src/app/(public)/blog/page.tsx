@@ -223,13 +223,13 @@ export default async function BlogPage({ searchParams }: Props) {
             <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 md:gap-8">
               {grid.map((post) => (
                 <article key={post.id} className="group bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 flex flex-col">
-                  <Link href={`/blog/${post.slug}`} className="relative aspect-[16/10] block overflow-hidden">
+                  <Link href={`/blog/${post.slug}`} className="relative aspect-video block overflow-hidden">
                     {post.featured_image ? (
                       <Image
                         src={post.featured_image}
                         alt={post.title}
                         fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-700"
+                        className="object-cover object-top group-hover:scale-105 transition-transform duration-700"
                         unoptimized={isHeic(post.featured_image)}
                       />
                     ) : (
@@ -339,7 +339,7 @@ export default async function BlogPage({ searchParams }: Props) {
                         src={p.featured_image || "https://images.unsplash.com/photo-1504052434569-70ad5836ab65?auto=format&fit=crop&q=80"}
                         alt={p.title}
                         fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-500"
+                        className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
                         unoptimized={isHeic(p.featured_image)}
                       />
                     </div>

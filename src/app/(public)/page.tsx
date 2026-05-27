@@ -16,6 +16,12 @@ import { EventCard } from "@/components/content/event-card";
 import { TestimoniesSection } from "@/components/home/testimonies-section";
 import { ProductCarousel } from "@/components/home/product-carousel";
 import type { Post, Sermon, Event } from "@/lib/types";
+import { parsePageContent } from "@/lib/cms/page-content";
+import { resolveHomeDetails } from "@/lib/cms/home-page-defaults";
+import { normalizeMediaUrl } from "@/lib/media-url";
+
+const DEFAULT_SERMON_THUMB =
+  "https://images.unsplash.com/photo-1544427920-c49ccfb85579?q=80&w=2000&auto=format&fit=crop";
 
 export const revalidate = 3600;
 
@@ -28,7 +34,7 @@ export default async function Home() {
   const supabase = createClient();
 
   // Fetch: latest published sermon, featured upcoming events, latest 3 posts, featured products, and hero image
-  const [sermonRes, featuredEventsRes, postsRes, productsRes, heroRes] = await Promise.all([
+  const [sermonRes, featuredEventsRes, postsRes, productsRes, heroRes, homePageRes] = await Promise.all([
     supabase
       .from("sermons")
       .select("*")
@@ -61,10 +67,34 @@ export default async function Home() {
       .eq("type", "hero")
       .eq("is_active", true)
       .maybeSingle(),
+    supabase
+      .from("pages")
+      .select("content_json")
+      .in("slug", ["home", ""])
+      .eq("status", "published")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
-  const featuredSermon: Sermon | null = sermonRes.data ?? null;
-  const heroImageUrl = heroRes.data?.url;
+  let featuredSermon: Sermon | null = sermonRes.data ?? null;
+  const homeContent = homePageRes.data?.content_json
+    ? parsePageContent(homePageRes.data.content_json)
+    : null;
+  const home = resolveHomeDetails(homeContent?.home);
+
+  const featuredSlug = home.sermonFeaturedSlug?.trim();
+  if (featuredSlug && featuredSermon?.slug !== featuredSlug) {
+    const { data: overrideSermon } = await supabase
+      .from("sermons")
+      .select("*")
+      .eq("slug", featuredSlug)
+      .eq("status", "published")
+      .maybeSingle();
+    if (overrideSermon) featuredSermon = overrideSermon;
+  }
+
+  const heroImageUrl = homeContent?.hero?.imageUrl?.trim() || heroRes.data?.url;
   let upcomingEvents: Event[] = featuredEventsRes.data ?? [];
 
   // Fallback: if no featured events, get next 3 upcoming regardless of is_featured
@@ -80,43 +110,55 @@ export default async function Home() {
 
   const latestPosts: Post[] = (postsRes.data as Post[]) ?? [];
   const featuredProducts = productsRes.data ?? [];
+  const sermonThumb =
+    normalizeMediaUrl(home.sermonThumbnailUrl) ||
+    normalizeMediaUrl(featuredSermon?.thumbnail_url) ||
+    DEFAULT_SERMON_THUMB;
+  const sermonWatchHref =
+    home.sermonVideoUrl?.trim() ||
+    featuredSermon?.video_url?.trim() ||
+    (featuredSermon ? `/sermons/${featuredSermon.slug}` : home.sermonViewAllUrl || "/sermons");
+  const heroCopy = {
+    welcomeText: home.heroWelcomeText || '',
+    headingTop: home.heroHeadingTop || '',
+    headingBottom: home.heroHeadingBottom || '',
+    lead: home.heroLead || '',
+    primaryCtaLabel: home.heroPrimaryCtaLabel || '',
+    primaryCtaUrl: home.heroPrimaryCtaUrl || '/about',
+    secondaryCtaLabel: home.heroSecondaryCtaLabel || '',
+    secondaryCtaUrl: home.heroSecondaryCtaUrl || '/live',
+    joinUsLabel: home.joinUsLabel || '',
+    serviceSlots: (home.serviceSlots ?? []).slice(0, 3),
+  };
 
   const heroSrc = getHeroImageSrc(heroImageUrl);
   preload(heroSrc, { as: "image", fetchPriority: "high" });
 
   return (
     <div className="flex min-h-screen flex-col">
-      <HeroSection backgroundImage={heroImageUrl} />
+      <HeroSection backgroundImage={heroImageUrl} content={heroCopy} />
 
       {/* Mission / Stats */}
       <PageSection className="bg-white py-24">
           <div className="mx-auto max-w-3xl text-center space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/8 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
               <Sparkles className="h-3.5 w-3.5" />
-              Our Mission
+              {home.missionBadge}
             </div>
             <h2 className="text-4xl font-bold md:text-5xl font-serif text-primary leading-tight">
-              To Set the{" "}
               <span className="bg-gradient-to-r from-accent to-yellow-500 bg-clip-text text-transparent">
-                Captives Free
+                {home.missionTitle}
               </span>
             </h2>
             <div className="mx-auto h-1 w-20 rounded-full bg-gradient-to-r from-accent to-yellow-400" />
             <p className="text-base leading-relaxed text-primary/70 md:text-lg">
-              Kingdom Deliverance Centre Uganda, led by Bishop Climate Wiseman Irungu and Pastor Clear, 
-              is a vibrant community dedicated to the total liberation of mankind. Our mandate is to 
-              deliver the oppressed and cultivate a community that is wealthy, healthy, and wise.
+              {home.missionBody}
             </p>
           </div>
 
           {/* Stats */}
           <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6">
-            {[
-              { value: "500+", label: "Church Members" },
-              { value: "15+", label: "Years of Ministry" },
-              { value: "50+", label: "Lives Transformed" },
-              { value: "10+", label: "Community Programs" },
-            ].map((stat) => (
+            {(home.stats ?? []).map((stat) => (
               <div
                 key={stat.label}
                 className="text-center rounded-2xl border border-accent/15 bg-accent/5 p-6 hover:border-accent/30 hover:bg-accent/10 transition-all duration-300"
@@ -132,48 +174,42 @@ export default async function Home() {
       <section className="py-24 bg-gray-50/80">
         <div className="container px-4">
           <div className="mb-14 text-center space-y-4">
-            <h2 className="text-4xl font-bold md:text-5xl font-serif text-primary">Grow With Us</h2>
+            <h2 className="text-4xl font-bold md:text-5xl font-serif text-primary">{home.growTitle}</h2>
             <p className="text-base text-primary/60 max-w-xl mx-auto md:text-lg">
-              Resources and community designed to help you grow in your faith journey.
+              {home.growSubtitle}
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <FeatureCard
-              icon={<Video className="w-7 h-7 text-accent" />}
-              title="Latest Sermons"
-              description="Catch up on recent teachings and be blessed by the Word of God delivered with passion and truth."
-              link="/sermons"
-              linkText="Watch Now"
-            />
-            <FeatureCard
-              icon={<Calendar className="w-7 h-7 text-accent" />}
-              title="Upcoming Events"
-              description="Join us for special services, conferences, and community outreaches that transform lives."
-              link="/events"
-              linkText="View Calendar"
-            />
-            <FeatureCard
-              icon={<BookOpen className="w-7 h-7 text-accent" />}
-              title="Ministries"
-              description="Find your place to serve and grow in our various church ministries for every age and calling."
-              link="/ministries"
-              linkText="Explore Ministries"
-            />
-            <FeatureCard
-              icon={<Heart className="w-7 h-7 text-accent" />}
-              title="Give Online"
-              description="Partner with us in spreading the Gospel through your generous giving and support the Kingdom work."
-              link="/donations"
-              linkText="Donate Now"
-            />
+            {(home.features ?? []).map((feature, idx) => (
+              <FeatureCard
+                key={feature.title + idx}
+                icon={
+                  idx % 4 === 0 ? <Video className="w-7 h-7 text-accent" /> :
+                  idx % 4 === 1 ? <Calendar className="w-7 h-7 text-accent" /> :
+                  idx % 4 === 2 ? <BookOpen className="w-7 h-7 text-accent" /> :
+                  <Heart className="w-7 h-7 text-accent" />
+                }
+                title={feature.title}
+                description={feature.description}
+                link={feature.link}
+                linkText={feature.linkText}
+              />
+            ))}
           </div>
         </div>
       </section>
 
       {/* Product Carousel */}
       {featuredProducts.length > 0 && (
-        <ProductCarousel products={featuredProducts} />
+        <ProductCarousel
+          products={featuredProducts}
+          badge={home.storeBadge}
+          title={home.storeTitle}
+          subtitle={home.storeSubtitle}
+          viewAllLabel={home.storeViewAllLabel}
+          viewAllUrl={home.storeViewAllUrl}
+        />
       )}
 
       {/* Featured Sermon */}
@@ -187,18 +223,18 @@ export default async function Home() {
             <div className="space-y-3">
               <div className="inline-flex items-center gap-2 rounded-full bg-accent/20 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-accent">
                 <Play className="w-3.5 h-3.5 fill-current" />
-                Latest Message
+                {home.sermonBadge}
               </div>
-                <h2 className="text-4xl font-bold font-serif md:text-5xl text-white">Recent Message</h2>
-              <p className="text-white/60 text-base">The latest word from our leadership.</p>
+                <h2 className="text-4xl font-bold font-serif md:text-5xl text-white">{home.sermonTitle}</h2>
+              <p className="text-white/60 text-base">{home.sermonSubtitle}</p>
             </div>
             <Button
               asChild
               variant="outline"
               className="self-start border-white/20 bg-white/8 text-white hover:bg-white/15 hover:border-white/30 rounded-full px-6 transition-all duration-300"
             >
-              <Link href="/sermons" className="flex items-center gap-2">
-                View All Sermons
+              <Link href={home.sermonViewAllUrl || "/sermons"} className="flex items-center gap-2">
+                {home.sermonViewAllLabel}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </Button>
@@ -208,21 +244,21 @@ export default async function Home() {
             {/* Video Thumbnail */}
             <div className="relative group">
               <div className="absolute -inset-3 bg-gradient-to-r from-accent/20 to-yellow-400/10 rounded-2xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500" />
-              <div className="relative aspect-video overflow-hidden rounded-2xl bg-black shadow-2xl ring-1 ring-white/10">
+              <Link
+                href={sermonWatchHref}
+                className="relative block aspect-video overflow-hidden rounded-2xl bg-black shadow-2xl ring-1 ring-white/10"
+              >
                 <div
                   className="absolute inset-0 bg-cover bg-center"
-                  style={{
-                    backgroundImage:
-                      "url('https://images.unsplash.com/photo-1544427920-c49ccfb85579?q=80&w=2000&auto=format&fit=crop')",
-                  }}
+                  style={{ backgroundImage: `url('${sermonThumb}')` }}
                 >
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <div className="w-18 h-18 flex items-center justify-center rounded-full bg-accent/90 shadow-xl shadow-accent/40 hover:scale-110 hover:bg-accent transition-all duration-300 cursor-pointer">
+                    <div className="w-18 h-18 flex items-center justify-center rounded-full bg-accent/90 shadow-xl shadow-accent/40 group-hover:scale-110 group-hover:bg-accent transition-all duration-300">
                       <Play className="w-8 h-8 text-primary ml-1" fill="currentColor" />
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             </div>
 
             {/* Sermon Info */}
@@ -252,8 +288,8 @@ export default async function Home() {
                 asChild
                 className="bg-accent hover:bg-accent/90 text-primary font-bold rounded-full px-8 shadow-lg shadow-accent/30 hover:shadow-accent/50 hover:scale-105 transition-all duration-300"
               >
-                <Link href={featuredSermon ? `/sermons/${featuredSermon.slug}` : "/sermons"} className="flex items-center gap-2">
-                  Watch Full Message
+                <Link href={sermonWatchHref} className="flex items-center gap-2">
+                  {home.sermonWatchLabel}
                   <Play className="w-4 h-4 fill-current" />
                 </Link>
               </Button>
@@ -268,32 +304,29 @@ export default async function Home() {
           <div className="mb-14 text-center space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/8 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
               <Award className="h-3.5 w-3.5" />
-              Our Values
+                  {home.valuesBadge}
             </div>
             <h2 className="text-4xl font-bold md:text-5xl font-serif text-primary">
-              What We Stand For
+                  {home.valuesTitle}
             </h2>
             <p className="text-base text-primary/60 max-w-xl mx-auto md:text-lg">
-              Our core values guide everything we do as a church community.
+                  {home.valuesSubtitle}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <ValueCard
-              icon={<Sparkles className="w-10 h-10 text-accent" />}
-              title="Wealthy"
-              description="We believe in God's provision and financial breakthrough for His people, enabling us to be a blessing to others."
-            />
-            <ValueCard
-              icon={<Heart className="w-10 h-10 text-accent" />}
-              title="Healthy"
-              description="God's desire is for His children to walk in total health — spirit, soul, and body, free from all infirmities."
-            />
-            <ValueCard
-              icon={<BookOpen className="w-10 h-10 text-accent" />}
-              title="Wise"
-              description="Through the Word of God, we gain the wisdom needed to navigate life and build lasting generations."
-            />
+            {(home.values ?? []).map((value, idx) => (
+              <ValueCard
+                key={value.title + idx}
+                icon={
+                  idx % 3 === 0 ? <Sparkles className="w-10 h-10 text-accent" /> :
+                  idx % 3 === 1 ? <Heart className="w-10 h-10 text-accent" /> :
+                  <BookOpen className="w-10 h-10 text-accent" />
+                }
+                title={value.title}
+                description={value.description}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -306,12 +339,14 @@ export default async function Home() {
               <div className="space-y-2">
                 <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-accent">
                   <Calendar className="h-3.5 w-3.5" />
-                  Upcoming Events
+                  {home.eventsBadge}
                 </div>
-                <h2 className="text-3xl font-bold font-serif text-primary md:text-4xl">What&apos;s Coming Up</h2>
+                <h2 className="text-3xl font-bold font-serif text-primary md:text-4xl">{home.eventsTitle}</h2>
               </div>
               <Button asChild variant="outline" className="self-start border-primary/20 text-primary rounded-full px-6">
-                <Link href="/events" className="flex items-center gap-2">View All Events <ArrowRight className="w-4 h-4" /></Link>
+                <Link href={home.eventsViewAllUrl || "/events"} className="flex items-center gap-2">
+                  {home.eventsViewAllLabel} <ArrowRight className="w-4 h-4" />
+                </Link>
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -331,12 +366,14 @@ export default async function Home() {
               <div className="space-y-2">
                 <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-accent">
                   <BookOpen className="h-3.5 w-3.5" />
-                  Latest Posts
+                  {home.postsBadge}
                 </div>
-                <h2 className="text-3xl font-bold font-serif text-primary md:text-4xl">News &amp; Teachings</h2>
+                <h2 className="text-3xl font-bold font-serif text-primary md:text-4xl">{home.postsTitle}</h2>
               </div>
               <Button asChild variant="outline" className="self-start border-primary/20 text-primary rounded-full px-6">
-                <Link href="/blog" className="flex items-center gap-2">Read All Posts <ArrowRight className="w-4 h-4" /></Link>
+                <Link href={home.postsViewAllUrl || "/blog"} className="flex items-center gap-2">
+                  {home.postsViewAllLabel} <ArrowRight className="w-4 h-4" />
+                </Link>
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -348,29 +385,29 @@ export default async function Home() {
         </section>
       )}
 
-      {/* Testimonies Section */}
-      <TestimoniesSection />
-
       {/* CTA Banner - Fire Service */}
       <section className="py-12 bg-gradient-to-r from-red-600 via-orange-500 to-red-600 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.2)_0%,transparent_100%)] mix-blend-multiply" />
         <div className="container px-4 text-center space-y-6 relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold font-serif text-white">
-            🔥 The Fire Service: Friday, May 29, 2026 🔥
+            {home.fireCtaTitle}
           </h2>
           <p className="text-white/90 text-base md:text-xl max-w-2xl mx-auto font-medium">
-            There is a matter in your life that will not respond until it is brought into the place of fire. Submit your case to the Fire Altar tonight.
+            {home.fireCtaBody}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
             <Button
               asChild
               className="bg-white hover:bg-gray-100 text-red-600 font-bold rounded-full px-10 py-6 text-lg shadow-2xl hover:scale-105 transition-all duration-300"
             >
-              <Link href="/fire-service">Submit Your Fire List Now</Link>
+              <Link href={home.fireCtaUrl || "/fire-service"}>{home.fireCtaLabel}</Link>
             </Button>
           </div>
         </div>
       </section>
+
+      {/* Testimonies Section */}
+      <TestimoniesSection home={homeContent?.home} />
     </div>
   );
 }

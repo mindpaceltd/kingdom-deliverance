@@ -1,5 +1,6 @@
 export type CmsPageType =
   | 'home'
+  | 'faq'
   | 'about'
   | 'contact'
   | 'give'
@@ -77,6 +78,113 @@ export interface CmsContactDetails {
   submitButtonLabel?: string
 }
 
+export interface CmsHomeStat {
+  value: string
+  label: string
+}
+
+export interface CmsHomeFeature {
+  title: string
+  description: string
+  link: string
+  linkText: string
+}
+
+export interface CmsHomeValueCard {
+  title: string
+  description: string
+}
+
+export interface CmsServiceSlot {
+  label: string
+  time: string
+}
+
+export interface CmsHomeDetails {
+  heroWelcomeText?: string
+  heroHeadingTop?: string
+  heroHeadingBottom?: string
+  heroLead?: string
+  heroPrimaryCtaLabel?: string
+  heroPrimaryCtaUrl?: string
+  heroSecondaryCtaLabel?: string
+  heroSecondaryCtaUrl?: string
+  joinUsLabel?: string
+  serviceSlots?: CmsServiceSlot[]
+  missionBadge?: string
+  missionTitle?: string
+  missionBody?: string
+  stats?: CmsHomeStat[]
+  growTitle?: string
+  growSubtitle?: string
+  features?: CmsHomeFeature[]
+  storeBadge?: string
+  storeTitle?: string
+  storeSubtitle?: string
+  storeViewAllLabel?: string
+  storeViewAllUrl?: string
+  sermonBadge?: string
+  sermonTitle?: string
+  sermonSubtitle?: string
+  sermonViewAllLabel?: string
+  sermonViewAllUrl?: string
+  sermonFeaturedBadge?: string
+  sermonWatchLabel?: string
+  /** Override which published sermon appears (slug). Empty = latest published. */
+  sermonFeaturedSlug?: string
+  /** Optional thumbnail behind the play button (falls back to sermon thumbnail). */
+  sermonThumbnailUrl?: string
+  /** Optional direct video/watch URL when clicking the thumbnail or play button. */
+  sermonVideoUrl?: string
+  valuesBadge?: string
+  valuesTitle?: string
+  valuesSubtitle?: string
+  values?: CmsHomeValueCard[]
+  eventsBadge?: string
+  eventsTitle?: string
+  eventsViewAllLabel?: string
+  eventsViewAllUrl?: string
+  postsBadge?: string
+  postsTitle?: string
+  postsViewAllLabel?: string
+  postsViewAllUrl?: string
+  testimoniesBadge?: string
+  testimoniesTitle?: string
+  testimoniesSubtitle?: string
+  testimoniesCtaTitle?: string
+  testimoniesCtaBody?: string
+  testimoniesCtaLabel?: string
+  testimoniesCtaUrl?: string
+  fireCtaTitle?: string
+  fireCtaBody?: string
+  fireCtaLabel?: string
+  fireCtaUrl?: string
+}
+
+export interface CmsFaqItem {
+  question: string
+  answer: string
+}
+
+export interface CmsFaqSection {
+  title: string
+  items: CmsFaqItem[]
+}
+
+export interface CmsFaqDetails {
+  intro?: string
+  lastUpdated?: string
+  lastUpdatedLabel?: string
+  sections?: CmsFaqSection[]
+  helpTitle?: string
+  helpMessageLead?: string
+  helpLinkLabel?: string
+  helpLinkUrl?: string
+  helpMessageTail?: string
+  /** @deprecated Use helpTitle + helpMessage* fields */
+  helpText?: string
+}
+
 export interface CmsPageSeo {
   metaTitle?: string
   metaDescription?: string
@@ -101,6 +209,8 @@ export interface CmsPageContent {
   seo?: CmsPageSeo
   missionTitle?: string
   missionHtml?: string
+  home?: CmsHomeDetails
+  faq?: CmsFaqDetails
   about?: CmsAboutDetails
   contact?: CmsContactDetails
   /** Optional rich text above the contact grid */
@@ -127,6 +237,8 @@ export function parsePageContent(raw: unknown): CmsPageContent {
     seo: parsePageSeo(o.seo),
     missionTitle: typeof o.missionTitle === 'string' ? o.missionTitle : undefined,
     missionHtml: typeof o.missionHtml === 'string' ? o.missionHtml : undefined,
+    home: parseHomeDetails(o.home),
+    faq: parseFaqDetails(o.faq),
     about: parseAboutDetails(o.about),
     contact: parseContactDetails(o.contact),
     contactIntroHtml:
@@ -138,6 +250,145 @@ export function parsePageContent(raw: unknown): CmsPageContent {
     ctaUrl: typeof o.ctaUrl === 'string' ? o.ctaUrl : undefined,
     isSystem: Boolean(o.isSystem),
   }
+}
+
+function parseHomeDetails(raw: unknown): CmsHomeDetails | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  const h = raw as Record<string, unknown>
+  const details: CmsHomeDetails = {}
+  const strings = [
+    'heroWelcomeText',
+    'heroHeadingTop',
+    'heroHeadingBottom',
+    'heroLead',
+    'heroPrimaryCtaLabel',
+    'heroPrimaryCtaUrl',
+    'heroSecondaryCtaLabel',
+    'heroSecondaryCtaUrl',
+    'joinUsLabel',
+    'missionBadge',
+    'missionTitle',
+    'missionBody',
+    'growTitle',
+    'growSubtitle',
+    'storeBadge',
+    'storeTitle',
+    'storeSubtitle',
+    'storeViewAllLabel',
+    'storeViewAllUrl',
+    'sermonBadge',
+    'sermonTitle',
+    'sermonSubtitle',
+    'sermonViewAllLabel',
+    'sermonViewAllUrl',
+    'sermonFeaturedBadge',
+    'sermonWatchLabel',
+    'sermonFeaturedSlug',
+    'sermonThumbnailUrl',
+    'sermonVideoUrl',
+    'valuesBadge',
+    'valuesTitle',
+    'valuesSubtitle',
+    'eventsBadge',
+    'eventsTitle',
+    'eventsViewAllLabel',
+    'eventsViewAllUrl',
+    'postsBadge',
+    'postsTitle',
+    'postsViewAllLabel',
+    'postsViewAllUrl',
+    'testimoniesBadge',
+    'testimoniesTitle',
+    'testimoniesSubtitle',
+    'testimoniesCtaTitle',
+    'testimoniesCtaBody',
+    'testimoniesCtaLabel',
+    'testimoniesCtaUrl',
+    'fireCtaTitle',
+    'fireCtaBody',
+    'fireCtaLabel',
+    'fireCtaUrl',
+  ] as const
+  for (const key of strings) {
+    if (typeof h[key] === 'string') details[key] = h[key]
+  }
+  if (Array.isArray(h.serviceSlots)) {
+    details.serviceSlots = h.serviceSlots
+      .filter((x): x is Record<string, unknown> => Boolean(x && typeof x === 'object'))
+      .map((slot) => ({
+        label: String(slot.label ?? ''),
+        time: String(slot.time ?? ''),
+      }))
+      .filter((slot) => slot.label.trim() || slot.time.trim())
+  }
+  if (Array.isArray(h.stats)) {
+    details.stats = h.stats
+      .filter((x): x is Record<string, unknown> => Boolean(x && typeof x === 'object'))
+      .map((stat) => ({
+        value: String(stat.value ?? ''),
+        label: String(stat.label ?? ''),
+      }))
+      .filter((stat) => stat.value.trim() || stat.label.trim())
+  }
+  if (Array.isArray(h.features)) {
+    details.features = h.features
+      .filter((x): x is Record<string, unknown> => Boolean(x && typeof x === 'object'))
+      .map((feature) => ({
+        title: String(feature.title ?? ''),
+        description: String(feature.description ?? ''),
+        link: String(feature.link ?? ''),
+        linkText: String(feature.linkText ?? ''),
+      }))
+      .filter((feature) => feature.title.trim())
+  }
+  if (Array.isArray(h.values)) {
+    details.values = h.values
+      .filter((x): x is Record<string, unknown> => Boolean(x && typeof x === 'object'))
+      .map((value) => ({
+        title: String(value.title ?? ''),
+        description: String(value.description ?? ''),
+      }))
+      .filter((value) => value.title.trim())
+  }
+  return Object.keys(details).length > 0 ? details : undefined
+}
+
+function parseFaqDetails(raw: unknown): CmsFaqDetails | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  const f = raw as Record<string, unknown>
+  const details: CmsFaqDetails = {}
+  const strings = [
+    'intro',
+    'lastUpdated',
+    'lastUpdatedLabel',
+    'helpTitle',
+    'helpMessageLead',
+    'helpLinkLabel',
+    'helpLinkUrl',
+    'helpMessageTail',
+    'helpText',
+  ] as const
+  for (const key of strings) {
+    if (typeof f[key] === 'string') details[key] = f[key]
+  }
+  if (Array.isArray(f.sections)) {
+    details.sections = f.sections
+      .filter((x): x is Record<string, unknown> => Boolean(x && typeof x === 'object'))
+      .map((section) => ({
+        title: String(section.title ?? ''),
+        items: Array.isArray(section.items)
+          ? section.items
+              .filter((it): it is Record<string, unknown> => Boolean(it && typeof it === 'object'))
+              .map((item) => ({
+                question: String(item.question ?? ''),
+                answer: String(item.answer ?? ''),
+              }))
+              .filter((item) => item.question.trim())
+          : [],
+      }))
+      .filter((section) => section.title.trim())
+  }
+  return Object.keys(details).length > 0 ? details : undefined
 }
 
 function parseAboutDetails(raw: unknown): CmsAboutDetails | undefined {
@@ -249,6 +500,7 @@ export function pageTypeLabel(type: CmsPageType, listingTarget?: ListingTarget):
   }
   const labels: Record<CmsPageType, string> = {
     home: 'Homepage',
+    faq: 'FAQ',
     about: 'About',
     contact: 'Contact',
     give: 'Give / Donate',

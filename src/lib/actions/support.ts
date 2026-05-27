@@ -19,6 +19,12 @@ import {
 import { randomUUID } from 'crypto'
 import { parsePageContent } from '@/lib/cms/page-content'
 import { resolveContactPage } from '@/lib/cms/contact-page-defaults'
+import { upsertLeadFromSupport } from '@/lib/actions/leads'
+import {
+  conversationHasContact,
+  validateSupportContact,
+  type SupportContactMethod,
+} from '@/lib/support/contact-validation'
 
 function visitorTokenFromCookie(): string | null {
   return cookies().get(SUPPORT_VISITOR_COOKIE)?.value ?? null
@@ -107,16 +113,56 @@ async function insertMessage(
     .eq('id', input.conversationId)
 
   revalidatePath('/admin/support')
+  revalidatePath('/admin/leads')
   return { message: msg as SupportMessage }
 }
 
-export async function initVisitorSupportChat(input?: {
-  name?: string
+export async function resumeVisitorSupportChat(): Promise<
+  | { conversation: SupportConversation; messages: SupportMessage[] }
+  | { needsContact: true }
+  | { error: string }
+> {
+  const token = visitorTokenFromCookie()
+  if (!token) return { needsContact: true }
+
+  const admin = createAdminClient()
+  const { data: existing } = await admin
+    .from('support_conversations')
+    .select('*')
+    .eq('visitor_token', token)
+    .neq('status', 'closed')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (!existing || !conversationHasContact(existing)) {
+    return { needsContact: true }
+  }
+
+  const { data: messages } = await admin
+    .from('support_messages')
+    .select('*')
+    .eq('conversation_id', existing.id)
+    .order('created_at', { ascending: true })
+
+  return {
+    conversation: existing as SupportConversation,
+    messages: (messages ?? []) as SupportMessage[],
+  }
+}
+
+export async function initVisitorSupportChat(input: {
+  name: string
   email?: string
+  phone?: string
+  contactMethod: SupportContactMethod
 }): Promise<
   | { conversation: SupportConversation; messages: SupportMessage[]; visitorToken: string }
   | { error: string }
 > {
+  const validated = validateSupportContact(input)
+  if ('error' in validated) return validated
+
   const admin = createAdminClient()
   let token = visitorTokenFromCookie()
 
@@ -137,23 +183,28 @@ export async function initVisitorSupportChat(input?: {
     .maybeSingle()
 
   if (existing) {
-    conversation = existing as SupportConversation
-    if (input?.name || input?.email) {
-      await admin
-        .from('support_conversations')
-        .update({
-          visitor_name: input.name ?? existing.visitor_name,
-          visitor_email: input.email ?? existing.visitor_email,
-        })
-        .eq('id', existing.id)
-    }
+    const { data: updated, error } = await admin
+      .from('support_conversations')
+      .update({
+        visitor_name: validated.name,
+        visitor_email: validated.email,
+        visitor_phone: validated.phone,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existing.id)
+      .select('*')
+      .single()
+
+    if (error || !updated) return { error: error?.message ?? 'Could not update conversation' }
+    conversation = updated as SupportConversation
   } else {
     const { data: created, error } = await admin
       .from('support_conversations')
       .insert({
         visitor_token: token,
-        visitor_name: input?.name?.trim() || null,
-        visitor_email: input?.email?.trim() || null,
+        visitor_name: validated.name,
+        visitor_email: validated.email,
+        visitor_phone: validated.phone,
         status: 'open',
         last_message_preview: BOT_WELCOME.slice(0, 120),
       })
@@ -171,6 +222,14 @@ export async function initVisitorSupportChat(input?: {
       bumpStaffUnread: true,
     })
   }
+
+  const leadResult = await upsertLeadFromSupport({
+    conversationId: conversation.id,
+    name: validated.name,
+    email: validated.email,
+    phone: validated.phone,
+  })
+  if ('error' in leadResult) return leadResult
 
   const { data: messages } = await admin
     .from('support_messages')

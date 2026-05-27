@@ -13,6 +13,7 @@ import {
   Images,
   GalleryHorizontal,
   Inbox,
+  UserPlus,
   Users,
   Settings,
   LogOut,
@@ -80,6 +81,7 @@ const allNavLinks: NavLink[] = [
     ]
   },
   { href: '/admin/inbox', label: 'Inbox', icon: Inbox, adminOnly: false },
+  { href: '/admin/leads', label: 'Leads', icon: UserPlus, adminOnly: false },
   { href: '/admin/support', label: 'Live Support', icon: MessageCircle, adminOnly: false },
   { href: '/admin/testimonies', label: 'Testimonies', icon: MessageCircle, adminOnly: false },
   { href: '/admin/users', label: 'Users', icon: Users, adminOnly: true },

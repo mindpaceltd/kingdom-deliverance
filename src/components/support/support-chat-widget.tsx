@@ -9,10 +9,12 @@ import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import {
   initVisitorSupportChat,
+  resumeVisitorSupportChat,
   sendVisitorSupportMessage,
   sendVisitorBotQuickReply,
   fetchVisitorSupportMessages,
 } from '@/lib/actions/support'
+import type { SupportContactMethod } from '@/lib/support/contact-validation'
 import { BOT_QUICK_REPLIES } from '@/lib/support/bot'
 import type { SupportConversation, SupportMessage } from '@/lib/support/types'
 
@@ -29,6 +31,9 @@ export function SupportChatWidget() {
   const [draft, setDraft] = React.useState('')
   const [name, setName] = React.useState('')
   const [email, setEmail] = React.useState('')
+  const [phone, setPhone] = React.useState('')
+  const [contactMethod, setContactMethod] = React.useState<SupportContactMethod>('email')
+  const [formError, setFormError] = React.useState<string | null>(null)
   const [started, setStarted] = React.useState(false)
   const [unread, setUnread] = React.useState(0)
   const bottomRef = React.useRef<HTMLDivElement>(null)
@@ -42,12 +47,30 @@ export function SupportChatWidget() {
   }, [messages, open, scrollToBottom])
 
   async function bootstrap() {
+    setFormError(null)
     setLoading(true)
     const result = await initVisitorSupportChat({
-      name: name.trim() || undefined,
-      email: email.trim() || undefined,
+      name: name.trim(),
+      email: contactMethod === 'email' ? email.trim() : undefined,
+      phone: contactMethod === 'phone' ? phone.trim() : undefined,
+      contactMethod,
     })
     setLoading(false)
+    if ('error' in result) {
+      setFormError(result.error)
+      return
+    }
+    setConversation(result.conversation)
+    setMessages(result.messages)
+    setStarted(true)
+    setUnread(0)
+  }
+
+  async function tryResumeSession() {
+    setLoading(true)
+    const result = await resumeVisitorSupportChat()
+    setLoading(false)
+    if ('needsContact' in result && result.needsContact) return
     if ('error' in result) return
     setConversation(result.conversation)
     setMessages(result.messages)
@@ -58,7 +81,7 @@ export function SupportChatWidget() {
   async function handleOpen() {
     setOpen(true)
     if (!started) {
-      await bootstrap()
+      await tryResumeSession()
     }
   }
 
@@ -139,21 +162,62 @@ export function SupportChatWidget() {
           </div>
 
           {!started ? (
-            <div className="flex-1 p-4 space-y-3">
+            <div className="flex-1 p-4 space-y-3 overflow-y-auto">
               <p className="text-sm text-muted-foreground">
-                Start a conversation with our team. Optional details help us follow up.
+                Enter your name and either email or phone so our team can follow up.
               </p>
               <Input
-                placeholder="Your name (optional)"
+                placeholder="Your name *"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                required
               />
-              <Input
-                type="email"
-                placeholder="Email (optional)"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setContactMethod('email')}
+                  className={cn(
+                    'flex-1 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors',
+                    contactMethod === 'email'
+                      ? 'border-accent bg-accent/15 text-primary'
+                      : 'border-border text-muted-foreground hover:bg-muted'
+                  )}
+                >
+                  Email
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setContactMethod('phone')}
+                  className={cn(
+                    'flex-1 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors',
+                    contactMethod === 'phone'
+                      ? 'border-accent bg-accent/15 text-primary'
+                      : 'border-border text-muted-foreground hover:bg-muted'
+                  )}
+                >
+                  Phone
+                </button>
+              </div>
+              {contactMethod === 'email' ? (
+                <Input
+                  type="email"
+                  placeholder="Email address *"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              ) : (
+                <Input
+                  type="tel"
+                  placeholder="Phone number *"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                />
+              )}
+              {formError && (
+                <p className="text-xs text-destructive">{formError}</p>
+              )}
               <Button className="w-full" onClick={() => void bootstrap()} disabled={loading}>
                 {loading ? <Loader2 className="size-4 animate-spin" /> : 'Start chat'}
               </Button>

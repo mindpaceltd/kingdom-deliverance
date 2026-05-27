@@ -13,6 +13,10 @@ import {
 } from '@/lib/cms/page-content'
 import { defaultAboutDetails } from '@/lib/cms/about-page-defaults'
 import { defaultContactDetails } from '@/lib/cms/contact-page-defaults'
+import {
+  getFaqSystemPageContent,
+  getHomeSystemPageContent,
+} from '@/lib/cms/seed-home-faq-pages'
 import { SYSTEM_PAGE_DEFINITIONS } from '@/lib/cms/system-pages'
 
 export interface CmsPagePayload {
@@ -35,6 +39,62 @@ function revalidateAdminPages() {
 
 function revalidatePublicPage(slug: string) {
   revalidatePath(pagePathFromSlug(slug))
+}
+
+/** Fill Homepage / FAQ rows with full section copy when the CMS body is still empty. */
+async function ensureHomeFaqCmsBody(
+  admin: ReturnType<typeof createAdminClient>,
+  overwrite: boolean
+): Promise<number> {
+  let synced = 0
+  const targets = [
+    {
+      slug: 'home' as const,
+      title: 'Homepage',
+      getContent: getHomeSystemPageContent,
+      hasBody: (content: CmsPageContent) =>
+        Boolean(content.home?.storeTitle && content.home?.sermonTitle),
+    },
+    {
+      slug: 'faq' as const,
+      title: 'FAQ',
+      getContent: getFaqSystemPageContent,
+      hasBody: (content: CmsPageContent) =>
+        Boolean(content.faq?.helpTitle && (content.faq?.sections?.length ?? 0) > 0),
+    },
+  ]
+
+  for (const target of targets) {
+    let query = admin.from('pages').select('id, slug, content_json')
+    if (target.slug === 'home') {
+      query = query.in('slug', ['home', ''])
+    } else {
+      query = query.eq('slug', target.slug)
+    }
+    const { data: existing } = await query.maybeSingle()
+    if (!existing?.id) continue
+
+    const parsed = parsePageContent(
+      (existing.content_json ?? {}) as Record<string, unknown>
+    )
+    if (!overwrite && target.hasBody(parsed)) continue
+
+    const def = SYSTEM_PAGE_DEFINITIONS.find((d) => d.slug === target.slug)
+    const { error } = await admin
+      .from('pages')
+      .update({
+        title: target.title,
+        slug: target.slug,
+        content_json: buildContentJson(target.getContent()),
+        ...(overwrite && def ? { status: def.status } : {}),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existing.id)
+
+    if (!error) synced++
+  }
+
+  return synced
 }
 
 export async function ensureSystemPages(options?: {
@@ -85,6 +145,8 @@ export async function ensureSystemPages(options?: {
       if (!error) synced++
     }
   }
+
+  synced += await ensureHomeFaqCmsBody(admin, overwrite)
 
   revalidateAdminPages()
   if (overwrite || synced > 0) {
