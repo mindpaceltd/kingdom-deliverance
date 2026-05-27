@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import dynamic from 'next/dynamic'
-import { Trash2, Upload, X, Copy, Check, Loader2 } from 'lucide-react'
+import { Trash2, Upload, X, Copy, Check, Loader2, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,7 +13,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { deleteMedia, getMediaLibraryPage, updateMedia } from '@/lib/actions/media'
+import {
+  bulkDeleteMedia,
+  deleteMedia,
+  getMediaLibraryPage,
+  updateMedia,
+} from '@/lib/actions/media'
 import type { MediaLibraryFilter } from '@/lib/media/library-query'
 import { LazyMediaThumb } from '@/components/admin/media/lazy-media-thumb'
 import { MediaFilePreview } from '@/components/admin/media/media-file-preview'
@@ -76,8 +81,17 @@ export function MediaLibrary({
   const [saving, setSaving] = React.useState(false)
   const [deleting, setDeleting] = React.useState(false)
   const [copied, setCopied] = React.useState(false)
+  const [searchInput, setSearchInput] = React.useState('')
+  const [searchQuery, setSearchQuery] = React.useState('')
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set())
+  const [bulkDeleting, setBulkDeleting] = React.useState(false)
 
   const loadMoreRef = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    const timer = window.setTimeout(() => setSearchQuery(searchInput.trim()), 300)
+    return () => window.clearTimeout(timer)
+  }, [searchInput])
 
   React.useEffect(() => {
     if (selectedAsset) {
@@ -91,9 +105,14 @@ export function MediaLibrary({
   }, [selectedAsset])
 
   const fetchPage = React.useCallback(
-    async (pageIndex: number, filter: MediaLibraryFilter, append: boolean) => {
+    async (
+      pageIndex: number,
+      filter: MediaLibraryFilter,
+      append: boolean,
+      search: string
+    ) => {
       if (!append) {
-        const cached = getClientLibraryCache(pageIndex, filter)
+        const cached = getClientLibraryCache(pageIndex, filter, search)
         if (cached) {
           setMedia(cached.data)
           setTotal(cached.total)
@@ -103,14 +122,18 @@ export function MediaLibrary({
         }
       }
 
-      const result = await getMediaLibraryPage({ page: pageIndex, type: filter })
+      const result = await getMediaLibraryPage({
+        page: pageIndex,
+        type: filter,
+        search: search || undefined,
+      })
       if ('error' in result) {
         alert(result.error)
         return null
       }
 
       if (!append) {
-        setClientLibraryCache(pageIndex, filter, result)
+        setClientLibraryCache(pageIndex, filter, result, search)
       }
 
       if (append) {
@@ -135,19 +158,34 @@ export function MediaLibrary({
     setActiveFilter(filter)
     setSelectedAsset(null)
 
-    const cached = getClientLibraryCache(0, filter)
+    const cached = getClientLibraryCache(0, filter, searchQuery)
     if (cached) {
       setMedia(cached.data)
       setTotal(cached.total)
       setHasMore(cached.hasMore)
       setPage(0)
+      setSelectedIds(new Set())
       return
     }
 
     setFilterLoading(true)
-    await fetchPage(0, filter, false)
+    setSelectedIds(new Set())
+    await fetchPage(0, filter, false, searchQuery)
     setFilterLoading(false)
   }
+
+  const searchMountedRef = React.useRef(false)
+  React.useEffect(() => {
+    if (!searchMountedRef.current) {
+      searchMountedRef.current = true
+      return
+    }
+    setFilterLoading(true)
+    setSelectedIds(new Set())
+    setSelectedAsset(null)
+    void fetchPage(0, activeFilter, false, searchQuery).finally(() => setFilterLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery])
 
   const loadMoreStateRef = React.useRef({
     hasMore,
@@ -155,14 +193,22 @@ export function MediaLibrary({
     filterLoading,
     page,
     activeFilter,
+    searchQuery,
   })
-  loadMoreStateRef.current = { hasMore, loadingMore, filterLoading, page, activeFilter }
+  loadMoreStateRef.current = {
+    hasMore,
+    loadingMore,
+    filterLoading,
+    page,
+    activeFilter,
+    searchQuery,
+  }
 
   const handleLoadMore = React.useCallback(async () => {
     const s = loadMoreStateRef.current
     if (!s.hasMore || s.loadingMore || s.filterLoading) return
     setLoadingMore(true)
-    await fetchPage(s.page + 1, s.activeFilter, true)
+    await fetchPage(s.page + 1, s.activeFilter, true, s.searchQuery)
     setLoadingMore(false)
   }, [fetchPage])
 
@@ -182,8 +228,47 @@ export function MediaLibrary({
 
   async function refreshAfterUpload() {
     invalidateClientLibraryCache()
-    await fetchPage(0, activeFilter, false)
+    await fetchPage(0, activeFilter, false, searchQuery)
     setUploadOpen(false)
+  }
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function selectAllOnPage() {
+    setSelectedIds(new Set(media.map((a) => a.id)))
+  }
+
+  async function handleBulkDelete() {
+    const count = selectedIds.size
+    if (
+      count === 0 ||
+      !window.confirm(`Permanently delete ${count} selected file${count === 1 ? '' : 's'}?`)
+    ) {
+      return
+    }
+    setBulkDeleting(true)
+    const result = await bulkDeleteMedia([...selectedIds])
+    setBulkDeleting(false)
+    if ('error' in result) {
+      alert(result.error)
+      return
+    }
+    invalidateClientLibraryCache()
+    setSelectedIds(new Set())
+    if (selectedAsset && selectedIds.has(selectedAsset.id)) {
+      setSelectedAsset(null)
+    }
+    await fetchPage(0, activeFilter, false, searchQuery)
+    if (result.failed > 0) {
+      alert(`Deleted ${result.deleted} file(s). ${result.failed} could not be deleted.`)
+    }
   }
 
   async function handleSaveMetadata() {
@@ -253,6 +338,46 @@ export function MediaLibrary({
         />
       )}
 
+      <div className="relative max-w-md">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search filename, alt text, or caption…"
+          className="pl-9"
+          aria-label="Search media library"
+        />
+      </div>
+
+      {selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2">
+          <span className="text-sm font-medium">{selectedIds.size} selected</span>
+          <Button variant="ghost" size="sm" className="h-8" onClick={() => setSelectedIds(new Set())}>
+            Clear
+          </Button>
+          <Button variant="outline" size="sm" className="h-8" onClick={selectAllOnPage}>
+            Select all on page
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            className="h-8"
+            disabled={bulkDeleting}
+            onClick={handleBulkDelete}
+          >
+            {bulkDeleting ? (
+              <>
+                <Loader2 className="mr-2 size-4 animate-spin" /> Deleting…
+              </>
+            ) : (
+              <>
+                <Trash2 className="mr-2 size-4" /> Delete selected
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
       <div className="flex gap-1 border-b border-border">
         {FILTERS.map((filter) => (
           <button
@@ -277,7 +402,9 @@ export function MediaLibrary({
         <MediaLibrarySkeleton count={18} />
       ) : media.length === 0 ? (
         <div className="rounded-xl border border-dashed py-16 text-center text-sm text-muted-foreground">
-          No {activeFilter === 'all' ? '' : `${activeFilter} `}files yet.
+          {searchQuery
+            ? `No files match "${searchQuery}".`
+            : `No ${activeFilter === 'all' ? '' : `${activeFilter} `}files yet.`}
         </div>
       ) : (
         <>
@@ -287,7 +414,9 @@ export function MediaLibrary({
                 key={asset.id}
                 asset={asset}
                 selected={selectedAsset?.id === asset.id}
+                checked={selectedIds.has(asset.id)}
                 onSelect={() => setSelectedAsset(asset)}
+                onToggleCheck={() => toggleSelected(asset.id)}
               />
             ))}
           </div>

@@ -11,6 +11,7 @@ import { createSocialImageMetadata, stripHtmlExcerpt } from '@/lib/seo-image-uti
 import { createCanonicalMetadata } from '@/lib/seo/canonical-utils'
 import { getOrgOgImageUrl, getSiteName } from '@/lib/seo/site-branding'
 import { ProductPrice } from '@/components/shop/product-price'
+import { ProductViewTracker } from '@/components/shop/product-view-tracker'
 import type { Metadata } from 'next'
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -152,6 +153,7 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <ProductViewTracker productId={product.id} />
       {/* Main product area */}
       <div className="pt-20 lg:pt-24">
         <div className="container px-4 mx-auto max-w-6xl">

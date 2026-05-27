@@ -91,43 +91,59 @@ function revalidateMediaLibraryCache() {
   revalidateTag('media-library')
 }
 
+function escapeIlikePattern(term: string): string {
+  return term.replace(/[%_\\]/g, '\\$&')
+}
+
+async function fetchMediaLibraryPageRows(
+  page: number,
+  pageSize: number,
+  type: MediaLibraryFilter,
+  search: string
+): Promise<MediaLibraryPageResult | { error: string }> {
+  const from = page * pageSize
+  const to = from + pageSize - 1
+  const q = search.trim()
+
+  const supabase = createAdminClient()
+  let query = supabase
+    .from('media')
+    .select(MEDIA_LIBRARY_SELECT, { count: 'exact' })
+    .order('created_at', { ascending: false })
+
+  if (type !== 'all') {
+    query = query.eq('type', type)
+  }
+
+  if (q) {
+    const term = escapeIlikePattern(q)
+    query = query.or(
+      `filename.ilike.%${term}%,alt_text.ilike.%${term}%,caption.ilike.%${term}%`
+    )
+  }
+
+  const { data, error, count } = await query.range(from, to)
+
+  if (error) {
+    console.error('[fetchMediaLibraryPageRows]', error.message)
+    return { error: error.message }
+  }
+
+  const total = count ?? 0
+  const rows = (data ?? []) as MediaAsset[]
+
+  return {
+    data: rows,
+    total,
+    page,
+    pageSize,
+    hasMore: from + rows.length < total,
+  }
+}
+
 const fetchMediaLibraryPageCached = unstable_cache(
-  async (
-    page: number,
-    pageSize: number,
-    type: MediaLibraryFilter
-  ): Promise<MediaLibraryPageResult | { error: string }> => {
-    const from = page * pageSize
-    const to = from + pageSize - 1
-
-    const supabase = createAdminClient()
-    let query = supabase
-      .from('media')
-      .select(MEDIA_LIBRARY_SELECT, { count: 'exact' })
-      .order('created_at', { ascending: false })
-
-    if (type !== 'all') {
-      query = query.eq('type', type)
-    }
-
-    const { data, error, count } = await query.range(from, to)
-
-    if (error) {
-      console.error('[fetchMediaLibraryPageCached]', error.message)
-      return { error: error.message }
-    }
-
-    const total = count ?? 0
-    const rows = (data ?? []) as MediaAsset[]
-
-    return {
-      data: rows,
-      total,
-      page,
-      pageSize,
-      hasMore: from + rows.length < total,
-    }
-  },
+  async (page: number, pageSize: number, type: MediaLibraryFilter) =>
+    fetchMediaLibraryPageRows(page, pageSize, type, ''),
   ['media-library-page'],
   { revalidate: 60, tags: ['media-library'] }
 )
@@ -136,6 +152,7 @@ export async function getMediaLibraryPage(options?: {
   page?: number
   pageSize?: number
   type?: MediaLibraryFilter
+  search?: string
 }): Promise<MediaLibraryPageResult | { error: string }> {
   const auth = await requireRoles(ROLES.CONTENT)
   if ('error' in auth) return auth
@@ -143,6 +160,11 @@ export async function getMediaLibraryPage(options?: {
   const page = Math.max(0, options?.page ?? 0)
   const pageSize = options?.pageSize ?? MEDIA_LIBRARY_PAGE_SIZE
   const type = options?.type ?? 'all'
+  const search = options?.search?.trim() ?? ''
+
+  if (search) {
+    return fetchMediaLibraryPageRows(page, pageSize, type, search)
+  }
 
   return fetchMediaLibraryPageCached(page, pageSize, type)
 }
@@ -183,14 +205,10 @@ export async function updateMedia(
 // deleteMedia
 // ---------------------------------------------------------------------------
 
-export async function deleteMedia(
+async function deleteMediaRecordById(
+  supabase: ReturnType<typeof createClient>,
   id: string
 ): Promise<{ success: true } | { error: string }> {
-  const result = await requireAdmin()
-  if ('error' in result) return result
-
-  const supabase = createClient()
-
   const { data: media, error: fetchError } = await supabase
     .from('media')
     .select('url, bucket')
@@ -204,7 +222,6 @@ export async function deleteMedia(
 
   const bucket = media.bucket ?? 'media'
 
-  // 1. If it's an R2 URL, delete it from R2 Storage
   const r2Key = getKeyFromUrl(media.url)
   if (r2Key) {
     const { error: r2Error } = await deleteFile(r2Key, bucket)
@@ -212,7 +229,6 @@ export async function deleteMedia(
       console.error('[deleteMedia] R2 delete error:', r2Error)
     }
   } else {
-    // 2. Otherwise delete it from Supabase Storage
     const marker = `/storage/v1/object/public/${bucket}/`
     const markerIndex = media.url.indexOf(marker)
 
@@ -229,18 +245,51 @@ export async function deleteMedia(
     }
   }
 
-  const { error: deleteError } = await supabase
-    .from('media')
-    .delete()
-    .eq('id', id)
+  const { error: deleteError } = await supabase.from('media').delete().eq('id', id)
 
   if (deleteError) {
     console.error('[deleteMedia] db delete error', deleteError.message)
     return { error: deleteError.message }
   }
 
+  return { success: true }
+}
+
+export async function deleteMedia(
+  id: string
+): Promise<{ success: true } | { error: string }> {
+  const result = await requireAdmin()
+  if ('error' in result) return result
+
+  const supabase = createClient()
+  const deleted = await deleteMediaRecordById(supabase, id)
+  if ('error' in deleted) return deleted
+
   revalidateMediaLibraryCache()
   return { success: true }
+}
+
+export async function bulkDeleteMedia(
+  ids: string[]
+): Promise<{ success: true; deleted: number; failed: number } | { error: string }> {
+  const unique = [...new Set(ids.filter(Boolean))]
+  if (unique.length === 0) return { error: 'No items selected' }
+
+  const result = await requireAdmin()
+  if ('error' in result) return result
+
+  const supabase = createClient()
+  let deleted = 0
+  let failed = 0
+
+  for (const id of unique) {
+    const outcome = await deleteMediaRecordById(supabase, id)
+    if ('success' in outcome) deleted++
+    else failed++
+  }
+
+  revalidateMediaLibraryCache()
+  return { success: true, deleted, failed }
 }
 
 // ---------------------------------------------------------------------------

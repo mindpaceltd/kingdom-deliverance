@@ -12,6 +12,7 @@ import {
   type ProductsAdminPageResult,
   type ProductsAdminStats,
 } from '@/lib/products/admin-query'
+import { computeProductSeoScore } from '@/lib/products/product-seo-score'
 
 type ProductRow = Record<string, unknown>
 
@@ -161,6 +162,14 @@ export async function saveProduct(data: any) {
   if (!rest.slug) {
     rest.slug = generateSlug(rest.name)
   }
+
+  rest.seo_score = computeProductSeoScore({
+    meta_title: rest.meta_title,
+    meta_description: rest.meta_description,
+    image_alt: rest.image_alt,
+    description: rest.description,
+    short_description: rest.short_description,
+  })
 
   let productId = id
 

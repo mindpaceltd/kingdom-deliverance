@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { saveProduct } from '@/lib/actions/products'
+import { computeProductSeoScore } from '@/lib/products/product-seo-score'
 import { RichTextEditor } from '@/components/admin/rich-text-editor'
 import { MediaPicker } from '@/components/admin/media-picker'
 import { 
@@ -94,18 +95,35 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
     }
   }, [formData.name, manuallyEdited])
 
-  const seoChecklist = React.useMemo(() => [
-    { label: 'Meta title length (30-60 chars)', pass: formData.meta_title.length >= 30 && formData.meta_title.length <= 60 },
-    { label: 'Meta description length (120-160 chars)', pass: formData.meta_description.length >= 120 && formData.meta_description.length <= 160 },
-    { label: 'Featured image alt text present', pass: !!formData.image_alt },
-    { label: 'Product description > 300 chars', pass: formData.description.replace(/<[^>]*>?/gm, '').length > 300 },
-    { label: 'Short description present', pass: !!formData.short_description }
-  ], [formData])
+  const seoChecklist = React.useMemo(() => {
+    const plainDescription = formData.description.replace(/<[^>]*>?/gm, '')
+    return [
+      {
+        label: 'Meta title length (30-60 chars)',
+        pass: formData.meta_title.length >= 30 && formData.meta_title.length <= 60,
+      },
+      {
+        label: 'Meta description length (120-160 chars)',
+        pass:
+          formData.meta_description.length >= 120 && formData.meta_description.length <= 160,
+      },
+      { label: 'Featured image alt text present', pass: !!formData.image_alt },
+      { label: 'Product description > 300 chars', pass: plainDescription.length > 300 },
+      { label: 'Short description present', pass: !!formData.short_description },
+    ]
+  }, [formData])
 
-  const seoScore = React.useMemo(() => {
-    const passed = seoChecklist.filter(c => c.pass).length
-    return Math.round((passed / seoChecklist.length) * 100)
-  }, [seoChecklist])
+  const seoScore = React.useMemo(
+    () =>
+      computeProductSeoScore({
+        meta_title: formData.meta_title,
+        meta_description: formData.meta_description,
+        image_alt: formData.image_alt,
+        description: formData.description,
+        short_description: formData.short_description,
+      }),
+    [formData]
+  )
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()

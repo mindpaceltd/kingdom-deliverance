@@ -132,6 +132,31 @@ export async function deleteGalleryItem(
   return { success: true }
 }
 
+export async function bulkDeleteGalleryItems(
+  ids: string[]
+): Promise<{ success: true; deleted: number; failed: number } | { error: string }> {
+  const unique = [...new Set(ids.filter(Boolean))]
+  if (unique.length === 0) return { error: 'No items selected' }
+
+  const result = await requireRoles(ROLES.CONTENT)
+  if ('error' in result) return result
+
+  const supabase = createClient()
+  const { error, count } = await supabase
+    .from('gallery')
+    .delete({ count: 'exact' })
+    .in('id', unique)
+
+  if (error) {
+    console.error('[bulkDeleteGalleryItems]', error.message)
+    return { error: error.message }
+  }
+
+  revalidateGalleryPaths()
+  const deleted = count ?? unique.length
+  return { success: true, deleted, failed: Math.max(0, unique.length - deleted) }
+}
+
 export async function reorderGallery(
   items: { id: string; display_order: number }[]
 ): Promise<{ success: true } | { error: string }> {

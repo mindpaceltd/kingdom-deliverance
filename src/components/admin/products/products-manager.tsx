@@ -4,12 +4,14 @@ import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Globe, Copy, Trash2, Loader2, X } from 'lucide-react'
+import { Globe, Copy, Trash2, Loader2, X, Eye } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ProductBulkActions, DuplicateProductButton } from '@/components/admin/products/product-bulk-actions'
 import { deleteProduct, deleteProducts, duplicateProducts } from '@/lib/actions/products'
 import { buildPublicContentUrl } from '@/lib/seo/public-content-urls'
-import { formatPrice } from '@/lib/utils'
+import { formatPrice, cn } from '@/lib/utils'
+import { getSeoScoreColor } from '@/lib/posts-helpers'
+import { computeProductSeoScore } from '@/lib/products/product-seo-score'
 
 export interface ProductRow {
   id: string
@@ -18,10 +20,47 @@ export interface ProductRow {
   type?: string
   status?: string
   image_url?: string
+  image_alt?: string | null
+  short_description?: string | null
+  description?: string | null
+  meta_title?: string | null
+  meta_description?: string | null
+  seo_score?: number | null
+  views?: number | null
   category?: { name: string }
   price_usd: number
   sale_price_usd: number
   regular_price_usd: number
+}
+
+function SeoScoreBadge({ score }: { score: number }) {
+  const color = getSeoScoreColor(score ?? 0)
+  const colorClass = {
+    red: 'text-red-600 bg-red-50',
+    yellow: 'text-yellow-600 bg-yellow-50',
+    green: 'text-green-600 bg-green-50',
+  }[color]
+
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold tabular-nums',
+        colorClass
+      )}
+    >
+      {score}%
+    </span>
+  )
+}
+
+function resolveProductSeoScore(product: ProductRow): number {
+  return computeProductSeoScore({
+    meta_title: product.meta_title,
+    meta_description: product.meta_description,
+    image_alt: product.image_alt,
+    description: product.description,
+    short_description: product.short_description,
+  })
 }
 
 interface ProductsManagerProps {
@@ -275,6 +314,8 @@ export function ProductsManager({
               <th className="px-6 py-4 font-semibold">Product</th>
               <th className="px-6 py-4 font-semibold">Status</th>
               <th className="px-6 py-4 font-semibold">Category</th>
+              <th className="px-6 py-4 font-semibold">SEO</th>
+              <th className="px-6 py-4 font-semibold">Views</th>
               <th className="px-6 py-4 font-semibold">Price (USD)</th>
               <th className="px-6 py-4 text-right font-semibold">Actions</th>
             </tr>
@@ -308,6 +349,15 @@ export function ProductsManager({
                     </td>
                     <td className="px-6 py-4 text-muted-foreground font-medium">
                       {product.category?.name || 'Uncategorized'}
+                    </td>
+                    <td className="px-6 py-4">
+                      <SeoScoreBadge score={resolveProductSeoScore(product)} />
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center gap-1.5 text-sm font-medium tabular-nums text-muted-foreground">
+                        <Eye className="size-3.5 shrink-0 opacity-60" />
+                        {(product.views ?? 0).toLocaleString()}
+                      </span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
@@ -354,7 +404,7 @@ export function ProductsManager({
               })
             ) : (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground italic">
+                <td colSpan={8} className="px-6 py-12 text-center text-muted-foreground italic">
                   No products found in your inventory.
                 </td>
               </tr>
