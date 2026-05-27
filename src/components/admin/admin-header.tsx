@@ -20,6 +20,7 @@ const pageTitles: Record<string, string> = {
   '/admin/media': 'Media Library',
   '/admin/gallery': 'Gallery',
   '/admin/inbox': 'Inbox',
+  '/admin/support': 'Live Support',
   '/admin/users': 'Users',
   '/admin/settings': 'Settings',
   '/admin/qr-codes': 'QR Codes',

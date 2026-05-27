@@ -80,6 +80,7 @@ const allNavLinks: NavLink[] = [
     ]
   },
   { href: '/admin/inbox', label: 'Inbox', icon: Inbox, adminOnly: false },
+  { href: '/admin/support', label: 'Live Support', icon: MessageCircle, adminOnly: false },
   { href: '/admin/testimonies', label: 'Testimonies', icon: MessageCircle, adminOnly: false },
   { href: '/admin/users', label: 'Users', icon: Users, adminOnly: true },
   { href: '/admin/settings', label: 'Settings', icon: Settings, adminOnly: true },

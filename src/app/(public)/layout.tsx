@@ -5,6 +5,7 @@ import { CartProvider } from '@/lib/cart-context'
 import { getExchangeRates, FALLBACK_RATES } from '@/lib/services/exchange-rates'
 import { CurrencyProvider } from '@/lib/currency-context'
 import { createClient } from '@/lib/supabase/server'
+import { SupportChatWidget } from '@/components/support/support-chat-widget'
 
 // ─── Geo-detection ────────────────────────────────────────────────────────────
 
@@ -75,6 +76,7 @@ export default async function PublicLayout({
         <Navbar logo={siteLogo} />
         <main className="flex-1 w-full max-w-full overflow-x-hidden relative">{children}</main>
         <Footer />
+        <SupportChatWidget />
       </CurrencyProvider>
     </CartProvider>
   )
