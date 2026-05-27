@@ -76,15 +76,21 @@ export async function updateUserProfileAsAdmin(
   if (!name) return { error: 'Name is required' }
 
   const supabase = createClient()
-  const { error } = await supabase
-    .from('profiles')
-    .update({
-      name,
-      phone: payload.phone?.trim() || null,
-      bio: payload.bio?.trim() || null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', userId)
+  const updateRow: {
+    name: string
+    phone: string | null
+    updated_at: string
+    bio?: string | null
+  } = {
+    name,
+    phone: payload.phone?.trim() || null,
+    updated_at: new Date().toISOString(),
+  }
+  if (payload.bio !== undefined) {
+    updateRow.bio = payload.bio.trim() || null
+  }
+
+  const { error } = await supabase.from('profiles').update(updateRow).eq('id', userId)
 
   if (error) {
     console.error('[updateUserProfileAsAdmin]', error.message)

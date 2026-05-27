@@ -1,13 +1,11 @@
 'use client'
 
 import * as React from 'react'
-import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import {
   UserPlusIcon,
   MailIcon,
   CalendarIcon,
-  PhoneIcon,
   UserIcon,
   SearchIcon,
   MoreVerticalIcon,
@@ -15,22 +13,8 @@ import {
   LoaderIcon,
   SaveIcon,
   ExternalLinkIcon,
+  XIcon,
 } from 'lucide-react'
-
-const RichTextEditor = dynamic(
-  () =>
-    import('@/components/admin/rich-text-editor').then((m) => ({
-      default: m.RichTextEditor,
-    })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex min-h-[160px] items-center justify-center rounded-md border border-white/20 bg-white/5">
-        <LoaderIcon className="size-5 animate-spin text-white/60" />
-      </div>
-    ),
-  }
-)
 import { 
   DataTable, 
   type ColumnDef 
@@ -47,6 +31,7 @@ import {
 } from '@/components/ui/select'
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetHeader,
   SheetTitle,
@@ -128,7 +113,6 @@ export function UsersManager({ initialUsers, currentUserId }: UsersManagerProps)
   // Profile edit state (user detail sheet)
   const [editName, setEditName] = React.useState('')
   const [editPhone, setEditPhone] = React.useState('')
-  const [editBio, setEditBio] = React.useState('')
   const [profileSaving, setProfileSaving] = React.useState(false)
   const [profileMsg, setProfileMsg] = React.useState<string | null>(null)
 
@@ -136,7 +120,6 @@ export function UsersManager({ initialUsers, currentUserId }: UsersManagerProps)
     if (!selectedUser) return
     setEditName(selectedUser.name ?? '')
     setEditPhone(selectedUser.phone ?? '')
-    setEditBio(selectedUser.bio ?? '')
     setProfileMsg(null)
   }, [selectedUser])
 
@@ -175,7 +158,6 @@ export function UsersManager({ initialUsers, currentUserId }: UsersManagerProps)
     const result = await updateUserProfileAsAdmin(selectedUser.id, {
       name: editName,
       phone: editPhone,
-      bio: editBio,
     })
     setProfileSaving(false)
     if ('error' in result) {
@@ -186,7 +168,6 @@ export function UsersManager({ initialUsers, currentUserId }: UsersManagerProps)
       ...selectedUser,
       name: editName.trim(),
       phone: editPhone.trim() || null,
-      bio: editBio.trim() || null,
     }
     setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)))
     setSelectedUser(updated)
@@ -395,19 +376,36 @@ export function UsersManager({ initialUsers, currentUserId }: UsersManagerProps)
 
       {/* User Details Sidebar */}
       <Sheet open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
-        <SheetContent className="flex h-full w-full flex-col gap-0 overflow-hidden px-0 sm:max-w-lg">
-          <SheetHeader className="flex shrink-0 flex-row items-center justify-between border-b border-white/10 px-6 pb-4">
-            <SheetTitle>User Profile</SheetTitle>
-            {selectedUser?.id !== currentUserId && (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="text-red-400 hover:text-red-300"
-                onClick={() => handleDeactivate(selectedUser!)}
-              >
-                <Trash2Icon className="size-4" />
-              </Button>
-            )}
+        <SheetContent
+          showCloseButton={false}
+          className="flex h-full w-full flex-col gap-0 overflow-hidden px-0 sm:max-w-lg"
+        >
+          <SheetHeader className="flex shrink-0 flex-row items-center justify-between gap-4 border-b border-white/10 px-6 pb-4 pt-2">
+            <SheetTitle className="min-w-0 flex-1">User Profile</SheetTitle>
+            <div className="flex shrink-0 items-center gap-2">
+              {selectedUser?.id !== currentUserId && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-9 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                  title="Deactivate user"
+                  onClick={() => handleDeactivate(selectedUser!)}
+                >
+                  <Trash2Icon className="size-4" />
+                </Button>
+              )}
+              <SheetClose asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-9 text-white/70 hover:bg-white/10 hover:text-white"
+                  title="Close"
+                >
+                  <XIcon className="size-5" />
+                  <span className="sr-only">Close</span>
+                </Button>
+              </SheetClose>
+            </div>
           </SheetHeader>
 
           {selectedUser && (
@@ -490,19 +488,29 @@ export function UsersManager({ initialUsers, currentUserId }: UsersManagerProps)
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-white/50">
                       Bio
                     </Label>
-                    <p className="text-xs text-white/50">
-                      Rich text shown on blog author boxes. Use headings, links, and emphasis.
-                    </p>
-                    <div className="overflow-hidden rounded-lg border border-white/15 bg-white text-foreground shadow-sm">
-                      <RichTextEditor
-                        value={editBio}
-                        onChange={setEditBio}
-                        placeholder="Write a biography…"
-                        disabled={profileSaving}
-                        compact
-                        editorMinHeight="min-h-[200px]"
+                    {selectedUser.bio ? (
+                      <div
+                        className="prose prose-sm prose-invert max-w-none rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-white/80"
+                        dangerouslySetInnerHTML={{ __html: selectedUser.bio }}
                       />
-                    </div>
+                    ) : (
+                      <p className="rounded-lg border border-white/10 bg-white/5 p-4 text-sm italic text-white/50">
+                        No bio provided.
+                      </p>
+                    )}
+                    {selectedUser.id === currentUserId ? (
+                      <p className="text-xs text-white/50">
+                        Edit your bio on{' '}
+                        <Link href="/admin/profile" className="font-medium text-white underline">
+                          My Profile
+                        </Link>
+                        .
+                      </p>
+                    ) : (
+                      <p className="text-xs text-white/50">
+                        Only the user can edit their own bio from My Profile.
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
