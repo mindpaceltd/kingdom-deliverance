@@ -1,28 +1,36 @@
 import type { Metadata } from 'next'
 import { AboutPageView } from '@/components/about/about-page-view'
 import { loadAboutPageData } from '@/lib/cms/load-about-page-data'
-import { createClient } from '@/lib/supabase/server'
 import { parsePageContent } from '@/lib/cms/page-content'
+import { buildCmsPageMetadata } from '@/lib/seo/cms-page-metadata'
+import { getAboutHeroUrl } from '@/lib/seo/page-hero'
+import { createClient } from '@/lib/supabase/server'
 
 export async function generateMetadata(): Promise<Metadata> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('pages')
-    .select('content_json')
-    .eq('slug', 'about')
-    .eq('status', 'published')
-    .maybeSingle()
+  const supabase = createClient()
+  const [pageRes, heroImageUrl] = await Promise.all([
+    supabase
+      .from('pages')
+      .select('content_json')
+      .eq('slug', 'about')
+      .eq('status', 'published')
+      .maybeSingle(),
+    getAboutHeroUrl(),
+  ])
 
-  const content = data?.content_json ? parsePageContent(data.content_json) : null
-  const seo = content?.seo
+  const content = pageRes.data?.content_json
+    ? parsePageContent(pageRes.data.content_json)
+    : null
 
-  return {
-    title: seo?.metaTitle ?? 'About Us | Kingdom Deliverance Centre Uganda',
-    description:
-      seo?.metaDescription ??
+  return buildCmsPageMetadata({
+    slug: 'about',
+    path: '/about',
+    defaultTitle: 'About Us | Kingdom Deliverance Centre Uganda',
+    defaultDescription:
       'Learn about Kingdom Deliverance Centre Uganda — our history, vision, leadership, and mission under Bishop Climate Wiseman.',
-    ...(seo?.noIndex ? { robots: { index: false, follow: false } } : {}),
-  }
+    content,
+    heroImageUrl,
+  })
 }
 
 export default async function AboutPage() {
