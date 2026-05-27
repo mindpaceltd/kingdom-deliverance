@@ -75,20 +75,22 @@ export function GalleryLightboxGrid({ items }: GalleryLightboxGridProps) {
 
   return (
     <>
-      <div className="columns-2 gap-3 sm:columns-3 md:columns-4 lg:columns-5 [column-gap:0.75rem]">
+      <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5">
         {shuffled.map((item, index) => (
           <button
             key={item.id}
             type="button"
             onClick={() => setOpenIndex(index)}
-            className="group relative mb-3 block w-full break-inside-avoid overflow-hidden rounded-xl border border-primary/10 bg-muted shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="group relative block w-full overflow-hidden rounded-xl border border-primary/10 bg-muted shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
-            <GalleryImage
-              src={item.image_url}
-              alt={item.caption}
-              className="h-auto w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-            />
-            <GalleryCaptionOverlay caption={item.caption} />
+            <div className="relative aspect-[3/4] w-full sm:aspect-[4/5]">
+              <GalleryImage
+                src={item.image_url}
+                alt={item.caption}
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+              />
+              <GalleryCaptionOverlay caption={item.caption} />
+            </div>
           </button>
         ))}
       </div>
