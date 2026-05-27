@@ -283,6 +283,76 @@ export async function deleteEvent(
   return { success: true }
 }
 
+const EVENT_STATUSES = [
+  'draft',
+  'published',
+  'scheduled',
+  'trash',
+  'archived',
+  'upcoming',
+  'ongoing',
+  'past',
+  'cancelled',
+] as const
+
+export type EventStatus = (typeof EVENT_STATUSES)[number]
+
+export async function bulkUpdateEventStatus(
+  ids: string[],
+  status: EventStatus
+): Promise<{ success: true; updated: number } | { error: string }> {
+  if (ids.length === 0) {
+    return { error: 'No events selected.' }
+  }
+
+  if (!EVENT_STATUSES.includes(status)) {
+    return { error: 'Invalid status.' }
+  }
+
+  const auth = await requireRoles(ROLES.CONTENT)
+  if ('error' in auth) return auth
+
+  const supabase = createClient()
+  const patch: Record<string, unknown> = {
+    status,
+    updated_at: new Date().toISOString(),
+  }
+
+  if (status === 'published') {
+    patch.published_at = new Date().toISOString()
+  }
+  if (status === 'trash') {
+    patch.deleted_at = new Date().toISOString()
+  }
+  if (status === 'draft' || status === 'upcoming') {
+    patch.deleted_at = null
+  }
+
+  const { data, error } = await supabase
+    .from('events')
+    .update(patch)
+    .in('id', ids)
+    .select('id, slug')
+
+  if (error) {
+    console.error('[bulkUpdateEventStatus]', error.message)
+    return { error: error.message }
+  }
+
+  revalidateEventPaths()
+
+  const rows = data ?? []
+  if (['published', 'upcoming', 'ongoing'].includes(status)) {
+    await Promise.all(
+      rows.map((row) =>
+        indexOnPublish('event', String(row.slug ?? ''), status)
+      )
+    )
+  }
+
+  return { success: true, updated: rows.length }
+}
+
 export async function checkSlugAvailability(
   slug: string,
   excludeId?: string

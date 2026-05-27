@@ -32,6 +32,11 @@ import { getPublicIndexUrl } from '@/lib/seo/content-indexing'
 import { submitGoogleIndexing } from '@/lib/seo/submit-google-indexing-client'
 import { toast } from 'sonner'
 import { computeSeoScore } from '@/lib/seo-scorer'
+import {
+  isEventStatusIndexable,
+  normalizeEventDatetime,
+  validateEventForm,
+} from '@/lib/admin/event-form-utils'
 import { cn } from '@/lib/utils'
 import type { Event } from '@/lib/types'
 
@@ -126,7 +131,7 @@ export function EventEditorClient({ event }: EventEditorClientProps) {
     const result = await generatePostContent({
       mode: mode === 'full' ? 'event_full' : 'event_improve',
       title: form.title,
-      excerpt: form.excerpt || undefined,
+      excerpt: form.description || undefined,
       existingContent: form.content || undefined,
       focusKeyword: form.focus_keyword || undefined,
     })
@@ -146,9 +151,35 @@ export function EventEditorClient({ event }: EventEditorClientProps) {
     toast.success('AI updated event content and SEO fields.')
   }
 
-  async function save(overrideStatus?: Event['status']) {
+  async function save(options?: {
+    statusOverride?: Event['status']
+    redirect?: boolean
+  }): Promise<boolean> {
+    const validationError = validateEventForm({
+      title: form.title,
+      slug: form.slug,
+      date: form.date,
+      slugError,
+    })
+    if (validationError) {
+      setError(validationError)
+      toast.error(validationError)
+      return false
+    }
+
     setSubmitting(true)
-    const effectiveStatus = overrideStatus ?? form.status
+    setError(null)
+
+    const effectiveStatus = options?.statusOverride ?? form.status
+    const normalizedDate = normalizeEventDatetime(form.date)
+    if (!normalizedDate) {
+      setSubmitting(false)
+      const msg = 'Start date and time are invalid.'
+      setError(msg)
+      toast.error(msg)
+      return false
+    }
+
     const { score } = computeSeoScore({
       focusKeyword: form.focus_keyword,
       seoTitle: form.meta_title || form.title,
@@ -159,8 +190,24 @@ export function EventEditorClient({ event }: EventEditorClientProps) {
     })
 
     const payload = {
-      ...form,
-      status: effectiveStatus as any,
+      title: form.title.trim(),
+      slug: form.slug.trim(),
+      description: form.description || undefined,
+      content: form.content || undefined,
+      date: normalizedDate,
+      end_date: form.end_date ? normalizeEventDatetime(form.end_date) ?? undefined : undefined,
+      location: form.location || undefined,
+      image_url: form.image_url || undefined,
+      is_featured: form.is_featured,
+      registration_url: form.registration_url || undefined,
+      status: effectiveStatus as Event['status'],
+      scheduled_at:
+        effectiveStatus === 'scheduled' && form.scheduled_at
+          ? normalizeEventDatetime(form.scheduled_at) ?? undefined
+          : undefined,
+      meta_title: form.meta_title || undefined,
+      meta_description: form.meta_description || undefined,
+      focus_keyword: form.focus_keyword || undefined,
       seo_score: score,
     }
 
@@ -169,35 +216,52 @@ export function EventEditorClient({ event }: EventEditorClientProps) {
       : await createEvent(payload)
 
     setSubmitting(false)
+
     if ('error' in result) {
       setError(result.error)
+      toast.error(result.error)
       return false
     }
 
-    if (
-      effectiveStatus === 'published' &&
-      form.slug.trim()
-    ) {
+    toast.success(isEditing ? 'Event updated' : 'Event created')
+    setSaved(true)
+    router.refresh()
+
+    if (isEventStatusIndexable(effectiveStatus) && form.slug.trim()) {
       const indexResult = await submitGoogleIndexing([
         getPublicIndexUrl('event', form.slug),
       ])
       reportIndexingToast(indexResult)
     }
 
-    setSaved(true)
+    if (!isEditing && 'id' in result && !options?.redirect) {
+      router.replace(`/admin/events/${result.id}`)
+      return true
+    }
+
+    if (options?.redirect) {
+      router.push('/admin/events')
+    }
+
     return true
   }
 
-  async function handlePublish() {
+  /** Sidebar Update — save and stay on this page */
+  async function handleSaveUpdate() {
+    await save({ redirect: false })
+  }
+
+  /** Top bar — save and return to list */
+  async function handleSaveAndClose() {
     const statusToSave =
       form.status === 'draft' || form.status === 'scheduled'
         ? 'upcoming'
         : form.status
-    if (await save(statusToSave as any)) router.push('/admin/events')
+    await save({ statusOverride: statusToSave, redirect: true })
   }
 
   async function handleSaveDraft() {
-    await save('draft')
+    await save({ statusOverride: 'draft', redirect: false })
   }
 
   return (
@@ -240,14 +304,14 @@ export function EventEditorClient({ event }: EventEditorClientProps) {
 
         <Button
           size="sm"
-          onClick={handlePublish}
+          onClick={() => void handleSaveAndClose()}
           disabled={submitting}
           className="h-8 bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
         >
           {submitting ? (
             <LoaderIcon className="size-3.5 animate-spin" />
           ) : null}
-          {isEditing ? 'Save & Publish' : 'Create Event'}
+          {isEditing ? 'Save & close' : 'Create Event'}
         </Button>
       </div>
 
@@ -487,11 +551,11 @@ export function EventEditorClient({ event }: EventEditorClientProps) {
               authorName="Admin"
               isEditing={isEditing}
               submitting={submitting}
-              error={null}
+              error={error}
               onStatusChange={(s) => setField('status', s as any)}
               onScheduledAtChange={(v) => setField('scheduled_at', v)}
-              onPublish={handlePublish}
-              onSaveDraft={handleSaveDraft}
+              onPublish={() => void handleSaveUpdate()}
+              onSaveDraft={() => void handleSaveDraft()}
               customStatuses={EVENT_STATUSES}
             />
 

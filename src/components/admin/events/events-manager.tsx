@@ -39,6 +39,8 @@ import {
   duplicateEvent,
   duplicateEvents,
   deleteEvent,
+  bulkUpdateEventStatus,
+  type EventStatus,
 } from '@/lib/actions/events'
 import { createClient } from '@/lib/supabase/client'
 import { buildPublicContentUrl } from '@/lib/seo/public-content-urls'
@@ -261,6 +263,29 @@ export function EventsManager({ initialEvents }: EventsManagerProps) {
     router.push(`/admin/events/${result.id}`)
   }
 
+  async function handleBulkStatusUpdate(status: EventStatus) {
+    if (selectedIds.size === 0) return
+    const label = status.charAt(0).toUpperCase() + status.slice(1)
+    if (
+      !window.confirm(
+        `Set ${selectedIds.size} selected event(s) to "${label}"?`
+      )
+    ) {
+      return
+    }
+    setActionLoading('bulk-status')
+    const result = await bulkUpdateEventStatus(Array.from(selectedIds), status)
+    setActionLoading(null)
+    if ('error' in result) {
+      toast.error(result.error)
+      return
+    }
+    toast.success(`Updated ${result.updated} event(s) to ${label}`)
+    setSelectedIds(new Set())
+    await refreshEvents()
+    router.refresh()
+  }
+
   async function handleBulkDuplicate() {
     if (selectedIds.size === 0) return
     if (
@@ -319,9 +344,7 @@ export function EventsManager({ initialEvents }: EventsManagerProps) {
     }
   }
 
-  const bulkBusy = Boolean(
-    actionLoading?.startsWith('bulk-') || actionLoading === 'bulk-dup'
-  )
+  const bulkBusy = Boolean(actionLoading?.startsWith('bulk-'))
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto animate-in fade-in duration-500">
@@ -652,6 +675,24 @@ export function EventsManager({ initialEvents }: EventsManagerProps) {
             <Button
               variant="ghost"
               size="sm"
+              className="h-8 hover:bg-white/10 text-xs"
+              disabled={bulkBusy}
+              onClick={() => void handleBulkStatusUpdate('upcoming')}
+            >
+              Mark upcoming
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 hover:bg-white/10 text-xs"
+              disabled={bulkBusy}
+              onClick={() => void handleBulkStatusUpdate('published')}
+            >
+              Mark published
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               className="h-8 hover:bg-white/10"
               disabled={bulkBusy}
               onClick={handleBulkDuplicate}
@@ -664,7 +705,7 @@ export function EventsManager({ initialEvents }: EventsManagerProps) {
               size="sm"
               className="h-8 hover:bg-white/10"
               disabled={bulkBusy}
-              onClick={handleBulkIndex}
+              onClick={() => void handleBulkIndex()}
             >
               <GlobeIcon className="size-3.5 mr-1.5" />
               Index on Google
