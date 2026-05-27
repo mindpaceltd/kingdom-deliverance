@@ -23,6 +23,7 @@ import { TagInput } from './tag-input'
 import { SharePanel } from './share-panel'
 import { createPost, updatePost, checkSlugAvailability } from '@/lib/actions/posts'
 import { generatePostContent } from '@/lib/actions/ai'
+import { applyAiSeoFields } from '@/lib/admin/apply-ai-seo'
 import { computeSeoScore } from '@/lib/seo-scorer'
 import { cn } from '@/lib/utils'
 import type { Post, Tag } from '@/lib/types'
@@ -160,11 +161,14 @@ export function PostEditorClient({ post, authorName, allTags, initialTags = [] }
       return
     }
 
-    if (result.html) setField('content', result.html)
-    if (result.excerpt) setField('excerpt', result.excerpt)
-    if (result.focusKeyword) setField('focus_keyword', result.focusKeyword)
-    if (result.seoTitle) setField('meta_title', result.seoTitle)
-    if (result.metaDescription) setField('meta_description', result.metaDescription)
+    applyAiSeoFields(result, {
+      setContent: (html) => setField('content', html),
+      setSummary: (text) => setField('excerpt', text),
+      setFocusKeyword: (v) => setField('focus_keyword', v),
+      setMetaTitle: (v) => setField('meta_title', v),
+      setMetaDescription: (v) => setField('meta_description', v),
+      setSlug: (v) => setField('slug', v),
+    })
 
     if (result.tags && result.tags.length > 0) {
       const newTags: Tag[] = [...selectedTags]

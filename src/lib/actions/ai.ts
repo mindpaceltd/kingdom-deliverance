@@ -2,7 +2,15 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-export type AiGenerateMode = 'full' | 'improve' | 'sermon_full' | 'sermon_improve'
+export type AiGenerateMode =
+  | 'full'
+  | 'improve'
+  | 'sermon_full'
+  | 'sermon_improve'
+  | 'ministry_full'
+  | 'ministry_improve'
+  | 'event_full'
+  | 'event_improve'
 
 export interface AiGenerateRequest {
   mode: AiGenerateMode
@@ -19,7 +27,18 @@ export interface AiGenerateResult {
   focusKeyword?: string
   seoTitle?: string
   metaDescription?: string
+  slug?: string
 }
+
+const SEO_SCORE_RULES = `
+SEO SCORING (target 100/100 — follow exactly):
+- focusKeyword: 2–4 words; must appear in seoTitle, in the first 200 characters of html, and inside slug.
+- seoTitle: EXACTLY 50–60 characters including the focusKeyword.
+- metaDescription: EXACTLY 150–160 characters including the focusKeyword.
+- html: at least 300 words; focusKeyword in the first 200 characters of visible text.
+- slug: lowercase, hyphenated, URL-safe; MUST contain the slugified focusKeyword (e.g. "worship arts" → worship-arts).
+- excerpt: 100–150 character summary for cards/listings.
+`
 
 /**
  * Resiliently parses JSON from Gemini, falling back to custom regex extraction 
@@ -43,6 +62,7 @@ function parseResilientJson(text: string): AiGenerateResult {
   let focusKeyword = ''
   let seoTitle = ''
   let metaDescription = ''
+  let slug = ''
 
   // Try standard JSON.parse first
   try {
@@ -54,6 +74,7 @@ function parseResilientJson(text: string): AiGenerateResult {
       focusKeyword = parsed.focusKeyword || ''
       seoTitle = parsed.seoTitle || ''
       metaDescription = parsed.metaDescription || ''
+      slug = parsed.slug || ''
     }
   } catch (e) {
     console.warn('[parseResilientJson] Standard JSON parse failed, using resilient regex extractor:', e)
@@ -91,6 +112,7 @@ function parseResilientJson(text: string): AiGenerateResult {
     focusKeyword = extractField('focusKeyword') || extractField('focus_keyword')
     seoTitle = extractField('seoTitle') || extractField('meta_title') || extractField('seo_title')
     metaDescription = extractField('metaDescription') || extractField('meta_description') || extractField('seo_description')
+    slug = extractField('slug')
   }
 
   // If we couldn't even extract HTML and the string is not JSON, treat entire response as HTML
@@ -126,6 +148,7 @@ function parseResilientJson(text: string): AiGenerateResult {
     focusKeyword: focusKeyword.trim(),
     seoTitle: seoTitle.trim(),
     metaDescription: metaDescription.trim(),
+    slug: slug.trim().replace(/^\/+/, ''),
   }
 }
 
@@ -180,6 +203,9 @@ You MUST return a JSON object with the following fields:
 - focusKeyword: A high-intent keyword or phrase (2-4 words) that is naturally integrated in the content.
 - seoTitle: A search-optimized title (50-60 characters) that includes the focus keyword and appeals globally.
 - metaDescription: A compelling, search-optimized meta description (150-160 characters) that includes the focus keyword and highlights global ministry.
+- slug: URL slug that includes the slugified focusKeyword.
+
+${SEO_SCORE_RULES}
 
 Return ONLY the raw JSON object. Do not include markdown code blocks, do not include any text before or after the JSON.`
   } else if (req.mode === 'improve') {
@@ -209,6 +235,9 @@ You MUST return a JSON object with the following fields:
 - focusKeyword: A high-intent keyword or phrase (2-4 words) that is naturally integrated.
 - seoTitle: A search-optimized title (50-60 characters) that includes the focus keyword.
 - metaDescription: A compelling, search-optimized meta description (150-160 characters) that includes the focus keyword.
+- slug: URL slug that includes the slugified focusKeyword.
+
+${SEO_SCORE_RULES}
 
 Return ONLY the raw JSON object. Do not include markdown code blocks, do not include any text before or after the JSON.`
   } else if (req.mode === 'sermon_full') {
@@ -232,8 +261,63 @@ You MUST return a JSON object with the following fields:
 - focusKeyword: A high-intent keyword or key scripture reference (2-4 words) that represents the message.
 - seoTitle: A search-optimized title (50-60 characters) suitable for indexation.
 - metaDescription: A compelling, search-optimized meta description (150-160 characters) that includes the focus keyword.
+- slug: URL slug that includes the slugified focusKeyword.
+
+${SEO_SCORE_RULES}
 
 Return ONLY the raw JSON object. Do not include markdown code blocks, do not include any text before or after the JSON.`
+  } else if (req.mode === 'ministry_full') {
+    prompt = `You are a professional content writer and SEO expert for Kingdom Deliverance Centre (KDC) Uganda.
+
+Write complete ministry page content and SEO metadata for this ministry:
+Name: ${req.title}
+${req.excerpt ? `Short summary: ${req.excerpt}` : ''}
+${req.focusKeyword ? `Requested focus keyword: ${req.focusKeyword}` : ''}
+
+CRITICAL: Tailor to KDC Uganda with global outreach. html must use <p>, <h2>, <h3>, <ul>/<li> only — no literal \\n in HTML. At least 300 words.
+
+Return JSON with: html, excerpt, focusKeyword, seoTitle, metaDescription, slug.
+${SEO_SCORE_RULES}
+
+Return ONLY raw JSON.`
+  } else if (req.mode === 'ministry_improve') {
+    prompt = `You are a professional editor and SEO specialist for Kingdom Deliverance Centre (KDC) Uganda.
+
+Improve and expand this ministry page. Rewrite content and optimize ALL SEO fields for a 100/100 SEO score.
+Ministry name: ${req.title}
+${req.focusKeyword ? `Focus keyword: ${req.focusKeyword}` : ''}
+
+Current content:
+${req.existingContent || '(empty)'}
+
+Return JSON with: html, excerpt, focusKeyword, seoTitle, metaDescription, slug.
+${SEO_SCORE_RULES}
+
+Return ONLY raw JSON.`
+  } else if (req.mode === 'event_full') {
+    prompt = `You are a professional content writer and SEO expert for Kingdom Deliverance Centre (KDC) Uganda.
+
+Write a complete event description and SEO metadata:
+Event title: ${req.title}
+${req.excerpt ? `Summary: ${req.excerpt}` : ''}
+
+Return JSON with: html, excerpt, focusKeyword, seoTitle, metaDescription, slug.
+${SEO_SCORE_RULES}
+
+Return ONLY raw JSON.`
+  } else if (req.mode === 'event_improve') {
+    prompt = `You are a professional editor and SEO specialist for Kingdom Deliverance Centre (KDC) Uganda.
+
+Improve this event page content and rewrite ALL SEO metadata for maximum SEO score.
+Title: ${req.title}
+
+Current content:
+${req.existingContent || '(empty)'}
+
+Return JSON with: html, excerpt, focusKeyword, seoTitle, metaDescription, slug.
+${SEO_SCORE_RULES}
+
+Return ONLY raw JSON.`
   } else {
     // sermon_improve
     prompt = `You are a professional sermon editor and SEO specialist for Kingdom Deliverance Centre (KDC) Uganda.
@@ -258,6 +342,9 @@ You MUST return a JSON object with the following fields:
 - focusKeyword: A high-intent keyword or key verse (2-4 words).
 - seoTitle: A search-optimized title (50-60 characters).
 - metaDescription: A compelling, search-optimized meta description (150-160 characters).
+- slug: URL slug that includes the slugified focusKeyword.
+
+${SEO_SCORE_RULES}
 
 Return ONLY the raw JSON object. Do not include markdown code blocks, do not include any text before or after the JSON.`
   }

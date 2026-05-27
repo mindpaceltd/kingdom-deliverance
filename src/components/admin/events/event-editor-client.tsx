@@ -26,6 +26,11 @@ import { SeoPanel } from '../posts/seo-panel'
 import { MediaPicker } from '../media-picker'
 import { createEvent, updateEvent, checkSlugAvailability } from '@/lib/actions/events'
 import { generatePostContent } from '@/lib/actions/ai'
+import { applyAiSeoFields } from '@/lib/admin/apply-ai-seo'
+import { reportIndexingToast } from '@/lib/admin/report-indexing-toast'
+import { getPublicIndexUrl } from '@/lib/seo/content-indexing'
+import { submitGoogleIndexing } from '@/lib/seo/submit-google-indexing-client'
+import { toast } from 'sonner'
 import { computeSeoScore } from '@/lib/seo-scorer'
 import { cn } from '@/lib/utils'
 import type { Event } from '@/lib/types'
@@ -119,12 +124,26 @@ export function EventEditorClient({ event }: EventEditorClientProps) {
     if (!form.title.trim()) return
     setAiLoading(true)
     const result = await generatePostContent({
-      mode: mode === 'full' ? 'sermon_full' : 'sermon_improve',
+      mode: mode === 'full' ? 'event_full' : 'event_improve',
       title: form.title,
+      excerpt: form.excerpt || undefined,
       existingContent: form.content || undefined,
+      focusKeyword: form.focus_keyword || undefined,
     })
-    if ('html' in result) setField('content', result.html)
     setAiLoading(false)
+    if ('error' in result) {
+      toast.error(result.error)
+      return
+    }
+    applyAiSeoFields(result, {
+      setContent: (html) => setField('content', html),
+      setSummary: (text) => setField('excerpt', text),
+      setFocusKeyword: (v) => setField('focus_keyword', v),
+      setMetaTitle: (v) => setField('meta_title', v),
+      setMetaDescription: (v) => setField('meta_description', v),
+      setSlug: (v) => void handleSlugChange(v),
+    })
+    toast.success('AI updated event content and SEO fields.')
   }
 
   async function save(overrideStatus?: Event['status']) {
@@ -154,6 +173,17 @@ export function EventEditorClient({ event }: EventEditorClientProps) {
       setError(result.error)
       return false
     }
+
+    if (
+      effectiveStatus === 'published' &&
+      form.slug.trim()
+    ) {
+      const indexResult = await submitGoogleIndexing([
+        getPublicIndexUrl('event', form.slug),
+      ])
+      reportIndexingToast(indexResult)
+    }
+
     setSaved(true)
     return true
   }

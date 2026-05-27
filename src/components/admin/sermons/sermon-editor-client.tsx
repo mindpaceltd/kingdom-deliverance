@@ -24,6 +24,7 @@ import { DraftReviewModal, type SermonFormData } from './draft-review-modal'
 import { createSermon, updateSermon, checkSlugAvailability } from '@/lib/actions/sermons'
 import { rewriteSermonWithAi } from '@/lib/actions/sermon-ai'
 import { generatePostContent } from '@/lib/actions/ai'
+import { applyAiSeoFields } from '@/lib/admin/apply-ai-seo'
 import { computeSeoScore } from '@/lib/seo-scorer'
 import { cn, validateVideoUrl } from '@/lib/utils'
 import { isAIProcessorEnabled } from '@/lib/env'
@@ -155,7 +156,14 @@ export function SermonEditorClient({ sermon, allSeries }: SermonEditorClientProp
       return
     }
 
-    setField('content', result.html)
+    applyAiSeoFields(result, {
+      setContent: (html) => setField('content', html),
+      setSummary: (text) => setField('description', text),
+      setFocusKeyword: (v) => setField('focus_keyword', v),
+      setMetaTitle: (v) => setField('meta_title', v),
+      setMetaDescription: (v) => setField('meta_description', v),
+      setSlug: (v) => setField('slug', v),
+    })
   }
   
   async function handleAiRewrite() {

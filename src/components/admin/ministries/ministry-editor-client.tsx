@@ -14,7 +14,12 @@ import { SeoPanel } from '../posts/seo-panel'
 import { MediaPicker } from '../media-picker'
 import { createMinistry, updateMinistry, checkSlugAvailability } from '@/lib/actions/ministries'
 import { generatePostContent } from '@/lib/actions/ai'
+import { applyAiSeoFields } from '@/lib/admin/apply-ai-seo'
+import { reportIndexingToast } from '@/lib/admin/report-indexing-toast'
 import { computeSeoScore } from '@/lib/seo-scorer'
+import { getPublicIndexUrl } from '@/lib/seo/content-indexing'
+import { submitGoogleIndexing } from '@/lib/seo/submit-google-indexing-client'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import type { Ministry } from '@/lib/types'
 
@@ -66,6 +71,7 @@ export function MinistryEditorClient({ ministry }: MinistryEditorClientProps) {
   const [error, setError] = React.useState<string | null>(null)
   const [slugError, setSlugError] = React.useState<string | null>(null)
   const [aiLoading, setAiLoading] = React.useState(false)
+  const [aiError, setAiError] = React.useState<string | null>(null)
   const [showAiMenu, setShowAiMenu] = React.useState(false)
   const [previewMode, setPreviewMode] = React.useState(false)
 
@@ -83,15 +89,37 @@ export function MinistryEditorClient({ ministry }: MinistryEditorClientProps) {
 
   async function handleAiGenerate(mode: 'full' | 'improve') {
     setShowAiMenu(false)
-    if (!form.name.trim()) return
+    setAiError(null)
+    if (!form.name.trim()) {
+      setAiError('Enter a ministry name before using AI Assist.')
+      return
+    }
+    if (mode === 'improve' && !form.content.trim()) {
+      setAiError('No content to improve. Use Generate Details instead.')
+      return
+    }
     setAiLoading(true)
     const result = await generatePostContent({
-      mode: mode === 'full' ? 'sermon_full' : 'sermon_improve',
+      mode: mode === 'full' ? 'ministry_full' : 'ministry_improve',
       title: form.name,
+      excerpt: form.description || undefined,
       existingContent: form.content || undefined,
+      focusKeyword: form.focus_keyword || undefined,
     })
     setAiLoading(false)
-    if ('html' in result) setField('content', result.html)
+    if ('error' in result) {
+      setAiError(result.error)
+      return
+    }
+    applyAiSeoFields(result, {
+      setContent: (html) => setField('content', html),
+      setSummary: (text) => setField('description', text),
+      setFocusKeyword: (v) => setField('focus_keyword', v),
+      setMetaTitle: (v) => setField('meta_title', v),
+      setMetaDescription: (v) => setField('meta_description', v),
+      setSlug: (v) => void handleSlugChange(v),
+    })
+    toast.success('AI updated ministry content and SEO fields.')
   }
 
   async function save(overrideStatus?: Ministry['status']) {
@@ -122,6 +150,14 @@ export function MinistryEditorClient({ ministry }: MinistryEditorClientProps) {
       setError(result.error)
       return false
     }
+
+    if (effectiveStatus === 'published' && form.slug.trim()) {
+      const indexResult = await submitGoogleIndexing([
+        getPublicIndexUrl('ministry', form.slug),
+      ])
+      reportIndexingToast(indexResult)
+    }
+
     return true
   }
 
@@ -276,6 +312,10 @@ export function MinistryEditorClient({ ministry }: MinistryEditorClientProps) {
                   </div>
                 </div>
               </div>
+
+              {aiError && (
+                <p className="text-xs text-destructive">{aiError}</p>
+              )}
 
               {previewMode ? (
                 <div className="rounded-md border border-input bg-background px-4 py-3 min-h-[320px]">
