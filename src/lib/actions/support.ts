@@ -4,13 +4,21 @@ import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { requireStaff } from '@/lib/authz'
-import { BOT_WELCOME, SUPPORT_BOT_NAME, getBotReply } from '@/lib/support/bot'
+import {
+  BOT_WELCOME,
+  SUPPORT_BOT_NAME,
+  detectBotIntent,
+  getBotReply,
+  type SupportBotFacts,
+} from '@/lib/support/bot'
 import {
   SUPPORT_VISITOR_COOKIE,
   type SupportConversation,
   type SupportMessage,
 } from '@/lib/support/types'
 import { randomUUID } from 'crypto'
+import { parsePageContent } from '@/lib/cms/page-content'
+import { resolveContactPage } from '@/lib/cms/contact-page-defaults'
 
 function visitorTokenFromCookie(): string | null {
   return cookies().get(SUPPORT_VISITOR_COOKIE)?.value ?? null
@@ -24,6 +32,32 @@ function setVisitorCookie(token: string) {
     maxAge: 60 * 60 * 24 * 365,
     path: '/',
   })
+}
+
+async function loadSupportBotFacts(
+  admin: ReturnType<typeof createAdminClient>
+): Promise<SupportBotFacts> {
+  const [pageRes, settingsRes] = await Promise.all([
+    admin
+      .from('pages')
+      .select('content_json')
+      .eq('slug', 'contact')
+      .eq('status', 'published')
+      .maybeSingle(),
+    admin.from('site_settings').select('key, value'),
+  ])
+
+  const settings = Object.fromEntries((settingsRes.data ?? []).map((row) => [row.key, row.value]))
+  const cms = pageRes.data?.content_json ? parsePageContent(pageRes.data.content_json) : null
+  const resolved = resolveContactPage(cms, settings)
+
+  return {
+    contactUrl: 'https://kdcuganda.org/contact',
+    email: resolved.email,
+    phones: resolved.phones,
+    address: resolved.address,
+    serviceTimes: resolved.serviceTimes,
+  }
 }
 
 async function insertMessage(
@@ -171,13 +205,39 @@ export async function sendVisitorSupportMessage(
 
   if (!conv) return { error: 'Conversation not found.' }
 
-  return insertMessage(admin, {
+  const visitorMessage = await insertMessage(admin, {
     conversationId,
     senderType: 'visitor',
     senderName: conv.visitor_name,
     body: trimmed,
     bumpStaffUnread: true,
   })
+
+  if ('error' in visitorMessage && visitorMessage.error) return visitorMessage
+
+  const detectedIntent = detectBotIntent(trimmed)
+  if (detectedIntent) {
+    if (detectedIntent === 'agent') {
+      await admin
+        .from('support_conversations')
+        .update({ status: 'pending', updated_at: new Date().toISOString() })
+        .eq('id', conversationId)
+    }
+
+    const facts = await loadSupportBotFacts(admin)
+    const botBody = getBotReply(detectedIntent, facts)
+    if (botBody) {
+      await insertMessage(admin, {
+        conversationId,
+        senderType: 'bot',
+        senderName: SUPPORT_BOT_NAME,
+        body: botBody,
+        bumpVisitorUnread: true,
+      })
+    }
+  }
+
+  return visitorMessage
 }
 
 export async function sendVisitorBotQuickReply(
@@ -197,7 +257,8 @@ export async function sendVisitorBotQuickReply(
 
   if (!conv) return { error: 'Conversation not found.' }
 
-  const botBody = getBotReply(replyKey)
+  const facts = await loadSupportBotFacts(admin)
+  const botBody = getBotReply(replyKey, facts)
   if (!botBody) return { error: 'Unknown quick reply.' }
 
   if (replyKey === 'agent') {

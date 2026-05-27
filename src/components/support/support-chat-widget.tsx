@@ -123,10 +123,10 @@ export function SupportChatWidget() {
     <div className="fixed bottom-5 left-5 z-[60] flex flex-col items-start gap-3">
       {open && (
         <div className="w-[min(100vw-2rem,380px)] h-[min(70vh,520px)] rounded-2xl border border-border bg-background shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-200">
-          <div className="flex items-center justify-between gap-2 bg-[#0d1b3e] text-white px-4 py-3">
+          <div className="flex items-center justify-between gap-2 bg-[#c9a227] text-[#1f1500] px-4 py-3">
             <div>
               <p className="font-semibold text-sm">KDC Support</p>
-              <p className="text-xs text-white/70">We typically reply during office hours</p>
+              <p className="text-xs text-[#1f1500]/70">We typically reply during office hours</p>
             </div>
             <button
               type="button"
@@ -176,7 +176,7 @@ export function SupportChatWidget() {
                             ? 'bg-accent text-primary rounded-br-md'
                             : isBot
                               ? 'bg-white border border-border text-foreground rounded-bl-md'
-                              : 'bg-[#0d1b3e] text-white rounded-bl-md'
+                              : 'bg-[#c9a227] text-[#1f1500] rounded-bl-md'
                         )}
                       >
                         {!isVisitor && (
@@ -244,7 +244,7 @@ export function SupportChatWidget() {
       <button
         type="button"
         onClick={() => (open ? setOpen(false) : void handleOpen())}
-        className="relative flex items-center justify-center size-14 rounded-full bg-[#0d1b3e] text-white shadow-lg hover:bg-[#162d5a] transition-colors"
+        className="relative flex items-center justify-center size-14 rounded-full bg-[#c9a227] text-[#1f1500] shadow-lg hover:bg-[#b58b1a] transition-colors"
         aria-label={open ? 'Close support chat' : 'Open support chat'}
       >
         {open ? <X className="size-6" /> : <MessageCircle className="size-6" />}

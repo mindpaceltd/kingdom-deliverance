@@ -9,12 +9,66 @@ export const BOT_QUICK_REPLIES = [
   { id: 'agent', label: 'Chat with a person', reply: 'agent' },
 ] as const
 
-export function getBotReply(key: string): string | null {
+export interface SupportBotFacts {
+  contactUrl?: string
+  email?: string
+  phones?: string[]
+  address?: string
+  serviceTimes?: string
+}
+
+function joinLines(lines: Array<string | null | undefined>): string {
+  return lines.filter(Boolean).join('\n')
+}
+
+export function detectBotIntent(message: string): 'service_times' | 'contact' | 'agent' | null {
+  const text = message.toLowerCase()
+
+  if (
+    /(human|person|agent|staff|team member|talk to someone|speak to someone|representative)/.test(
+      text
+    )
+  ) {
+    return 'agent'
+  }
+
+  if (/(service|time|hours|when|sunday|wednesday|friday|schedule|program)/.test(text)) {
+    return 'service_times'
+  }
+
+  if (/(contact|phone|call|email|address|location|where|find|map|reach)/.test(text)) {
+    return 'contact'
+  }
+
+  return null
+}
+
+export function getBotReply(key: string, facts?: SupportBotFacts): string | null {
+  const contactUrl = facts?.contactUrl || 'https://kdcuganda.org/contact'
+  const email = facts?.email
+  const phones = (facts?.phones ?? []).filter((phone) => phone.trim())
+  const address = facts?.address?.trim()
+  const serviceTimes = facts?.serviceTimes?.trim()
+
   switch (key) {
     case 'service_times':
-      return 'Our regular services are on Sunday and mid-week — check the Contact page on kdcuganda.org/contact for the latest service times and location.'
+      return (
+        joinLines([
+          serviceTimes ? `Our service times are:\n${serviceTimes}` : null,
+          `For updates and directions: ${contactUrl}`,
+        ]) ||
+        `Please see our latest service schedule here: ${contactUrl}`
+      )
     case 'contact':
-      return 'You can reach us at info@kdcuganda.org or visit kdcuganda.org/contact for phone, email, and directions.'
+      return (
+        joinLines([
+          email ? `Email: ${email}` : null,
+          phones.length > 0 ? `Phone: ${phones.join(' / ')}` : null,
+          address ? `Address: ${address}` : null,
+          `More details: ${contactUrl}`,
+        ]) ||
+        `You can reach us here: ${contactUrl}`
+      )
     case 'agent':
       return 'I am connecting you with our support team. A staff member will reply here as soon as possible. Please share your question below.'
     default:

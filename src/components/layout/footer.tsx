@@ -109,6 +109,10 @@ export async function Footer() {
               <Link href="/terms" className="text-xs text-white/40 hover:text-accent transition-colors duration-200">
                 Terms of Service
               </Link>
+              <span className="w-px h-3 bg-white/15" />
+              <Link href="/faq" className="text-xs text-white/40 hover:text-accent transition-colors duration-200">
+                FAQ
+              </Link>
             </div>
           </div>
 
