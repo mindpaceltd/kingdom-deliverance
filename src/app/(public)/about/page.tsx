@@ -33,8 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
   })
 
   // Force a same-origin OG image endpoint for WhatsApp unfurl reliability.
-  const forcedOgImage =
-    'https://kdcuganda.org/og?title=About%20Us%20%7C%20Kingdom%20Deliverance%20Centre%20Uganda&type=default&v=4'
+  const forcedOgImage = 'https://kdcuganda.org/og/about-image?v=5'
 
   return {
     ...base,
