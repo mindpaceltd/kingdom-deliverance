@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Calendar, Video, Heart, BookOpen, Sparkles,
-  Users, Award, Globe, ArrowRight, Play, Quote,
+  Users, Award, ArrowRight, Play, Quote,
 } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -16,83 +16,89 @@ import { EventCard } from "@/components/content/event-card";
 import { TestimoniesSection } from "@/components/home/testimonies-section";
 import { ProductCarousel } from "@/components/home/product-carousel";
 import type { Post, Sermon, Event } from "@/lib/types";
-import { parsePageContent } from "@/lib/cms/page-content";
+import { getPublishedPageBySlug } from "@/lib/cms/get-published-page";
 import { resolveHomeDetails } from "@/lib/cms/home-page-defaults";
 import { normalizeMediaUrl } from "@/lib/media-url";
 
-const DEFAULT_SERMON_THUMB =
-  "https://images.unsplash.com/photo-1544427920-c49ccfb85579?q=80&w=2000&auto=format&fit=crop";
+/** Always read fresh homepage CMS + sermons/events/posts from Supabase. */
+export const dynamic = 'force-dynamic';
 
-export const revalidate = 3600;
+export async function generateMetadata(): Promise<Metadata> {
+  const supabase = createClient();
+  const homePage = await getPublishedPageBySlug(supabase, 'home');
+  const seo = homePage?.content.seo;
 
-export const metadata: Metadata = {
-  title: "Home",
-  description: "Welcome to Kingdom Deliverance Centre Uganda. Join worship services, sermons, events, and ministries.",
-};
+  return {
+    title: seo?.metaTitle?.trim() || 'Home | Kingdom Deliverance Centre Uganda',
+    description:
+      seo?.metaDescription?.trim() ||
+      'Welcome to Kingdom Deliverance Centre Uganda. Join worship services, sermons, events, and ministries.',
+    openGraph: seo?.ogImageUrl ? { images: [{ url: seo.ogImageUrl }] } : undefined,
+  };
+}
+
+async function fetchFeaturedSermon(
+  supabase: ReturnType<typeof createClient>,
+  slug?: string
+): Promise<Sermon | null> {
+  if (slug) {
+    const { data } = await supabase
+      .from('sermons')
+      .select('*')
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .maybeSingle();
+    if (data) return data as Sermon;
+  }
+
+  const { data } = await supabase
+    .from('sermons')
+    .select('*')
+    .eq('status', 'published')
+    .order('date', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return (data as Sermon | null) ?? null;
+}
 
 export default async function Home() {
   const supabase = createClient();
 
-  // Fetch: latest published sermon, featured upcoming events, latest 3 posts, featured products, and hero image
-  const [sermonRes, featuredEventsRes, postsRes, productsRes, heroRes, homePageRes] = await Promise.all([
-    supabase
-      .from("sermons")
-      .select("*")
-      .eq("status", "published")
-      .order("date", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from("events")
-      .select("*")
-      .eq("is_featured", true)
-      .eq("status", "upcoming")
-      .order("date", { ascending: true })
-      .limit(3),
-    supabase
-      .from("posts")
-      .select("*, profiles(name, avatar_url)")
-      .eq("status", "published")
-      .order("published_at", { ascending: false })
-      .limit(3),
-    supabase
-      .from("products")
-      .select("*")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .limit(10),
-    supabase
-      .from("organization_images")
-      .select("url")
-      .eq("type", "hero")
-      .eq("is_active", true)
-      .maybeSingle(),
-    supabase
-      .from("pages")
-      .select("content_json")
-      .in("slug", ["home", ""])
-      .eq("status", "published")
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-  ]);
-
-  let featuredSermon: Sermon | null = sermonRes.data ?? null;
-  const homeContent = homePageRes.data?.content_json
-    ? parsePageContent(homePageRes.data.content_json)
-    : null;
+  const homePage = await getPublishedPageBySlug(supabase, 'home');
+  const homeContent = homePage?.content ?? null;
   const home = resolveHomeDetails(homeContent?.home);
-
   const featuredSlug = home.sermonFeaturedSlug?.trim();
-  if (featuredSlug && featuredSermon?.slug !== featuredSlug) {
-    const { data: overrideSermon } = await supabase
-      .from("sermons")
-      .select("*")
-      .eq("slug", featuredSlug)
-      .eq("status", "published")
-      .maybeSingle();
-    if (overrideSermon) featuredSermon = overrideSermon;
-  }
+
+  const [featuredSermon, featuredEventsRes, postsRes, productsRes, heroRes] =
+    await Promise.all([
+      fetchFeaturedSermon(supabase, featuredSlug || undefined),
+      supabase
+        .from("events")
+        .select("*")
+        .eq("is_featured", true)
+        .eq("status", "upcoming")
+        .order("date", { ascending: true })
+        .limit(3),
+      supabase
+        .from("posts")
+        .select("*, profiles(name, avatar_url)")
+        .eq("status", "published")
+        .order("published_at", { ascending: false })
+        .limit(3),
+      supabase
+        .from("products")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(10),
+      supabase
+        .from("organization_images")
+        .select("url")
+        .eq("type", "hero")
+        .eq("is_active", true)
+        .maybeSingle(),
+    ]);
 
   const heroImageUrl = homeContent?.hero?.imageUrl?.trim() || heroRes.data?.url;
   let upcomingEvents: Event[] = featuredEventsRes.data ?? [];
@@ -113,7 +119,7 @@ export default async function Home() {
   const sermonThumb =
     normalizeMediaUrl(home.sermonThumbnailUrl) ||
     normalizeMediaUrl(featuredSermon?.thumbnail_url) ||
-    DEFAULT_SERMON_THUMB;
+    null;
   const sermonWatchHref =
     home.sermonVideoUrl?.trim() ||
     featuredSermon?.video_url?.trim() ||
@@ -249,8 +255,8 @@ export default async function Home() {
                 className="relative block aspect-video overflow-hidden rounded-2xl bg-black shadow-2xl ring-1 ring-white/10"
               >
                 <div
-                  className="absolute inset-0 bg-cover bg-center"
-                  style={{ backgroundImage: `url('${sermonThumb}')` }}
+                  className={`absolute inset-0 bg-cover bg-center ${sermonThumb ? '' : 'bg-primary/40'}`}
+                  style={sermonThumb ? { backgroundImage: `url('${sermonThumb}')` } : undefined}
                 >
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                     <div className="w-18 h-18 flex items-center justify-center rounded-full bg-accent/90 shadow-xl shadow-accent/40 group-hover:scale-110 group-hover:bg-accent transition-all duration-300">
@@ -261,38 +267,48 @@ export default async function Home() {
               </Link>
             </div>
 
-            {/* Sermon Info */}
+            {/* Sermon Info — title, description, preacher, date from sermons table */}
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-accent">
-                <Quote className="w-3.5 h-3.5" />
-                Featured Sermon
-              </div>
-              <h3 className="text-3xl font-bold font-serif md:text-4xl leading-tight text-white">
-                {featuredSermon?.title ?? "The Power of Faith in Troubled Times"}
-              </h3>
-              <p className="text-white/75 leading-relaxed text-base md:text-lg">
-                {featuredSermon?.description ??
-                  "In this powerful message, we explore how standing firm in faith can break chains and bring deliverance in our darkest moments."}
-              </p>
-              <div className="flex items-center gap-4 text-sm text-white/50">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center">
-                    <Users className="w-3.5 h-3.5 text-accent" />
+              {featuredSermon ? (
+                <>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-accent">
+                    <Quote className="w-3.5 h-3.5" />
+                    {home.sermonFeaturedBadge}
                   </div>
-                  <span>{featuredSermon?.preacher ?? "Bishop Climate Wiseman"}</span>
-                </div>
-                <span>·</span>
-                <span>{featuredSermon ? new Date(featuredSermon.date).toLocaleDateString() : "Recent"}</span>
-              </div>
-              <Button
-                asChild
-                className="bg-accent hover:bg-accent/90 text-primary font-bold rounded-full px-8 shadow-lg shadow-accent/30 hover:shadow-accent/50 hover:scale-105 transition-all duration-300"
-              >
-                <Link href={sermonWatchHref} className="flex items-center gap-2">
-                  {home.sermonWatchLabel}
-                  <Play className="w-4 h-4 fill-current" />
-                </Link>
-              </Button>
+                  <h3 className="text-3xl font-bold font-serif md:text-4xl leading-tight text-white">
+                    {featuredSermon.title}
+                  </h3>
+                  {featuredSermon.description ? (
+                    <p className="text-white/75 leading-relaxed text-base md:text-lg">
+                      {featuredSermon.description}
+                    </p>
+                  ) : null}
+                  <div className="flex items-center gap-4 text-sm text-white/50">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center">
+                        <Users className="w-3.5 h-3.5 text-accent" />
+                      </div>
+                      <span>{featuredSermon.preacher}</span>
+                    </div>
+                    <span>·</span>
+                    <span>{new Date(featuredSermon.date).toLocaleDateString()}</span>
+                  </div>
+                  <Button
+                    asChild
+                    className="bg-accent hover:bg-accent/90 text-primary font-bold rounded-full px-8 shadow-lg shadow-accent/30 hover:shadow-accent/50 hover:scale-105 transition-all duration-300"
+                  >
+                    <Link href={sermonWatchHref} className="flex items-center gap-2">
+                      {home.sermonWatchLabel}
+                      <Play className="w-4 h-4 fill-current" />
+                    </Link>
+                  </Button>
+                </>
+              ) : (
+                <p className="text-white/70">
+                  No published sermon yet. Add one under Admin → Sermons or set a featured sermon
+                  slug on the Homepage in Admin → Pages.
+                </p>
+              )}
             </div>
           </div>
         </div>
