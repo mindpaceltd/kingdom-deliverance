@@ -342,16 +342,16 @@ export function ProductsManager({
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+      <div className="overflow-hidden">
+        <table className="w-full table-fixed text-left text-sm">
           <thead className="bg-muted/50 border-b">
             <tr>
               <th className="px-6 py-4 w-[52px]"><Checkbox checked={allSelected} indeterminate={someSelected} onChange={toggleSelectAll} aria-label="Select all products" /></th>
               <th className="px-6 py-4 font-semibold">Product</th>
               <th className="px-6 py-4 font-semibold">Status</th>
               <th className="px-6 py-4 font-semibold">Category</th>
-              <th className="px-6 py-4 font-semibold">SEO</th>
-              <th className="px-6 py-4 font-semibold">Views</th>
+              <th className="px-6 py-4 font-semibold hidden lg:table-cell">SEO</th>
+              <th className="px-6 py-4 font-semibold hidden xl:table-cell">Views</th>
               <th className="px-6 py-4 font-semibold">Price (USD)</th>
               <th className="px-6 py-4 text-right font-semibold">Actions</th>
             </tr>
@@ -364,7 +364,7 @@ export function ProductsManager({
                 return (
                   <tr key={product.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-4 align-top"><Checkbox checked={isSelected} onChange={() => toggleSelectRow(product.id)} aria-label={`Select ${product.name}`} /></td>
-                    <td className="px-6 py-4 min-w-[300px] max-w-[360px]">
+                    <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
                         <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0 border">
                           {product.image_url ? (
@@ -382,7 +382,7 @@ export function ProductsManager({
                           )}
                         </div>
                         <div className="flex min-w-0 flex-col">
-                          <span className="font-bold text-primary truncate max-w-[220px]" title={product.name}>
+                          <span className="font-bold text-primary truncate max-w-[160px] md:max-w-[240px]" title={product.name}>
                             {product.name}
                           </span>
                           <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
@@ -391,26 +391,26 @@ export function ProductsManager({
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-700">
                         {product.status || 'published'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-muted-foreground font-medium max-w-[150px]">
-                      <span className="block truncate" title={product.category?.name || 'Uncategorized'}>
+                    <td className="px-4 py-4 text-muted-foreground font-medium">
+                      <span className="block truncate max-w-[90px] md:max-w-[150px]" title={product.category?.name || 'Uncategorized'}>
                         {product.category?.name || 'Uncategorized'}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4 hidden lg:table-cell">
                       <SeoScoreBadge score={resolveProductSeoScore(product)} />
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4 hidden xl:table-cell">
                       <span className="inline-flex items-center gap-1.5 text-sm font-medium tabular-nums text-muted-foreground">
                         <Eye className="size-3.5 shrink-0 opacity-60" />
                         {(product.views ?? 0).toLocaleString()}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <div className="flex flex-col">
                         <span className="font-mono font-bold text-primary">{formatPrice(price.current)}</span>
                         {price.original && (
@@ -420,7 +420,7 @@ export function ProductsManager({
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-4 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {product.status === 'published' && product.slug && (
                           <Button
@@ -436,7 +436,7 @@ export function ProductsManager({
                           </Button>
                         )}
                         <DuplicateProductButton productId={product.id} />
-                        <Button variant="outline" size="sm" asChild className="h-8">
+                        <Button variant="outline" size="sm" asChild className="h-8 px-2">
                           <Link href={`/admin/products/${product.id}`}>Edit</Link>
                         </Button>
                         <Button
@@ -444,7 +444,7 @@ export function ProductsManager({
                           size="sm"
                           onClick={() => handleDelete(product.id, product.name)}
                           disabled={actionLoading === `delete-${product.id}` || actionLoading === 'bulk-delete'}
-                          className="text-destructive hover:text-destructive"
+                          className="text-destructive hover:text-destructive px-2"
                         >
                           Delete
                         </Button>
@@ -455,7 +455,7 @@ export function ProductsManager({
               })
             ) : (
               <tr>
-                <td colSpan={8} className="px-6 py-12 text-center text-muted-foreground italic">
+                <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground italic">
                   No products found in your inventory.
                 </td>
               </tr>
