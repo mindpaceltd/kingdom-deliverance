@@ -40,6 +40,12 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     ...base,
+    title: {
+      absolute:
+        typeof base.title === 'string'
+          ? base.title
+          : (content?.seo?.metaTitle?.trim() || 'About Us | Kingdom Deliverance Centre Uganda'),
+    },
     openGraph: {
       ...base.openGraph,
       images: [{ url: forcedOgImage, width: 1200, height: 630, alt: 'About Us | KDC Uganda' }],

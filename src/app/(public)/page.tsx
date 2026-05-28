@@ -18,6 +18,8 @@ import { ProductCarousel } from "@/components/home/product-carousel";
 import type { Post, Sermon, Event } from "@/lib/types";
 import { getPublishedPageBySlug } from "@/lib/cms/get-published-page";
 import { resolveHomeDetails } from "@/lib/cms/home-page-defaults";
+import { buildCmsPageMetadata } from "@/lib/seo/cms-page-metadata";
+import { getOrgOgImageUrl } from "@/lib/seo/site-branding";
 import { normalizeMediaUrl } from "@/lib/media-url";
 
 /** Always read fresh homepage CMS + sermons/events/posts from Supabase. */
@@ -25,15 +27,38 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
   const supabase = createClient();
-  const homePage = await getPublishedPageBySlug(supabase, 'home');
-  const seo = homePage?.content.seo;
+  const [homePage, orgOgImage] = await Promise.all([
+    getPublishedPageBySlug(supabase, 'home'),
+    getOrgOgImageUrl(),
+  ]);
+  const content = homePage?.content ?? null;
+  const base = await buildCmsPageMetadata({
+    slug: 'home',
+    path: '/',
+    defaultTitle: 'Home',
+    defaultDescription:
+      'Welcome to Kingdom Deliverance Centre Uganda. Join worship services, sermons, events, and ministries.',
+    content,
+    heroImageUrl: content?.hero?.imageUrl ?? null,
+  });
+  const forcedOgImage = content?.seo?.ogImageUrl?.trim() || orgOgImage;
 
   return {
-    title: seo?.metaTitle?.trim() || 'Home | Kingdom Deliverance Centre Uganda',
-    description:
-      seo?.metaDescription?.trim() ||
-      'Welcome to Kingdom Deliverance Centre Uganda. Join worship services, sermons, events, and ministries.',
-    openGraph: seo?.ogImageUrl ? { images: [{ url: seo.ogImageUrl }] } : undefined,
+    ...base,
+    title: {
+      absolute:
+        typeof base.title === 'string'
+          ? base.title
+          : (content?.seo?.metaTitle?.trim() || 'Home | Kingdom Deliverance Centre Uganda'),
+    },
+    openGraph: {
+      ...base.openGraph,
+      images: [{ url: forcedOgImage, width: 1200, height: 630, alt: 'Home | KDC Uganda' }],
+    },
+    twitter: {
+      ...base.twitter,
+      images: [forcedOgImage],
+    },
   };
 }
 
