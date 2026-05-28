@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button'
 import { PlusIcon, PackageIcon, FileIcon } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { getCreditSettings } from '@/lib/credits/settings'
+import { getExchangeRates } from '@/lib/services/exchange-rates'
 import {
   ProductsManager,
   type ProductRow,
@@ -28,7 +30,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
   const pageIndex = pageParam - 1
   const supabase = createClient()
 
-  const [statsResult, listResult, categoriesResult] = await Promise.all([
+  const [statsResult, listResult, categoriesResult, creditSettings, exchangeRates] = await Promise.all([
     getProductsAdminStats(),
     getProductsAdminPage({
       page: pageIndex,
@@ -38,6 +40,8 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
       query: queryFilter,
     }),
     supabase.from('product_categories').select('id, name').order('name'),
+    getCreditSettings(),
+    getExchangeRates(),
   ])
 
   const stats =
@@ -177,6 +181,8 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
         page={safePage}
         pageSize={listResult.pageSize}
         totalPages={listResult.totalPages}
+        displayCurrency={creditSettings.checkoutCurrency}
+        exchangeRates={exchangeRates}
         activeFilters={{
           status: statusFilter,
           type: typeFilter,

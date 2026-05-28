@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { ProductBulkActions, DuplicateProductButton } from '@/components/admin/products/product-bulk-actions'
 import { deleteProduct, deleteProducts, duplicateProducts } from '@/lib/actions/products'
 import { buildPublicContentUrl } from '@/lib/seo/public-content-urls'
-import { formatPrice, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { getSeoScoreColor } from '@/lib/posts-helpers'
 import { computeProductSeoScore } from '@/lib/products/product-seo-score'
 import { normalizeMediaUrl } from '@/lib/media-url'
@@ -87,6 +87,8 @@ interface ProductsManagerProps {
     category?: string
     q?: string
   }
+  displayCurrency?: string
+  exchangeRates?: Record<string, number>
 }
 
 export function ProductsManager({
@@ -96,6 +98,8 @@ export function ProductsManager({
   pageSize,
   totalPages,
   activeFilters,
+  displayCurrency = 'USD',
+  exchangeRates = { USD: 1 },
 }: ProductsManagerProps) {
   const router = useRouter()
   const [products, setProducts] = React.useState<ProductRow[]>(initialProducts)
@@ -105,6 +109,18 @@ export function ProductsManager({
   }, [initialProducts])
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set())
   const [actionLoading, setActionLoading] = React.useState<string | null>(null)
+  const targetCurrency = String(displayCurrency || 'USD').toUpperCase()
+  const targetRate = Number(exchangeRates[targetCurrency] ?? 1) || 1
+
+  function formatAdminPrice(usdPrice: number) {
+    const converted = usdPrice * targetRate
+    const locale = targetCurrency === 'UGX' ? 'en-UG' : 'en-US'
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: targetCurrency,
+      maximumFractionDigits: targetCurrency === 'UGX' ? 0 : 2,
+    }).format(converted || 0)
+  }
 
   const allSelected =
     products.length > 0 && products.every((product) => selectedIds.has(product.id))
@@ -275,7 +291,45 @@ export function ProductsManager({
               Select products to duplicate, delete, or submit to Google in bulk.
             </p>
           </div>
-          <ProductBulkActions />
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              disabled={Boolean(actionLoading)}
+              onClick={async () => {
+                const urls = products
+                  .filter((p) => p.status === 'published' && p.slug)
+                  .map((p) => buildPublicContentUrl('product', p.slug!))
+                if (urls.length === 0) {
+                  alert('No published products on this page to submit.')
+                  return
+                }
+                setActionLoading('bulk-index-page')
+                try {
+                  const { submitGoogleIndexing } = await import('@/lib/seo/submit-google-indexing-client')
+                  const result = await submitGoogleIndexing(urls)
+                  if (!result.ok) {
+                    alert(result.message + (result.hint ? `\n\n${result.hint}` : ''))
+                  } else {
+                    alert(result.message)
+                  }
+                } catch (err) {
+                  alert(`Error: ${err instanceof Error ? err.message : 'Request failed'}`)
+                }
+                setActionLoading(null)
+              }}
+            >
+              {actionLoading === 'bulk-index-page' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Globe className="h-4 w-4" />
+              )}
+              Bulk Google Index (This Page)
+            </Button>
+            <ProductBulkActions />
+          </div>
         </div>
       </div>
 
@@ -350,9 +404,9 @@ export function ProductsManager({
               <th className="px-6 py-4 font-semibold">Product</th>
               <th className="px-6 py-4 font-semibold">Status</th>
               <th className="px-6 py-4 font-semibold">Category</th>
-              <th className="px-6 py-4 font-semibold hidden lg:table-cell">SEO</th>
-              <th className="px-6 py-4 font-semibold hidden xl:table-cell">Views</th>
-              <th className="px-6 py-4 font-semibold">Price (USD)</th>
+              <th className="px-6 py-4 font-semibold">SEO</th>
+              <th className="px-6 py-4 font-semibold hidden lg:table-cell">Views</th>
+              <th className="px-6 py-4 font-semibold">{`Price (${targetCurrency})`}</th>
               <th className="px-6 py-4 text-right font-semibold">Actions</th>
             </tr>
           </thead>
@@ -401,10 +455,10 @@ export function ProductsManager({
                         {product.category?.name || 'Uncategorized'}
                       </span>
                     </td>
-                    <td className="px-4 py-4 hidden lg:table-cell">
+                    <td className="px-4 py-4">
                       <SeoScoreBadge score={resolveProductSeoScore(product)} />
                     </td>
-                    <td className="px-4 py-4 hidden xl:table-cell">
+                    <td className="px-4 py-4 hidden lg:table-cell">
                       <span className="inline-flex items-center gap-1.5 text-sm font-medium tabular-nums text-muted-foreground">
                         <Eye className="size-3.5 shrink-0 opacity-60" />
                         {(product.views ?? 0).toLocaleString()}
@@ -412,10 +466,10 @@ export function ProductsManager({
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex flex-col">
-                        <span className="font-mono font-bold text-primary">{formatPrice(price.current)}</span>
+                        <span className="font-mono font-bold text-primary">{formatAdminPrice(price.current)}</span>
                         {price.original && (
                           <span className="text-[10px] text-red-500 line-through opacity-60">
-                            {formatPrice(price.original)}
+                            {formatAdminPrice(price.original)}
                           </span>
                         )}
                       </div>
