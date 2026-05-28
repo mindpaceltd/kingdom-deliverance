@@ -316,10 +316,6 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
                           src={normalizeMediaUrl(p.image_url) || '/placeholder.png'}
                           alt={p.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => {
-                            const target = e.currentTarget
-                            if (!target.src.endsWith('/placeholder.png')) target.src = '/placeholder.png'
-                          }}
                         />
                         {pHasDiscount && (
                           <span className="absolute top-2 left-2 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">SALE</span>
