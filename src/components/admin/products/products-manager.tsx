@@ -4,7 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Globe, Copy, Trash2, Loader2, X, Eye } from 'lucide-react'
+import { Globe, Copy, Trash2, Loader2, X, Pencil } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ProductBulkActions, DuplicateProductButton } from '@/components/admin/products/product-bulk-actions'
 import { deleteProduct, deleteProducts, duplicateProducts } from '@/lib/actions/products'
@@ -405,7 +405,6 @@ export function ProductsManager({
               <th className="px-6 py-4 font-semibold">Status</th>
               <th className="px-6 py-4 font-semibold">Category</th>
               <th className="px-6 py-4 font-semibold">SEO</th>
-              <th className="px-6 py-4 font-semibold hidden lg:table-cell">Views</th>
               <th className="px-6 py-4 font-semibold">{`Price (${targetCurrency})`}</th>
               <th className="px-6 py-4 text-right font-semibold">Actions</th>
             </tr>
@@ -418,7 +417,7 @@ export function ProductsManager({
                 return (
                   <tr key={product.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-4 align-top"><Checkbox checked={isSelected} onChange={() => toggleSelectRow(product.id)} aria-label={`Select ${product.name}`} /></td>
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-4 w-[34%]">
                       <div className="flex items-center gap-3">
                         <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0 border">
                           {product.image_url ? (
@@ -436,7 +435,10 @@ export function ProductsManager({
                           )}
                         </div>
                         <div className="flex min-w-0 flex-col">
-                          <span className="font-bold text-primary truncate max-w-[160px] md:max-w-[240px]" title={product.name}>
+                          <span
+                            className="font-bold text-primary line-clamp-2 leading-tight max-w-[220px] md:max-w-[320px]"
+                            title={product.name}
+                          >
                             {product.name}
                           </span>
                           <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
@@ -458,13 +460,7 @@ export function ProductsManager({
                     <td className="px-4 py-4">
                       <SeoScoreBadge score={resolveProductSeoScore(product)} />
                     </td>
-                    <td className="px-4 py-4 hidden lg:table-cell">
-                      <span className="inline-flex items-center gap-1.5 text-sm font-medium tabular-nums text-muted-foreground">
-                        <Eye className="size-3.5 shrink-0 opacity-60" />
-                        {(product.views ?? 0).toLocaleString()}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-4 w-[16%]">
                       <div className="flex flex-col">
                         <span className="font-mono font-bold text-primary">{formatAdminPrice(price.current)}</span>
                         {price.original && (
@@ -474,7 +470,7 @@ export function ProductsManager({
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-right">
+                    <td className="px-4 py-4 text-right w-[120px]">
                       <div className="flex items-center justify-end gap-2">
                         {product.status === 'published' && product.slug && (
                           <Button
@@ -490,17 +486,27 @@ export function ProductsManager({
                           </Button>
                         )}
                         <DuplicateProductButton productId={product.id} />
-                        <Button variant="outline" size="sm" asChild className="h-8 px-2">
-                          <Link href={`/admin/products/${product.id}`}>Edit</Link>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          className="h-8 w-8 p-0"
+                          title="Edit product"
+                        >
+                          <Link href={`/admin/products/${product.id}`} aria-label="Edit product">
+                            <Pencil className="h-4 w-4" />
+                          </Link>
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleDelete(product.id, product.name)}
                           disabled={actionLoading === `delete-${product.id}` || actionLoading === 'bulk-delete'}
-                          className="text-destructive hover:text-destructive px-2"
+                          className="text-destructive hover:text-destructive h-8 w-8 p-0"
+                          title="Delete product"
+                          aria-label="Delete product"
                         >
-                          Delete
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </td>
@@ -509,7 +515,7 @@ export function ProductsManager({
               })
             ) : (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground italic">
+                <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground italic">
                   No products found in your inventory.
                 </td>
               </tr>
