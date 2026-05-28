@@ -12,6 +12,7 @@ import { buildPublicContentUrl } from '@/lib/seo/public-content-urls'
 import { formatPrice, cn } from '@/lib/utils'
 import { getSeoScoreColor } from '@/lib/posts-helpers'
 import { computeProductSeoScore } from '@/lib/products/product-seo-score'
+import { normalizeMediaUrl } from '@/lib/media-url'
 
 export interface ProductRow {
   id: string
@@ -63,12 +64,29 @@ function resolveProductSeoScore(product: ProductRow): number {
   })
 }
 
+function resolveDisplayPrice(product: ProductRow): { current: number; original?: number } {
+  const regular = Number(product.regular_price_usd || 0)
+  const sale = Number(product.sale_price_usd || 0)
+  const fallback = Number(product.price_usd || 0)
+  if (sale > 0 && regular > 0 && sale < regular) {
+    return { current: sale, original: regular }
+  }
+  if (regular > 0) return { current: regular }
+  return { current: fallback }
+}
+
 interface ProductsManagerProps {
   initialProducts: ProductRow[]
   total: number
   page: number
   pageSize: number
   totalPages: number
+  activeFilters?: {
+    status?: string
+    type?: string
+    category?: string
+    q?: string
+  }
 }
 
 export function ProductsManager({
@@ -77,6 +95,7 @@ export function ProductsManager({
   page,
   pageSize,
   totalPages,
+  activeFilters,
 }: ProductsManagerProps) {
   const router = useRouter()
   const [products, setProducts] = React.useState<ProductRow[]>(initialProducts)
@@ -120,7 +139,24 @@ export function ProductsManager({
   function goToPage(nextPage: number) {
     const clamped = Math.max(1, Math.min(nextPage, totalPages))
     setSelectedIds(new Set())
-    router.push(clamped === 1 ? '/admin/products' : `/admin/products?page=${clamped}`)
+    const params = new URLSearchParams()
+    if (activeFilters?.status && activeFilters.status !== 'all') {
+      params.set('status', activeFilters.status)
+    }
+    if (activeFilters?.type && activeFilters.type !== 'all') {
+      params.set('type', activeFilters.type)
+    }
+    if (activeFilters?.category && activeFilters.category !== 'all') {
+      params.set('category', activeFilters.category)
+    }
+    if (activeFilters?.q?.trim()) {
+      params.set('q', activeFilters.q.trim())
+    }
+    if (clamped > 1) {
+      params.set('page', String(clamped))
+    }
+    const query = params.toString()
+    router.push(query ? `/admin/products?${query}` : '/admin/products')
   }
 
   async function handleDelete(id: string, name: string) {
@@ -324,21 +360,34 @@ export function ProductsManager({
             {products.length > 0 ? (
               products.map((product) => {
                 const isSelected = selectedIds.has(product.id)
+                const price = resolveDisplayPrice(product)
                 return (
                   <tr key={product.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-4 align-top"><Checkbox checked={isSelected} onChange={() => toggleSelectRow(product.id)} aria-label={`Select ${product.name}`} /></td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 min-w-[300px] max-w-[360px]">
                       <div className="flex items-center gap-3">
                         <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0 border">
                           {product.image_url ? (
-                            <img src={product.image_url} alt={product.name} className="h-full w-full object-cover" />
+                            <img
+                              src={normalizeMediaUrl(product.image_url) || '/placeholder.png'}
+                              alt={product.name}
+                              className="h-full w-full object-cover"
+                              onError={(e) => {
+                                const target = e.currentTarget
+                                if (!target.src.endsWith('/placeholder.png')) target.src = '/placeholder.png'
+                              }}
+                            />
                           ) : (
                             <span className="text-muted-foreground">No image</span>
                           )}
                         </div>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-primary">{product.name}</span>
-                          <span className="text-[10px] text-muted-foreground uppercase tracking-widest">{product.type || 'product'}</span>
+                        <div className="flex min-w-0 flex-col">
+                          <span className="font-bold text-primary truncate max-w-[220px]" title={product.name}>
+                            {product.name}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                            {product.type || 'product'}
+                          </span>
                         </div>
                       </div>
                     </td>
@@ -347,8 +396,10 @@ export function ProductsManager({
                         {product.status || 'published'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-muted-foreground font-medium">
-                      {product.category?.name || 'Uncategorized'}
+                    <td className="px-6 py-4 text-muted-foreground font-medium max-w-[150px]">
+                      <span className="block truncate" title={product.category?.name || 'Uncategorized'}>
+                        {product.category?.name || 'Uncategorized'}
+                      </span>
                     </td>
                     <td className="px-6 py-4">
                       <SeoScoreBadge score={resolveProductSeoScore(product)} />
@@ -361,10 +412,10 @@ export function ProductsManager({
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
-                        <span className="font-mono font-bold text-primary">{formatPrice(product.price_usd)}</span>
-                        {product.sale_price_usd > 0 && product.sale_price_usd < product.regular_price_usd && (
+                        <span className="font-mono font-bold text-primary">{formatPrice(price.current)}</span>
+                        {price.original && (
                           <span className="text-[10px] text-red-500 line-through opacity-60">
-                            {formatPrice(product.regular_price_usd)}
+                            {formatPrice(price.original)}
                           </span>
                         )}
                       </div>

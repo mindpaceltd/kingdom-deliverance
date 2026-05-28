@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import Image from 'next/image'
 import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -30,15 +29,16 @@ interface ProductCarouselProps {
 
 function ProductThumb({ src, alt, priority = false }: { src?: string; alt: string; priority?: boolean }) {
   const [imageSrc, setImageSrc] = useState(normalizeMediaUrl(src) || '/placeholder.png')
+  useEffect(() => {
+    setImageSrc(normalizeMediaUrl(src) || '/placeholder.png')
+  }, [src])
+
   return (
-    <Image
+    <img
       src={imageSrc}
       alt={alt}
-      fill
-      sizes="(max-width: 640px) 45vw, (max-width: 1024px) 22vw, 18vw"
-      quality={70}
       loading={priority ? 'eager' : 'lazy'}
-      className="object-cover object-top"
+      className="w-full h-full object-cover object-top"
       onError={() => setImageSrc('/placeholder.png')}
     />
   )

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { PlusIcon, PackageIcon, FileIcon } from 'lucide-react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
 import {
   ProductsManager,
   type ProductRow,
@@ -9,16 +10,34 @@ import {
 import { getProductsAdminPage, getProductsAdminStats } from '@/lib/actions/products'
 
 type PageProps = {
-  searchParams?: { page?: string }
+  searchParams?: {
+    page?: string
+    status?: string
+    type?: string
+    category?: string
+    q?: string
+  }
 }
 
 export default async function AdminProductsPage({ searchParams }: PageProps) {
+  const statusFilter = searchParams?.status?.trim() || 'all'
+  const typeFilter = searchParams?.type?.trim() || 'all'
+  const categoryFilter = searchParams?.category?.trim() || 'all'
+  const queryFilter = searchParams?.q?.trim() || ''
   const pageParam = Math.max(1, parseInt(searchParams?.page ?? '1', 10) || 1)
   const pageIndex = pageParam - 1
+  const supabase = createClient()
 
-  const [statsResult, listResult] = await Promise.all([
+  const [statsResult, listResult, categoriesResult] = await Promise.all([
     getProductsAdminStats(),
-    getProductsAdminPage({ page: pageIndex }),
+    getProductsAdminPage({
+      page: pageIndex,
+      status: statusFilter,
+      type: typeFilter,
+      categoryId: categoryFilter,
+      query: queryFilter,
+    }),
+    supabase.from('product_categories').select('id, name').order('name'),
   ])
 
   const stats =
@@ -33,11 +52,19 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
     )
   }
 
+  const filterParams = new URLSearchParams()
+  if (statusFilter !== 'all') filterParams.set('status', statusFilter)
+  if (typeFilter !== 'all') filterParams.set('type', typeFilter)
+  if (categoryFilter !== 'all') filterParams.set('category', categoryFilter)
+  if (queryFilter) filterParams.set('q', queryFilter)
+
   if (listResult.total > 0 && pageParam > listResult.totalPages) {
-    redirect(`/admin/products?page=${listResult.totalPages}`)
+    filterParams.set('page', String(listResult.totalPages))
+    redirect(`/admin/products?${filterParams.toString()}`)
   }
 
   const safePage = Math.min(pageIndex, Math.max(0, listResult.totalPages - 1))
+  const categories = categoriesResult.data ?? []
 
   return (
     <div className="space-y-6">
@@ -90,12 +117,72 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
         </div>
       </div>
 
+      <form className="rounded-xl border bg-card p-4 shadow-sm">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+          <select
+            name="status"
+            defaultValue={statusFilter}
+            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value="all">All statuses</option>
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+          </select>
+
+          <select
+            name="type"
+            defaultValue={typeFilter}
+            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value="all">All product types</option>
+            <option value="digital">Digital</option>
+            <option value="physical">Physical</option>
+          </select>
+
+          <select
+            name="category"
+            defaultValue={categoryFilter}
+            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value="all">All categories</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+
+          <input
+            type="text"
+            name="q"
+            defaultValue={queryFilter}
+            placeholder="Search title..."
+            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+          />
+
+          <div className="flex gap-2">
+            <Button type="submit" variant="outline" className="h-10 flex-1">
+              Filter
+            </Button>
+            <Button asChild type="button" variant="ghost" className="h-10">
+              <Link href="/admin/products">Reset</Link>
+            </Button>
+          </div>
+        </div>
+      </form>
+
       <ProductsManager
         initialProducts={listResult.data as ProductRow[]}
         total={listResult.total}
         page={safePage}
         pageSize={listResult.pageSize}
         totalPages={listResult.totalPages}
+        activeFilters={{
+          status: statusFilter,
+          type: typeFilter,
+          category: categoryFilter,
+          q: queryFilter,
+        }}
       />
     </div>
   )

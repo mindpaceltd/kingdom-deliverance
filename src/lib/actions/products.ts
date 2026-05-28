@@ -55,6 +55,10 @@ export async function getProductsAdminStats(): Promise<
 export async function getProductsAdminPage(options?: {
   page?: number
   pageSize?: number
+  status?: string
+  type?: string
+  categoryId?: string
+  query?: string
 }): Promise<ProductsAdminPageResult | { error: string }> {
   const auth = await requireRoles(ROLES.CONTENT)
   if ('error' in auth) return auth
@@ -63,13 +67,23 @@ export async function getProductsAdminPage(options?: {
   const pageSize = options?.pageSize ?? PRODUCTS_ADMIN_PAGE_SIZE
   const from = page * pageSize
   const to = from + pageSize - 1
+  const status = options?.status?.trim()
+  const type = options?.type?.trim()
+  const categoryId = options?.categoryId?.trim()
+  const query = options?.query?.trim()
 
   const supabase = createClient()
-  const { data, error, count } = await supabase
+  let builder = supabase
     .from('products')
     .select(PRODUCTS_ADMIN_SELECT, { count: 'exact' })
     .order('created_at', { ascending: false })
-    .range(from, to)
+
+  if (status && status !== 'all') builder = builder.eq('status', status)
+  if (type && type !== 'all') builder = builder.eq('type', type)
+  if (categoryId && categoryId !== 'all') builder = builder.eq('category_id', categoryId)
+  if (query) builder = builder.ilike('name', `%${query}%`)
+
+  const { data, error, count } = await builder.range(from, to)
 
   if (error) {
     console.error('[getProductsAdminPage]', error.message)
