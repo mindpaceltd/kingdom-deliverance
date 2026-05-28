@@ -28,6 +28,22 @@ interface ProductCarouselProps {
   viewAllUrl?: string
 }
 
+function ProductThumb({ src, alt, priority = false }: { src?: string; alt: string; priority?: boolean }) {
+  const [imageSrc, setImageSrc] = useState(normalizeMediaUrl(src) || '/placeholder.png')
+  return (
+    <Image
+      src={imageSrc}
+      alt={alt}
+      fill
+      sizes="(max-width: 640px) 45vw, (max-width: 1024px) 22vw, 18vw"
+      quality={70}
+      loading={priority ? 'eager' : 'lazy'}
+      className="object-cover object-top"
+      onError={() => setImageSrc('/placeholder.png')}
+    />
+  )
+}
+
 export function ProductCarousel({
   products,
   badge = 'KDC Store',
@@ -136,15 +152,7 @@ export function ProductCarousel({
                     className="snap-start min-w-[calc((100%-1rem)/2)] sm:min-w-[calc((100%-1rem)/2)] md:min-w-[calc((100%-3rem)/4)] lg:min-w-[calc((100%-4rem)/5)] rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col"
                   >
                     <div className="relative aspect-[4/5] w-full overflow-hidden rounded-t-2xl bg-gray-50">
-                      <Image
-                        src={normalizeMediaUrl(product.image_url) || product.image_url}
-                        alt={product.name}
-                        fill
-                        sizes="(max-width: 640px) 45vw, (max-width: 1024px) 22vw, 18vw"
-                        quality={70}
-                        loading={index < 3 ? 'eager' : 'lazy'}
-                        className="object-cover object-top"
-                      />
+                      <ProductThumb src={product.image_url} alt={product.name} priority={index < 3} />
                       {hasDiscount && (
                         <div className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                           SALE

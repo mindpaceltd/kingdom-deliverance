@@ -2,23 +2,31 @@
 
 import React from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Search, MessageCircle } from 'lucide-react'
+import { Search, MessageCircle, SlidersHorizontal, X } from 'lucide-react'
 
 interface ShopFiltersProps {
   categories: any[]
   productCounts?: Record<string, number>
   totalCount?: number
+  mode?: 'desktop' | 'mobile'
 }
 
-export function ShopFilters({ categories, productCounts = {}, totalCount = 0 }: ShopFiltersProps) {
+export function ShopFilters({
+  categories,
+  productCounts = {},
+  totalCount = 0,
+  mode = 'desktop',
+}: ShopFiltersProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const activeCategory = searchParams.get('category')
   const searchQuery = searchParams.get('search') || ''
   const [search, setSearch] = React.useState(searchQuery)
+  const [mobileOpen, setMobileOpen] = React.useState(false)
 
   const updateFilters = React.useCallback((key: string, value: string | null) => {
     const params = new URLSearchParams(searchParams.toString())
+    params.delete('page')
     if (value) {
       params.set(key, value)
     } else {
@@ -34,8 +42,29 @@ export function ShopFilters({ categories, productCounts = {}, totalCount = 0 }: 
     return () => clearTimeout(timeout)
   }, [search, updateFilters])
 
+  const isMobile = mode === 'mobile'
+  const showBody = !isMobile || mobileOpen
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {isMobile && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-3 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setMobileOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-2 py-1.5 text-sm font-semibold text-gray-800"
+          >
+            <span className="inline-flex items-center gap-2">
+              <SlidersHorizontal className="w-4 h-4" />
+              Filters & Search
+            </span>
+            {mobileOpen ? <X className="w-4 h-4" /> : <span className="text-xs text-gray-500">Open</span>}
+          </button>
+        </div>
+      )}
+
+      {showBody && (
+        <>
       {/* Search */}
       <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-2 shadow-sm">
         <h4 className="text-sm font-bold text-gray-800">Search Products</h4>
@@ -54,7 +83,7 @@ export function ShopFilters({ categories, productCounts = {}, totalCount = 0 }: 
       {/* Categories */}
       <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-2 shadow-sm">
         <h4 className="text-sm font-bold text-gray-800">Categories</h4>
-        <div className="flex flex-col gap-0.5">
+        <div className={`flex flex-col gap-0.5 ${isMobile ? 'max-h-72 overflow-y-auto pr-1' : ''}`}>
           {/* All Products */}
           <button
             onClick={() => updateFilters('category', null)}
@@ -96,6 +125,8 @@ export function ShopFilters({ categories, productCounts = {}, totalCount = 0 }: 
           Contact Us
         </a>
       </div>
+        </>
+      )}
     </div>
   )
 }

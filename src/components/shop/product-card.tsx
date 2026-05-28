@@ -7,10 +7,26 @@ import { useCart } from '@/lib/cart-context'
 import { useCurrency } from '@/lib/currency-context'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
+import { normalizeMediaUrl } from '@/lib/media-url'
 
 interface ProductCardProps {
   product: any
   view?: 'grid' | 'list'
+}
+
+function ProductCardImage({ src, alt, className }: { src?: string | null; alt: string; className: string }) {
+  const normalized = normalizeMediaUrl(src) || '/placeholder.png'
+  return (
+    <img
+      src={normalized}
+      alt={alt}
+      className={className}
+      onError={(e) => {
+        const target = e.currentTarget
+        if (!target.src.endsWith('/placeholder.png')) target.src = '/placeholder.png'
+      }}
+    />
+  )
 }
 
 export function ProductCard({ product, view = 'grid' }: ProductCardProps) {
@@ -44,8 +60,8 @@ export function ProductCard({ product, view = 'grid' }: ProductCardProps) {
     return (
       <div className="group flex bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 h-40 md:h-48">
         <Link href={`/shop/${product.slug}`} className="relative w-32 md:w-48 shrink-0 overflow-hidden bg-gray-50">
-          <img
-            src={product.image_url || '/placeholder.png'}
+          <ProductCardImage
+            src={product.image_url}
             alt={product.name}
             className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
           />
@@ -112,8 +128,8 @@ export function ProductCard({ product, view = 'grid' }: ProductCardProps) {
   return (
     <div className="group flex flex-col bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300">
       <Link href={`/shop/${product.slug}`} className="relative aspect-[4/5] overflow-hidden bg-gray-50 block">
-        <img
-          src={product.image_url || '/placeholder.png'}
+        <ProductCardImage
+          src={product.image_url}
           alt={product.name}
           className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
         />

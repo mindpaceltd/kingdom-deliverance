@@ -2,29 +2,59 @@ import { createClient } from '@/lib/supabase/server'
 import { ShopFilters } from '@/components/shop/shop-filters'
 import { ShopContent } from '@/components/shop/shop-content'
 import { ShoppingBag, Zap, Lock, HeartHandshake, BookOpen } from 'lucide-react'
+import type { Metadata } from 'next'
+import { createSocialImageMetadata } from '@/lib/seo-image-utils'
+import { createCanonicalMetadata } from '@/lib/seo/canonical-utils'
+import { getOrgOgImageUrl, getSiteName } from '@/lib/seo/site-branding'
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
+  const title = 'Shop | Kingdom Deliverance Centre Uganda'
+  const description =
+    'Purchase e-books, sermons, and official Kingdom Deliverance Centre merchandise designed to support your spiritual growth.'
+  const [orgOgImage, siteName] = await Promise.all([getOrgOgImageUrl(), getSiteName()])
+  const socialImage = createSocialImageMetadata(title, description, undefined, 'default', orgOgImage)
   return {
-    title: 'Shop | Kingdom Deliverance Centre Uganda',
-    description: 'Purchase e-books, sermons, and official Kingdom Deliverance Centre merchandise designed to support your spiritual growth.',
+    title,
+    description,
+    ...createCanonicalMetadata('/shop'),
+    openGraph: {
+      title,
+      description,
+      url: 'https://kdcuganda.org/shop',
+      siteName,
+      type: 'website',
+      locale: 'en_UG',
+      images: [socialImage],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [socialImage.url],
+    },
   }
 }
 
 export default async function ShopPage({
   searchParams,
 }: {
-  searchParams: { category?: string; search?: string; sort?: string }
+  searchParams: { category?: string; search?: string; sort?: string; page?: string }
 }) {
   let products: any[] = []
   let categories: any[] = []
+  let totalCount = 0
   let loadError = false
+  const pageSize = 20
+  const currentPage = Math.max(1, Number(searchParams.page || '1') || 1)
+  const from = (currentPage - 1) * pageSize
+  const to = from + pageSize - 1
 
   try {
     const supabase = createClient()
 
     let query = supabase
       .from('products')
-      .select(`*, category:product_categories(id, name, slug)`)
+      .select(`*, category:product_categories(id, name, slug)`, { count: 'exact' })
       .eq('is_active', true)
 
     if (searchParams.category) {
@@ -42,12 +72,12 @@ export default async function ShopPage({
 
     const sortMap: Record<string, { column: string; ascending: boolean }> = {
       'latest': { column: 'created_at', ascending: false },
-      'price-asc': { column: 'price_usd', ascending: true },
-      'price-desc': { column: 'price_usd', ascending: false },
+      'price-asc': { column: 'regular_price_usd', ascending: true },
+      'price-desc': { column: 'regular_price_usd', ascending: false },
       'name': { column: 'name', ascending: true },
     }
     const sort = sortMap[searchParams.sort || 'latest'] || sortMap['latest']
-    query = query.order(sort.column, { ascending: sort.ascending })
+    query = query.order(sort.column, { ascending: sort.ascending }).range(from, to)
 
     const [productsRes, categoriesRes] = await Promise.all([
       query,
@@ -55,6 +85,7 @@ export default async function ShopPage({
     ])
 
     products = productsRes.data || []
+    totalCount = productsRes.count || 0
     categories = categoriesRes.data || []
     loadError = Boolean(productsRes.error || categoriesRes.error)
   } catch {
@@ -127,16 +158,32 @@ export default async function ShopPage({
           <div className="flex flex-col lg:flex-row gap-8">
 
             {/* Sidebar */}
-            <aside className="w-full lg:w-56 xl:w-60 shrink-0">
+            <aside className="hidden lg:block w-full lg:w-56 xl:w-60 shrink-0">
               <ShopFilters
                 categories={categories}
                 productCounts={productCounts}
-                totalCount={products.length}
+                totalCount={totalCount}
+                mode="desktop"
               />
             </aside>
 
             {/* Products */}
-            <ShopContent products={products} />
+            <div className="flex-1 space-y-4">
+              <div className="lg:hidden">
+                <ShopFilters
+                  categories={categories}
+                  productCounts={productCounts}
+                  totalCount={totalCount}
+                  mode="mobile"
+                />
+              </div>
+              <ShopContent
+                products={products}
+                currentPage={currentPage}
+                totalCount={totalCount}
+                pageSize={pageSize}
+              />
+            </div>
           </div>
         </div>
       </section>

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getOrgLogoUrl, getOrgOgImageUrl } from '@/lib/seo/site-branding'
 
 interface OrganizationSchemaProps {
   type?: 'Church' | 'LocalBusiness'
@@ -34,8 +35,10 @@ export async function OrganizationSchema({ type = 'Church' }: OrganizationSchema
   const images = imagesResult.data || []
 
   // Get specific images from database
-  const logoImage = images.find(img => img.type === 'logo')?.url || s.get('site_logo')
-  const ogImage = images.find(img => img.type === 'og_image')?.url
+  const [resolvedLogoUrl, resolvedOgUrl] = await Promise.all([
+    getOrgLogoUrl(),
+    getOrgOgImageUrl(),
+  ])
   const churchImage = images.find(img => img.type === 'church_building')?.url
 
   const organizationData = {
@@ -44,8 +47,8 @@ export async function OrganizationSchema({ type = 'Church' }: OrganizationSchema
     "name": s.get('site_name') || "Kingdom Deliverance Centre Uganda",
     "description": s.get('tagline') || "A Branch of Kingdom Temple — Led by Bishop Climate Wiseman",
     "url": "https://kdcuganda.org",
-    "logo": logoImage || "https://kdcuganda.org/logo.png",
-    "image": ogImage || churchImage || "https://kdcuganda.org/og-image.jpg",
+    "logo": resolvedLogoUrl || "https://kdcuganda.org/logo.png",
+    "image": resolvedOgUrl || churchImage || "https://kdcuganda.org/og-image.jpg",
     "sameAs": [
       s.get('social_facebook') || "https://facebook.com/kdcuganda",
       s.get('social_youtube') || "https://youtube.com/@kdcuganda", 

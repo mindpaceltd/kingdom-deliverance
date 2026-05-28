@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Poppins } from "next/font/google";
 import Script from "next/script";
 import { createClient } from '@/lib/supabase/server';
+import { getOrgOgImageUrl, getSiteName } from '@/lib/seo/site-branding';
 import "./globals.css";
 
 const inter = Inter({ 
@@ -18,12 +19,13 @@ const poppins = Poppins({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const siteName = "Kingdom Deliverance Centre Uganda";
-  const metaTitle = siteName;
+  const defaultSiteName = "Kingdom Deliverance Centre Uganda";
+  const metaTitle = defaultSiteName;
   const metaDesc = "Experience God's love, healing, and deliverance in our vibrant church community in Uganda.";
   const metaKeywords = "church Uganda, Kingdom Deliverance Centre, Bishop Climate Wiseman, Christian ministry, deliverance, healing, Kampala church";
   const siteIcon = "/favicon.ico";
-  const siteOgImage = "https://images.unsplash.com/photo-1493397212122-2b85dda8106b?q=80&w=2071&auto=format&fit=crop";
+  const siteOgImage = await getOrgOgImageUrl();
+  const siteName = await getSiteName();
 
   try {
   const supabase = createClient();
@@ -35,7 +37,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   const s = new Map(settings?.map(i => [i.key, i.value]) || []);
 
-  const resolvedSiteName = s.get('site_name') || siteName;
+  const resolvedSiteName = s.get('site_name') || siteName || defaultSiteName;
   const resolvedMetaTitle = s.get('site_meta_title') || resolvedSiteName;
   const resolvedMetaDesc = s.get('site_meta_description') || metaDesc;
   const resolvedMetaKeywords = s.get('site_meta_keywords') || metaKeywords;
@@ -82,7 +84,7 @@ export async function generateMetadata(): Promise<Metadata> {
     console.error('[generateMetadata] Failed to load site settings:', err)
     return {
       metadataBase: new URL('https://kdcuganda.org'),
-      title: { default: metaTitle, template: `%s | ${siteName}` },
+      title: { default: metaTitle, template: `%s | ${siteName || defaultSiteName}` },
       description: metaDesc,
       keywords: metaKeywords,
       icons: { icon: siteIcon, shortcut: siteIcon, apple: siteIcon },
@@ -92,8 +94,8 @@ export async function generateMetadata(): Promise<Metadata> {
         url: "https://kdcuganda.org",
         title: metaTitle,
         description: metaDesc,
-        siteName,
-        images: [{ url: siteOgImage, width: 1200, height: 630, alt: siteName }],
+        siteName: siteName || defaultSiteName,
+        images: [{ url: siteOgImage, width: 1200, height: 630, alt: siteName || defaultSiteName }],
       },
       twitter: {
         card: "summary_large_image",

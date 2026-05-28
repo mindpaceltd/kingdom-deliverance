@@ -10,6 +10,7 @@ import { FormatSelector } from '@/components/shop/format-selector'
 import { createSocialImageMetadata, stripHtmlExcerpt } from '@/lib/seo-image-utils'
 import { createCanonicalMetadata } from '@/lib/seo/canonical-utils'
 import { getOrgOgImageUrl, getSiteName } from '@/lib/seo/site-branding'
+import { normalizeMediaUrl } from '@/lib/media-url'
 import { ProductPrice } from '@/components/shop/product-price'
 import { ProductViewTracker } from '@/components/shop/product-view-tracker'
 import type { Metadata } from 'next'
@@ -311,7 +312,15 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
                   return (
                     <Link key={p.id} href={`/shop/${p.slug}`} className="block flex flex-col group bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-all">
                       <div className="relative aspect-square overflow-hidden bg-gray-100">
-                        <img src={p.image_url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <img
+                          src={normalizeMediaUrl(p.image_url) || '/placeholder.png'}
+                          alt={p.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            const target = e.currentTarget
+                            if (!target.src.endsWith('/placeholder.png')) target.src = '/placeholder.png'
+                          }}
+                        />
                         {pHasDiscount && (
                           <span className="absolute top-2 left-2 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">SALE</span>
                         )}

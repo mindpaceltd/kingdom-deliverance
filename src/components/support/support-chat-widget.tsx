@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import {
+  getSupportContactPrefill,
   initVisitorSupportChat,
   resumeVisitorSupportChat,
   sendVisitorSupportMessage,
@@ -36,6 +37,7 @@ export function SupportChatWidget() {
   const [formError, setFormError] = React.useState<string | null>(null)
   const [started, setStarted] = React.useState(false)
   const [unread, setUnread] = React.useState(0)
+  const [prefillLoaded, setPrefillLoaded] = React.useState(false)
   const bottomRef = React.useRef<HTMLDivElement>(null)
 
   const scrollToBottom = React.useCallback(() => {
@@ -80,6 +82,16 @@ export function SupportChatWidget() {
 
   async function handleOpen() {
     setOpen(true)
+    if (!prefillLoaded) {
+      const prefill = await getSupportContactPrefill()
+      setName((prev) => (prev.trim() ? prev : prefill.name ?? ''))
+      setEmail((prev) => (prev.trim() ? prev : prefill.email ?? ''))
+      setPhone((prev) => (prev.trim() ? prev : prefill.phone ?? ''))
+      if (!email.trim() && !phone.trim() && prefill.phone) {
+        setContactMethod('phone')
+      }
+      setPrefillLoaded(true)
+    }
     if (!started) {
       await tryResumeSession()
     }

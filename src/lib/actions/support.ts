@@ -40,6 +40,37 @@ function setVisitorCookie(token: string) {
   })
 }
 
+export async function getSupportContactPrefill(): Promise<{
+  name?: string
+  email?: string
+  phone?: string
+}> {
+  const supabase = createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return {}
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('name, phone')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  const fullName =
+    (profile?.name as string | null | undefined)?.trim() ||
+    (user.user_metadata?.full_name as string | undefined)?.trim() ||
+    undefined
+  const email = user.email?.trim() || undefined
+  const phone =
+    (profile?.phone as string | null | undefined)?.trim() ||
+    (user.user_metadata?.phone as string | undefined)?.trim() ||
+    undefined
+
+  return { name: fullName, email, phone }
+}
+
 async function loadSupportBotFacts(
   admin: ReturnType<typeof createAdminClient>
 ): Promise<SupportBotFacts> {
