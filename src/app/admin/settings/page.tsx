@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { SettingsForm } from '@/components/admin/settings/settings-form'
 import { CHURCH_SERVICE_TIMES_TEXT } from '@/lib/church-service-times'
+import { DEFAULT_YOUTUBE_CHANNEL_ID, DEFAULT_YOUTUBE_CHANNEL_URL } from '@/lib/youtube-live'
 import type { SiteSetting } from '@/lib/types'
 
 const SETTINGS_KEYS = [
@@ -11,6 +12,7 @@ const SETTINGS_KEYS = [
   'address',
   'facebook_url',
   'youtube_url',
+  'youtube_channel_id',
   'twitter_url',
   'instagram_url',
   'service_times',
@@ -61,6 +63,8 @@ const KDC_DEFAULTS: Partial<Record<(typeof SETTINGS_KEYS)[number], string>> = {
   vision: 'A community that is wealthy, healthy, and wise',
   address: 'Kosovo–Lungujja, Kampala, Uganda',
   service_times: CHURCH_SERVICE_TIMES_TEXT,
+  youtube_url: DEFAULT_YOUTUBE_CHANNEL_URL,
+  youtube_channel_id: DEFAULT_YOUTUBE_CHANNEL_ID,
 }
 
 export default async function AdminSettingsPage() {

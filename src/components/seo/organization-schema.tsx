@@ -51,7 +51,7 @@ export async function OrganizationSchema({ type = 'Church' }: OrganizationSchema
     "image": resolvedOgUrl || churchImage || "https://kdcuganda.org/og-image.jpg",
     "sameAs": [
       s.get('social_facebook') || "https://facebook.com/kdcuganda",
-      s.get('social_youtube') || "https://youtube.com/@kdcuganda", 
+      s.get('social_youtube') || "https://youtube.com/@bishopclimateministries",
       s.get('social_instagram') || "https://instagram.com/kdcuganda"
     ].filter(Boolean),
     "contactPoint": {

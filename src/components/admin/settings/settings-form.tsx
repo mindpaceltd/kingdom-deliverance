@@ -16,7 +16,8 @@ import {
   Trash2Icon,
   Share2Icon,
   ZapIcon,
-  QrCodeIcon
+  QrCodeIcon,
+  Video,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -659,6 +660,42 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                           Get PageSpeed API Key →
                         </a>
                       </p>
+                   </div>
+                </div>
+             </div>
+
+             <div className="space-y-4 p-5 rounded-xl border border-border bg-muted/10">
+                <div className="flex items-center gap-3">
+                   <div className="size-8 rounded-lg bg-red-600 flex items-center justify-center text-white"><Video className="size-4" /></div>
+                   <div>
+                      <h3 className="font-bold">YouTube Live</h3>
+                      <p className="text-xs text-muted-foreground">Powers the Watch Live page with your YouTube channel stream</p>
+                   </div>
+                </div>
+                <div className="grid gap-4 pt-2 sm:grid-cols-2">
+                   <div className="space-y-1.5 sm:col-span-2">
+                      <Label className="text-xs">YouTube Channel URL</Label>
+                      <Input
+                        value={values.youtube_url || ''}
+                        onChange={(e) => handleChange('youtube_url', e.target.value)}
+                        placeholder="https://www.youtube.com/@bishopclimateministries"
+                      />
+                   </div>
+                   <div className="space-y-1.5">
+                      <Label className="text-xs">YouTube Channel ID</Label>
+                      <Input
+                        value={values.youtube_channel_id || ''}
+                        onChange={(e) => handleChange('youtube_channel_id', e.target.value)}
+                        placeholder="UCxxxxxxxxxxxxxxxxxxxxxx"
+                      />
+                   </div>
+                   <div className="space-y-1.5">
+                      <Label className="text-xs">Custom Embed URL (optional)</Label>
+                      <Input
+                        value={values.live_stream_url || ''}
+                        onChange={(e) => handleChange('live_stream_url', e.target.value)}
+                        placeholder="https://www.youtube.com/embed/live_stream?channel=..."
+                      />
                    </div>
                 </div>
              </div>
