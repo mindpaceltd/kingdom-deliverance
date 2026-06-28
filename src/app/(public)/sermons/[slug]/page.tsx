@@ -122,22 +122,34 @@ export default async function SermonDetailPage({ params }: Props) {
         orgLogoUrl={orgLogoUrl}
       />
     <div className="flex flex-col">
-      <section className="relative w-full min-h-[38vh] md:min-h-[44vh] flex items-center text-white bg-primary overflow-hidden">
+      <section className="relative bg-primary text-white overflow-hidden md:min-h-[44vh] md:flex md:items-center">
         {sermon.thumbnail_url && (
-          <div className="absolute inset-0 w-full h-full" aria-hidden>
-            <Image
-              src={sermon.thumbnail_url}
-              alt=""
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover object-[left_center] md:object-center scale-110 md:scale-100 blur-sm md:blur-0"
-            />
-            {/* Solid overlay on mobile hides baked-in thumbnail text; softer gradient on larger screens */}
-            <div className="absolute inset-0 bg-primary/92 md:bg-primary/80 lg:bg-gradient-to-t lg:from-primary lg:from-25% lg:via-primary/70 lg:to-primary/35" />
-          </div>
+          <>
+            <div className="relative mt-20 w-full aspect-video md:hidden">
+              <Image
+                src={sermon.thumbnail_url}
+                alt=""
+                fill
+                priority
+                sizes="100vw"
+                className="object-cover object-left-top"
+              />
+              <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-primary to-transparent" />
+            </div>
+            <div className="absolute inset-0 hidden md:block" aria-hidden>
+              <Image
+                src={sermon.thumbnail_url}
+                alt=""
+                fill
+                priority
+                sizes="100vw"
+                className="object-cover object-center"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-primary from-25% via-primary/70 to-primary/35" />
+            </div>
+          </>
         )}
-        <div className="relative z-10 container px-4 max-w-4xl mx-auto text-center flex flex-col items-center py-16 md:py-24">
+        <div className={`relative z-10 container px-4 max-w-4xl mx-auto text-center flex flex-col items-center py-8 md:py-24 ${sermon.thumbnail_url ? "" : "mt-20 md:mt-0"}`}>
           <Link href="/sermons" className="inline-flex items-center gap-2 text-white/60 hover:text-accent text-sm mb-8 transition-colors">
             <ArrowLeft className="w-4 h-4" /> All Sermons
           </Link>
