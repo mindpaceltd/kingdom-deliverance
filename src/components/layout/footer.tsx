@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MapPin, Mail, Phone, Heart, ArrowRight, Globe } from "lucide-react";
 import { IconFacebook, IconInstagram, IconYoutube, IconTwitter, IconLinkedin, IconTiktok } from "@/components/icons/social-inline";
 import { createClient } from '@/lib/supabase/server';
+import { CHURCH_SERVICE_FOOTER } from '@/lib/church-service-times';
 import { normalizeExternalHref } from '@/lib/utils/external-url';
 
 const platformIcons: Record<string, any> = {
@@ -182,12 +183,8 @@ export async function Footer() {
             <div className="space-y-3">
               <p className="text-xs font-bold uppercase tracking-widest text-accent">Service Times</p>
               <div className="grid grid-cols-1 gap-2">
-                {[
-                  { day: "Sunday", time: "10:00 AM (EAT)" },
-                  { day: "Wednesday", time: "6:00 PM (EAT)" },
-                  { day: "Friday", time: "6:00 PM (EAT)" },
-                ].map((s) => (
-                  <div key={s.day} className="flex items-center justify-between text-sm border-b border-white/8 pb-2">
+                {CHURCH_SERVICE_FOOTER.map((s) => (
+                  <div key={`${s.day}-${s.time}`} className="flex items-center justify-between text-sm border-b border-white/8 pb-2">
                     <span className="text-white/70 font-medium">{s.day}</span>
                     <span className="text-accent text-xs font-semibold">{s.time}</span>
                   </div>

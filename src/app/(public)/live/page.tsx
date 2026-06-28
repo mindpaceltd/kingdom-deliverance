@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { buttonVariants } from "@/components/ui/button";
 import { Radio, Video, Globe, ExternalLink } from "lucide-react";
+import { CHURCH_LIVE_SCHEDULE } from "@/lib/church-service-times";
 
 export const metadata: Metadata = {
   title: "Live Stream | Kingdom Deliverance Centre Uganda",
@@ -50,12 +51,8 @@ export default function LivePage() {
             <h2 className="font-serif text-3xl font-bold text-primary">Service Schedule</h2>
             <p className="text-primary/70 mt-2">We go live for every service. Set a reminder so you never miss a moment.</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {[
-              { day: "Sunday", time: "10:00 AM (EAT)", label: "Celebration Service" },
-              { day: "Wednesday", time: "6:00 PM (EAT)", label: "Bible Study" },
-              { day: "Friday", time: "6:00 PM (EAT)", label: "Prayer Meeting" },
-            ].map((s) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {CHURCH_LIVE_SCHEDULE.map((s) => (
               <div key={`${s.day}-${s.time}`} className="bg-muted rounded-2xl p-6 space-y-2">
                 <div className="w-10 h-10 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-3">
                   <Radio className="w-5 h-5 text-accent" />

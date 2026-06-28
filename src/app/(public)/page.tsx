@@ -170,7 +170,7 @@ export default async function Home() {
     secondaryCtaLabel: home.heroSecondaryCtaLabel || '',
     secondaryCtaUrl: home.heroSecondaryCtaUrl || '/live',
     joinUsLabel: home.joinUsLabel || '',
-    serviceSlots: (home.serviceSlots ?? []).slice(0, 3),
+    serviceSlots: (home.serviceSlots ?? []).slice(0, 4),
   };
 
   const heroSrc = getHeroImageSrc(heroImageUrl);

@@ -1,4 +1,5 @@
 import type { CmsPageContent } from '@/lib/cms/page-content'
+import { CHURCH_SERVICE_TIMES_DISPLAY } from '@/lib/church-service-times'
 import {
   getFaqSystemPageContent,
   getHomeSystemPageContent,
@@ -133,8 +134,7 @@ export const SYSTEM_PAGE_DEFINITIONS: SystemPageDefinition[] = [
         primaryPhone: '+256 700 000 000',
         additionalPhones: [],
         email: 'info@kdcuganda.org',
-        serviceTimes:
-          'Sunday: 10:00 AM (EAT)\nWednesday: 6:00 PM (EAT)\nFriday: 6:00 PM (EAT)',
+        serviceTimes: CHURCH_SERVICE_TIMES_DISPLAY,
         mapEmbedUrl:
           'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.7573!2d32.5825!3d0.3136!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x177dbc0f9d74b39b%3A0x4099d33b10770b2!2sKingdom+Deliverance+Centre+Uganda!5e0!3m2!1sen!2sug!4v1714000000000',
         mapLinkUrl: 'https://maps.app.goo.gl/RrBd8tDxEDky8D6N7',

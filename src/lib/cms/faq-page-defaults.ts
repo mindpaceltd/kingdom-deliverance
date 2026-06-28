@@ -1,4 +1,5 @@
 import type { CmsFaqDetails, CmsFaqSection } from '@/lib/cms/page-content'
+import { CHURCH_SERVICE_TIMES_FAQ } from '@/lib/church-service-times'
 
 const FALLBACK_FAQ_SECTIONS: CmsFaqSection[] = [
   {
@@ -6,8 +7,7 @@ const FALLBACK_FAQ_SECTIONS: CmsFaqSection[] = [
     items: [
       {
         question: 'What are your regular service times?',
-        answer:
-          'Our regular services are Sunday at 10:00 AM (EAT), Wednesday at 6:00 PM (EAT), and Friday at 6:00 PM (EAT). For any special service updates, please check the Contact page or announcements on our social channels.',
+        answer: CHURCH_SERVICE_TIMES_FAQ,
       },
       {
         question: 'Where is Kingdom Deliverance Centre Uganda located?',

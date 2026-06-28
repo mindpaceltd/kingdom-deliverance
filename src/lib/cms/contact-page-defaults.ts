@@ -1,4 +1,5 @@
 import { parseStringArray } from '@/lib/settings-json'
+import { CHURCH_SERVICE_TIMES_DISPLAY } from '@/lib/church-service-times'
 import { parsePageContent, type CmsContactDetails, type CmsPageHero } from '@/lib/cms/page-content'
 import { SYSTEM_PAGE_DEFINITIONS } from '@/lib/cms/system-pages'
 
@@ -88,7 +89,7 @@ export function resolveContactPage(
       'info@kdcuganda.org',
     serviceTimes:
       pickString(contact.serviceTimes, defaults.serviceTimes) ??
-      'Sunday: 10:00 AM (EAT)\nWednesday: 6:00 PM (EAT)\nFriday: 6:00 PM (EAT)',
+      CHURCH_SERVICE_TIMES_DISPLAY,
     mapEmbedUrl:
       pickString(contact.mapEmbedUrl, defaults.mapEmbedUrl) ??
       'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.7573!2d32.5825!3d0.3136!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x177dbc0f9d74b39b%3A0x4099d33b10770b2!2sKingdom+Deliverance+Centre+Uganda!5e0!3m2!1sen!2sug!4v1714000000000',

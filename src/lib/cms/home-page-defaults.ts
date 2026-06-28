@@ -1,4 +1,5 @@
 import type { CmsHomeDetails } from '@/lib/cms/page-content'
+import { CHURCH_SERVICE_SLOTS } from '@/lib/church-service-times'
 
 const DEFAULT_HOME_DETAILS: CmsHomeDetails = {
   heroWelcomeText: 'Welcome to Kingdom Deliverance Centre Uganda',
@@ -11,11 +12,7 @@ const DEFAULT_HOME_DETAILS: CmsHomeDetails = {
   heroSecondaryCtaLabel: 'Watch Live',
   heroSecondaryCtaUrl: '/live',
   joinUsLabel: 'Join Us This Week',
-  serviceSlots: [
-    { label: 'Sunday Service', time: '10:00 AM (EAT)' },
-    { label: 'Bible Study', time: 'Wed 6:00 PM (EAT)' },
-    { label: 'Prayer Meeting', time: 'Fri 6:00 PM (EAT)' },
-  ],
+  serviceSlots: CHURCH_SERVICE_SLOTS.map((slot) => ({ ...slot })),
   missionBadge: 'Our Mission',
   missionTitle: 'To Set the Captives Free',
   missionBody:

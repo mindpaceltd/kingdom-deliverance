@@ -110,24 +110,12 @@ export function HeroSectionContent({
                 {joinUsLabel}
               </span>
             </div>
-            <div className="grid grid-cols-1 gap-3 divide-y divide-white/10 text-sm sm:grid-cols-3 sm:gap-4 sm:divide-y-0">
-              {serviceSlots.slice(0, 3).map((slot, idx) => (
+            <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4 sm:gap-4">
+              {serviceSlots.slice(0, 4).map((slot, idx) => (
                 <div
                   key={`${slot.label}-${idx}`}
-                  className={`space-y-0.5 text-center ${
-                    idx === 0
-                      ? 'pb-2.5 sm:pb-0'
-                      : idx === 1
-                        ? 'relative py-2.5 sm:py-0'
-                        : 'pt-2.5 sm:pt-0'
-                  }`}
+                  className="space-y-0.5 text-center"
                 >
-                  {idx === 1 && (
-                    <>
-                      <div className="absolute left-0 top-1/2 hidden h-8 w-px -translate-y-1/2 bg-white/15 sm:block" />
-                      <div className="absolute right-0 top-1/2 hidden h-8 w-px -translate-y-1/2 bg-white/15 sm:block" />
-                    </>
-                  )}
                   <div className="text-sm font-semibold text-white">{slot.label}</div>
                   <div className="text-xs text-white/60">{slot.time}</div>
                 </div>

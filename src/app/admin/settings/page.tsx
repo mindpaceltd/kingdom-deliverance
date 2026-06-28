@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { SettingsForm } from '@/components/admin/settings/settings-form'
+import { CHURCH_SERVICE_TIMES_TEXT } from '@/lib/church-service-times'
 import type { SiteSetting } from '@/lib/types'
 
 const SETTINGS_KEYS = [
@@ -59,8 +60,7 @@ const KDC_DEFAULTS: Partial<Record<(typeof SETTINGS_KEYS)[number], string>> = {
   mission: 'To set the captives free through the power of the Gospel',
   vision: 'A community that is wealthy, healthy, and wise',
   address: 'Kosovo–Lungujja, Kampala, Uganda',
-  service_times:
-    'Sunday Worship — 10:00 AM\nWednesday Bible Study — 6:00 PM\nFriday Fire Service — 6:00 PM',
+  service_times: CHURCH_SERVICE_TIMES_TEXT,
 }
 
 export default async function AdminSettingsPage() {

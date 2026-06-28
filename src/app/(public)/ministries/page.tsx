@@ -34,12 +34,12 @@ const staticMinistries = [
   {
     id: "5", slug: "children", name: "Children's Church", icon: <Star className="w-8 h-8 text-accent" />,
     description: "A vibrant, fun, and Spirit-filled environment where children learn about Jesus, grow in faith, and discover their identity in Christ.",
-    leader: "Sister Ruth Apio", meeting_time: "Sundays 10:00 AM (EAT)",
+    leader: "Sister Ruth Apio", meeting_time: "Sundays 8:00 AM – 10:00 AM (EAT)",
   },
   {
     id: "6", slug: "bible-study", name: "Bible Study", icon: <BookOpen className="w-8 h-8 text-accent" />,
     description: "Deep, systematic teaching of the Word of God to equip believers with sound doctrine and practical application for daily life.",
-    leader: "Bishop Climate Wiseman", meeting_time: "Wednesdays 6:00 PM (EAT)",
+    leader: "Bishop Climate Wiseman", meeting_time: "Wednesdays 9:00 PM (EAT)",
   },
   {
     id: "7", slug: "outreach", name: "Outreach & Missions", icon: <Globe className="w-8 h-8 text-accent" />,
