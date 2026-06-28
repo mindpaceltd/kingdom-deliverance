@@ -122,20 +122,22 @@ export default async function SermonDetailPage({ params }: Props) {
         orgLogoUrl={orgLogoUrl}
       />
     <div className="flex flex-col">
-      <section className="relative py-24 text-white bg-primary overflow-hidden">
+      <section className="relative w-full min-h-[38vh] md:min-h-[44vh] flex items-center text-white bg-primary overflow-hidden">
         {sermon.thumbnail_url && (
-          <div className="absolute inset-0 z-0">
-            <Image 
+          <div className="absolute inset-0 w-full h-full" aria-hidden>
+            <Image
               src={sermon.thumbnail_url}
               alt=""
               fill
-              className="object-cover object-center opacity-50"
               priority
+              sizes="100vw"
+              className="object-cover object-[left_center] md:object-center scale-110 md:scale-100 blur-sm md:blur-0"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/50 to-transparent" />
+            {/* Solid overlay on mobile hides baked-in thumbnail text; softer gradient on larger screens */}
+            <div className="absolute inset-0 bg-primary/92 md:bg-primary/80 lg:bg-gradient-to-t lg:from-primary lg:from-25% lg:via-primary/70 lg:to-primary/35" />
           </div>
         )}
-        <div className="relative z-10 container px-4 max-w-4xl mx-auto text-center flex flex-col items-center">
+        <div className="relative z-10 container px-4 max-w-4xl mx-auto text-center flex flex-col items-center py-16 md:py-24">
           <Link href="/sermons" className="inline-flex items-center gap-2 text-white/60 hover:text-accent text-sm mb-8 transition-colors">
             <ArrowLeft className="w-4 h-4" /> All Sermons
           </Link>
