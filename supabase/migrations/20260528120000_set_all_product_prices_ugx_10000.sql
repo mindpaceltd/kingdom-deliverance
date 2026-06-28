@@ -6,9 +6,18 @@ UPDATE public.products
 SET
   regular_price_usd = 10000.0 / 3800.0,
   sale_price_usd = 0,
-  price_usd = 10000.0 / 3800.0,
-  updated_at = NOW();
+  price_usd = 10000.0 / 3800.0;
 
--- Clear variant price modifiers so every variant matches the base price.
-UPDATE public.product_variants
-SET price_modifier = 0;
+-- Clear variant price modifiers when the column exists.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'product_variants'
+      AND column_name = 'price_modifier'
+  ) THEN
+    UPDATE public.product_variants SET price_modifier = 0;
+  END IF;
+END $$;
