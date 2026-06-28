@@ -11,7 +11,7 @@ import {
 import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from '@/lib/supabase/server';
-import { PostCard } from "@/components/content/post-card";
+import { PostsCarousel } from "@/components/home/posts-carousel";
 import { EventCard } from "@/components/content/event-card";
 import { TestimoniesSection } from "@/components/home/testimonies-section";
 import { ProductCarousel } from "@/components/home/product-carousel";
@@ -123,7 +123,7 @@ export default async function Home() {
         .select("*, profiles(name, avatar_url)")
         .eq("status", "published")
         .order("published_at", { ascending: false })
-        .limit(3),
+        .limit(12),
       supabase
         .from("products")
         .select("*")
@@ -414,29 +414,13 @@ export default async function Home() {
 
       {/* Latest Posts Section */}
       {latestPosts.length > 0 && (
-        <section className="py-12 bg-gray-50/80">
-          <div className="container px-4">
-            <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-              <div className="space-y-2">
-                <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-accent">
-                  <BookOpen className="h-3.5 w-3.5" />
-                  {home.postsBadge}
-                </div>
-                <h2 className="text-3xl font-bold font-serif text-primary md:text-4xl">{home.postsTitle}</h2>
-              </div>
-              <Button asChild variant="outline" className="self-start border-primary/20 text-primary rounded-full px-6">
-                <Link href={home.postsViewAllUrl || "/blog"} className="flex items-center gap-2">
-                  {home.postsViewAllLabel} <ArrowRight className="w-4 h-4" />
-                </Link>
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {latestPosts.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))}
-            </div>
-          </div>
-        </section>
+        <PostsCarousel
+          posts={latestPosts}
+          badge={home.postsBadge}
+          title={home.postsTitle}
+          viewAllLabel={home.postsViewAllLabel}
+          viewAllUrl={home.postsViewAllUrl || "/blog"}
+        />
       )}
 
       {/* CTA Banner - Fire Service */}
