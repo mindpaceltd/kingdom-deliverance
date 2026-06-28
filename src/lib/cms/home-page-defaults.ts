@@ -108,7 +108,7 @@ const DEFAULT_HOME_DETAILS: CmsHomeDetails = {
   testimoniesCtaBody: 'Share what God has done in your life to encourage others.',
   testimoniesCtaLabel: 'Submit Your Testimony',
   testimoniesCtaUrl: '/testimonies',
-  fireCtaTitle: '🔥 The Fire Service: Friday, May 29, 2026 🔥',
+  fireCtaTitle: '🔥 The Fire Service 🔥',
   fireCtaBody:
     'There is a matter in your life that will not respond until it is brought into the place of fire. Submit your case to the Fire Altar tonight.',
   fireCtaLabel: 'Submit Your Fire List Now',

@@ -655,10 +655,13 @@ export function HomePageEditorFields({
 
       <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Fire service CTA banner</h2>
+        <p className="text-sm text-muted-foreground">
+          The Fire Service date in the banner updates automatically to the last Friday of each month.
+        </p>
         <Input
           value={home.fireCtaTitle ?? ''}
           onChange={(e) => patchHome({ fireCtaTitle: e.target.value })}
-          placeholder="Banner title"
+          placeholder="🔥 The Fire Service 🔥"
           disabled={disabled}
         />
         <Textarea

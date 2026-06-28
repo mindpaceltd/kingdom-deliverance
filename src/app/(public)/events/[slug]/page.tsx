@@ -10,6 +10,7 @@ import { getOrgLogoUrl, getOrgOgImageUrl, getSiteName } from "@/lib/seo/site-bra
 import { BreadcrumbSchema, generateBreadcrumbs } from "@/components/seo/breadcrumb-schema";
 import { EventSchema } from "@/components/seo/event-schema";
 import { incrementEventViews } from "@/lib/actions/event-views";
+import { withFireServiceSchedule } from "@/lib/events/resolve-fire-service-event";
 import { EventImage } from "@/components/content/event-image";
 import { ShareButtons } from "@/components/content/share-buttons";
 import { formatSafeDate, normalizeMediaUrl, toValidDate } from "@/lib/media-url";
@@ -99,33 +100,35 @@ export default async function EventDetailPage({ params }: Props) {
 
   if (!event) notFound();
 
-  incrementEventViews(event.id).catch(console.error);
+  const displayEvent = withFireServiceSchedule(event);
 
-  const imageUrl = normalizeMediaUrl(event.image_url)
-  const statusLabel = eventStatusLabel(event)
+  incrementEventViews(displayEvent.id).catch(console.error);
+
+  const imageUrl = normalizeMediaUrl(displayEvent.image_url)
+  const statusLabel = eventStatusLabel(displayEvent)
   const excerpt =
-    event.meta_description?.trim() ||
-    stripHtmlExcerpt(event.description, 200) ||
+    displayEvent.meta_description?.trim() ||
+    stripHtmlExcerpt(displayEvent.description, 200) ||
     ""
-  const eventUrl = `https://kdcuganda.org/events/${event.slug}`
+  const eventUrl = `https://kdcuganda.org/events/${displayEvent.slug}`
   const shareImage = createSocialImageMetadata(
-    event.meta_title || event.title,
-    excerpt || stripHtmlExcerpt(event.description, 160) || event.title,
-    event.image_url,
+    displayEvent.meta_title || displayEvent.title,
+    excerpt || stripHtmlExcerpt(displayEvent.description, 160) || displayEvent.title,
+    displayEvent.image_url,
     "event",
     orgOgImage
   )
 
   return (
     <>
-      <BreadcrumbSchema items={generateBreadcrumbs('event', event.title, event.slug)} />
+      <BreadcrumbSchema items={generateBreadcrumbs('event', displayEvent.title, displayEvent.slug)} />
       <EventSchema
-        title={event.meta_title || event.title}
-        description={excerpt || event.title}
-        slug={event.slug}
-        startDate={event.date}
-        endDate={event.end_date}
-        location={event.location}
+        title={displayEvent.meta_title || displayEvent.title}
+        description={excerpt || displayEvent.title}
+        slug={displayEvent.slug}
+        startDate={displayEvent.date}
+        endDate={displayEvent.end_date}
+        location={displayEvent.location}
         imageUrl={shareImage.url}
         orgName={siteName}
         orgLogoUrl={orgLogoUrl}
@@ -150,15 +153,15 @@ export default async function EventDetailPage({ params }: Props) {
             <div className="inline-block mb-4 text-xs font-bold tracking-widest uppercase text-accent border border-accent/50 rounded-full px-3 py-1">
               {statusLabel}
             </div>
-            <h1 className="font-serif text-4xl md:text-5xl font-bold leading-tight">{event.title}</h1>
+            <h1 className="font-serif text-4xl md:text-5xl font-bold leading-tight">{displayEvent.title}</h1>
             <div className="flex flex-wrap gap-6 mt-6 text-white/70 text-sm">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-accent" />
-                {formatSafeDate(event.date, "EEEE, MMMM d, yyyy")}
+                {formatSafeDate(displayEvent.date, "EEEE, MMMM d, yyyy")}
               </div>
-              {event.location && (
+              {displayEvent.location && (
                 <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-accent" />{event.location}
+                  <MapPin className="w-4 h-4 text-accent" />{displayEvent.location}
                 </div>
               )}
             </div>
@@ -181,24 +184,24 @@ export default async function EventDetailPage({ params }: Props) {
                 {excerpt && (
                   <p className="text-lg font-medium leading-relaxed text-primary/90">{excerpt}</p>
                 )}
-                {event.description && event.description !== excerpt && (
-                  <p className="text-primary/80 leading-relaxed text-lg">{event.description}</p>
+                {displayEvent.description && displayEvent.description !== excerpt && (
+                  <p className="text-primary/80 leading-relaxed text-lg">{displayEvent.description}</p>
                 )}
-                {!event.description && !excerpt && (
+                {!displayEvent.description && !excerpt && (
                   <p className="text-primary/70 leading-relaxed">
                     Join us at {siteName} for this special gathering.
                   </p>
                 )}
-                {event.content && (
-                  <div className="prose prose-purple max-w-none" dangerouslySetInnerHTML={{ __html: event.content }} />
+                {displayEvent.content && (
+                  <div className="prose prose-purple max-w-none" dangerouslySetInnerHTML={{ __html: displayEvent.content }} />
                 )}
               </div>
               <div className="space-y-6">
                 <div className="rounded-2xl border border-primary/10 bg-muted/50 p-5">
                   <ShareButtons
                     url={eventUrl}
-                    title={event.meta_title || event.title}
-                    text={excerpt || event.title}
+                    title={displayEvent.meta_title || displayEvent.title}
+                    text={excerpt || displayEvent.title}
                     label="Share"
                     className="flex-col items-start gap-2"
                   />
@@ -210,26 +213,26 @@ export default async function EventDetailPage({ params }: Props) {
                       <Calendar className="w-4 h-4 text-accent mt-0.5 shrink-0" />
                       <div>
                         <p className="font-semibold text-primary">Date</p>
-                        <p>{formatSafeDate(event.date, "MMMM d, yyyy • h:mm a")}</p>
-                        {event.end_date && (
-                          <p>Ends: {formatSafeDate(event.end_date, "MMMM d, yyyy • h:mm a")}</p>
+                        <p>{formatSafeDate(displayEvent.date, "MMMM d, yyyy • h:mm a")}</p>
+                        {displayEvent.end_date && (
+                          <p>Ends: {formatSafeDate(displayEvent.end_date, "MMMM d, yyyy • h:mm a")}</p>
                         )}
                       </div>
                     </div>
-                    {event.location && (
+                    {displayEvent.location && (
                       <div className="flex items-start gap-3 text-primary/70">
                         <MapPin className="w-4 h-4 text-accent mt-0.5 shrink-0" />
                         <div>
                           <p className="font-semibold text-primary">Location</p>
-                          <p>{event.location}</p>
+                          <p>{displayEvent.location}</p>
                         </div>
                       </div>
                     )}
                   </div>
                 </div>
-                {event.registration_url && (
+                {displayEvent.registration_url && (
                   <Button asChild className="w-full bg-accent text-primary hover:bg-accent/90">
-                    <a href={event.registration_url} target="_blank" rel="noopener noreferrer">
+                    <a href={displayEvent.registration_url} target="_blank" rel="noopener noreferrer">
                       Register Now <ExternalLink className="w-4 h-4 ml-2" />
                     </a>
                   </Button>

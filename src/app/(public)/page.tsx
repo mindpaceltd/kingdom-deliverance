@@ -18,6 +18,8 @@ import { ProductCarousel } from "@/components/home/product-carousel";
 import type { Post, Sermon, Event } from "@/lib/types";
 import { getPublishedPageBySlug } from "@/lib/cms/get-published-page";
 import { resolveHomeDetails } from "@/lib/cms/home-page-defaults";
+import { resolveFireServiceCtaTitle } from "@/lib/fire-service-schedule";
+import { withFireServiceSchedules } from "@/lib/events/resolve-fire-service-event";
 import { getOrgOgImageUrl, getSiteName } from "@/lib/seo/site-branding";
 import { normalizeMediaUrl } from "@/lib/media-url";
 import { createSocialImageMetadata } from "@/lib/seo-image-utils";
@@ -137,7 +139,7 @@ export default async function Home() {
     ]);
 
   const heroImageUrl = homeContent?.hero?.imageUrl?.trim() || heroRes.data?.url;
-  let upcomingEvents: Event[] = featuredEventsRes.data ?? [];
+  let upcomingEvents: Event[] = withFireServiceSchedules(featuredEventsRes.data ?? []);
 
   // Fallback: if no featured events, get next 3 upcoming regardless of is_featured
   if (upcomingEvents.length === 0) {
@@ -147,7 +149,7 @@ export default async function Home() {
       .eq("status", "upcoming")
       .order("date", { ascending: true })
       .limit(3);
-    upcomingEvents = fallbackEvents ?? [];
+    upcomingEvents = withFireServiceSchedules(fallbackEvents ?? []);
   }
 
   const latestPosts: Post[] = (postsRes.data as Post[]) ?? [];
@@ -442,7 +444,7 @@ export default async function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.2)_0%,transparent_100%)] mix-blend-multiply" />
         <div className="container px-4 text-center space-y-6 relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold font-serif text-white">
-            {home.fireCtaTitle}
+            {resolveFireServiceCtaTitle(home.fireCtaTitle)}
           </h2>
           <p className="text-white/90 text-base md:text-xl max-w-2xl mx-auto font-medium">
             {home.fireCtaBody}

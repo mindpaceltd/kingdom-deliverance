@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import type { Post, Sermon, Event, Ministry, GalleryItem } from '@/lib/types'
+import { withFireServiceSchedule, withFireServiceSchedules } from '@/lib/events/resolve-fire-service-event'
 
 // ─── Posts ────────────────────────────────────────────────────────────────────
 
@@ -130,7 +131,7 @@ export async function getEvents(opts?: {
     console.error('[getEvents]', error.message)
     return []
   }
-  return data ?? []
+  return withFireServiceSchedules(data ?? [])
 }
 
 export async function getEventBySlug(slug: string): Promise<Event | null> {
@@ -144,7 +145,7 @@ export async function getEventBySlug(slug: string): Promise<Event | null> {
     console.error('[getEventBySlug]', error.message)
     return null
   }
-  return data
+  return data ? withFireServiceSchedule(data) : null
 }
 
 // ─── Ministries ───────────────────────────────────────────────────────────────

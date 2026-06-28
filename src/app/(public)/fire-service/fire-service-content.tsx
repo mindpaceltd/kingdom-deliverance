@@ -5,7 +5,9 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { FireServiceForm } from '@/components/prayer/fire-service-form'
 import { Flame, Calendar, Clock, MapPin, ChevronRight, AlertCircle, Quote } from 'lucide-react'
 
-export function FireServiceContent() {
+import { getFireServiceSchedule, type FireServiceSchedule } from '@/lib/fire-service-schedule'
+
+export function FireServiceContent({ schedule }: { schedule: FireServiceSchedule }) {
   const { scrollYProgress } = useScroll()
   const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
   const scale = useTransform(scrollYProgress, [0, 0.2], [1, 0.95])
@@ -169,14 +171,14 @@ export function FireServiceContent() {
                   <Calendar className="shrink-0 h-6 w-6 opacity-80" />
                   <div>
                     <p className="text-sm opacity-70 uppercase tracking-widest font-bold">Date</p>
-                    <p className="text-xl font-bold">Friday, May 29, 2026</p>
+                    <p className="text-xl font-bold">{schedule.formattedDate}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
                   <Clock className="shrink-0 h-6 w-6 opacity-80" />
                   <div>
                     <p className="text-sm opacity-70 uppercase tracking-widest font-bold">Time</p>
-                    <p className="text-xl font-bold">10:00 PM — 12:00 Midnight</p>
+                    <p className="text-xl font-bold">{schedule.formattedTime}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">

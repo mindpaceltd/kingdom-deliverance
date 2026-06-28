@@ -1,11 +1,14 @@
-import { Metadata } from 'next'
 import { FireServiceContent } from './fire-service-content'
+import { getFireServiceSchedule } from '@/lib/fire-service-schedule'
+import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Fire Service - Kingdom Deliverance Centre Uganda',
-  description: 'Submit your Fire List and connect with a prophetic Fire Seed. Tonight, your case will be carried into the Fire Altar.',
+  description:
+    'Submit your Fire List for the monthly Fire Service on the last Friday of every month at Kingdom Deliverance Centre Uganda.',
 }
 
 export default function FireServicePage() {
-  return <FireServiceContent />
+  const schedule = getFireServiceSchedule()
+  return <FireServiceContent schedule={schedule} />
 }
