@@ -36,10 +36,11 @@ export async function generateMetadata(): Promise<Metadata> {
     getSiteName(),
   ]);
   const content = homePage?.content ?? null;
-  const ogTitle =
-    content?.seo?.ogTitle?.trim() ||
+  const pageTitle =
     content?.seo?.metaTitle?.trim() ||
-    'Home | Kingdom Deliverance Centre Uganda';
+    `${siteName} | Pentecostal Church in Kampala, Uganda`;
+  const ogTitle =
+    content?.seo?.ogTitle?.trim() || pageTitle;
   const description =
     content?.seo?.ogDescription?.trim() ||
     content?.seo?.metaDescription?.trim() ||
@@ -54,7 +55,7 @@ export async function generateMetadata(): Promise<Metadata> {
   );
 
   return {
-    title: ogTitle,
+    title: { absolute: pageTitle },
     description,
     ...createCanonicalMetadata('/'),
     openGraph: {

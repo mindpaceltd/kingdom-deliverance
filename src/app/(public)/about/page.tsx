@@ -28,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const ogTitle =
     content?.seo?.ogTitle?.trim() ||
     content?.seo?.metaTitle?.trim() ||
-    'About Us | Kingdom Deliverance Centre Uganda'
+    'About Us'
   const description =
     content?.seo?.ogDescription?.trim() ||
     content?.seo?.metaDescription?.trim() ||

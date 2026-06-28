@@ -1,11 +1,5 @@
 import Link from 'next/link'
-import type { Metadata } from 'next'
 import { searchContent } from '@/lib/supabase/queries'
-
-export const metadata: Metadata = {
-  title: 'Search',
-  description: 'Search sermons, posts, and events at Kingdom Deliverance Centre Uganda.',
-}
 
 export default async function SearchPage({
   searchParams,

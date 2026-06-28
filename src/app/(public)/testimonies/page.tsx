@@ -3,11 +3,16 @@ import { FadeInSection } from '@/components/ui/page-transition'
 import { TestimoniesSection } from '@/components/home/testimonies-section'
 import { TestimonySubmitForm } from '@/components/testimonies/testimony-submit-form'
 import type { Metadata } from 'next'
+import { buildListPageMetadata } from '@/lib/seo/list-page-metadata'
 
-export const metadata: Metadata = {
-  title: 'Testimonies | Kingdom Deliverance Centre Uganda',
-  description:
-    'Share your testimony of healing, deliverance, and breakthrough with Kingdom Deliverance Centre Uganda.',
+export async function generateMetadata(): Promise<Metadata> {
+  return buildListPageMetadata({
+    title: 'Testimonies',
+    description:
+      'Read and share testimonies of healing, deliverance, and breakthrough from Kingdom Deliverance Centre Uganda.',
+    path: '/testimonies',
+    keywords: 'church testimonies Uganda, healing testimonies Kampala, deliverance testimonies KDC',
+  })
 }
 
 export default function TestimoniesPage() {

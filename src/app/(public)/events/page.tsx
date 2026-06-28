@@ -6,12 +6,19 @@ import type { Metadata } from "next";
 import { EventImage } from "@/components/content/event-image";
 import { formatSafeDate } from "@/lib/media-url";
 import { getEventsHeroUrl } from "@/lib/seo/page-hero";
+import { buildListPageMetadata } from "@/lib/seo/list-page-metadata";
 
-export const metadata: Metadata = {
-  title: "Events | Kingdom Deliverance Centre Uganda",
-  description:
-    "Upcoming church events, conferences, outreaches and special services at Kingdom Deliverance Centre Uganda.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildListPageMetadata({
+    title: "Church Events",
+    description:
+      "Upcoming church events, conferences, outreaches, and special services at Kingdom Deliverance Centre Uganda in Kampala.",
+    path: "/events",
+    keywords:
+      "KDC Uganda events, church events Kampala, Christian conferences Uganda, Fire Service Kampala, church outreach Uganda",
+    ogType: "event",
+  });
+}
 
 export const revalidate = 3600;
 

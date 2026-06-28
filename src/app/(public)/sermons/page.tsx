@@ -1,12 +1,19 @@
 import { getSermons, getSermonFilters } from "@/lib/supabase/queries";
 import { SermonsPageClient } from "@/components/content/sermons-page-client";
 import type { Metadata } from "next";
+import { buildListPageMetadata } from "@/lib/seo/list-page-metadata";
 
-export const metadata: Metadata = {
-  title: "Sermons | Kingdom Deliverance Centre Uganda",
-  description:
-    "Watch and listen to powerful messages from Bishop Climate Wiseman and the KDC Uganda leadership team.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildListPageMetadata({
+    title: "Sermons & Messages",
+    description:
+      "Watch and listen to powerful sermons from Bishop Climate Wiseman and KDC Uganda. Faith-building messages on healing, deliverance, and the Word of God.",
+    path: "/sermons",
+    keywords:
+      "KDC Uganda sermons, Bishop Climate Wiseman sermons, church sermons Uganda, deliverance messages Kampala, Christian preaching Uganda",
+    ogType: "sermon",
+  });
+}
 
 export const revalidate = 3600;
 

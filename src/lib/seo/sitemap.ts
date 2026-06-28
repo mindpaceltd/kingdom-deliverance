@@ -41,7 +41,7 @@ const STATIC_ROUTES: Array<{
   { path: '/fire-service', changefreq: 'monthly', priority: 0.6 },
   { path: '/terms', changefreq: 'yearly', priority: 0.3 },
   { path: '/privacy', changefreq: 'yearly', priority: 0.3 },
-  { path: '/faq', changefreq: 'monthly', priority: 0.5 },
+  { path: '/faq', changefreq: 'monthly', priority: 0.7 },
 ]
 
 function toLastmod(value: string | null | undefined): string {

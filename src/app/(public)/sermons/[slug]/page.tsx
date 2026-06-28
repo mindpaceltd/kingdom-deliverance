@@ -9,6 +9,7 @@ import { createSocialImageMetadata, stripHtmlExcerpt } from "@/lib/seo-image-uti
 import { createCanonicalMetadata } from "@/lib/seo/canonical-utils";
 import { getOrgLogoUrl, getOrgOgImageUrl, getSiteName } from "@/lib/seo/site-branding";
 import { SermonSchema } from "@/components/seo/sermon-schema";
+import { BreadcrumbSchema, generateBreadcrumbs } from "@/components/seo/breadcrumb-schema";
 import { ShareButtons } from "@/components/content/share-buttons";
 import { incrementSermonViews } from "@/lib/actions/event-views";
 
@@ -45,7 +46,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const pageUrl = `https://kdcuganda.org/sermons/${data.slug}`;
 
   return {
-    title: `${ogTitle} | KDC Uganda Sermons`,
+    title: ogTitle,
     description: excerpt,
     ...createCanonicalMetadata(`/sermons/${data.slug}`),
     openGraph: {
@@ -121,6 +122,7 @@ export default async function SermonDetailPage({ params }: Props) {
         orgName={siteName}
         orgLogoUrl={orgLogoUrl}
       />
+      <BreadcrumbSchema items={generateBreadcrumbs('sermon', sermon.title, sermon.slug)} />
     <div className="flex flex-col">
       <section className="relative bg-primary text-white overflow-hidden md:min-h-[44vh] md:flex md:items-center">
         {sermon.thumbnail_url && (

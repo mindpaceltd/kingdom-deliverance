@@ -1,7 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { Package, Download, User, LogOut, LayoutDashboard } from 'lucide-react'
+import { NOINDEX_METADATA } from '@/lib/seo/noindex-metadata'
+
+export const metadata: Metadata = NOINDEX_METADATA
 
 const NAV_ITEMS = [
   { href: '/account', label: 'Dashboard', icon: LayoutDashboard },

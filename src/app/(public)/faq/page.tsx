@@ -8,6 +8,8 @@ import {
   resolveFaqDetails,
 } from '@/lib/cms/faq-page-defaults'
 import { normalizeMediaUrl } from '@/lib/media-url'
+import { buildCmsPageMetadata } from '@/lib/seo/cms-page-metadata'
+import { FaqSchema } from '@/components/seo/faq-schema'
 
 export const revalidate = 3600
 
@@ -21,17 +23,16 @@ export async function generateMetadata(): Promise<Metadata> {
     .maybeSingle()
 
   const content = data?.content_json ? parsePageContent(data.content_json) : null
-  const seo = content?.seo
 
-  return {
-    title: seo?.metaTitle?.trim() || 'FAQ | Kingdom Deliverance Centre Uganda',
-    description:
-      seo?.metaDescription?.trim() ||
-      'Frequently asked questions about Kingdom Deliverance Centre Uganda services, giving, support, and website access.',
-    openGraph: seo?.ogImageUrl
-      ? { images: [{ url: seo.ogImageUrl }] }
-      : undefined,
-  }
+  return buildCmsPageMetadata({
+    slug: 'faq',
+    path: '/faq',
+    defaultTitle: 'Frequently Asked Questions',
+    defaultDescription:
+      'Answers about Kingdom Deliverance Centre Uganda — service times in Kampala, giving, live stream, ministries, and how to visit our church.',
+    content,
+    heroImageUrl: normalizeMediaUrl(content?.hero?.imageUrl) || DEFAULT_FAQ_HERO_IMAGE,
+  })
 }
 
 export default async function FaqPage() {
@@ -51,8 +52,16 @@ export default async function FaqPage() {
   const heroImage =
     normalizeMediaUrl(content?.hero?.imageUrl) || DEFAULT_FAQ_HERO_IMAGE
 
+  const faqSchemaItems = sections.flatMap((section) =>
+    section.items.map((item) => ({
+      question: item.question,
+      answer: item.answer,
+    }))
+  )
+
   return (
     <div className="flex flex-col min-h-screen bg-white">
+      <FaqSchema items={faqSchemaItems} />
       <section className="relative pt-48 pb-20 lg:pt-56 lg:pb-28 text-white overflow-hidden bg-[#0d1b3e]">
         <div
           className="absolute inset-0 opacity-10 bg-cover bg-center"

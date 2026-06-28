@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     const pageUrl = `https://kdcuganda.org/shop/${product.slug}`
 
     return {
-      title: `${ogTitle} | KDC Uganda Store`,
+      title: ogTitle,
       description: excerpt,
       ...createCanonicalMetadata(`/shop/${product.slug}`),
       openGraph: {

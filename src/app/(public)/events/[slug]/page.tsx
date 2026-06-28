@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const pageUrl = `https://kdcuganda.org/events/${event.slug}`;
 
   return {
-    title: `${ogTitle} | KDC Uganda Events`,
+    title: ogTitle,
     description: excerpt,
     ...createCanonicalMetadata(`/events/${event.slug}`),
     openGraph: {

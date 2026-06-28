@@ -4,26 +4,33 @@ import { ContactForm } from '@/components/contact/contact-form'
 import { loadContactPageData } from '@/lib/cms/load-contact-page-data'
 import { createClient } from '@/lib/supabase/server'
 import { parsePageContent } from '@/lib/cms/page-content'
+import { buildCmsPageMetadata } from '@/lib/seo/cms-page-metadata'
+import { DEFAULT_CONTACT_HERO_IMAGE } from '@/lib/cms/contact-page-defaults'
 
 export async function generateMetadata(): Promise<Metadata> {
   const supabase = await createClient()
-  const { data } = await supabase
-    .from('pages')
-    .select('content_json')
-    .eq('slug', 'contact')
-    .eq('status', 'published')
-    .maybeSingle()
+  const [pageRes] = await Promise.all([
+    supabase
+      .from('pages')
+      .select('content_json')
+      .eq('slug', 'contact')
+      .eq('status', 'published')
+      .maybeSingle(),
+  ])
 
-  const content = data?.content_json ? parsePageContent(data.content_json) : null
-  const seo = content?.seo
+  const content = pageRes.data?.content_json
+    ? parsePageContent(pageRes.data.content_json)
+    : null
 
-  return {
-    title: seo?.metaTitle ?? 'Contact | Kingdom Deliverance Centre Uganda',
-    description:
-      seo?.metaDescription ??
-      'Get in touch with Kingdom Deliverance Centre Uganda in Kampala.',
-    ...(seo?.noIndex ? { robots: { index: false, follow: false } } : {}),
-  }
+  return buildCmsPageMetadata({
+    slug: 'contact',
+    path: '/contact',
+    defaultTitle: 'Contact Us',
+    defaultDescription:
+      'Contact Kingdom Deliverance Centre Uganda in Kampala. Service times, directions, phone, email, and prayer requests.',
+    content,
+    heroImageUrl: DEFAULT_CONTACT_HERO_IMAGE,
+  })
 }
 
 export default async function ContactPage() {

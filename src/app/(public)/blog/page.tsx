@@ -5,18 +5,19 @@ import { format } from "date-fns";
 import { ArrowRight, BookOpen, Search, Clock, Send } from "lucide-react";
 import type { Metadata } from "next";
 import { getBlogHeroUrl } from "@/lib/seo/page-hero";
+import { buildListPageMetadata } from "@/lib/seo/list-page-metadata";
 
-export const metadata: Metadata = {
-  title: "Blog & News | Kingdom Deliverance Centre Uganda",
-  description:
-    "Insights, teachings, and updates to inspire your faith and transform your life.",
-  openGraph: {
-    title: "Blog & News | KDC Uganda",
-    description: "Insights, teachings, and updates to inspire your faith and transform your life.",
-    url: "https://kdcuganda.org/blog",
-    type: "website",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildListPageMetadata({
+    title: "Blog & News",
+    description:
+      "Faith-building teachings, ministry updates, and news from Kingdom Deliverance Centre Uganda — Bishop Climate Wiseman and the KDC leadership team.",
+    path: "/blog",
+    keywords:
+      "KDC Uganda blog, Christian teachings Uganda, church news Kampala, Bishop Climate teachings, faith blog Uganda",
+    ogType: "blog",
+  });
+}
 
 export const revalidate = 3600;
 

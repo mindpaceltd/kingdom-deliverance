@@ -2,11 +2,19 @@ import { createClient } from '@/lib/supabase/server';
 import Link from "next/link";
 import { ArrowRight, Users, Clock, Music, Heart, BookOpen, Shield, Star, Globe, Zap } from "lucide-react";
 import type { Metadata } from "next";
+import { buildListPageMetadata } from "@/lib/seo/list-page-metadata";
 
-export const metadata: Metadata = {
-  title: "Ministries | Kingdom Deliverance Centre Uganda",
-  description: "Discover the various ministries at Kingdom Deliverance Centre Uganda — find your place to serve and grow.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildListPageMetadata({
+    title: "Ministries",
+    description:
+      "Discover worship, youth, prayer, outreach, and family ministries at Kingdom Deliverance Centre Uganda — find your place to serve and grow in Kampala.",
+    path: "/ministries",
+    keywords:
+      "KDC ministries, church ministries Kampala, youth ministry Uganda, worship ministry Uganda, prayer ministry Kampala",
+    ogType: "ministry",
+  });
+}
 
 export const revalidate = 3600;
 

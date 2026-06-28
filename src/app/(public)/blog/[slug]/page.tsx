@@ -11,6 +11,7 @@ import { autoPublishScheduled } from "@/lib/actions/post-utils";
 import { createSocialImageMetadata, stripHtmlExcerpt } from "@/lib/seo-image-utils";
 import { createCanonicalMetadata } from "@/lib/seo/canonical-utils";
 import { getOrgOgImageUrl, getSiteName } from "@/lib/seo/site-branding";
+import { BreadcrumbSchema, generateBreadcrumbs } from "@/components/seo/breadcrumb-schema";
 
 interface Props { params: { slug: string } }
 
@@ -49,7 +50,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   );
 
   return {
-    title: `${ogTitle} | KDC Uganda`,
+    title: ogTitle,
     description: excerpt,
     ...createCanonicalMetadata(`/blog/${data.slug}`),
     openGraph: {
@@ -246,6 +247,7 @@ export default async function BlogPostPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <BreadcrumbSchema items={generateBreadcrumbs('blog', post.title, post.slug)} />
 
       <div className="flex flex-col min-h-screen">
 

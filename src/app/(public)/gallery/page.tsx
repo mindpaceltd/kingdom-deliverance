@@ -4,12 +4,17 @@ import { normalizeMediaUrl } from "@/lib/media-url";
 import { DEFAULT_ABOUT_HERO_URL } from "@/lib/seo/page-hero";
 import { GalleryLightboxGrid } from "@/components/gallery/gallery-lightbox-grid";
 import { resolveGalleryCaption } from "@/lib/gallery-caption";
+import { buildListPageMetadata } from "@/lib/seo/list-page-metadata";
 
-export const metadata: Metadata = {
-  title: "Gallery | Kingdom Deliverance Centre Uganda",
-  description:
-    "View moments from worship services, outreaches, conferences, and church life at Kingdom Deliverance Centre Uganda.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildListPageMetadata({
+    title: "Photo Gallery",
+    description:
+      "Photos from worship services, outreaches, conferences, and church life at Kingdom Deliverance Centre Uganda in Kampala.",
+    path: "/gallery",
+    keywords: "KDC Uganda photos, church gallery Kampala, worship photos Uganda",
+  });
+}
 
 export const revalidate = 3600;
 

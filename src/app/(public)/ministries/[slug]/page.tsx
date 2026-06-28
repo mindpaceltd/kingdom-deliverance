@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   );
 
   return {
-    title: `${ogTitle} | KDC Uganda Ministries`,
+    title: ogTitle,
     description: excerpt,
     ...createCanonicalMetadata(`/ministries/${data.slug}`),
     openGraph: {

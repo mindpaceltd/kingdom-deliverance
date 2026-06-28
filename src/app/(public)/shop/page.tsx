@@ -3,36 +3,17 @@ import { ShopFilters } from '@/components/shop/shop-filters'
 import { ShopContent } from '@/components/shop/shop-content'
 import { ShoppingBag, Zap, Lock, HeartHandshake, BookOpen } from 'lucide-react'
 import type { Metadata } from 'next'
-import { createSocialImageMetadata } from '@/lib/seo-image-utils'
-import { createCanonicalMetadata } from '@/lib/seo/canonical-utils'
-import { getOrgOgImageUrl, getSiteName } from '@/lib/seo/site-branding'
+import { buildListPageMetadata } from '@/lib/seo/list-page-metadata'
 
 export async function generateMetadata(): Promise<Metadata> {
-  const title = 'Shop | Kingdom Deliverance Centre Uganda'
-  const description =
-    'Purchase e-books, sermons, and official Kingdom Deliverance Centre merchandise designed to support your spiritual growth.'
-  const [orgOgImage, siteName] = await Promise.all([getOrgOgImageUrl(), getSiteName()])
-  const socialImage = createSocialImageMetadata(title, description, undefined, 'default', orgOgImage)
-  return {
-    title,
-    description,
-    ...createCanonicalMetadata('/shop'),
-    openGraph: {
-      title,
-      description,
-      url: 'https://kdcuganda.org/shop',
-      siteName,
-      type: 'website',
-      locale: 'en_UG',
-      images: [socialImage],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [socialImage.url],
-    },
-  }
+  return buildListPageMetadata({
+    title: 'Shop',
+    description:
+      'Purchase e-books, sermons, and official Kingdom Deliverance Centre merchandise to support your spiritual growth.',
+    path: '/shop',
+    keywords: 'KDC Uganda shop, Christian books Uganda, church merchandise Kampala',
+    ogType: 'product',
+  })
 }
 
 export default async function ShopPage({

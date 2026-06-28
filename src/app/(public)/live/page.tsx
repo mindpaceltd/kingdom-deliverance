@@ -7,11 +7,17 @@ import { createClient } from '@/lib/supabase/server'
 import { getLiveStreamConfig } from '@/lib/live-stream'
 import { YouTubeLivePlayer } from '@/components/live/youtube-live-player'
 import { normalizeExternalHref } from '@/lib/utils/external-url'
+import { buildListPageMetadata } from '@/lib/seo/list-page-metadata'
 
-export const metadata: Metadata = {
-  title: 'Live Stream | Kingdom Deliverance Centre Uganda',
-  description:
-    'Watch Kingdom Deliverance Centre Uganda live on YouTube. Join our Sunday services and special programs online.',
+export async function generateMetadata(): Promise<Metadata> {
+  return buildListPageMetadata({
+    title: 'Watch Live',
+    description:
+      'Watch Kingdom Deliverance Centre Uganda live on YouTube. Join Sunday English and Luganda services, Bible Study, and Fire Service from Kampala.',
+    path: '/live',
+    keywords:
+      'KDC Uganda live stream, church live Uganda, Bishop Climate live, Sunday service live Kampala, YouTube church Uganda',
+  })
 }
 
 export const revalidate = 3600

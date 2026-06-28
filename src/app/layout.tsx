@@ -21,8 +21,10 @@ const poppins = Poppins({
 export async function generateMetadata(): Promise<Metadata> {
   const defaultSiteName = "Kingdom Deliverance Centre Uganda";
   const metaTitle = defaultSiteName;
-  const metaDesc = "Experience God's love, healing, and deliverance in our vibrant church community in Uganda.";
-  const metaKeywords = "church Uganda, Kingdom Deliverance Centre, Bishop Climate Wiseman, Christian ministry, deliverance, healing, Kampala church";
+  const metaDesc =
+    "Kingdom Deliverance Centre Uganda (KDC) — Pentecostal church in Kampala led by Bishop Climate Wiseman. Sunday worship, live sermons, healing, deliverance, and ministry programs.";
+  const metaKeywords =
+    "church Uganda, Kampala church, Pentecostal church Uganda, Kingdom Deliverance Centre, KDC Uganda, Bishop Climate Wiseman, deliverance ministry Uganda, healing church Kampala, live church service Uganda, Christian church Kosovo Lungujja, worship Kampala, Bible study Uganda, Fire Service prayer";
   const siteIcon = "/favicon.ico";
   const siteOgImage = await getOrgOgImageUrl();
   const siteName = await getSiteName();
@@ -110,6 +112,7 @@ export async function generateMetadata(): Promise<Metadata> {
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
 import { Toaster } from "sonner";
 import { OrganizationSchema } from "@/components/seo/organization-schema";
+import { WebsiteSchema } from "@/components/seo/website-schema";
 
 export default function RootLayout({
   children,
@@ -154,6 +157,7 @@ export default function RootLayout({
         </Script>
         <div className="flex-1 flex flex-col w-full max-w-full overflow-x-hidden relative">
           <OrganizationSchema />
+          <WebsiteSchema />
           {children}
         </div>
         <ScrollToTop />
