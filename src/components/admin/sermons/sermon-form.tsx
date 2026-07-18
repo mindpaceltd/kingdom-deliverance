@@ -313,7 +313,7 @@ export function SermonForm({ sermon, onSuccess, onCancel }: SermonFormProps) {
       </div>
 
       {/* Preacher + Series row */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="sermon-preacher">Preacher</Label>
           <Input
@@ -338,7 +338,7 @@ export function SermonForm({ sermon, onSuccess, onCancel }: SermonFormProps) {
       </div>
 
       {/* Date + Duration row */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="sermon-date">Date</Label>
           <Input

@@ -281,7 +281,7 @@ export function DraftReviewModal({
             </div>
 
             {/* Preacher + Series row */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="draft-preacher">Preacher</Label>
                 <Input
@@ -305,7 +305,7 @@ export function DraftReviewModal({
             </div>
 
             {/* Date + Duration row */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="draft-date">Date</Label>
                 <Input

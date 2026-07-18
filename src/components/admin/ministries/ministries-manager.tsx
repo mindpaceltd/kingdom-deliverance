@@ -227,8 +227,8 @@ export function MinistriesManager({ initialMinistries }: MinistriesManagerProps)
   const bulkBusy = bulkIndexing || indexingId !== null
 
   return (
-    <div className="space-y-4 p-6 pb-24">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="space-y-4 pb-24">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold">Ministries</h1>
           <p className="text-sm text-muted-foreground">
@@ -270,6 +270,8 @@ export function MinistriesManager({ initialMinistries }: MinistriesManagerProps)
       )}
 
       <div className="rounded-lg border border-border overflow-hidden bg-background shadow-sm">
+        <div className="overflow-x-auto">
+        <div className="min-w-[900px]">
         <div
           className={cn(
             'grid gap-x-2 bg-muted/50 px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider',
@@ -447,6 +449,8 @@ export function MinistriesManager({ initialMinistries }: MinistriesManagerProps)
             })}
           </ul>
         )}
+        </div>
+        </div>
       </div>
 
       <AnimatePresence>

@@ -169,17 +169,17 @@ export function InboxClient({ initialContacts, initialPrayers }: InboxClientProp
   }
 
   return (
-    <div className="flex h-screen flex-col bg-background overflow-hidden -m-6">
+    <div className="flex h-screen flex-col bg-background overflow-hidden -m-3 sm:-m-4 lg:-m-6">
       {/* Top Header */}
-      <header className="shrink-0 border-b border-border bg-background/95 px-6 py-4 backdrop-blur">
-        <div className="flex items-center justify-between">
+      <header className="shrink-0 border-b border-border bg-background/95 px-3 py-4 sm:px-6 backdrop-blur">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-bold tracking-tight">Inbox</h1>
             <p className="text-xs text-muted-foreground">Manage communications and prayer requests.</p>
           </div>
           
-          <div className="flex items-center gap-3">
-             <div className="relative w-64">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
+             <div className="relative w-full sm:w-64">
                 <SearchIcon className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
                 <Input
                   placeholder="Search messages..."
@@ -256,8 +256,8 @@ export function InboxClient({ initialContacts, initialPrayers }: InboxClientProp
                       key={item.id}
                       onClick={() => handleSelect(item)}
                       className={cn(
-                        "w-full flex items-start gap-4 px-6 py-4 text-left transition-all hover:bg-muted/40",
-                        !isRead && "bg-primary/[0.03] border-l-4 border-l-primary px-[20px]",
+                        "w-full flex items-start gap-3 sm:gap-4 px-3 sm:px-6 py-4 text-left transition-all hover:bg-muted/40",
+                        !isRead && "bg-primary/[0.03] border-l-4 border-l-primary",
                         selectedItem?.id === item.id && "bg-muted"
                       )}
                     >
@@ -324,7 +324,7 @@ export function InboxClient({ initialContacts, initialPrayers }: InboxClientProp
           </SheetHeader>
 
           {selectedItem && (
-            <div className="p-6 space-y-8">
+            <div className="p-4 sm:p-6 space-y-8">
                {/* Sender Info Card */}
                <div className="bg-muted/30 rounded-xl p-4 border border-border space-y-4">
                   <div className="flex items-center gap-4">

@@ -203,8 +203,8 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
   }
 
   return (
-    <div className="space-y-4 p-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold">Gallery</h1>
           <p className="text-sm text-muted-foreground">
@@ -380,7 +380,7 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
 
           {selectedItem && (
             <div className="flex flex-col">
-              <div className="p-6 bg-muted/30 flex items-center justify-center border-b border-border">
+              <div className="p-4 sm:p-6 bg-muted/30 flex items-center justify-center border-b border-border">
                 <div className="relative w-full aspect-square rounded-lg overflow-hidden border border-border shadow-sm bg-white">
                   <Image
                     src={selectedItem.image_url}
@@ -392,7 +392,7 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
                 </div>
               </div>
 
-              <div className="p-6 space-y-6">
+              <div className="p-4 sm:p-6 space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -439,11 +439,11 @@ export function GalleryManager({ initialItems }: GalleryManagerProps) {
                 </div>
               </div>
 
-              <div className="sticky bottom-0 bg-background p-6 border-t border-border flex items-center justify-between gap-3">
-                <Button variant="destructive" size="sm" onClick={handleDelete} disabled={editSaving}>
+              <div className="sticky bottom-0 bg-background p-4 sm:p-6 border-t border-border flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <Button variant="destructive" size="sm" onClick={handleDelete} disabled={editSaving} className="w-full sm:w-auto">
                   <Trash2Icon className="mr-2 size-4" /> Delete Permanently
                 </Button>
-                <Button size="sm" onClick={handleUpdate} disabled={editSaving}>
+                <Button size="sm" onClick={handleUpdate} disabled={editSaving} className="w-full sm:w-auto">
                   {editSaving ? 'Saving...' : 'Save Changes'}
                 </Button>
               </div>

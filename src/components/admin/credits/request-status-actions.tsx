@@ -77,7 +77,7 @@ export function RequestStatusActions({ request }: { request: any }) {
           </DialogHeader>
           
           <div className="space-y-6 py-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground">Location</p>
                 <p className="font-medium">{request.country}</p>

@@ -78,7 +78,7 @@ export default async function AdminDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Command Center</h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -104,7 +104,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Secondary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <MiniStatCard title="Ministries" value={stats.ministries} icon={<BookOpen className="w-4 h-4" />} href="/admin/ministries" />
         <MiniStatCard title="Gallery Items" value={stats.gallery} icon={<ImageIcon className="w-4 h-4" />} href="/admin/gallery" />
         <MiniStatCard title="Media Files" value={stats.media} icon={<TrendingUp className="w-4 h-4" />} href="/admin/media" />

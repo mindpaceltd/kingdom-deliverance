@@ -947,7 +947,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
         )}
 
         {/* Form Footer */}
-        <div className="flex items-center justify-between border-t border-border pt-6">
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-border pt-6">
            <p className="text-xs text-muted-foreground flex items-center gap-2">
              <AlertTriangleIcon className="size-3" />
              Always ensure API keys are kept secret and never shared.

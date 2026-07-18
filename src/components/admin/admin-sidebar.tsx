@@ -3,92 +3,11 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import {
-  LayoutDashboard,
-  FileText,
-  FileStack,
-  Video,
-  Calendar,
-  Users2,
-  Images,
-  GalleryHorizontal,
-  Inbox,
-  UserPlus,
-  Users,
-  Settings,
-  LogOut,
-  UserCircleIcon,
-  BarChart,
-  MessageCircle,
-  FolderOpen,
-  ChevronDown,
-  ShoppingBag,
-  ListOrdered,
-  QrCode
-} from 'lucide-react'
+import { LogOut, ChevronDown } from 'lucide-react'
 import { useAdmin } from '@/lib/admin-context'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
-
-interface NavLink {
-  href: string
-  label: string
-  icon: any
-  adminOnly: boolean
-  subLinks?: { href: string; label: string; icon: any }[]
-}
-
-const allNavLinks: NavLink[] = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, adminOnly: false },
-  { href: '/admin/analytics', label: 'Analytics', icon: BarChart, adminOnly: true },
-  { href: '/admin/posts', label: 'Posts & Blogs', icon: FileText, adminOnly: false },
-  { 
-    href: '/admin/sermons', 
-    label: 'Sermons', 
-    icon: Video, 
-    adminOnly: false,
-    subLinks: [
-      { href: '/admin/sermons', label: 'All Sermons', icon: Video },
-      { href: '/admin/sermons/series', label: 'Sermon Series', icon: GalleryHorizontal },
-    ]
-  },
-  { href: '/admin/events', label: 'Events', icon: Calendar, adminOnly: false },
-  { href: '/admin/ministries', label: 'Ministries', icon: Users2, adminOnly: false },
-  { href: '/admin/pages', label: 'Pages', icon: FileStack, adminOnly: false },
-  { href: '/admin/media', label: 'Media Library', icon: Images, adminOnly: false },
-  { href: '/admin/gallery', label: 'Gallery', icon: GalleryHorizontal, adminOnly: false },
-  { 
-    href: '/admin/products', 
-    label: 'KDC Store', 
-    icon: ShoppingBag, 
-    adminOnly: false,
-    subLinks: [
-      { href: '/admin/products', label: 'Products', icon: ShoppingBag },
-      { href: '/admin/products/categories', label: 'Categories', icon: FolderOpen },
-      { href: '/admin/products/attributes', label: 'Attributes', icon: Settings },
-      { href: '/admin/orders', label: 'Orders', icon: ListOrdered },
-    ]
-  },
-  { 
-    href: '/admin/credits', 
-    label: 'Credits & Services', 
-    icon: BarChart, 
-    adminOnly: true,
-    subLinks: [
-      { href: '/admin/credits', label: 'User Balances', icon: Users },
-      { href: '/admin/credits/requests', label: 'Service Requests', icon: MessageCircle },
-      { href: '/admin/credits/transactions', label: 'Transaction History', icon: BarChart },
-    ]
-  },
-  { href: '/admin/inbox', label: 'Inbox', icon: Inbox, adminOnly: false },
-  { href: '/admin/leads', label: 'Leads', icon: UserPlus, adminOnly: false },
-  { href: '/admin/support', label: 'Live Support', icon: MessageCircle, adminOnly: false },
-  { href: '/admin/testimonies', label: 'Testimonies', icon: MessageCircle, adminOnly: false },
-  { href: '/admin/users', label: 'Users', icon: Users, adminOnly: true },
-  { href: '/admin/settings', label: 'Settings', icon: Settings, adminOnly: true },
-  { href: '/admin/qr-codes', label: 'QR Codes', icon: QrCode, adminOnly: true },
-  { href: '/admin/profile', label: 'My Profile', icon: UserCircleIcon, adminOnly: false },
-]
+import { adminNavLinks } from '@/components/admin/admin-nav-links'
 
 export function AdminSidebar({ logo }: { logo?: string }) {
   const { role } = useAdmin()
@@ -97,23 +16,23 @@ export function AdminSidebar({ logo }: { logo?: string }) {
   const [openMenus, setOpenMenus] = React.useState<string[]>([])
 
   const toggleMenu = (label: string) => {
-    setOpenMenus(prev => 
+    setOpenMenus(prev =>
       prev.includes(label) ? prev.filter(m => m !== label) : [...prev, label]
     )
   }
 
   // Auto-open menu if child is active
   React.useEffect(() => {
-    allNavLinks.forEach(link => {
+    adminNavLinks.forEach(link => {
       if (link.subLinks?.some(sub => pathname === sub.href || pathname.startsWith(sub.href + '/'))) {
-        if (!openMenus.includes(link.label)) {
-          setOpenMenus(prev => [...prev, link.label])
-        }
+        setOpenMenus(prev =>
+          prev.includes(link.label) ? prev : [...prev, link.label]
+        )
       }
     })
   }, [pathname])
 
-  const navLinks = allNavLinks.filter(
+  const navLinks = adminNavLinks.filter(
     (link) => !link.adminOnly || role === 'admin'
   )
 
@@ -145,7 +64,7 @@ export function AdminSidebar({ logo }: { logo?: string }) {
         {navLinks.map((link) => {
           const hasSubLinks = link.subLinks && link.subLinks.length > 0
           const isOpen = openMenus.includes(link.label)
-          
+
           const isActive = link.href === '/admin'
             ? pathname === '/admin'
             : pathname === link.href || pathname.startsWith(link.href + '/')

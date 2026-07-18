@@ -311,8 +311,8 @@ export function MediaLibrary({
   const showingCount = media.length
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-foreground">Media Library</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
@@ -456,7 +456,7 @@ export function MediaLibrary({
                 </div>
               </div>
 
-              <div className="space-y-6 p-6">
+              <div className="space-y-6 p-4 sm:p-6">
                 <div className="grid grid-cols-2 gap-4 text-xs">
                   <div>
                     <p className="text-muted-foreground">Type</p>
@@ -531,7 +531,7 @@ export function MediaLibrary({
                 </div>
               </div>
 
-              <div className="sticky bottom-0 flex items-center justify-between gap-3 border-t border-border bg-background p-6">
+              <div className="sticky bottom-0 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between border-t border-border bg-background p-4 sm:p-6">
                 <Button variant="destructive" size="sm" onClick={handleDelete} disabled={deleting}>
                   {deleting ? (
                     'Deleting...'

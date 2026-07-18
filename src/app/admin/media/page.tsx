@@ -8,7 +8,7 @@ const MediaLibrary = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-6">
         <MediaLibrarySkeleton count={18} />
       </div>
     ),
@@ -20,7 +20,7 @@ async function MediaLibraryLoader() {
 
   if ('error' in result) {
     return (
-      <div className="p-6">
+      <div>
         <h1 className="text-xl font-semibold">Media Library</h1>
         <p className="mt-4 text-sm text-destructive">Could not load media: {result.error}</p>
       </div>
@@ -40,7 +40,7 @@ export default function AdminMediaPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col gap-6">
           <div className="space-y-2">
             <div className="h-7 w-40 animate-pulse rounded bg-muted" />
             <div className="h-4 w-64 animate-pulse rounded bg-muted" />

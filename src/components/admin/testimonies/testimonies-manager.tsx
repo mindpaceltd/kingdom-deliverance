@@ -169,8 +169,8 @@ export function TestimoniesManager({ initialTestimonies }: TestimoniesManagerPro
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="grid flex-1 gap-4 sm:grid-cols-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="grid flex-1 grid-cols-2 gap-4 sm:grid-cols-4">
           <div className="rounded-xl border bg-card p-4 shadow-sm">
             <p className="text-sm text-muted-foreground">Total</p>
             <p className="text-2xl font-bold text-primary">{testimonies.length}</p>
@@ -183,7 +183,7 @@ export function TestimoniesManager({ initialTestimonies }: TestimoniesManagerPro
             <p className="text-sm text-muted-foreground">Published (front-end)</p>
             <p className="text-2xl font-bold text-green-600">{approvedCount}</p>
           </div>
-          <div className="rounded-xl border bg-card p-4 shadow-sm hidden sm:block">
+          <div className="rounded-xl border bg-card p-4 shadow-sm">
             <p className="text-sm text-muted-foreground">Trash</p>
             <p className="text-2xl font-bold text-destructive">{trashCount}</p>
           </div>
@@ -238,7 +238,7 @@ export function TestimoniesManager({ initialTestimonies }: TestimoniesManagerPro
         </Button>
       </div>
 
-      <div className="overflow-hidden rounded-xl border bg-card shadow-sm [&_[data-slot=table-container]]:overflow-x-visible">
+      <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
         <Table className="table-fixed w-full">
           <colgroup>
             <col className="w-[88px]" />

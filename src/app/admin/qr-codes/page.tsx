@@ -66,24 +66,22 @@ export default async function AdminQrCodesPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden -m-6 bg-background">
-      <header className="shrink-0 border-b border-border bg-background/95 px-6 py-4 backdrop-blur">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">QR Codes</h1>
-            <p className="text-xs text-muted-foreground">
-              Create and manage QR codes for donations, mobile money, and more.
-              They will be displayed on the public{' '}
-              <a href="/give" target="_blank" className="text-primary underline underline-offset-2">
-                /give
-              </a>{' '}
-              page.
-            </p>
-          </div>
+    <div className="flex flex-col h-screen overflow-hidden -m-3 sm:-m-4 lg:-m-6 bg-background">
+      <header className="shrink-0 border-b border-border bg-background/95 px-3 py-4 sm:px-6 backdrop-blur">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold">QR Codes</h1>
+          <p className="text-xs text-muted-foreground">
+            Create and manage QR codes for donations, mobile money, and more.
+            They will be displayed on the public{' '}
+            <a href="/give" target="_blank" className="text-primary underline underline-offset-2">
+              /give
+            </a>{' '}
+            page.
+          </p>
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-6">
         <div className="max-w-5xl mx-auto">
           <QrCodesAdminClient initialQrCodes={initialQrCodes} />
         </div>

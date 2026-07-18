@@ -73,9 +73,9 @@ export function SeriesEditorClient({ series }: SeriesEditorClientProps) {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-background overflow-hidden -m-6">
+    <div className="flex h-screen flex-col bg-background overflow-hidden -m-3 sm:-m-4 lg:-m-6">
       {/* Top bar */}
-      <div className="shrink-0 sticky top-0 z-10 flex items-center gap-3 border-b border-border bg-background/95 px-6 py-3 backdrop-blur">
+      <div className="shrink-0 sticky top-0 z-10 flex flex-wrap items-center gap-2 sm:gap-3 border-b border-border bg-background/95 px-3 sm:px-6 py-3 backdrop-blur">
         <Button
           type="button"
           variant="ghost"
@@ -87,12 +87,12 @@ export function SeriesEditorClient({ series }: SeriesEditorClientProps) {
           Series List
         </Button>
         <div className="flex-1" />
-        <span className="text-sm text-muted-foreground">
+        <span className="min-w-0 truncate text-sm text-muted-foreground">
           {isEditing ? 'Editing series' : 'New series'}
         </span>
       </div>
 
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-1 min-h-0 flex-col lg:flex-row overflow-hidden">
         <main className="flex-1 overflow-y-auto px-6 py-8">
           <div className="max-w-3xl mx-auto space-y-6">
             <Input
@@ -122,7 +122,7 @@ export function SeriesEditorClient({ series }: SeriesEditorClientProps) {
           </div>
         </main>
 
-        <aside className="w-80 shrink-0 border-l border-border overflow-y-auto px-4 py-6 space-y-6">
+        <aside className="w-full lg:w-80 lg:shrink-0 border-t lg:border-t-0 lg:border-l border-border overflow-y-auto px-4 py-6 space-y-6">
           <div className="rounded-lg border border-border bg-card p-4 space-y-4">
             <h3 className="text-sm font-semibold">Publish</h3>
             {error && <p className="text-xs text-destructive">{error}</p>}

@@ -455,7 +455,8 @@ export function AnalyticsDashboard() {
     <div className="space-y-8 animate-in fade-in duration-700">
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <TabsList className="bg-primary/5 p-1 border border-primary/10 rounded-2xl h-12">
+          <div className="overflow-x-auto -mx-1 px-1">
+          <TabsList className="bg-primary/5 p-1 border border-primary/10 rounded-2xl h-12 w-max min-w-full">
             <TabsTrigger value="overview" className="gap-2 px-6 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-accent transition-all">
               <TrendingUp className="size-4" /> Google Site Kit
             </TabsTrigger>
@@ -472,8 +473,9 @@ export function AnalyticsDashboard() {
               <Settings className="size-4" /> Settings
             </TabsTrigger>
           </TabsList>
+          </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <select 
               value={dateRange} 
               onChange={(e) => handleRangeChange(e.target.value)}

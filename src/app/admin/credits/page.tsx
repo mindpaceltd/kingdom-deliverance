@@ -74,12 +74,12 @@ export default async function AdminCreditsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">User Credit Balances</h1>
           <p className="text-muted-foreground">Monitor and manage user credit accounts.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" asChild>
             <Link href="/admin/credits/transactions">
               <History className="h-4 w-4 mr-2" />
@@ -149,7 +149,7 @@ export default async function AdminCreditsPage() {
 
       {/* Users Table */}
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-4 border-b flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="font-semibold text-sm">All Users ({items.length})</h2>
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
         </div>
@@ -233,7 +233,7 @@ export default async function AdminCreditsPage() {
       {/* Recent Transactions */}
       {recentTxns && recentTxns.length > 0 && (
         <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b flex items-center justify-between">
+          <div className="px-4 sm:px-6 py-4 border-b flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="font-semibold text-sm">Recent Transactions</h2>
             <Button variant="ghost" size="sm" asChild>
               <Link href="/admin/credits/transactions" className="text-xs text-muted-foreground">

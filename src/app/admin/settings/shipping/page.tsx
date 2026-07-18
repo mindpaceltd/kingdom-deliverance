@@ -15,7 +15,7 @@ export default async function ShippingSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Shipping Settings</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -31,7 +31,7 @@ export default async function ShippingSettingsPage() {
       </div>
 
       {shippingRates && shippingRates.length > 0 ? (
-        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/50">

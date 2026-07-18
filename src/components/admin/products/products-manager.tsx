@@ -284,14 +284,14 @@ export function ProductsManager({
   return (
     <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
       <div className="border-b bg-muted/50 p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold">Products</h2>
             <p className="text-sm text-muted-foreground">
               Select products to duplicate, delete, or submit to Google in bulk.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
               variant="outline"
@@ -396,7 +396,7 @@ export function ProductsManager({
         </div>
       )}
 
-      <div className="overflow-hidden">
+      <div className="overflow-x-auto">
         <table className="w-full table-fixed text-left text-sm">
           <thead className="bg-muted/50 border-b">
             <tr>

@@ -56,7 +56,7 @@ export function AboutPageEditorFields({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Foundation (Mission, Vision, Values)</h2>
         <p className="text-xs text-muted-foreground">
           The three cards shown under &quot;Built on Purpose&quot; on the public About page.
@@ -135,7 +135,7 @@ export function AboutPageEditorFields({
         </div>
       </div>
 
-      <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Leadership</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
@@ -233,7 +233,7 @@ export function AboutPageEditorFields({
         </div>
       </div>
 
-      <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold">History timeline</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
@@ -310,7 +310,7 @@ export function AboutPageEditorFields({
         </div>
       </div>
 
-      <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Kingdom Temple affiliation</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">

@@ -47,7 +47,7 @@ export function FaqPageEditorFields({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold">FAQ hero text</h2>
         <p className="text-xs text-muted-foreground">
           The main page title and hero background image are edited in the Hero panel above.
@@ -84,7 +84,7 @@ export function FaqPageEditorFields({
         </div>
       </div>
 
-      <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">FAQ sections</h2>
           <Button
@@ -186,7 +186,7 @@ export function FaqPageEditorFields({
         </div>
       </div>
 
-      <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Bottom help box</h2>
         <div className="space-y-1.5">
           <Label>Box title</Label>

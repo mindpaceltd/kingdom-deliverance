@@ -288,9 +288,9 @@ export function PostEditorClient({ post, authorName, allTags, initialTags = [] }
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="flex h-screen flex-col bg-background overflow-hidden -m-6">
+    <div className="flex h-screen flex-col bg-background overflow-hidden -m-3 sm:-m-4 lg:-m-6">
       {/* Top bar — fixed height */}
-      <div className="shrink-0 sticky top-0 z-10 flex items-center gap-3 border-b border-border bg-background/95 px-6 py-3 backdrop-blur">
+      <div className="shrink-0 sticky top-0 z-10 flex flex-wrap items-center gap-2 sm:gap-3 border-b border-border bg-background/95 px-3 sm:px-6 py-3 backdrop-blur">
         <Button
           type="button"
           variant="ghost"
@@ -302,13 +302,13 @@ export function PostEditorClient({ post, authorName, allTags, initialTags = [] }
           Posts
         </Button>
         <div className="flex-1" />
-        <span className="text-sm text-muted-foreground">
+        <span className="min-w-0 truncate text-sm text-muted-foreground">
           {isEditing ? 'Editing post' : 'New post'}
         </span>
       </div>
 
       {/* Main layout — fills remaining height, both panels scroll independently */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-1 min-h-0 flex-col lg:flex-row overflow-hidden">
         {/* Left: main content — scrolls independently */}
         <main className="flex-1 overflow-y-auto px-6 py-8">
           <div className="max-w-3xl mx-auto space-y-6">
@@ -509,7 +509,7 @@ export function PostEditorClient({ post, authorName, allTags, initialTags = [] }
         </main>
 
         {/* Right: sidebar — scrolls independently, stays fixed while content scrolls */}
-        <aside className="w-80 shrink-0 border-l border-border overflow-y-auto px-4 py-6 space-y-4">
+        <aside className="w-full lg:w-80 lg:shrink-0 border-t lg:border-t-0 lg:border-l border-border overflow-y-auto px-4 py-6 space-y-4">
           <PublishPanel
             status={form.status}
             scheduledAt={form.scheduled_at}

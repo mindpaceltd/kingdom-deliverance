@@ -100,7 +100,7 @@ export function QrCodesAdminClient({ initialQrCodes }: Props) {
       {/* ── Left panel: list + edit form ── */}
       <div className="lg:col-span-7 space-y-4">
         {/* Toolbar */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
             {entries.length} QR code{entries.length !== 1 ? 's' : ''} configured
           </p>

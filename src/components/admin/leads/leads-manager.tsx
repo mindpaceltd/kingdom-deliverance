@@ -13,7 +13,7 @@ function sourceLabel(source: string) {
 
 export function LeadsManager({ leads }: { leads: Lead[] }) {
   return (
-    <div className="space-y-6 p-6 pb-24">
+    <div className="space-y-6 pb-24">
       <div>
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
           <UserPlus className="size-7 text-primary" />

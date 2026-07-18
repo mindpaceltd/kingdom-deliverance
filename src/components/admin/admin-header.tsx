@@ -7,34 +7,9 @@ import { useAdmin } from '@/lib/admin-context'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { MobileDrawer } from '@/components/admin/mobile-drawer'
 import { getInitials } from '@/components/admin/initials'
+import { getAdminPageTitle } from '@/components/admin/admin-nav-links'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
-
-const pageTitles: Record<string, string> = {
-  '/admin': 'Dashboard',
-  '/admin/posts': 'Posts & Blogs',
-  '/admin/sermons': 'Sermons',
-  '/admin/events': 'Events',
-  '/admin/ministries': 'Ministries',
-  '/admin/pages': 'Pages',
-  '/admin/media': 'Media Library',
-  '/admin/gallery': 'Gallery',
-  '/admin/inbox': 'Inbox',
-  '/admin/leads': 'Leads',
-  '/admin/support': 'Live Support',
-  '/admin/users': 'Users',
-  '/admin/settings': 'Settings',
-  '/admin/qr-codes': 'QR Codes',
-  '/admin/profile': 'My Profile',
-}
-
-function getPageTitle(pathname: string): string {
-  if (pageTitles[pathname]) return pageTitles[pathname]
-  for (const [path, title] of Object.entries(pageTitles)) {
-    if (path !== '/admin' && pathname.startsWith(path + '/')) return title
-  }
-  return 'Admin'
-}
 
 export function AdminHeader({ logo }: { logo?: string }) {
   const { profile } = useAdmin()
@@ -44,7 +19,7 @@ export function AdminHeader({ logo }: { logo?: string }) {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const pageTitle = getPageTitle(pathname)
+  const pageTitle = getAdminPageTitle(pathname)
   const initials = getInitials(profile.name)
 
   // Close dropdown on outside click

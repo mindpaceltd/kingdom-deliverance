@@ -44,7 +44,7 @@ export default async function AdminOrderDetailsPage({ params }: { params: { id: 
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
             <Link href="/admin/orders">
@@ -69,7 +69,7 @@ export default async function AdminOrderDetailsPage({ params }: { params: { id: 
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap gap-2">
           <OrderActions order={order} />
         </div>
       </div>
@@ -85,7 +85,7 @@ export default async function AdminOrderDetailsPage({ params }: { params: { id: 
             </div>
             <div className="divide-y divide-white/5">
               {order.order_items?.map((item: any) => (
-                <div key={item.id} className="px-6 py-4 flex items-center justify-between">
+                <div key={item.id} className="px-6 py-4 flex flex-col gap-2 sm:flex-row sm:justify-between">
                   <div className="flex items-center gap-4">
                     <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
                       {item.products?.image_url ? (

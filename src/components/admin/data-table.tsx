@@ -149,19 +149,21 @@ export function DataTable<T>({
   return (
     <div className={cn('space-y-4', className)}>
       {!hideSearch && (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Input
             placeholder={searchPlaceholder}
             value={searchQuery}
             onChange={handleSearchChange}
-            className="max-w-sm"
+            className="w-full max-w-full sm:max-w-sm"
           />
-          {filterSlot && <div className="flex items-center gap-2">{filterSlot}</div>}
+          {filterSlot && (
+            <div className="flex flex-wrap items-center gap-2">{filterSlot}</div>
+          )}
         </div>
       )}
 
       {/* Table */}
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -226,36 +228,43 @@ export function DataTable<T>({
 
       {/* Pagination */}
       {totalItems > 0 && (
-        <div className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
-          <span>
+        <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-center sm:text-left">
             Showing {startIndex + 1}–{endIndex} of {totalItems} results
           </span>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center justify-center gap-1 sm:justify-end">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={safePage === 1}
             >
-              Previous
+              <span className="sm:hidden">Prev</span>
+              <span className="hidden sm:inline">Previous</span>
             </Button>
 
-            {pageNumbers.map((page, i) =>
-              page === '...' ? (
-                <span key={`ellipsis-${i}`} className="px-2">
-                  …
-                </span>
-              ) : (
-                <Button
-                  key={page}
-                  variant={safePage === page ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setCurrentPage(page as number)}
-                >
-                  {page}
-                </Button>
-              )
-            )}
+            <span className="px-2 text-xs sm:hidden">
+              {safePage} / {totalPages}
+            </span>
+
+            <div className="hidden items-center gap-1 sm:flex">
+              {pageNumbers.map((page, i) =>
+                page === '...' ? (
+                  <span key={`ellipsis-${i}`} className="px-2">
+                    …
+                  </span>
+                ) : (
+                  <Button
+                    key={page}
+                    variant={safePage === page ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentPage(page as number)}
+                  >
+                    {page}
+                  </Button>
+                )
+              )}
+            </div>
 
             <Button
               variant="outline"

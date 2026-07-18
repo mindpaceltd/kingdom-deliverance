@@ -395,7 +395,7 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Sermons</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -624,6 +624,12 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
                     </div>
 
                     <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex shrink-0 lg:hidden">
+                        <Checkbox
+                          checked={isSelected}
+                          onChange={() => toggleSelectRow(sermon.id)}
+                        />
+                      </div>
                       <div className="size-12 rounded-lg overflow-hidden bg-muted shrink-0 border">
                         {sermon.thumbnail_url ? (
                           <img
@@ -765,12 +771,12 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
               })}
             </div>
 
-            <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-muted-foreground">
-              <span>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-4 py-3 border-t text-sm text-muted-foreground">
+              <span className="text-center sm:text-left">
                 Showing {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filteredSermons.length)}{' '}
                 of {filteredSermons.length}
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"

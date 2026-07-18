@@ -213,7 +213,7 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
 
       <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
-          <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+          <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
             <div className="space-y-1.5">
               <Label htmlFor="page-title">Page title</Label>
               <Input
@@ -251,7 +251,7 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
             </div>
           </div>
 
-          <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+          <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
             <h2 className="text-lg font-semibold">Hero section</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5 sm:col-span-2">
@@ -339,7 +339,7 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
 
           {content.pageType === 'contact' && (
             <>
-              <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+              <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
                 <h2 className="text-lg font-semibold">Find us & map</h2>
                 <p className="text-xs text-muted-foreground">
                   All text and links shown on the public contact page. Empty fields fall back to
@@ -464,7 +464,7 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
                 </div>
               </div>
 
-              <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+              <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
                 <h2 className="text-lg font-semibold">Contact form</h2>
                 <div className="space-y-1.5">
                   <Label>Form heading</Label>
@@ -513,7 +513,7 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
                 </div>
               </div>
 
-              <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+              <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
                 <h2 className="text-lg font-semibold">Optional intro (rich text)</h2>
                 <p className="text-xs text-muted-foreground">
                   Shown below the hero and above the contact grid when provided.
@@ -530,7 +530,7 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
           )}
 
           {content.pageType === 'give' && (
-            <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+            <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
               <h2 className="text-lg font-semibold">Giving intro</h2>
               <p className="text-xs text-muted-foreground">
                 QR codes remain under Settings → General and QR Codes admin.
@@ -546,7 +546,7 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
           )}
 
           {content.pageType === 'live' && (
-            <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+            <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
               <h2 className="text-lg font-semibold">Live stream</h2>
               <div className="space-y-1.5">
                 <Label>YouTube or stream URL</Label>
@@ -562,7 +562,7 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
 
           {(content.pageType === 'fire_service' ||
             content.pageType === 'custom') && (
-            <div className="grid gap-4 sm:grid-cols-2 rounded-2xl border bg-card p-6 shadow-sm">
+            <div className="grid gap-4 sm:grid-cols-2 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
               <div className="space-y-1.5">
                 <Label>CTA button label</Label>
                 <Input
@@ -591,7 +591,7 @@ export function PageEditorClient({ page }: { page?: CmsPage }) {
           )}
 
           {!['contact', 'give', 'about', 'home', 'faq'].includes(content.pageType) && (
-            <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+            <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
               <div>
                 <h2 className="text-lg font-semibold">Main content</h2>
                 <p className="text-xs text-muted-foreground mt-1">

@@ -57,7 +57,7 @@ export function HomePageEditorFields({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Hero content</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5 sm:col-span-2">
@@ -128,7 +128,7 @@ export function HomePageEditorFields({
         </div>
       </div>
 
-      <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Service schedule</h2>
           <Button
@@ -189,7 +189,7 @@ export function HomePageEditorFields({
         ))}
       </div>
 
-      <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Mission and stats</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
@@ -273,7 +273,7 @@ export function HomePageEditorFields({
         </div>
       </div>
 
-      <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Grow With Us cards</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
@@ -359,7 +359,7 @@ export function HomePageEditorFields({
         ))}
       </div>
 
-      <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold">KDC Store carousel</h2>
         <p className="text-xs text-muted-foreground">
           Product cards come from Admin → KDC Store. Edit section headings and links here.
@@ -400,7 +400,7 @@ export function HomePageEditorFields({
         </div>
       </div>
 
-      <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Recent Message (sermon)</h2>
         <p className="text-xs text-muted-foreground">
           Leave sermon slug empty to show the latest published sermon. Override thumbnail or video
@@ -479,7 +479,7 @@ export function HomePageEditorFields({
         />
       </div>
 
-      <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Values section</h2>
         <div className="grid gap-4 sm:grid-cols-3">
           <Input
@@ -541,7 +541,7 @@ export function HomePageEditorFields({
         ))}
       </div>
 
-      <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Upcoming events</h2>
         <p className="text-xs text-muted-foreground">
           Event cards are managed under Admin → Events.
@@ -570,7 +570,7 @@ export function HomePageEditorFields({
         </div>
       </div>
 
-      <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold">News &amp; teachings (blog)</h2>
         <p className="text-xs text-muted-foreground">
           Post cards come from Admin → Posts &amp; Blogs.
@@ -599,7 +599,7 @@ export function HomePageEditorFields({
         </div>
       </div>
 
-      <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Testimonies</h2>
         <p className="text-xs text-muted-foreground">
           Testimony quotes come from Admin → Testimonies when approved.
@@ -653,7 +653,7 @@ export function HomePageEditorFields({
         </div>
       </div>
 
-      <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Fire service CTA banner</h2>
         <p className="text-sm text-muted-foreground">
           The Fire Service date in the banner updates automatically to the last Friday of each month.

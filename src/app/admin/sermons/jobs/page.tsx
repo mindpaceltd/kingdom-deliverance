@@ -525,7 +525,7 @@ export default function JobsDashboardPage() {
 
   if (!mounted) {
     return (
-      <div className="space-y-4 p-6">
+      <div className="space-y-4">
         <div className="h-10 w-48 bg-muted animate-pulse rounded" />
         <div className="h-96 w-full bg-muted animate-pulse rounded" />
       </div>
@@ -533,7 +533,7 @@ export default function JobsDashboardPage() {
   }
 
   return (
-    <div className="space-y-6 p-6 max-w-[1400px] mx-auto animate-in fade-in duration-500">
+    <div className="space-y-6 max-w-[1400px] mx-auto animate-in fade-in duration-500">
       {/* Screen reader live region for status change announcements (Requirements 17.6, 17.2) */}
       <div
         aria-live="polite"
@@ -544,7 +544,7 @@ export default function JobsDashboardPage() {
       </div>
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
             Processing Jobs
@@ -554,7 +554,7 @@ export default function JobsDashboardPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"

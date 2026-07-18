@@ -265,9 +265,9 @@ export function EventEditorClient({ event }: EventEditorClientProps) {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-background overflow-hidden -m-6">
+    <div className="flex h-screen flex-col bg-background overflow-hidden -m-3 sm:-m-4 lg:-m-6">
       {/* ── Top bar ── */}
-      <div className="shrink-0 sticky top-0 z-20 flex items-center gap-3 border-b border-border bg-background/95 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="shrink-0 sticky top-0 z-20 flex flex-wrap items-center gap-2 sm:gap-3 border-b border-border bg-background/95 px-3 sm:px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <Button
           type="button"
           variant="ghost"
@@ -281,7 +281,7 @@ export function EventEditorClient({ event }: EventEditorClientProps) {
 
         <div className="h-4 w-px bg-border" />
 
-        <span className="text-sm font-semibold text-foreground truncate max-w-[300px]">
+        <span className="min-w-0 truncate text-sm font-semibold text-foreground max-w-[300px]">
           {form.title || (isEditing ? 'Edit Event' : 'New Event')}
         </span>
 
@@ -316,7 +316,7 @@ export function EventEditorClient({ event }: EventEditorClientProps) {
       </div>
 
       {/* ── Main layout ── */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-1 min-h-0 flex-col lg:flex-row overflow-hidden">
         {/* ── Editor ── */}
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-3xl mx-auto px-6 py-10 space-y-8">
@@ -543,7 +543,7 @@ export function EventEditorClient({ event }: EventEditorClientProps) {
         </main>
 
         {/* ── Sidebar ── */}
-        <aside className="w-[320px] shrink-0 border-l border-border overflow-y-auto bg-muted/5">
+        <aside className="w-full lg:w-[320px] lg:shrink-0 border-t lg:border-t-0 lg:border-l border-border overflow-y-auto bg-muted/5">
           <div className="px-5 py-6 space-y-5">
             <PublishPanel
               status={form.status as any}

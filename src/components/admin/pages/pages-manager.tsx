@@ -294,7 +294,7 @@ export function PagesManager({
   const bulkBusy = bulkIndexing || indexingId !== null
 
   return (
-    <div className="space-y-6 p-6 pb-24">
+    <div className="space-y-6 pb-24">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">

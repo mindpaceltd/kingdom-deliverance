@@ -343,10 +343,10 @@ export function PostsManager({ initialPosts, initialFilter }: PostsManagerProps)
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="space-y-8 p-6 pb-20">
+    <div className="space-y-8 pb-20">
       {/* Page Header & Stats Summary */}
       <div className="flex flex-col gap-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -593,6 +593,12 @@ export function PostsManager({ initialPosts, initialFilter }: PostsManagerProps)
 
                     {/* Post Main Info */}
                     <div className="flex items-center gap-4 min-w-0">
+                      <div className="flex shrink-0 md:hidden">
+                        <Checkbox
+                          checked={isSelected}
+                          onChange={() => toggleSelectRow(post.id)}
+                        />
+                      </div>
                       <div className="h-12 w-12 rounded-xl bg-muted overflow-hidden shrink-0 border border-white/5 relative group/img">
                         {post.featured_image ? (
                           <img src={post.featured_image} alt="" className="h-full w-full object-cover group-hover/img:scale-110 transition-transform duration-500" />
@@ -714,11 +720,11 @@ export function PostsManager({ initialPosts, initialFilter }: PostsManagerProps)
 
             {/* Pagination */}
             {filteredPosts.length > PAGE_SIZE && (
-              <div className="flex items-center justify-between px-6 py-8 border-t border-transparent">
-                <p className="text-sm text-muted-foreground font-medium">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-6 sm:py-8 border-t border-transparent">
+                <p className="text-sm text-muted-foreground font-medium text-center sm:text-left">
                   Showing <span className="text-primary">{pageStart + 1}</span> to <span className="text-primary">{pageEnd}</span> of <span className="text-primary font-bold">{filteredPosts.length}</span> articles
                 </p>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
                   <Button
                     variant="ghost"
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}

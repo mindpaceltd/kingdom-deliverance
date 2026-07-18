@@ -188,8 +188,8 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
     <form onSubmit={onSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-20">
       <div className="lg:col-span-8 space-y-6">
         {/* Bulk Tools Toolbar */}
-        <div className="flex items-center justify-between bg-card border rounded-xl p-4 shadow-sm">
-          <div className="flex gap-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-card border rounded-xl p-4 shadow-sm">
+          <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" size="sm" className="gap-2" onClick={handleDuplicate}>
               <Copy className="h-4 w-4" /> Duplicate
             </Button>
