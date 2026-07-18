@@ -88,34 +88,34 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border bg-card p-6 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="rounded-lg bg-primary/10 p-2 text-primary">
-              <PackageIcon className="h-6 w-6" />
+      <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
+        <div className="rounded-xl border bg-card p-3 sm:p-6 shadow-sm">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="rounded-lg bg-primary/10 p-2 text-primary shrink-0">
+              <PackageIcon className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Total Active</p>
-              <h2 className="text-2xl font-bold">{stats.published}</h2>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-xl border bg-card p-6 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="rounded-lg bg-yellow-500/10 p-2 text-yellow-600">
-              <FileIcon className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Drafts</p>
-              <h2 className="text-2xl font-bold text-yellow-600">{stats.drafts}</h2>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-sm font-medium text-muted-foreground truncate">Total Active</p>
+              <h2 className="text-xl sm:text-2xl font-bold">{stats.published}</h2>
             </div>
           </div>
         </div>
-        <div className="rounded-xl border bg-card p-6 shadow-sm sm:col-span-2 lg:col-span-2">
-          <div className="flex items-center gap-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">All products</p>
-              <h2 className="text-2xl font-bold">{stats.total}</h2>
+        <div className="rounded-xl border bg-card p-3 sm:p-6 shadow-sm">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="rounded-lg bg-yellow-500/10 p-2 text-yellow-600 shrink-0">
+              <FileIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-sm font-medium text-muted-foreground">Drafts</p>
+              <h2 className="text-xl sm:text-2xl font-bold text-yellow-600">{stats.drafts}</h2>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl border bg-card p-3 sm:p-6 shadow-sm col-span-2">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-sm font-medium text-muted-foreground">All products</p>
+              <h2 className="text-xl sm:text-2xl font-bold">{stats.total}</h2>
             </div>
           </div>
         </div>

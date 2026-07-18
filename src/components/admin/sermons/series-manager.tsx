@@ -46,7 +46,7 @@ export function SeriesManager({ initialSeries }: SeriesManagerProps) {
           <h1 className="text-2xl font-bold tracking-tight">Sermon Series</h1>
           <p className="text-muted-foreground">Manage your sermon collections and series.</p>
         </div>
-        <Button onClick={openCreate} className="gap-2">
+        <Button onClick={openCreate} className="gap-2 w-full sm:w-auto">
           <PlusIcon className="h-4 w-4" />
           New Series
         </Button>
@@ -62,17 +62,17 @@ export function SeriesManager({ initialSeries }: SeriesManagerProps) {
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {filteredSeries.map((s) => (
           <div
             key={s.id}
-            className="group relative flex flex-col rounded-lg border bg-card p-5 hover:border-primary/50 transition-colors shadow-sm"
+            className="group relative flex flex-col rounded-lg border bg-card p-4 sm:p-5 hover:border-primary/50 transition-colors shadow-sm"
           >
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg">{s.name}</h3>
-              <p className="text-xs text-muted-foreground font-mono mt-1">/{s.slug}</p>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-base sm:text-lg leading-snug">{s.name}</h3>
+              <p className="text-xs text-muted-foreground font-mono mt-1 truncate">/{s.slug}</p>
               {s.description && (
-                <p className="text-sm text-muted-foreground mt-3 line-clamp-2">
+                <p className="text-sm text-muted-foreground mt-3 line-clamp-3">
                   {s.description}
                 </p>
               )}
@@ -82,7 +82,7 @@ export function SeriesManager({ initialSeries }: SeriesManagerProps) {
                 variant="outline"
                 size="sm"
                 onClick={() => openEdit(s)}
-                className="flex-1 gap-1.5"
+                className="flex-1 gap-1.5 h-9"
               >
                 <PencilIcon className="h-3.5 w-3.5" />
                 Edit
@@ -91,7 +91,7 @@ export function SeriesManager({ initialSeries }: SeriesManagerProps) {
                 variant="outline"
                 size="sm"
                 onClick={() => handleDelete(s.id)}
-                className="flex-1 gap-1.5 text-destructive hover:bg-destructive/5 hover:text-destructive"
+                className="flex-1 gap-1.5 h-9 text-destructive hover:bg-destructive/5 hover:text-destructive"
               >
                 <Trash2Icon className="h-3.5 w-3.5" />
                 Delete

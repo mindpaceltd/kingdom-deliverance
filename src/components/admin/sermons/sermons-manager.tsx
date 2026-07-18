@@ -482,7 +482,7 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         {[
           { label: 'Total Sermons', value: stats.total, icon: VideoIcon },
           { label: 'Total Views', value: stats.views.toLocaleString(), icon: EyeIcon },
@@ -491,66 +491,68 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="rounded-xl border bg-card p-4 shadow-sm"
+            className="rounded-xl border bg-card p-3 sm:p-4 shadow-sm"
           >
-            <p className="text-xs text-muted-foreground font-medium">{stat.label}</p>
-            <p className="text-2xl font-bold mt-1">{stat.value}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground font-medium truncate">{stat.label}</p>
+            <p className="text-xl sm:text-2xl font-bold mt-0.5 sm:mt-1">{stat.value}</p>
           </div>
         ))}
       </div>
 
       <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
-        <div className="p-4 border-b space-y-3">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-            <Input
-              placeholder="Search title, series or preacher..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value)
+        <div className="p-3 sm:p-4 border-b space-y-3">
+          <Input
+            placeholder="Search title, series or preacher..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value)
+              setCurrentPage(1)
+            }}
+            className="w-full"
+          />
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <Select
+              value={filterPreacher}
+              onValueChange={(v) => {
+                setFilterPreacher(v ?? 'all')
                 setCurrentPage(1)
               }}
-              className="max-w-md"
-            />
-            <div className="flex flex-wrap items-center gap-2 bg-muted/30 p-1 rounded-lg border flex-1">
-              <FilterIcon className="size-3.5 text-muted-foreground ml-2" />
-              <Select
-                value={filterPreacher}
-                onValueChange={(v) => {
-                  setFilterPreacher(v ?? 'all')
-                  setCurrentPage(1)
-                }}
-              >
-                <SelectTrigger className="h-8 w-[140px] border-none bg-transparent shadow-none">
+            >
+              <SelectTrigger className="h-9 w-full">
+                <div className="flex items-center gap-2 min-w-0">
+                  <FilterIcon className="size-3.5 shrink-0 text-muted-foreground" />
                   <SelectValue placeholder="Preacher" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Preachers</SelectItem>
-                  {preachers.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={filterStatus}
-                onValueChange={(v) => {
-                  setFilterStatus(v ?? 'all')
-                  setCurrentPage(1)
-                }}
-              >
-                <SelectTrigger className="h-8 w-[120px] border-none bg-transparent shadow-none">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="published">Published</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="scheduled">Scheduled</SelectItem>
-                  <SelectItem value="trash">Trash</SelectItem>
-                </SelectContent>
-              </Select>
-              <CalendarIcon className="size-3.5 text-muted-foreground" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Preachers</SelectItem>
+                {preachers.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={filterStatus}
+              onValueChange={(v) => {
+                setFilterStatus(v ?? 'all')
+                setCurrentPage(1)
+              }}
+            >
+              <SelectTrigger className="h-9 w-full">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="scheduled">Scheduled</SelectItem>
+                <SelectItem value="trash">Trash</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="relative">
+              <CalendarIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="date"
                 value={filterDateFrom}
@@ -558,9 +560,14 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
                   setFilterDateFrom(e.target.value)
                   setCurrentPage(1)
                 }}
-                className="h-8 w-[130px] border-none bg-transparent text-xs"
+                className="h-9 w-full pl-8 text-xs"
+                aria-label="From date"
               />
-              <span className="text-muted-foreground text-xs">to</span>
+            </div>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-medium uppercase text-muted-foreground">
+                to
+              </span>
               <Input
                 type="date"
                 value={filterDateTo}
@@ -568,11 +575,11 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
                   setFilterDateTo(e.target.value)
                   setCurrentPage(1)
                 }}
-                className="h-8 w-[130px] border-none bg-transparent text-xs"
+                className="h-9 w-full pl-8 text-xs"
+                aria-label="To date"
               />
             </div>
           </div>
-
         </div>
 
         {isRefreshing ? (
@@ -643,23 +650,29 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
                           </div>
                         )}
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <button
                           type="button"
                           onClick={() => router.push(`/admin/sermons/${sermon.id}`)}
-                          className="text-sm font-semibold truncate block text-left hover:text-primary w-full"
+                          className="text-sm font-semibold text-left hover:text-primary w-full line-clamp-2 sm:truncate sm:line-clamp-none"
                         >
                           {sermon.title}
                         </button>
-                        <p className="text-[11px] text-muted-foreground truncate">
+                        <p className="text-[11px] text-muted-foreground line-clamp-1">
                           {sermon.sermon_series?.name || sermon.series || 'Individual'} ·{' '}
                           {sermon.preacher}
                         </p>
                         {sermon.meta_title && (
-                          <p className="text-[10px] text-muted-foreground/80 truncate mt-0.5">
+                          <p className="text-[10px] text-muted-foreground/80 line-clamp-1 mt-0.5 hidden sm:block">
                             OG: {sermon.meta_title}
                           </p>
                         )}
+                        <div className="mt-2 flex flex-wrap items-center gap-2 lg:hidden">
+                          <StatusBadge status={sermon.status} />
+                          <span className="text-[10px] text-muted-foreground">
+                            {formatDate(sermon.date)}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -680,7 +693,7 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
                       <StatusBadge status={sermon.status} />
                     </div>
 
-                    <div className="flex items-center justify-end gap-0.5 flex-wrap">
+                    <div className="flex items-center justify-end gap-1 flex-wrap col-span-full lg:col-span-1 pt-1 lg:pt-0 border-t lg:border-0 mt-1 lg:mt-0">
                       {isTrash ? (
                         <>
                           <Button

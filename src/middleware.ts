@@ -2,8 +2,13 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-pathname', request.nextUrl.pathname)
+
   // Start with a pass-through response so cookies can be mutated below.
-  let supabaseResponse = NextResponse.next({ request })
+  let supabaseResponse = NextResponse.next({
+    request: { headers: requestHeaders },
+  })
 
   // Create a Supabase client that reads/writes cookies on the request/response.
   // The setAll implementation ensures refreshed session tokens are forwarded to
@@ -19,8 +24,10 @@ export async function middleware(request: NextRequest) {
         setAll(cookiesToSet) {
           // Write updated cookies onto the request first (for downstream middleware)
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          // Re-create the response so it carries the mutated request cookies
-          supabaseResponse = NextResponse.next({ request })
+          // Re-create the response so it carries the mutated request cookies + pathname
+          supabaseResponse = NextResponse.next({
+            request: { headers: requestHeaders },
+          })
           // Then write the same cookies onto the response so the browser receives them
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)

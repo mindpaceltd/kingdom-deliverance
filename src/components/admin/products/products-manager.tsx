@@ -396,17 +396,133 @@ export function ProductsManager({
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="w-full table-fixed text-left text-sm">
+      {/* Mobile card list */}
+      <div className="md:hidden divide-y">
+        {products.length > 0 ? (
+          products.map((product) => {
+            const isSelected = selectedIds.has(product.id)
+            const price = resolveDisplayPrice(product)
+            const discountPct =
+              price.original && price.original > price.current
+                ? Math.round(((price.original - price.current) / price.original) * 100)
+                : null
+            return (
+              <div
+                key={product.id}
+                className={cn(
+                  'p-4 space-y-3',
+                  isSelected && 'bg-primary/5'
+                )}
+              >
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    checked={isSelected}
+                    onChange={() => toggleSelectRow(product.id)}
+                    aria-label={`Select ${product.name}`}
+                    className="mt-1"
+                  />
+                  <div className="h-14 w-14 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0 border">
+                    {product.image_url ? (
+                      <img
+                        src={normalizeMediaUrl(product.image_url) || '/placeholder.png'}
+                        alt={product.name}
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          const target = e.currentTarget
+                          if (!target.src.endsWith('/placeholder.png')) target.src = '/placeholder.png'
+                        }}
+                      />
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground">No img</span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-primary leading-snug line-clamp-2">{product.name}</p>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                      <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-700">
+                        {product.status || 'published'}
+                      </span>
+                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {product.type || 'product'}
+                      </span>
+                      {discountPct != null && (
+                        <span className="text-[10px] font-bold text-red-500">-{discountPct}%</span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground truncate">
+                      {product.category?.name || 'Uncategorized'}
+                    </p>
+                    <div className="mt-1 flex items-baseline gap-2">
+                      <span className="font-mono font-bold text-primary text-sm">
+                        {formatAdminPrice(price.current)}
+                      </span>
+                      {price.original && (
+                        <span className="text-[10px] text-red-500 line-through opacity-60">
+                          {formatAdminPrice(price.original)}
+                        </span>
+                      )}
+                      <SeoScoreBadge score={resolveProductSeoScore(product)} />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 pl-7">
+                  {product.status === 'published' && product.slug && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5"
+                      disabled={Boolean(actionLoading)}
+                      onClick={() => handleSingleIndex(product)}
+                    >
+                      <Globe className="h-3.5 w-3.5" /> Index
+                    </Button>
+                  )}
+                  <DuplicateProductButton productId={product.id} />
+                  <Button variant="outline" size="sm" asChild className="h-8 gap-1.5">
+                    <Link href={`/admin/products/${product.id}`}>
+                      <Pencil className="h-3.5 w-3.5" /> Edit
+                    </Link>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(product.id, product.name)}
+                    disabled={actionLoading === `delete-${product.id}` || actionLoading === 'bulk-delete'}
+                    className="h-8 gap-1.5 text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Delete
+                  </Button>
+                </div>
+              </div>
+            )
+          })
+        ) : (
+          <div className="px-4 py-12 text-center text-muted-foreground italic text-sm">
+            No products found in your inventory.
+          </div>
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full min-w-[900px] text-left text-sm">
           <thead className="bg-muted/50 border-b">
             <tr>
-              <th className="px-6 py-4 w-[52px]"><Checkbox checked={allSelected} indeterminate={someSelected} onChange={toggleSelectAll} aria-label="Select all products" /></th>
-              <th className="px-6 py-4 font-semibold">Product</th>
-              <th className="px-6 py-4 font-semibold">Status</th>
-              <th className="px-6 py-4 font-semibold">Category</th>
-              <th className="px-6 py-4 font-semibold">SEO</th>
-              <th className="px-6 py-4 font-semibold">{`Price (${targetCurrency})`}</th>
-              <th className="px-6 py-4 text-right font-semibold">Actions</th>
+              <th className="px-4 py-3 w-[52px]">
+                <Checkbox
+                  checked={allSelected}
+                  indeterminate={someSelected}
+                  onChange={toggleSelectAll}
+                  aria-label="Select all products"
+                />
+              </th>
+              <th className="px-4 py-3 font-semibold">Product</th>
+              <th className="px-4 py-3 font-semibold">Status</th>
+              <th className="px-4 py-3 font-semibold">Category</th>
+              <th className="px-4 py-3 font-semibold">SEO</th>
+              <th className="px-4 py-3 font-semibold">{`Price (${targetCurrency})`}</th>
+              <th className="px-4 py-3 text-right font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -416,8 +532,14 @@ export function ProductsManager({
                 const price = resolveDisplayPrice(product)
                 return (
                   <tr key={product.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-6 py-4 align-top"><Checkbox checked={isSelected} onChange={() => toggleSelectRow(product.id)} aria-label={`Select ${product.name}`} /></td>
-                    <td className="px-4 py-4 w-[34%]">
+                    <td className="px-4 py-4 align-top">
+                      <Checkbox
+                        checked={isSelected}
+                        onChange={() => toggleSelectRow(product.id)}
+                        aria-label={`Select ${product.name}`}
+                      />
+                    </td>
+                    <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
                         <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0 border">
                           {product.image_url ? (
@@ -431,12 +553,12 @@ export function ProductsManager({
                               }}
                             />
                           ) : (
-                            <span className="text-muted-foreground">No image</span>
+                            <span className="text-muted-foreground text-[10px]">No image</span>
                           )}
                         </div>
                         <div className="flex min-w-0 flex-col">
                           <span
-                            className="font-bold text-primary line-clamp-2 leading-tight max-w-[220px] md:max-w-[320px]"
+                            className="font-bold text-primary line-clamp-2 leading-tight"
                             title={product.name}
                           >
                             {product.name}
@@ -453,14 +575,14 @@ export function ProductsManager({
                       </span>
                     </td>
                     <td className="px-4 py-4 text-muted-foreground font-medium">
-                      <span className="block truncate max-w-[90px] md:max-w-[150px]" title={product.category?.name || 'Uncategorized'}>
+                      <span className="block truncate max-w-[150px]" title={product.category?.name || 'Uncategorized'}>
                         {product.category?.name || 'Uncategorized'}
                       </span>
                     </td>
                     <td className="px-4 py-4">
                       <SeoScoreBadge score={resolveProductSeoScore(product)} />
                     </td>
-                    <td className="px-4 py-4 w-[16%]">
+                    <td className="px-4 py-4">
                       <div className="flex flex-col">
                         <span className="font-mono font-bold text-primary">{formatAdminPrice(price.current)}</span>
                         {price.original && (
@@ -470,7 +592,7 @@ export function ProductsManager({
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-right w-[120px]">
+                    <td className="px-4 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {product.status === 'published' && product.slug && (
                           <Button

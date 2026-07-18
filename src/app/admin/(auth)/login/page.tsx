@@ -11,24 +11,43 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [logo, setLogo] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchLogo() {
+    async function init() {
       const supabase = createClient();
-      
-      // Check organization_images first, then site_settings
+
+      // If already signed in, never show login inside the shell — go to dashboard.
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        router.replace("/admin");
+        return;
+      }
+
       const [orgLogoRes, settingsLogoRes] = await Promise.all([
-        supabase.from('organization_images').select('url').eq('type', 'logo').eq('is_active', true).maybeSingle(),
-        supabase.from('site_settings').select('value').eq('key', 'site_logo').maybeSingle()
+        supabase
+          .from("organization_images")
+          .select("url")
+          .eq("type", "logo")
+          .eq("is_active", true)
+          .maybeSingle(),
+        supabase
+          .from("site_settings")
+          .select("value")
+          .eq("key", "site_logo")
+          .maybeSingle(),
       ]);
-      
+
       const logoUrl = orgLogoRes.data?.url || settingsLogoRes.data?.value;
       if (logoUrl) setLogo(logoUrl);
+      setCheckingSession(false);
     }
-    fetchLogo();
-  }, []);
+    void init();
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,41 +76,39 @@ export default function AdminLoginPage() {
     }
   };
 
+  if (checkingSession) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-[#1e1b4b]">
+        <Loader2 className="size-6 animate-spin text-amber-400" />
+      </div>
+    );
+  }
+
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%)",
-        fontFamily: "'Inter', system-ui, sans-serif",
-      }}
-    >
-      <div style={{ width: "100%", maxWidth: "420px", margin: "0 16px" }}>
-        <div style={{ background: "#fff", borderRadius: "16px", overflow: "hidden", boxShadow: "0 25px 50px rgba(0,0,0,0.4)" }}>
-          {/* Header */}
-          <div style={{ background: "linear-gradient(135deg, #1e1b4b, #4c1d95)", padding: "40px 32px", textAlign: "center" }}>
-            <div style={{
-              width: "64px", height: "64px", borderRadius: "50%",
-              border: "2px solid #fbbf24", background: "rgba(251,191,36,0.1)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 16px", overflow: "hidden"
-            }}>
+    <div className="flex min-h-[100dvh] items-center justify-center bg-gradient-to-br from-[#1e1b4b] via-indigo-900 to-[#1e1b4b] px-4 py-8">
+      <div className="w-full max-w-[420px]">
+        <div className="overflow-hidden rounded-2xl bg-white shadow-2xl">
+          <div className="bg-gradient-to-br from-[#1e1b4b] to-purple-900 px-6 py-8 text-center sm:px-8 sm:py-10">
+            <div className="mx-auto mb-4 flex size-14 items-center justify-center overflow-hidden rounded-full border-2 border-amber-400 bg-amber-400/10 sm:size-16">
               {logo ? (
-                <img src={logo} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logo} alt="Logo" className="size-full object-cover" />
               ) : (
-                <ShieldCheck size={32} color="#fbbf24" />
+                <ShieldCheck className="size-8 text-amber-400" />
               )}
             </div>
-            <h1 style={{ color: "#fff", fontSize: "24px", fontWeight: 700, margin: "0 0 4px" }}>KDC Admin</h1>
-            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "14px", margin: 0 }}>Kingdom Deliverance Centre Uganda</p>
+            <h1 className="m-0 text-xl font-bold text-white sm:text-2xl">KDC Admin</h1>
+            <p className="m-0 mt-1 text-sm text-white/60">
+              Kingdom Deliverance Centre Uganda
+            </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleLogin} style={{ padding: "32px" }}>
-            <div style={{ marginBottom: "20px" }}>
-              <label htmlFor="email" style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#374151", marginBottom: "6px" }}>
+          <form onSubmit={handleLogin} className="space-y-5 p-5 sm:p-8">
+            <div>
+              <label
+                htmlFor="email"
+                className="mb-1.5 block text-sm font-medium text-gray-700"
+              >
                 Email Address
               </label>
               <input
@@ -101,16 +118,16 @@ export default function AdminLoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@kdcuganda.org"
                 required
-                style={{
-                  width: "100%", padding: "10px 14px", fontSize: "14px",
-                  border: "1px solid #d1d5db", borderRadius: "8px",
-                  outline: "none", boxSizing: "border-box",
-                }}
+                autoComplete="email"
+                className="h-11 w-full rounded-lg border border-gray-300 px-3.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
               />
             </div>
 
-            <div style={{ marginBottom: "20px" }}>
-              <label htmlFor="password" style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#374151", marginBottom: "6px" }}>
+            <div>
+              <label
+                htmlFor="password"
+                className="mb-1.5 block text-sm font-medium text-gray-700"
+              >
                 Password
               </label>
               <PasswordInput
@@ -119,15 +136,13 @@ export default function AdminLoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="h-[42px] rounded-lg text-sm"
+                autoComplete="current-password"
+                className="h-11 rounded-lg text-sm"
               />
             </div>
 
             {error && (
-              <div style={{
-                background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626",
-                padding: "12px 16px", borderRadius: "8px", fontSize: "14px", marginBottom: "20px",
-              }}>
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
                 {error}
               </div>
             )}
@@ -135,19 +150,18 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              style={{
-                width: "100%", padding: "12px", fontSize: "15px", fontWeight: 600,
-                background: loading ? "#6366f1" : "#4f46e5", color: "#fff",
-                border: "none", borderRadius: "8px", cursor: loading ? "not-allowed" : "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-              }}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 text-[15px] font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-80"
             >
               {loading ? (
-                <><Loader2 size={16} className="animate-spin" /> Signing in...</>
-              ) : "Sign In to Dashboard"}
+                <>
+                  <Loader2 className="size-4 animate-spin" /> Signing in...
+                </>
+              ) : (
+                "Sign In to Dashboard"
+              )}
             </button>
 
-            <p style={{ textAlign: "center", fontSize: "12px", color: "#9ca3af", marginTop: "16px", marginBottom: 0 }}>
+            <p className="m-0 text-center text-xs text-gray-400">
               Only authorized church administrators may access this area.
             </p>
           </form>

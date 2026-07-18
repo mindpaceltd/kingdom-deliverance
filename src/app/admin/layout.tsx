@@ -1,13 +1,26 @@
+import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { AdminProvider } from '@/lib/admin-context'
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
 import { AdminHeader } from '@/components/admin/admin-header'
+
+function isAuthRoute(pathname: string): boolean {
+  return pathname === '/admin/login' || pathname.startsWith('/admin/login/')
+}
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const pathname = headers().get('x-pathname') ?? ''
+
+  // Auth pages must never render inside the admin shell (sidebar/header),
+  // even if a stale session is present while middleware redirects.
+  if (isAuthRoute(pathname)) {
+    return <>{children}</>
+  }
+
   const supabase = createClient()
 
   const {
