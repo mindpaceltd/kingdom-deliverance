@@ -49,6 +49,7 @@ export type DmPostInput = {
   status?: DmPostStatus
   sermonId?: string | null
   mediaIds?: string[]
+  aiMetadata?: Record<string, unknown>
 }
 
 function publishSupportFor(platform: string) {
@@ -259,6 +260,17 @@ export async function updateDmPost(id: string, input: DmPostInput) {
   if (input.status !== undefined) payload.status = input.status
   if (input.sermonId !== undefined) payload.sermon_id = input.sermonId
   if (input.mediaIds !== undefined) payload.media_ids = input.mediaIds
+  if (input.aiMetadata !== undefined) {
+    const { data: existing } = await admin
+      .from('dm_posts')
+      .select('ai_metadata')
+      .eq('id', id)
+      .maybeSingle()
+    payload.ai_metadata = {
+      ...((existing?.ai_metadata as Record<string, unknown>) ?? {}),
+      ...input.aiMetadata,
+    }
+  }
 
   const { error } = await admin.from('dm_posts').update(payload).eq('id', id).is('deleted_at', null)
   if (error) return { error: error.message }
@@ -398,21 +410,33 @@ export async function publishDmPostNow(id: string) {
   const admin = createAdminClient()
   const { data: post } = await admin
     .from('dm_posts')
-    .select('id, title, body, platforms, status')
+    .select('id, title, body, platforms, status, ai_metadata')
     .eq('id', id)
     .is('deleted_at', null)
     .maybeSingle()
 
   if (!post) return { error: 'Post not found' }
 
-  const message = [post.title, stripHtmlForPublish(post.body || '')]
-    .filter(Boolean)
-    .join('\n\n')
-    .trim()
-  if (!message) return { error: 'Add a title or body before publishing' }
+  const meta = (post.ai_metadata ?? {}) as {
+    platformCaptions?: Record<string, string>
+    trimToLimit?: boolean
+  }
+  const trim = meta.trimToLimit !== false
+  const { platformCaption } = await import('@/lib/digital-ministry/platform-guides')
 
   const platforms = (post.platforms as string[]) ?? []
   if (platforms.length === 0) return { error: 'Select at least one platform' }
+
+  const defaultMessage = platformCaption(
+    post.title || '',
+    post.body || '',
+    platforms[0],
+    meta.platformCaptions,
+    trim
+  )
+  if (!defaultMessage && !Object.values(meta.platformCaptions ?? {}).some((v) => v?.trim())) {
+    return { error: 'Add a title or body before publishing' }
+  }
 
   await syncPublicationRows(admin, id, platforms)
   await admin
@@ -452,6 +476,13 @@ export async function publishDmPostNow(id: string) {
     if (platform === 'facebook' && metaConfigured() && account?.account_id && account.token_encrypted) {
       const token = tryDecryptSecret(account.token_encrypted)
       if (token && !String(account.account_id).startsWith('no-pages:')) {
+        const message = platformCaption(
+          post.title || '',
+          post.body || '',
+          'facebook',
+          meta.platformCaptions,
+          trim
+        )
         const result = await tryPublishMetaPage({
           accountId: account.account_id,
           accessToken: token,

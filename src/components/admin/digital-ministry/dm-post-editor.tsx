@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DmCard } from '@/components/admin/digital-ministry/dm-ui'
+import { DmPlatformPreviews } from '@/components/admin/digital-ministry/dm-platform-previews'
 import {
   archiveDmPost,
   markPublicationManualDone,
@@ -22,6 +23,7 @@ import {
   type DmPost,
   type DmPostPublication,
 } from '@/lib/digital-ministry/types'
+import { DM_PLATFORM_GUIDES } from '@/lib/digital-ministry/platform-guides'
 import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
 
@@ -51,7 +53,6 @@ function plainTextLength(html: string) {
     .trim().length
 }
 
-/** AI / plain drafts → simple HTML for TipTap */
 function ensureHtml(content: string) {
   const trimmed = content.trim()
   if (!trimmed) return ''
@@ -80,10 +81,26 @@ export function DmPostEditor({
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  const meta = (post.ai_metadata ?? {}) as {
+    platformCaptions?: Record<string, string>
+    trimToLimit?: boolean
+  }
+  const [overrides, setOverrides] = useState<Record<string, string>>(meta.platformCaptions ?? {})
+  const [trimEnabled, setTrimEnabled] = useState(meta.trimToLimit !== false)
+
   const charCount = useMemo(() => plainTextLength(body), [body])
 
   function togglePlatform(id: string) {
     setPlatforms((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]))
+  }
+
+  function payloadExtras() {
+    return {
+      aiMetadata: {
+        platformCaptions: overrides,
+        trimToLimit: trimEnabled,
+      },
+    }
   }
 
   function run(action: () => Promise<void>) {
@@ -107,6 +124,7 @@ export function DmPostEditor({
         platforms,
         aiTone: tone,
         scheduledAt: scheduleAt ? new Date(scheduleAt).toISOString() : null,
+        ...payloadExtras(),
       })
       if (result.error) setError(result.error)
       else {
@@ -122,7 +140,14 @@ export function DmPostEditor({
       return
     }
     run(async () => {
-      await updateDmPost(post.id, { title, body, bodyMarkdown: body, platforms, aiTone: tone })
+      await updateDmPost(post.id, {
+        title,
+        body,
+        bodyMarkdown: body,
+        platforms,
+        aiTone: tone,
+        ...payloadExtras(),
+      })
       const result = await scheduleDmPost(post.id, new Date(scheduleAt).toISOString())
       if (result.error) setError(result.error)
       else {
@@ -134,7 +159,14 @@ export function DmPostEditor({
 
   function onPublish() {
     run(async () => {
-      await updateDmPost(post.id, { title, body, bodyMarkdown: body, platforms, aiTone: tone })
+      await updateDmPost(post.id, {
+        title,
+        body,
+        bodyMarkdown: body,
+        platforms,
+        aiTone: tone,
+        ...payloadExtras(),
+      })
       const result = await publishDmPostNow(post.id)
       if (result.error) setError(result.error)
       else {
@@ -205,7 +237,7 @@ export function DmPostEditor({
           <div>
             <div className="flex items-center justify-between gap-2">
               <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Body
+                Shared draft
               </label>
               <span className="text-[11px] tabular-nums text-muted-foreground">
                 {charCount} chars
@@ -215,10 +247,10 @@ export function DmPostEditor({
               <RichTextEditor
                 value={body}
                 onChange={setBody}
-                placeholder="Write your social post, caption, or newsletter blurb…"
+                placeholder="Write once — then tune per platform in the previews below…"
                 disabled={pending}
                 compact
-                editorMinHeight="min-h-[240px]"
+                editorMinHeight="min-h-[220px]"
               />
             </div>
           </div>
@@ -249,6 +281,18 @@ export function DmPostEditor({
             </Button>
           </div>
         </DmCard>
+
+        <DmPlatformPreviews
+          platforms={platforms}
+          title={title}
+          bodyHtml={body}
+          overrides={overrides}
+          onOverrideChange={(platform, value) =>
+            setOverrides((prev) => ({ ...prev, [platform]: value }))
+          }
+          trimEnabled={trimEnabled}
+          onTrimChange={setTrimEnabled}
+        />
 
         {pubs.length > 0 ? (
           <DmCard className="p-4 sm:p-5">
@@ -310,20 +354,26 @@ export function DmPostEditor({
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Platforms
           </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Select networks to unlock recommendations and live previews.
+          </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {DM_STUDIO_PLATFORMS.map((p) => {
               const on = platforms.includes(p.id)
+              const guide = DM_PLATFORM_GUIDES[p.id]
               return (
                 <button
                   key={p.id}
                   type="button"
                   onClick={() => togglePlatform(p.id)}
+                  title={guide?.recommendations[0]}
                   className={cn(
                     'rounded-full border px-2.5 py-1 text-xs transition-colors',
                     on
-                      ? 'border-foreground/30 bg-foreground text-background'
+                      ? 'border-transparent text-white'
                       : 'border-border bg-muted/40 text-muted-foreground hover:bg-muted'
                   )}
+                  style={on && guide ? { background: guide.accent } : undefined}
                 >
                   {p.label}
                 </button>
@@ -347,9 +397,6 @@ export function DmPostEditor({
               </option>
             ))}
           </select>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Uses Gemini (`GEMINI_API_KEY`) and logs to <code>dm_ai_generations</code>.
-          </p>
         </DmCard>
 
         <DmCard className="p-4 sm:p-5">
@@ -362,14 +409,6 @@ export function DmPostEditor({
             value={scheduleAt}
             onChange={(e) => setScheduleAt(e.target.value)}
           />
-          <p className="mt-2 text-xs text-muted-foreground">
-            Creates a calendar entry when you Schedule.
-          </p>
-        </DmCard>
-
-        <DmCard className="p-4 text-xs text-muted-foreground">
-          Rich text is saved as HTML. Facebook auto-posts as plain text. Instagram needs media
-          (manual for text). X / LinkedIn / YouTube captions stay manual with Mark published.
         </DmCard>
       </aside>
     </div>
