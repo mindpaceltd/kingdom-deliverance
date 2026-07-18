@@ -1,11 +1,11 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { DmCard } from '@/components/admin/digital-ministry/dm-ui'
 import {
   archiveDmPost,
@@ -25,12 +25,41 @@ import {
 import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
 
+const RichTextEditor = dynamic(
+  () => import('@/components/admin/rich-text-editor').then((m) => m.RichTextEditor),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="min-h-[240px] animate-pulse rounded-lg border border-border bg-muted/30" />
+    ),
+  }
+)
+
 function toLocalInputValue(iso: string | null) {
   if (!iso) return ''
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ''
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function plainTextLength(html: string) {
+  return html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim().length
+}
+
+/** AI / plain drafts → simple HTML for TipTap */
+function ensureHtml(content: string) {
+  const trimmed = content.trim()
+  if (!trimmed) return ''
+  if (/<[a-z][\s\S]*>/i.test(trimmed)) return trimmed
+  return trimmed
+    .split(/\n{2,}/)
+    .map((block) => `<p>${block.replace(/\n/g, '<br>')}</p>`)
+    .join('')
 }
 
 export function DmPostEditor({
@@ -43,7 +72,7 @@ export function DmPostEditor({
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [title, setTitle] = useState(post.title ?? '')
-  const [body, setBody] = useState(post.body ?? '')
+  const [body, setBody] = useState(() => ensureHtml(post.body ?? ''))
   const [platforms, setPlatforms] = useState<string[]>(post.platforms ?? [])
   const [tone, setTone] = useState<DmAiTone>((post.ai_tone as DmAiTone) || 'evangelism')
   const [scheduleAt, setScheduleAt] = useState(toLocalInputValue(post.scheduled_at))
@@ -51,7 +80,7 @@ export function DmPostEditor({
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const charCount = useMemo(() => body.length, [body])
+  const charCount = useMemo(() => plainTextLength(body), [body])
 
   function togglePlatform(id: string) {
     setPlatforms((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]))
@@ -74,6 +103,7 @@ export function DmPostEditor({
       const result = await updateDmPost(post.id, {
         title,
         body,
+        bodyMarkdown: body,
         platforms,
         aiTone: tone,
         scheduledAt: scheduleAt ? new Date(scheduleAt).toISOString() : null,
@@ -92,7 +122,7 @@ export function DmPostEditor({
       return
     }
     run(async () => {
-      await updateDmPost(post.id, { title, body, platforms, aiTone: tone })
+      await updateDmPost(post.id, { title, body, bodyMarkdown: body, platforms, aiTone: tone })
       const result = await scheduleDmPost(post.id, new Date(scheduleAt).toISOString())
       if (result.error) setError(result.error)
       else {
@@ -104,7 +134,7 @@ export function DmPostEditor({
 
   function onPublish() {
     run(async () => {
-      await updateDmPost(post.id, { title, body, platforms, aiTone: tone })
+      await updateDmPost(post.id, { title, body, bodyMarkdown: body, platforms, aiTone: tone })
       const result = await publishDmPostNow(post.id)
       if (result.error) setError(result.error)
       else {
@@ -120,11 +150,16 @@ export function DmPostEditor({
 
   function onRewrite() {
     run(async () => {
-      const result = await rewriteDmPostWithAi({ title, body, tone, platforms })
+      const result = await rewriteDmPostWithAi({
+        title,
+        body: body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
+        tone,
+        platforms,
+      })
       if ('error' in result) setError(result.error)
       else {
         setTitle(result.title)
-        setBody(result.body)
+        setBody(ensureHtml(result.body))
         setMessage('AI rewrite applied — review and save')
       }
     })
@@ -172,14 +207,20 @@ export function DmPostEditor({
               <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Body
               </label>
-              <span className="text-[11px] tabular-nums text-muted-foreground">{charCount} chars</span>
+              <span className="text-[11px] tabular-nums text-muted-foreground">
+                {charCount} chars
+              </span>
             </div>
-            <Textarea
-              className="mt-1.5 min-h-[240px] font-sans text-sm leading-relaxed"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="Write your social post, caption, or newsletter blurb…"
-            />
+            <div className="mt-1.5 overflow-hidden rounded-lg border border-border">
+              <RichTextEditor
+                value={body}
+                onChange={setBody}
+                placeholder="Write your social post, caption, or newsletter blurb…"
+                disabled={pending}
+                compact
+                editorMinHeight="min-h-[240px]"
+              />
+            </div>
           </div>
           {(message || error) && (
             <p className={cn('text-sm', error ? 'text-destructive' : 'text-emerald-700')}>
@@ -236,7 +277,12 @@ export function DmPostEditor({
                     ) : null}
                   </div>
                   {p.status === 'manual_required' || p.status === 'failed' ? (
-                    <Button size="sm" variant="outline" disabled={pending} onClick={() => onMarkDone(p.id)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={pending}
+                      onClick={() => onMarkDone(p.id)}
+                    >
                       Mark published
                     </Button>
                   ) : null}
@@ -322,8 +368,8 @@ export function DmPostEditor({
         </DmCard>
 
         <DmCard className="p-4 text-xs text-muted-foreground">
-          Facebook auto-posts when Meta is connected. Instagram needs media (manual for text). X /
-          LinkedIn / YouTube captions stay manual with Mark published.
+          Rich text is saved as HTML. Facebook auto-posts as plain text. Instagram needs media
+          (manual for text). X / LinkedIn / YouTube captions stay manual with Mark published.
         </DmCard>
       </aside>
     </div>
