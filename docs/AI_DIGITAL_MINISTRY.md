@@ -47,6 +47,14 @@ META_APP_SECRET=
 
 Google redirect remains `/api/google/callback` (same as Admin → Analytics). Reconnect from Digital Ministry to grant YouTube scopes if an older token lacked them.
 
+## Phase 3 (shipped)
+
+- **Content Studio** list + editor at `/admin/digital-ministry/studio` → `dm_posts`
+- Per-platform rows in `dm_post_publications` (auto Facebook when Meta connected; otherwise `manual_required`)
+- Schedule → `dm_calendar_entries` + **Content Calendar** month view
+- AI rewrite / AI Writer briefs → Gemini → drafts + `dm_ai_generations` log
+- Publish now / Mark published for manual platforms (X, YouTube captions, etc.)
+
 ## Apply migration
 
 ```bash
@@ -60,7 +68,7 @@ npx supabase db push
 | Phase | Focus |
 |------|--------|
 | 2 | ✅ Meta Graph OAuth + YouTube sync into `dm_social_accounts` |
-| 3 | Content Studio editor + schedule → `dm_posts` / `dm_post_publications` |
+| 3 | ✅ Content Studio editor + schedule → `dm_posts` / `dm_post_publications` |
 | 4 | Sermon Studio pipeline → clip segments + multi-format generation |
 | 5 | Growth Coach daily job (Gemini) writing `dm_growth_reports` |
 | 6 | Competitor snapshots (public APIs / RSS only) |

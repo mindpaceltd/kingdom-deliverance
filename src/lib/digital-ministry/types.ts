@@ -19,6 +19,89 @@ export type DmPlatform =
 export type DmAccountStatus = 'connected' | 'disconnected' | 'expired' | 'error' | 'limited'
 export type DmHealthStatus = 'healthy' | 'degraded' | 'error' | 'unknown'
 
+export type DmPostStatus =
+  | 'draft'
+  | 'scheduled'
+  | 'publishing'
+  | 'published'
+  | 'failed'
+  | 'archived'
+
+export type DmPublicationStatus =
+  | 'pending'
+  | 'queued'
+  | 'published'
+  | 'failed'
+  | 'manual_required'
+
+export type DmAiTone =
+  | 'professional'
+  | 'youth'
+  | 'evangelism'
+  | 'prayer'
+  | 'leadership'
+  | 'testimony'
+  | 'devotional'
+
+export interface DmPost {
+  id: string
+  title: string | null
+  body: string | null
+  body_markdown: string | null
+  status: DmPostStatus
+  platforms: string[]
+  media_ids: string[]
+  campaign_id: string | null
+  sermon_id: string | null
+  post_id: string | null
+  scheduled_at: string | null
+  published_at: string | null
+  ai_tone: string | null
+  ai_metadata: Record<string, unknown>
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface DmPostPublication {
+  id: string
+  dm_post_id: string
+  social_account_id: string | null
+  platform: string
+  status: DmPublicationStatus
+  external_id: string | null
+  external_url: string | null
+  error_message: string | null
+  published_at: string | null
+  metrics: Record<string, unknown>
+}
+
+/** Platforms selectable in Content Studio for multi-publish. */
+export const DM_STUDIO_PLATFORMS: {
+  id: DmPlatform
+  label: string
+  publishSupport: 'full' | 'limited' | 'manual' | 'analytics'
+}[] = [
+  { id: 'facebook', label: 'Facebook', publishSupport: 'full' },
+  { id: 'instagram', label: 'Instagram', publishSupport: 'full' },
+  { id: 'youtube', label: 'YouTube', publishSupport: 'manual' },
+  { id: 'tiktok', label: 'TikTok', publishSupport: 'limited' },
+  { id: 'x', label: 'X', publishSupport: 'manual' },
+  { id: 'linkedin', label: 'LinkedIn', publishSupport: 'limited' },
+  { id: 'website', label: 'Website / Blog', publishSupport: 'manual' },
+  { id: 'email', label: 'Newsletter', publishSupport: 'manual' },
+]
+
+export const DM_AI_TONES: { id: DmAiTone; label: string }[] = [
+  { id: 'professional', label: 'Professional' },
+  { id: 'youth', label: 'Youth' },
+  { id: 'evangelism', label: 'Evangelism' },
+  { id: 'prayer', label: 'Prayer' },
+  { id: 'leadership', label: 'Leadership' },
+  { id: 'testimony', label: 'Testimony' },
+  { id: 'devotional', label: 'Devotional' },
+]
+
 export interface DmSocialAccount {
   id: string
   platform: DmPlatform
