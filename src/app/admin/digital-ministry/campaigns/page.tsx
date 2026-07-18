@@ -1,14 +1,17 @@
-import { DmModulePlaceholder } from '@/components/admin/digital-ministry/dm-ui'
+import { DmPageHeader } from '@/components/admin/digital-ministry/dm-ui'
+import { CampaignsClient } from '@/components/admin/digital-ministry/campaigns-client'
+import { listCampaigns } from '@/lib/digital-ministry/ops'
 
-export default function Page() {
+export default async function CampaignsPage() {
+  const campaigns = await listCampaigns()
+
   return (
-    <DmModulePlaceholder
-      title="Campaigns"
-      description="Plan multi-platform campaigns around events, conferences, and outreach themes."
-      bullets={[
-          'Goals, date ranges, and linked studio posts',
-          'Performance rollups when analytics connectors are live'
-      ]}
-    />
+    <div className="space-y-6">
+      <DmPageHeader
+        title="Campaigns"
+        description="Plan multi-platform campaigns around events, conferences, and outreach themes."
+      />
+      <CampaignsClient campaigns={campaigns} />
+    </div>
   )
 }

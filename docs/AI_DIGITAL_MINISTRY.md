@@ -10,83 +10,58 @@ This is **not** a separate SaaS. It reuses:
 - Media library + R2
 - Sermon AI (Gemini sync + Whisper/Ollama queue)
 - Post / sermon SEO panels
-- Gemini content generation (`src/lib/actions/ai.ts`)
+- Gemini content generation (`src/lib/actions/ai.ts` + `src/lib/digital-ministry/gemini.ts`)
 
-## Phase 1 (shipped)
+## Phases 1–8 (shipped)
 
-- Database schema (`supabase/migrations/20260718220000_digital_ministry_platform.sql`)
-- Sidebar section **AI Digital Ministry** with full module navigation
-- Live **Dashboard** KPIs from site data (sermons, posts, prayer, inbox, media, testimonies)
-- Data-backed **AI Summary** (deterministic until Growth Coach jobs persist reports)
-- **Social Accounts** catalog with publish-capability labels (official API strategy)
-- Module shells: Studio, Calendar, Campaigns, AI Writer, Sermon Studio, Analytics, Competitors, Community, SEO, Website Analytics, Growth Coach, Reports, Settings
-- Per-platform account detail routes (Facebook, YouTube, TikTok, X, LinkedIn, Instagram)
-- Staff RBAC via `requireStaff()` on the section layout
+| Phase | Status | What shipped |
+|------|--------|----------------|
+| 1 | ✅ | Schema, nav, dashboard KPIs, module shells |
+| 2 | ✅ | YouTube/Google + Meta OAuth → encrypted `dm_social_accounts` |
+| 3 | ✅ | Content Studio + calendar + AI Writer drafts |
+| 4 | ✅ | Sermon Studio packs → `dm_sermon_segments` + push to Studio |
+| 5 | ✅ | Growth Coach Gemini reports + cron endpoint |
+| 6 | ✅ | Competitors + public RSS/website snapshots + AI compare |
+| 7 | ✅ | Community inbox sync (contact/prayer) + AI draft replies |
+| 8 | ✅ | Analytics charts/snapshots + CSV reports |
 
-## Phase 2 (shipped)
+Also wired: Campaigns, SEO audits, Settings health, Website analytics KPIs.
 
-- AES-GCM token encryption (`DM_TOKEN_ENCRYPTION_KEY` or service role key) → `dm_social_accounts.token_encrypted`
-- **YouTube / Google**: extended OAuth scopes (`youtube.readonly`, `yt-analytics.readonly`); callback syncs channel metadata into `dm_social_accounts`
-- **Meta**: `/api/meta/auth` + `/api/meta/callback` — Pages + linked Instagram Business accounts
-- Social Accounts UI: Connect / Reconnect / Disconnect / YouTube Sync + flash messages
-- Platform detail pages for Facebook, Instagram, YouTube show live connection health
-
-### Env (Phase 2)
+### Env
 
 ```bash
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
-# Optional dedicated key; otherwise SUPABASE_SERVICE_ROLE_KEY is hashed for AES
-DM_TOKEN_ENCRYPTION_KEY=
-
-META_APP_ID=
+DM_TOKEN_ENCRYPTION_KEY=   # optional
+META_APP_ID=               # can wait until end of rollout
 META_APP_SECRET=
-# Redirect URI in Meta app: https://kdcuganda.org/api/meta/callback
-# (and localhost equivalent for local dev)
+GEMINI_API_KEY=            # required for AI modules
+CRON_SECRET=               # or DM_CRON_SECRET for Growth Coach cron
 ```
 
-Google redirect remains `/api/google/callback` (same as Admin → Analytics). Reconnect from Digital Ministry to grant YouTube scopes if an older token lacked them.
-
-## Phase 3 (shipped)
-
-- **Content Studio** list + editor at `/admin/digital-ministry/studio` → `dm_posts`
-- Per-platform rows in `dm_post_publications` (auto Facebook when Meta connected; otherwise `manual_required`)
-- Schedule → `dm_calendar_entries` + **Content Calendar** month view
-- AI rewrite / AI Writer briefs → Gemini → drafts + `dm_ai_generations` log
-- Publish now / Mark published for manual platforms (X, YouTube captions, etc.)
+- Google callback: `/api/google/callback`
+- Meta callback: `/api/meta/callback`
+- Growth cron: `GET/POST /api/digital-ministry/cron/growth` with `Authorization: Bearer $CRON_SECRET`
 
 ## Apply migration
 
 ```bash
-# Local / linked Supabase project
 npx supabase db push
-# or run the SQL in the Supabase SQL editor
 ```
-
-## Roadmap (next phases)
-
-| Phase | Focus |
-|------|--------|
-| 2 | ✅ Meta Graph OAuth + YouTube sync into `dm_social_accounts` |
-| 3 | ✅ Content Studio editor + schedule → `dm_posts` / `dm_post_publications` |
-| 4 | Sermon Studio pipeline → clip segments + multi-format generation |
-| 5 | Growth Coach daily job (Gemini) writing `dm_growth_reports` |
-| 6 | Competitor snapshots (public APIs / RSS only) |
-| 7 | Community comment sync + AI draft replies |
-| 8 | Unified analytics charts + report exports |
 
 ## API principles
 
-- Prefer official APIs (YouTube, Meta, GA, Search Console, GBP, TikTok where available).
-- Where write APIs are restricted (e.g. X): drafts + analytics + **manual publish** with clear UI.
-- Never scrape private data or violate platform ToS.
-- Never give generic AI advice — always ground in KDC metrics and content.
+- Prefer official APIs (YouTube, Meta, GA, Search Console).
+- Where write APIs are restricted: drafts + **manual publish**.
+- Competitor intel: public RSS / website only — no private scraping.
+- AI always grounded in KDC metrics and sermon/post content.
 
 ## Key paths
 
 | Path | Role |
 |------|------|
 | `src/app/admin/digital-ministry/` | App routes |
-| `src/components/admin/digital-ministry/` | UI kit + subnav |
-| `src/lib/digital-ministry/` | Types + dashboard data |
+| `src/components/admin/digital-ministry/` | UI kit + module clients |
+| `src/lib/digital-ministry/` | Server actions + Gemini helper |
+| `src/app/api/digital-ministry/cron/growth/` | Daily coach job |
 | `supabase/migrations/20260718220000_digital_ministry_platform.sql` | Schema |

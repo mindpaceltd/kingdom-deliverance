@@ -1,19 +1,17 @@
-import { DmModulePlaceholder } from '@/components/admin/digital-ministry/dm-ui'
+import { DmPageHeader } from '@/components/admin/digital-ministry/dm-ui'
+import { SeoClient } from '@/components/admin/digital-ministry/seo-client'
+import { listSeoAudits } from '@/lib/digital-ministry/ops'
 
-export default function Page() {
+export default async function SeoPage() {
+  const audits = await listSeoAudits(25)
+
   return (
-    <DmModulePlaceholder
-      title="SEO Center"
-      description="Audit pages, meta, schema, internal links, Core Web Vitals, and keyword opportunities."
-      bullets={[
-          'Builds on existing post/sermon SEO panels and /admin/seo-tools',
-          'Stores audits in dm_seo_audits'
-      ]}
-      links={
-[
-          { href: '/admin/seo-tools', label: 'SEO Tools' },
-          { href: '/admin/posts', label: 'Posts SEO' }
-      ]}
-    />
+    <div className="space-y-6">
+      <DmPageHeader
+        title="SEO Center"
+        description="Audit pages for title, meta, H1, canonical, and OG — stores results in dm_seo_audits."
+      />
+      <SeoClient audits={audits} />
+    </div>
   )
 }

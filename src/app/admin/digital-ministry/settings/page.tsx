@@ -1,14 +1,18 @@
-import { DmModulePlaceholder } from '@/components/admin/digital-ministry/dm-ui'
+import { DmPageHeader } from '@/components/admin/digital-ministry/dm-ui'
+import { SettingsClient } from '@/components/admin/digital-ministry/settings-client'
+import { getConnectionHealth, getDmSettings } from '@/lib/digital-ministry/ops'
 
-export default function Page() {
+export default async function SettingsPage() {
+  const [health, settings] = await Promise.all([getConnectionHealth(), getDmSettings()])
+  const notify = settings.notify_email as { email?: string } | undefined
+
   return (
-    <DmModulePlaceholder
-      title="Settings"
-      description="Module preferences, notification channels, and API connection health."
-      bullets={[
-          'Role-aware access (admin / media / editor)',
-          'Token refresh and audit logging'
-      ]}
-    />
+    <div className="space-y-6">
+      <DmPageHeader
+        title="Settings"
+        description="Module preferences, notification channels, and API connection health."
+      />
+      <SettingsClient health={health} notifyEmail={notify?.email || ''} />
+    </div>
   )
 }
