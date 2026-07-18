@@ -18,6 +18,7 @@ import {
   ShoppingBag,
   ListOrdered,
   QrCode,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -37,6 +38,29 @@ export interface AdminNavLink {
 
 export const adminNavLinks: AdminNavLink[] = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, adminOnly: false },
+  {
+    href: '/admin/digital-ministry',
+    label: 'AI Digital Ministry',
+    icon: Sparkles,
+    adminOnly: false,
+    subLinks: [
+      { href: '/admin/digital-ministry', label: 'Dashboard', icon: LayoutDashboard },
+      { href: '/admin/digital-ministry/studio', label: 'Content Studio', icon: FileText },
+      { href: '/admin/digital-ministry/calendar', label: 'Content Calendar', icon: Calendar },
+      { href: '/admin/digital-ministry/campaigns', label: 'Campaigns', icon: BarChart },
+      { href: '/admin/digital-ministry/ai-writer', label: 'AI Writer', icon: Sparkles },
+      { href: '/admin/digital-ministry/sermon-studio', label: 'Sermon Studio', icon: Video },
+      { href: '/admin/digital-ministry/accounts', label: 'Social Accounts', icon: Users2 },
+      { href: '/admin/digital-ministry/analytics', label: 'Analytics', icon: BarChart },
+      { href: '/admin/digital-ministry/competitors', label: 'Competitors', icon: BarChart },
+      { href: '/admin/digital-ministry/community', label: 'Community', icon: MessageCircle },
+      { href: '/admin/digital-ministry/seo', label: 'SEO', icon: FileStack },
+      { href: '/admin/digital-ministry/website', label: 'Website Analytics', icon: BarChart },
+      { href: '/admin/digital-ministry/growth-coach', label: 'Growth Coach', icon: Sparkles },
+      { href: '/admin/digital-ministry/reports', label: 'Reports', icon: FileText },
+      { href: '/admin/digital-ministry/settings', label: 'DM Settings', icon: Settings },
+    ],
+  },
   { href: '/admin/analytics', label: 'Analytics', icon: BarChart, adminOnly: true },
   { href: '/admin/posts', label: 'Posts & Blogs', icon: FileText, adminOnly: false },
   {
@@ -89,6 +113,21 @@ export const adminNavLinks: AdminNavLink[] = [
 
 export const adminPageTitles: Record<string, string> = {
   '/admin': 'Dashboard',
+  '/admin/digital-ministry': 'AI Digital Ministry',
+  '/admin/digital-ministry/studio': 'Content Studio',
+  '/admin/digital-ministry/calendar': 'Content Calendar',
+  '/admin/digital-ministry/campaigns': 'Campaigns',
+  '/admin/digital-ministry/ai-writer': 'AI Writer',
+  '/admin/digital-ministry/sermon-studio': 'Sermon Studio',
+  '/admin/digital-ministry/accounts': 'Social Accounts',
+  '/admin/digital-ministry/analytics': 'DM Analytics',
+  '/admin/digital-ministry/competitors': 'Competitor Intelligence',
+  '/admin/digital-ministry/community': 'Community',
+  '/admin/digital-ministry/seo': 'SEO Center',
+  '/admin/digital-ministry/website': 'Website Analytics',
+  '/admin/digital-ministry/growth-coach': 'Growth Coach',
+  '/admin/digital-ministry/reports': 'Reports',
+  '/admin/digital-ministry/settings': 'DM Settings',
   '/admin/analytics': 'Analytics',
   '/admin/posts': 'Posts & Blogs',
   '/admin/sermons': 'Sermons',
@@ -117,7 +156,6 @@ export const adminPageTitles: Record<string, string> = {
 
 export function getAdminPageTitle(pathname: string): string {
   if (adminPageTitles[pathname]) return adminPageTitles[pathname]
-  // Prefer longer/more specific paths first
   const entries = Object.entries(adminPageTitles).sort(
     ([a], [b]) => b.length - a.length
   )
