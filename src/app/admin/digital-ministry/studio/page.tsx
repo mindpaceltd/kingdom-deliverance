@@ -95,7 +95,11 @@ export default async function StudioPage({
                       {p.title || 'Untitled draft'}
                     </h3>
                     <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                      {p.body || 'No body yet'}
+                      {(p.body || '')
+                        .replace(/<[^>]+>/g, ' ')
+                        .replace(/&nbsp;/g, ' ')
+                        .replace(/\s+/g, ' ')
+                        .trim() || 'No body yet'}
                     </p>
                     <p className="mt-2 text-[11px] text-muted-foreground">
                       {(p.platforms ?? []).join(' · ') || 'No platforms'}

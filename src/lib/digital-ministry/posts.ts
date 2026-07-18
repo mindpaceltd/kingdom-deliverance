@@ -15,6 +15,23 @@ import type {
 } from '@/lib/digital-ministry/types'
 import { DM_STUDIO_PLATFORMS } from '@/lib/digital-ministry/types'
 
+function stripHtmlForPublish(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<\/h[1-6]>/gi, '\n\n')
+    .replace(/<li[^>]*>/gi, '• ')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
 function revalidateStudio(id?: string) {
   revalidatePath('/admin/digital-ministry/studio')
   revalidatePath('/admin/digital-ministry/calendar')
@@ -388,7 +405,10 @@ export async function publishDmPostNow(id: string) {
 
   if (!post) return { error: 'Post not found' }
 
-  const message = [post.title, post.body].filter(Boolean).join('\n\n').trim()
+  const message = [post.title, stripHtmlForPublish(post.body || '')]
+    .filter(Boolean)
+    .join('\n\n')
+    .trim()
   if (!message) return { error: 'Add a title or body before publishing' }
 
   const platforms = (post.platforms as string[]) ?? []
