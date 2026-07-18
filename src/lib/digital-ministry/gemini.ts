@@ -1,5 +1,3 @@
-'use server'
-
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { createAdminClient } from '@/lib/supabase/server'
 
