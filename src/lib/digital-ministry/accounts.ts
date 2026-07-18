@@ -136,6 +136,59 @@ export async function disconnectDmPlatform(platform: DmPlatform, accountId?: str
   return { success: true }
 }
 
+/** Manual / limited platforms: register handle or page URL without OAuth tokens. */
+export async function manualConnectDmAccount(input: {
+  platform: DmPlatform
+  accountName: string
+  accountHandleOrUrl?: string | null
+  notes?: string | null
+}) {
+  const auth = await requireStaff()
+  if ('error' in auth) return { error: auth.error }
+
+  const name = input.accountName.trim()
+  if (!name) return { error: 'Account name is required' }
+
+  const handle = (input.accountHandleOrUrl || name).trim()
+  const accountId = handle
+    .replace(/^https?:\/\//i, '')
+    .replace(/\/$/, '')
+    .slice(0, 180)
+
+  const result = await upsertDmSocialAccount({
+    platform: input.platform,
+    accountId: accountId || `manual:${auth.id}:${Date.now()}`,
+    accountName: name,
+    status: 'connected',
+    healthStatus: 'healthy',
+    healthMessage:
+      'Manually connected for drafts, calendar, and analytics. Use Mark published for outbound posts where API write is unavailable.',
+    scopes: ['manual'],
+    connectedBy: auth.id,
+    metadata: {
+      source: 'manual_connect',
+      handle_or_url: handle,
+      notes: input.notes?.trim() || null,
+      publish_mode: 'manual',
+    },
+  })
+
+  if (result.error) return { error: result.error }
+
+  const admin = createAdminClient()
+  await admin.from('dm_audit_logs').insert({
+    actor_id: auth.id,
+    action: 'dm.account.manual_connect',
+    entity_type: 'dm_social_accounts',
+    entity_id: result.id ?? null,
+    metadata: { platform: input.platform, accountId },
+  })
+
+  revalidatePath('/admin/digital-ministry/accounts')
+  revalidatePath(`/admin/digital-ministry/accounts/${input.platform}`)
+  return { success: true, id: result.id }
+}
+
 /**
  * After Google OAuth succeeds, sync YouTube channel (if scoped) + website marker into dm_social_accounts.
  */

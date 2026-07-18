@@ -349,7 +349,7 @@ async function tryPublishMetaPage(params: {
     // Feed photo publish needs media; text-only → manual for now
     return {
       ok: false,
-      error: 'Instagram Graph publish needs an image/video. Mark as manual or attach media in a later phase.',
+      error: 'Instagram Graph publish needs an image URL. Attach media or mark as manual publish.',
     }
   }
 
@@ -488,7 +488,7 @@ export async function publishDmPostNow(id: string) {
         error_message:
           support === 'manual'
             ? 'Manual publish required for this platform.'
-            : 'Auto-publish not available yet — copy and post manually.',
+            : 'Copy and post manually, then Mark published.',
         updated_at: now,
       })
       .eq('id', pub.id)

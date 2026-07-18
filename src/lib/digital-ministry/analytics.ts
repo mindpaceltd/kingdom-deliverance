@@ -79,6 +79,46 @@ export async function persistAnalyticsSnapshot() {
   const admin = createAdminClient()
   const periodStart = new Date().toISOString().slice(0, 10)
 
+  // Try a lightweight GA pull for active users (7 days) if property configured
+  let gaUsers: number | null = null
+  try {
+    const { data: cfg } = await admin
+      .from('analytics_config')
+      .select('property_id, user_id')
+      .not('property_id', 'is', null)
+      .limit(1)
+      .maybeSingle()
+
+    if (cfg?.property_id && cfg.user_id) {
+      const { getAuthedGoogleClient } = await import('@/lib/google/client')
+      const { google } = await import('googleapis')
+      const authClient = await getAuthedGoogleClient(cfg.user_id)
+      const analyticsData = google.analyticsdata({ version: 'v1beta', auth: authClient })
+      const end = new Date()
+      const start = new Date()
+      start.setDate(end.getDate() - 7)
+      const res = await analyticsData.properties.runReport({
+        property: `properties/${cfg.property_id}`,
+        requestBody: {
+          dateRanges: [
+            {
+              startDate: start.toISOString().slice(0, 10),
+              endDate: end.toISOString().slice(0, 10),
+            },
+          ],
+          metrics: [{ name: 'activeUsers' }, { name: 'newUsers' }],
+        },
+      })
+      const row = res.data.rows?.[0]
+      gaUsers = parseInt(row?.metricValues?.[0]?.value || '0', 10) || 0
+      const newUsers = parseInt(row?.metricValues?.[1]?.value || '0', 10) || 0
+      bundle.kpis.websiteVisitors = gaUsers
+      bundle.kpis.returningVisitors = Math.max(0, gaUsers - newUsers)
+    }
+  } catch (err) {
+    console.warn('GA enrich for DM snapshot skipped:', err)
+  }
+
   const { data, error } = await admin
     .from('dm_analytics_snapshots')
     .upsert(
@@ -90,6 +130,7 @@ export async function persistAnalyticsSnapshot() {
           kpis: bundle.kpis,
           series: bundle.series,
           platformMix: bundle.platformMix,
+          ga: gaUsers != null ? { users: gaUsers, returning: bundle.kpis.returningVisitors } : null,
         },
       },
       { onConflict: 'period,period_start,source' }
@@ -100,7 +141,8 @@ export async function persistAnalyticsSnapshot() {
   if (error) return { error: error.message }
 
   revalidatePath('/admin/digital-ministry/analytics')
-  return { id: data?.id as string | undefined }
+  revalidatePath('/admin/digital-ministry')
+  return { id: data?.id as string | undefined, gaUsers }
 }
 
 export async function generateDmReport(period: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly') {

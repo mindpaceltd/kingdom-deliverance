@@ -115,11 +115,9 @@ export default async function SocialAccountsPage({
                   metaConfigured={metaOk}
                   googleConfigured={googleConfigured}
                 />
-                {['facebook', 'youtube', 'tiktok', 'x', 'linkedin', 'instagram'].includes(p.id) ? (
-                  <Button size="sm" variant="ghost" className="h-8 px-2" asChild>
-                    <Link href={`/admin/digital-ministry/accounts/${p.id}`}>Details</Link>
-                  </Button>
-                ) : null}
+                <Button size="sm" variant="ghost" className="h-8 px-2" asChild>
+                  <Link href={`/admin/digital-ministry/accounts/${p.id}`}>Details</Link>
+                </Button>
               </div>
             </DmCard>
           )
@@ -128,19 +126,18 @@ export default async function SocialAccountsPage({
 
       <DmCard className="space-y-2 p-5 text-sm text-muted-foreground">
         <p>
-          <span className="font-medium text-foreground">YouTube / Google:</span> uses existing{' '}
-          <code className="text-xs">GOOGLE_CLIENT_*</code> OAuth (Analytics + Search Console + YouTube
-          readonly). Also available under{' '}
-          <Link href="/admin/analytics" className="text-foreground underline underline-offset-2">
-            Admin → Analytics
-          </Link>
-          .
+          <span className="font-medium text-foreground">YouTube / Google:</span> OAuth via{' '}
+          <code className="text-xs">GOOGLE_CLIENT_*</code>
+          {googleConfigured ? ' · configured' : ' · not configured'}.
         </p>
         <p>
-          <span className="font-medium text-foreground">Facebook / Instagram:</span> requires{' '}
-          <code className="text-xs">META_APP_ID</code> and <code className="text-xs">META_APP_SECRET</code>
-          . Callback: <code className="text-xs">/api/meta/callback</code>
-          {metaOk ? ' · configured' : ' · not configured yet'}.
+          <span className="font-medium text-foreground">Facebook / Instagram:</span>{' '}
+          <code className="text-xs">META_APP_*</code>
+          {metaOk ? ' · configured' : ' · optional — Manual connect works until set'}.
+        </p>
+        <p>
+          <span className="font-medium text-foreground">Other platforms:</span> Manual connect
+          registers handles for Studio drafts, calendar, and Mark published workflows.
         </p>
       </DmCard>
     </div>

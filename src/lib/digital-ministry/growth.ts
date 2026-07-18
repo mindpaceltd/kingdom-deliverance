@@ -19,6 +19,40 @@ export type GrowthReportRow = {
   created_at: string
 }
 
+export async function listOpenAiTasks(limit = 20) {
+  const auth = await requireStaff()
+  if ('error' in auth) return []
+
+  const supabase = createClient()
+  const { data } = await supabase
+    .from('dm_ai_tasks')
+    .select('id, title, description, priority, difficulty, expected_impact, status, created_at')
+    .is('deleted_at', null)
+    .in('status', ['open', 'in_progress'])
+    .order('priority', { ascending: false })
+    .limit(limit)
+
+  return data ?? []
+}
+
+export async function updateAiTaskStatus(
+  id: string,
+  status: 'open' | 'in_progress' | 'done' | 'dismissed'
+) {
+  const auth = await requireStaff()
+  if ('error' in auth) return { error: auth.error }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('dm_ai_tasks')
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq('id', id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/admin/digital-ministry/growth-coach')
+  return { success: true }
+}
+
 export async function listGrowthReports(limit = 14): Promise<GrowthReportRow[]> {
   const auth = await requireStaff()
   if ('error' in auth) return []

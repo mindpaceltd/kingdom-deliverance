@@ -94,11 +94,36 @@ export default async function DigitalMinistryDashboardPage() {
         <DmKpiCard label="Media assets" value={fmt(kpis.mediaAssets)} />
         <DmKpiCard label="Connected accounts" value={fmt(kpis.connectedAccounts)} />
         <DmKpiCard label="Open comments" value={fmt(kpis.openComments)} />
-        <DmKpiCard label="Website visitors" value={fmt(kpis.websiteVisitors)} hint="Connect GA in Website Analytics" />
-        <DmKpiCard label="Returning visitors" value={fmt(kpis.returningVisitors)} hint="Requires GA Data API" />
-        <DmKpiCard label="Newsletter signups" value={fmt(kpis.newsletterSignups)} hint="Wire when list source is ready" />
-        <DmKpiCard label="Donations" value={fmt(kpis.donations)} hint="Wire from payments / give flows" />
-        <DmKpiCard label="Conversions" value="—" hint="Events, prayer, give CTAs" />
+        <DmKpiCard
+          label="Website visitors"
+          value={fmt(kpis.websiteVisitors)}
+          hint={kpis.websiteVisitors == null ? 'Save a snapshot in DM Analytics after GA sync' : 'From latest DM analytics snapshot'}
+        />
+        <DmKpiCard
+          label="Returning visitors"
+          value={fmt(kpis.returningVisitors)}
+          hint={kpis.returningVisitors == null ? 'Appears when GA metrics are snapshotted' : 'From latest DM analytics snapshot'}
+        />
+        <DmKpiCard
+          label="Form / email leads"
+          value={fmt(kpis.newsletterSignups)}
+          hint="Contact form submissions"
+        />
+        <DmKpiCard
+          label="Donations & paid orders"
+          value={fmt(kpis.donations)}
+          hint="Confirmed donations + paid shop orders"
+        />
+        <DmKpiCard
+          label="Conversions"
+          value={fmt(
+            (kpis.prayerRequests ?? 0) +
+              (kpis.contactMessages ?? 0) +
+              (kpis.donations ?? 0) +
+              (kpis.testimonies ?? 0)
+          )}
+          hint="Prayer + contact + giving + testimonies"
+        />
       </div>
 
       {/* Insight cards */}

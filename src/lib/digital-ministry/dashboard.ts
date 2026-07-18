@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import type { DmAiSummary, DmDashboardKpis, DmInsightCard } from '@/lib/digital-ministry/types'
 
 async function safeCount(
@@ -17,6 +17,7 @@ async function safeCount(
 
 export async function getDigitalMinistryKpis(): Promise<DmDashboardKpis> {
   const supabase = createClient()
+  const admin = createAdminClient()
 
   const [
     prayerRequests,
@@ -30,6 +31,8 @@ export async function getDigitalMinistryKpis(): Promise<DmDashboardKpis> {
     testimonies,
     connectedAccounts,
     openComments,
+    donations,
+    paidOrders,
   ] = await Promise.all([
     safeCount(() => supabase.from('prayer_requests').select('id', { count: 'exact', head: true })),
     safeCount(() =>
@@ -64,6 +67,12 @@ export async function getDigitalMinistryKpis(): Promise<DmDashboardKpis> {
         .eq('status', 'new')
         .is('deleted_at', null)
     ),
+    safeCount(() =>
+      admin.from('donations').select('id', { count: 'exact', head: true }).eq('status', 'confirmed')
+    ),
+    safeCount(() =>
+      admin.from('orders').select('id', { count: 'exact', head: true }).eq('payment_status', 'paid')
+    ),
   ])
 
   let growthScore: number | null = null
@@ -88,9 +97,32 @@ export async function getDigitalMinistryKpis(): Promise<DmDashboardKpis> {
     sermonViews = 0
   }
 
+  // Newsletter proxy: contact leads with email (until a dedicated list exists)
+  const newsletterSignups = contactMessages
+
+  let websiteVisitors: number | null = null
+  let returningVisitors: number | null = null
+  try {
+    const { data: snap } = await supabase
+      .from('dm_analytics_snapshots')
+      .select('metrics')
+      .eq('period', 'daily')
+      .order('period_start', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    const metrics = (snap?.metrics ?? {}) as {
+      kpis?: { websiteVisitors?: number; returningVisitors?: number }
+      ga?: { users?: number; returning?: number }
+    }
+    websiteVisitors = metrics.ga?.users ?? metrics.kpis?.websiteVisitors ?? null
+    returningVisitors = metrics.ga?.returning ?? metrics.kpis?.returningVisitors ?? null
+  } catch {
+    /* optional */
+  }
+
   return {
-    websiteVisitors: null,
-    returningVisitors: null,
+    websiteVisitors,
+    returningVisitors,
     prayerRequests,
     unreadPrayer,
     contactMessages,
@@ -101,8 +133,8 @@ export async function getDigitalMinistryKpis(): Promise<DmDashboardKpis> {
     publishedSermons,
     mediaAssets,
     testimonies,
-    newsletterSignups: null,
-    donations: null,
+    newsletterSignups,
+    donations: donations + paidOrders,
     connectedAccounts,
     openComments,
     growthScore,

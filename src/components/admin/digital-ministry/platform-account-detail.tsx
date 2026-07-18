@@ -14,6 +14,14 @@ const LABELS: Partial<Record<DmPlatform, string>> = {
   tiktok: 'TikTok',
   x: 'X (Twitter)',
   linkedin: 'LinkedIn',
+  threads: 'Threads',
+  pinterest: 'Pinterest',
+  whatsapp: 'WhatsApp',
+  telegram: 'Telegram',
+  website: 'Website / Blog',
+  email: 'Email Newsletter',
+  google_business: 'Google Business Profile',
+  rss: 'RSS',
 }
 
 export async function PlatformAccountDetail({ platform }: { platform: DmPlatform }) {

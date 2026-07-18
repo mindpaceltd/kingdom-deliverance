@@ -5,13 +5,15 @@ import {
   getDigitalMinistryKpis,
   getOrBuildAiSummary,
 } from '@/lib/digital-ministry/dashboard'
-import { listGrowthReports } from '@/lib/digital-ministry/growth'
+import { listGrowthReports, listOpenAiTasks } from '@/lib/digital-ministry/growth'
 import { GrowthCoachActions } from '@/components/admin/digital-ministry/growth-coach-actions'
+import { GrowthTasksList } from '@/components/admin/digital-ministry/growth-tasks-list'
 
 export default async function GrowthCoachPage() {
   const kpis = await getDigitalMinistryKpis()
   const summary = await getOrBuildAiSummary(kpis)
   const reports = await listGrowthReports(10)
+  const tasks = await listOpenAiTasks(12)
   const latest = reports[0]
 
   return (
@@ -36,7 +38,7 @@ export default async function GrowthCoachPage() {
             <span className="text-xl text-muted-foreground">%</span>
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
-            {latest ? `${latest.period} · ${latest.report_date}` : 'Provisional until you generate'}
+            {latest ? `${latest.period} · ${latest.report_date}` : 'Generate a report to score today'}
           </p>
         </DmCard>
 
@@ -95,6 +97,18 @@ export default async function GrowthCoachPage() {
           </DmCard>
         ))}
       </div>
+
+      <GrowthTasksList
+        tasks={tasks.map((t) => ({
+          id: t.id,
+          title: t.title,
+          description: t.description,
+          priority: t.priority,
+          difficulty: t.difficulty,
+          expected_impact: t.expected_impact,
+          status: t.status,
+        }))}
+      />
 
       {reports.length > 1 ? (
         <DmCard className="p-5">

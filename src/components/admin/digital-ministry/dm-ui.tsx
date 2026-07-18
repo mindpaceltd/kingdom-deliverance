@@ -86,9 +86,7 @@ export function DmModulePlaceholder({
       <DmPageHeader title={title} description={description} />
       <DmCard className="p-6 sm:p-8">
         <p className="text-sm text-muted-foreground">
-          This module is scaffolded and ready for API wiring. Core schema, navigation, and
-          permissions are live. Features below ship in phased releases without breaking the
-          existing KDC site.
+          This module is available in AI Digital Ministry. Use the links below for related tools.
         </p>
         {bullets && bullets.length > 0 ? (
           <ul className="mt-4 space-y-2 text-sm text-foreground/90">
@@ -118,7 +116,7 @@ export function DmModulePlaceholder({
   )
 }
 
-export function DmComingSoonBadge({ children = 'Phase roadmap' }: { children?: React.ReactNode }) {
+export function DmComingSoonBadge({ children = 'Live' }: { children?: React.ReactNode }) {
   return (
     <span className="inline-flex items-center rounded-full border border-border bg-muted/50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
       {children}

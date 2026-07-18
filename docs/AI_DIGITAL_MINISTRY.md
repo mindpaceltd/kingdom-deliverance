@@ -27,6 +27,8 @@ This is **not** a separate SaaS. It reuses:
 
 Also wired: Campaigns, SEO audits, Settings health, Website analytics KPIs.
 
+**Completion pass:** Manual connect for every platform (TikTok/X/LinkedIn/etc.), no “coming soon” stubs, Growth Coach open tasks, dashboard donations/leads/conversions + GA snapshot enrichment.
+
 ### Env
 
 ```bash
