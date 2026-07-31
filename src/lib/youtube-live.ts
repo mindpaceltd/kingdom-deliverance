@@ -98,6 +98,50 @@ export function buildYouTubeChannelUrl(channelId: string): string {
   return `https://www.youtube.com/channel/${channelId}`
 }
 
+/** KDC YouTube live stream (watch URL). Used when no admin override is saved. */
+export const DEFAULT_KDC_LIVE_VIDEO_ID = 'J99Flr81xE8'
+export const DEFAULT_KDC_LIVE_WATCH_URL = `https://www.youtube.com/watch?v=${DEFAULT_KDC_LIVE_VIDEO_ID}`
+
+export function parseYouTubeVideoId(value?: string | null): string | null {
+  const input = value?.trim()
+  if (!input) return null
+
+  if (/^[\w-]{11}$/.test(input)) return input
+
+  const patterns = [
+    /(?:youtube\.com\/watch\?.*v=|youtu\.be\/)([\w-]{11})/i,
+    /youtube\.com\/embed\/([\w-]{11})/i,
+    /youtube\.com\/shorts\/([\w-]{11})/i,
+    /youtube\.com\/live\/([\w-]{11})/i,
+  ]
+
+  for (const pattern of patterns) {
+    const match = input.match(pattern)
+    if (match?.[1]) return match[1]
+  }
+
+  return null
+}
+
+export function buildYouTubeWatchUrl(videoId: string): string {
+  return `https://www.youtube.com/watch?v=${videoId}`
+}
+
+/** Whether a specific video is broadcasting live right now. */
+export async function fetchVideoIsLiveNow(videoId: string): Promise<boolean> {
+  try {
+    const response = await fetch(buildYouTubeWatchUrl(videoId), {
+      headers: YOUTUBE_FETCH_HEADERS,
+      next: { revalidate: 60 },
+    })
+    if (!response.ok) return false
+    const html = await response.text()
+    return html.includes('"isLiveNow":true')
+  } catch {
+    return false
+  }
+}
+
 export const DEFAULT_YOUTUBE_CHANNEL_ID = 'UChhdehWEPhFS7ebO8WDEjEA'
 export const DEFAULT_YOUTUBE_CHANNEL_URL = 'https://www.youtube.com/@bishopclimateministries'
 

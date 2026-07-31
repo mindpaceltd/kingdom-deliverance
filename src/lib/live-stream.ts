@@ -5,11 +5,16 @@ import {
   buildYouTubeChannelUrl,
   buildYouTubeLiveEmbedUrl,
   buildYouTubeVideoEmbedUrl,
+  buildYouTubeWatchUrl,
+  DEFAULT_KDC_LIVE_VIDEO_ID,
+  DEFAULT_KDC_LIVE_WATCH_URL,
   fetchActiveLiveVideoId,
   fetchLatestChannelVideoId,
+  fetchVideoIsLiveNow,
   isEmbeddableChannelVideo,
   parseYouTubeChannelId,
   parseYouTubeHandle,
+  parseYouTubeVideoId,
   resolveYouTubeChannelIdFromHandle,
   sanitizeYouTubeChannelId,
   validateYouTubeChannelId,
@@ -19,10 +24,28 @@ export interface LiveStreamConfig {
   embedUrl: string
   channelUrl: string
   channelLiveUrl: string
+  /** Direct link to the current stream or video on YouTube. */
+  streamPageUrl: string
   channelId: string
   isLive: boolean
   mode: 'live' | 'recent' | 'channel'
   recentVideoId: string | null
+}
+
+function configFromVideoId(
+  videoId: string,
+  isLive: boolean,
+  base: Pick<LiveStreamConfig, 'channelId' | 'channelUrl' | 'channelLiveUrl'>,
+): LiveStreamConfig {
+  const watchUrl = buildYouTubeWatchUrl(videoId)
+  return {
+    ...base,
+    embedUrl: buildYouTubeVideoEmbedUrl(videoId),
+    streamPageUrl: watchUrl,
+    isLive,
+    mode: isLive ? 'live' : 'recent',
+    recentVideoId: videoId,
+  }
 }
 
 export async function getLiveStreamConfig(
@@ -32,9 +55,6 @@ export async function getLiveStreamConfig(
     settings.youtube_url?.trim() ||
     process.env.NEXT_PUBLIC_SOCIAL_YOUTUBE?.trim() ||
     DEFAULT_YOUTUBE_CHANNEL_URL
-
-  const overrideEmbed =
-    settings.live_stream_url?.trim() || process.env.NEXT_PUBLIC_LIVE_STREAM_URL?.trim()
 
   let channelId =
     sanitizeYouTubeChannelId(settings.youtube_channel_id) ||
@@ -61,14 +81,26 @@ export async function getLiveStreamConfig(
     ? buildYouTubeChannelUrl(channelId)
     : youtubeUrl
   const channelLiveUrl = buildYouTubeChannelLiveUrl(channelId)
+  const base = { channelId, channelUrl, channelLiveUrl }
 
-  if (overrideEmbed) {
+  const overrideRaw =
+    settings.live_stream_url?.trim() ||
+    process.env.NEXT_PUBLIC_LIVE_STREAM_URL?.trim() ||
+    DEFAULT_KDC_LIVE_WATCH_URL
+
+  const overrideVideoId = parseYouTubeVideoId(overrideRaw)
+  if (overrideVideoId) {
+    const isLive = await fetchVideoIsLiveNow(overrideVideoId)
+    return configFromVideoId(overrideVideoId, isLive, base)
+  }
+
+  if (overrideRaw.startsWith('http') && overrideRaw.includes('embed/')) {
+    const isLive = overrideRaw.includes('live_stream')
     return {
-      channelId,
-      embedUrl: overrideEmbed,
-      channelUrl,
-      channelLiveUrl,
-      isLive: overrideEmbed.includes('live_stream'),
+      ...base,
+      embedUrl: overrideRaw,
+      streamPageUrl: channelLiveUrl,
+      isLive,
       mode: 'channel',
       recentVideoId: null,
     }
@@ -80,34 +112,22 @@ export async function getLiveStreamConfig(
   ])
 
   if (liveVideoId && (await isEmbeddableChannelVideo(liveVideoId))) {
-    return {
-      channelId,
-      embedUrl: buildYouTubeVideoEmbedUrl(liveVideoId),
-      channelUrl,
-      channelLiveUrl,
-      isLive: true,
-      mode: 'live',
-      recentVideoId: liveVideoId,
-    }
+    return configFromVideoId(liveVideoId, true, base)
   }
 
   if (recentVideoId) {
-    return {
-      channelId,
-      embedUrl: buildYouTubeVideoEmbedUrl(recentVideoId),
-      channelUrl,
-      channelLiveUrl,
-      isLive: false,
-      mode: 'recent',
-      recentVideoId,
-    }
+    return configFromVideoId(recentVideoId, false, base)
+  }
+
+  if (await isEmbeddableChannelVideo(DEFAULT_KDC_LIVE_VIDEO_ID)) {
+    const isLive = await fetchVideoIsLiveNow(DEFAULT_KDC_LIVE_VIDEO_ID)
+    return configFromVideoId(DEFAULT_KDC_LIVE_VIDEO_ID, isLive, base)
   }
 
   return {
-    channelId,
+    ...base,
     embedUrl: buildYouTubeLiveEmbedUrl(channelId),
-    channelUrl,
-    channelLiveUrl,
+    streamPageUrl: channelLiveUrl,
     isLive: false,
     mode: 'channel',
     recentVideoId: null,

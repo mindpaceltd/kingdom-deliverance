@@ -3,6 +3,7 @@ import {
   buildYouTubeLiveEmbedUrl,
   parseYouTubeChannelId,
   parseYouTubeHandle,
+  parseYouTubeVideoId,
   sanitizeYouTubeChannelId,
 } from '@/lib/youtube-live'
 
@@ -36,6 +37,12 @@ describe('youtube-live', () => {
     expect(buildYouTubeLiveEmbedUrl('UChhdehWEPhFS7ebO8WDEjEA')).toContain(
       'origin=https%3A%2F%2Fkdcuganda.org',
     )
+  })
+
+  it('parses YouTube watch and youtu.be video IDs', () => {
+    expect(parseYouTubeVideoId('https://www.youtube.com/watch?v=J99Flr81xE8')).toBe('J99Flr81xE8')
+    expect(parseYouTubeVideoId('https://youtu.be/J99Flr81xE8')).toBe('J99Flr81xE8')
+    expect(parseYouTubeVideoId('J99Flr81xE8')).toBe('J99Flr81xE8')
   })
 
   it('sanitizes channel IDs with unicode dashes', () => {

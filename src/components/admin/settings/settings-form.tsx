@@ -727,12 +727,15 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                       />
                    </div>
                    <div className="space-y-1.5">
-                      <Label className="text-xs">Custom Embed URL (optional)</Label>
+                      <Label className="text-xs">Live stream URL (optional)</Label>
                       <Input
                         value={values.live_stream_url || ''}
                         onChange={(e) => handleChange('live_stream_url', e.target.value)}
-                        placeholder="https://www.youtube.com/embed/live_stream?channel=..."
+                        placeholder="https://www.youtube.com/watch?v=J99Flr81xE8"
                       />
+                      <p className="text-[10px] text-muted-foreground">
+                        Paste a YouTube watch or embed link for the KDC live broadcast.
+                      </p>
                    </div>
                 </div>
              </div>
