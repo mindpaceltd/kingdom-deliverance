@@ -1,6 +1,8 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { formatShopPrice } from '@/lib/format-shop-price'
+import { DEFAULT_SITE_CURRENCY } from '@/lib/geo-currency'
 
 // ─── Constants (duplicated from exchange-rates.ts which is server-only) ───────
 
@@ -24,6 +26,11 @@ export const FALLBACK_RATES: Record<string, number> = {
 }
 
 const STORAGE_KEY = 'kdc_currency'
+/** Set when the visitor explicitly picks a currency (checkout or shop selector). */
+const MANUAL_KEY = 'kdc_currency_manual'
+/** Bump when default geo rules change so stale auto-detected KES resets to UGX. */
+const STORAGE_VERSION = '3'
+const VERSION_KEY = 'kdc_currency_v'
 
 // ─── Context interface ────────────────────────────────────────────────────────
 
@@ -31,7 +38,9 @@ export interface CurrencyContextValue {
   currency: string
   rate: number
   rates: Record<string, number>
+  detectedCurrency: string
   setCurrency: (code: string) => void
+  resetToDetectedCurrency: () => void
   formatPrice: (usdPrice: number) => string
 }
 
@@ -45,63 +54,94 @@ interface CurrencyProviderProps {
   rates: Record<string, number>
 }
 
+function resolveCurrency(detectedCurrency: string): string {
+  const geoCurrency = detectedCurrency || DEFAULT_SITE_CURRENCY
+
+  try {
+    const version = localStorage.getItem(VERSION_KEY)
+    if (version !== STORAGE_VERSION) {
+      const wasManual = localStorage.getItem(MANUAL_KEY) === '1'
+      const stored = localStorage.getItem(STORAGE_KEY)
+      localStorage.setItem(VERSION_KEY, STORAGE_VERSION)
+
+      if (wasManual && stored && (SUPPORTED_CURRENCIES as readonly string[]).includes(stored)) {
+        return stored
+      }
+
+      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(MANUAL_KEY)
+      return geoCurrency
+    }
+
+    const isManual = localStorage.getItem(MANUAL_KEY) === '1'
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (
+      isManual &&
+      stored &&
+      (SUPPORTED_CURRENCIES as readonly string[]).includes(stored)
+    ) {
+      return stored
+    }
+
+    // Drop legacy auto-selected KES from the old geo map (Uganda site → UGX).
+    if (!isManual && stored === 'KES') {
+      localStorage.removeItem(STORAGE_KEY)
+      return geoCurrency
+    }
+  } catch {
+    // localStorage unavailable — use geo
+  }
+
+  return geoCurrency
+}
+
 export function CurrencyProvider({
   children,
   detectedCurrency,
   rates,
 }: CurrencyProviderProps) {
-  // Start with the server-detected currency to minimise hydration mismatch.
-  // The client-side priority resolution runs after mount.
-  const [activeCurrency, setActiveCurrency] = useState<string>(
-    detectedCurrency || 'USD',
-  )
+  const geoCurrency = detectedCurrency || DEFAULT_SITE_CURRENCY
+
+  const [activeCurrency, setActiveCurrency] = useState<string>(geoCurrency)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    // Priority resolution: localStorage → detectedCurrency → 'USD'
-    let resolved: string = detectedCurrency || 'USD'
-
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored && (SUPPORTED_CURRENCIES as readonly string[]).includes(stored)) {
-        resolved = stored
-      }
-    } catch {
-      // localStorage unavailable (SSR, private browsing) — fall through
-    }
-
-    setActiveCurrency(resolved)
+    setActiveCurrency(resolveCurrency(detectedCurrency))
     setMounted(true)
   }, [detectedCurrency])
 
-  const setCurrency = (code: string) => {
+  const setCurrency = useCallback((code: string) => {
     setActiveCurrency(code)
     try {
       localStorage.setItem(STORAGE_KEY, code)
+      localStorage.setItem(MANUAL_KEY, '1')
     } catch {
       // localStorage unavailable — state update still applies
     }
-  }
+  }, [])
 
-  const formatPrice = (usdPrice: number): string => {
-    // Guard against rate 0 or NaN
-    const rate = rates[activeCurrency] || FALLBACK_RATES[activeCurrency] || 1
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: activeCurrency,
-    }).format(usdPrice * rate)
-  }
+  const resetToDetectedCurrency = useCallback(() => {
+    setActiveCurrency(geoCurrency)
+    try {
+      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(MANUAL_KEY)
+    } catch {
+      // ignore
+    }
+  }, [geoCurrency])
 
-  const rate = rates[activeCurrency] || FALLBACK_RATES[activeCurrency] || 1
+  const displayCurrency = mounted ? activeCurrency : geoCurrency
+  const displayRate = rates[displayCurrency] || FALLBACK_RATES[displayCurrency] || 1
 
   const value: CurrencyContextValue = {
-    // Before mount, expose the server-detected currency so SSR and first
-    // client render agree. After mount, use the fully-resolved value.
-    currency: mounted ? activeCurrency : detectedCurrency || 'USD',
-    rate,
+    currency: displayCurrency,
+    rate: displayRate,
     rates,
+    detectedCurrency: geoCurrency,
     setCurrency,
-    formatPrice,
+    resetToDetectedCurrency,
+    formatPrice: (usdPrice: number) =>
+      formatShopPrice(usdPrice, displayCurrency, displayRate),
   }
 
   return (
