@@ -2,12 +2,12 @@ import { format } from 'date-fns'
 
 export const FIRE_SERVICE_EVENT_SLUG = 'fire-service-night-of-prayer-deliverance-kdc'
 const EAT_TIMEZONE = 'Africa/Kampala'
-/** Last Friday of each month, 6:00 PM – 10:00 PM EAT */
-export const FIRE_SERVICE_START_HOUR = 18
-export const FIRE_SERVICE_END_HOUR = 22
+/** Last Friday of each month, 7:00 PM – 9:00 PM EAT */
+export const FIRE_SERVICE_START_HOUR = 19
+export const FIRE_SERVICE_END_HOUR = 21
 export const FIRE_SERVICE_PROMO_LEAD_DAYS = 7
 export const FIRE_SERVICE_LOCATION = 'Kingdom Deliverance Centre, Kosovo–Lungujja, Kampala'
-export const FIRE_SERVICE_TIME_LABEL = '6:00 PM — 10:00 PM (EAT)'
+export const FIRE_SERVICE_TIME_LABEL = '7:00 PM — 9:00 PM (EAT)'
 
 export interface FireServiceOccurrence {
   year: number
@@ -133,7 +133,7 @@ function isSameEatDay(a: DateParts, occurrence: FireServiceOccurrence): boolean 
 
 /**
  * Whether the site-wide Fire Service promo should appear.
- * Visible from 7 days before through the end of the service (10 PM EAT).
+ * Visible from 7 days before through the end of the service (9 PM EAT).
  */
 export function getFireServicePromoState(now = new Date()): FireServicePromoState {
   const schedule = getFireServiceSchedule(now)
