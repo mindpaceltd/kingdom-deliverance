@@ -4,42 +4,11 @@ import { Footer } from '@/components/layout/footer'
 import { CartProvider } from '@/lib/cart-context'
 import { getExchangeRates, FALLBACK_RATES } from '@/lib/services/exchange-rates'
 import { CurrencyProvider } from '@/lib/currency-context'
+import { detectCurrencyFromCountry } from '@/lib/geo-currency'
 import { createClient } from '@/lib/supabase/server'
 import { SupportChatWidget } from '@/components/support/support-chat-widget'
 import { FireServicePromoPopup } from '@/components/fire-service/fire-service-promo-popup'
 import { getFireServicePromoPayload } from '@/lib/fire-service-schedule'
-
-// ─── Geo-detection ────────────────────────────────────────────────────────────
-
-const COUNTRY_CURRENCY_MAP: Record<string, string> = {
-  // East Africa
-  UG: 'UGX',
-  KE: 'KES',
-  TZ: 'TZS',
-  RW: 'RWF',
-  // West Africa
-  NG: 'NGN',
-  GH: 'GHS',
-  // Southern Africa
-  ZA: 'ZAR',
-  // English-speaking
-  GB: 'GBP',
-  US: 'USD',
-  // Eurozone
-  FR: 'EUR',
-  DE: 'EUR',
-  IT: 'EUR',
-  ES: 'EUR',
-  NL: 'EUR',
-  BE: 'EUR',
-  PT: 'EUR',
-  AT: 'EUR',
-}
-
-function detectCurrency(countryCode: string | null): string {
-  if (!countryCode) return 'USD'
-  return COUNTRY_CURRENCY_MAP[countryCode.toUpperCase()] ?? 'USD'
-}
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
 
@@ -49,7 +18,7 @@ export default async function PublicLayout({
   children: React.ReactNode
 }) {
   const countryCode = headers().get('x-vercel-ip-country')
-  const detectedCurrency = detectCurrency(countryCode)
+  const detectedCurrency = detectCurrencyFromCountry(countryCode)
 
   let rates: Awaited<ReturnType<typeof getExchangeRates>>
   let siteLogo: string | undefined
