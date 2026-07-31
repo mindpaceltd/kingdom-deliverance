@@ -7,6 +7,7 @@ import {
   buildYouTubeVideoEmbedUrl,
   fetchActiveLiveVideoId,
   fetchLatestChannelVideoId,
+  isEmbeddableChannelVideo,
   parseYouTubeChannelId,
   parseYouTubeHandle,
   resolveYouTubeChannelIdFromHandle,
@@ -78,7 +79,7 @@ export async function getLiveStreamConfig(
     fetchLatestChannelVideoId(channelId),
   ])
 
-  if (liveVideoId) {
+  if (liveVideoId && (await isEmbeddableChannelVideo(liveVideoId))) {
     return {
       channelId,
       embedUrl: buildYouTubeVideoEmbedUrl(liveVideoId),

@@ -33,6 +33,9 @@ describe('youtube-live', () => {
     expect(buildYouTubeLiveEmbedUrl('UChhdehWEPhFS7ebO8WDEjEA')).toContain(
       'channel=UChhdehWEPhFS7ebO8WDEjEA',
     )
+    expect(buildYouTubeLiveEmbedUrl('UChhdehWEPhFS7ebO8WDEjEA')).toContain(
+      'origin=https%3A%2F%2Fkdcuganda.org',
+    )
   })
 
   it('sanitizes channel IDs with unicode dashes', () => {
