@@ -85,14 +85,17 @@ export function FireServicePromoPopup(props: FireServicePromoPayload) {
   return (
     <AnimatePresence>
       {open ? (
-        <>
-          <motion.button
+        <motion.div
+          role="presentation"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto overscroll-contain p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:p-6"
+        >
+          <button
             type="button"
             aria-label="Close Fire Service announcement"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={dismiss}
           />
 
@@ -100,11 +103,11 @@ export function FireServicePromoPopup(props: FireServicePromoPayload) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="fire-service-promo-title"
-            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            initial={{ opacity: 0, y: 20, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.98 }}
+            exit={{ opacity: 0, y: 12, scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-            className="fixed inset-x-4 top-[max(1rem,env(safe-area-inset-top))] z-[101] mx-auto max-w-lg sm:inset-x-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2"
+            className="relative z-[1] my-auto w-full max-w-lg max-h-[min(90dvh,calc(100dvh-2rem))] shrink-0 overflow-y-auto overscroll-contain"
           >
             <div className="relative overflow-hidden rounded-3xl border border-orange-500/30 bg-[#0a0612] text-white shadow-[0_0_80px_-12px_rgba(255,80,0,0.55)]">
               <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-orange-500/30 blur-3xl" />
@@ -120,7 +123,7 @@ export function FireServicePromoPopup(props: FireServicePromoPayload) {
                 <X className="size-4" />
               </button>
 
-              <div className="relative p-6 pt-7 sm:p-8">
+              <div className="relative p-5 pt-6 sm:p-8">
                 <div className="mb-5 flex flex-wrap items-center gap-2">
                   {props.isLive ? (
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-red-400/40 bg-red-500/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-red-100">
@@ -162,7 +165,7 @@ export function FireServicePromoPopup(props: FireServicePromoPayload) {
                 <div className="mt-5 grid gap-2.5 sm:grid-cols-3">
                   {[
                     { icon: Calendar, label: 'Date', value: props.formattedDate.split(',')[0] },
-                    { icon: Clock, label: 'Time', value: '6 – 10 PM' },
+                    { icon: Clock, label: 'Time', value: props.formattedTime.replace(' — ', ' – ') },
                     { icon: MapPin, label: 'Venue', value: 'KDC Kampala' },
                   ].map(({ icon: Icon, label, value }) => (
                     <div
@@ -221,7 +224,7 @@ export function FireServicePromoPopup(props: FireServicePromoPayload) {
               </div>
             </div>
           </motion.div>
-        </>
+        </motion.div>
       ) : null}
     </AnimatePresence>
   )
