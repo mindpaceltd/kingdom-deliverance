@@ -100,27 +100,29 @@ export default async function ShopPage({
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[#0d1b2a] via-[#0d1b2a]/90 to-[#0d1b2a]/60" />
 
-        <div className="relative z-10 container px-4 mx-auto">
+        <div className="relative z-10 container px-4 mx-auto text-center">
           {/* Official badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#d4a017]/20 border border-[#d4a017]/40 text-[#d4a017] text-[11px] font-bold uppercase tracking-widest mb-6">
-            <ShoppingBag className="w-3 h-3" />
-            Official Ministry Store
+          <div className="flex justify-center mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#d4a017]/20 border border-[#d4a017]/40 text-[#d4a017] text-[11px] font-bold uppercase tracking-widest">
+              <ShoppingBag className="w-3 h-3" />
+              Official Ministry Store
+            </div>
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-black text-white leading-tight mb-4 max-w-2xl">
+          <h1 className="text-4xl md:text-6xl font-black text-white leading-tight mb-4 max-w-2xl mx-auto">
             Resources for{' '}
             <span className="italic text-[#d4a017]">Spirit &amp; Purpose</span>
           </h1>
 
-          <p className="text-white/60 text-base max-w-xl mb-10 leading-relaxed">
+          <p className="text-white/60 text-base max-w-xl mx-auto mb-10 leading-relaxed">
             Explore our collection of e-books, recorded sermons, and church merchandise designed to support your spiritual growth.
           </p>
 
           {/* Trust badges row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
             {trustBadges.map((b) => (
-              <div key={b.label} className="flex items-start gap-3">
-                <div className="mt-0.5 size-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+              <div key={b.label} className="flex flex-col items-center gap-2 text-center">
+                <div className="size-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
                   <b.icon className="w-4 h-4 text-[#d4a017]" />
                 </div>
                 <div>
