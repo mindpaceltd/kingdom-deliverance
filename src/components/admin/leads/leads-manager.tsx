@@ -80,7 +80,7 @@ export function LeadsManager({ leads }: { leads: Lead[] }) {
                     <td className="px-6 py-4 text-right">
                       {lead.support_conversation_id ? (
                         <Link
-                          href={`/admin/support`}
+                          href={`/admin/support?conversation=${lead.support_conversation_id}`}
                           className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                         >
                           <MessageCircle className="size-3.5" />

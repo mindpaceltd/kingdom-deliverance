@@ -2,7 +2,11 @@ import { listSupportConversations } from '@/lib/actions/support'
 import { SupportInbox } from '@/components/admin/support/support-inbox'
 import type { SupportConversation } from '@/lib/support/types'
 
-export default async function AdminSupportPage() {
+export default async function AdminSupportPage({
+  searchParams,
+}: {
+  searchParams?: { conversation?: string }
+}) {
   const result = await listSupportConversations()
 
   if ('error' in result) {
@@ -13,5 +17,10 @@ export default async function AdminSupportPage() {
     )
   }
 
-  return <SupportInbox initialConversations={result as SupportConversation[]} />
+  return (
+    <SupportInbox
+      initialConversations={result as SupportConversation[]}
+      initialActiveId={searchParams?.conversation ?? null}
+    />
+  )
 }

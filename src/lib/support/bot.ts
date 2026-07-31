@@ -25,9 +25,10 @@ export function detectBotIntent(message: string): 'service_times' | 'contact' | 
   const text = message.toLowerCase()
 
   if (
-    /(human|person|agent|staff|team member|talk to someone|speak to someone|representative)/.test(
+    /(human|person|agent|staff|team member|talk to someone|speak to someone|representative|connect me|reach someone|live agent|real person)/.test(
       text
-    )
+    ) ||
+    /\b(team|someone)\b/.test(text)
   ) {
     return 'agent'
   }

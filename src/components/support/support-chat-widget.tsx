@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/client'
 import {
   getSupportContactPrefill,
   initVisitorSupportChat,
@@ -39,6 +38,7 @@ export function SupportChatWidget() {
   const [unread, setUnread] = React.useState(0)
   const [prefillLoaded, setPrefillLoaded] = React.useState(false)
   const bottomRef = React.useRef<HTMLDivElement>(null)
+  const lastSeenMessageCountRef = React.useRef(0)
 
   const scrollToBottom = React.useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -82,12 +82,13 @@ export function SupportChatWidget() {
 
   async function handleOpen() {
     setOpen(true)
+    setUnread(0)
     if (!prefillLoaded) {
       const prefill = await getSupportContactPrefill()
       setName((prev) => (prev.trim() ? prev : prefill.name ?? ''))
       setEmail((prev) => (prev.trim() ? prev : prefill.email ?? ''))
       setPhone((prev) => (prev.trim() ? prev : prefill.phone ?? ''))
-      if (!email.trim() && !phone.trim() && prefill.phone) {
+      if (prefill.phone && !prefill.email) {
         setContactMethod('phone')
       }
       setPrefillLoaded(true)
@@ -102,7 +103,15 @@ export function SupportChatWidget() {
     setSending(true)
     const result = await sendVisitorSupportMessage(conversation.id, draft)
     setSending(false)
-    if (result.message) {
+    if (result.error) {
+      setFormError(result.error)
+      return
+    }
+    if (result.messages) {
+      setMessages(result.messages)
+      setDraft('')
+      setFormError(null)
+    } else if (result.message) {
       setMessages((prev) => [...prev, result.message!])
       setDraft('')
     }
@@ -119,45 +128,39 @@ export function SupportChatWidget() {
   React.useEffect(() => {
     if (!conversation?.id) return
 
-    const supabase = createClient()
-    const channel = supabase
-      .channel(`support-visitor-${conversation.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'support_messages',
-          filter: `conversation_id=eq.${conversation.id}`,
-        },
-        (payload) => {
-          const row = payload.new as SupportMessage
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === row.id)) return prev
-            return [...prev, row]
-          })
-          if (!open && row.sender_type === 'agent') {
-            setUnread((n) => n + 1)
-          }
-        }
-      )
-      .subscribe()
+    if (open) {
+      lastSeenMessageCountRef.current = messages.length
+    }
 
     const poll = setInterval(async () => {
       const result = await fetchVisitorSupportMessages(conversation.id)
-      if (result.messages) setMessages(result.messages)
-    }, 8000)
+      if (!result.messages) return
 
-    return () => {
-      clearInterval(poll)
-      supabase.removeChannel(channel)
-    }
-  }, [conversation?.id, open])
+      setMessages(result.messages)
+
+      if (open) {
+        lastSeenMessageCountRef.current = result.messages.length
+        return
+      }
+
+      const newCount = result.messages.length - lastSeenMessageCountRef.current
+      if (newCount <= 0) return
+
+      const incoming = result.messages.slice(-newCount)
+      const staffReplies = incoming.filter((m) => m.sender_type !== 'visitor').length
+      if (staffReplies > 0) {
+        setUnread((n) => n + staffReplies)
+      }
+      lastSeenMessageCountRef.current = result.messages.length
+    }, 3000)
+
+    return () => clearInterval(poll)
+  }, [conversation?.id, open, messages.length])
 
   return (
-    <div className="fixed bottom-5 left-5 z-[60] flex flex-col items-start gap-3">
+    <div className="fixed z-[60] bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-[max(1.25rem,env(safe-area-inset-left))]">
       {open && (
-        <div className="w-[min(100vw-2rem,380px)] h-[min(70vh,520px)] rounded-2xl border border-border bg-background shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-200">
+        <div className="absolute bottom-[calc(3.5rem+0.75rem)] left-0 w-[min(calc(100vw-2.5rem),380px)] max-h-[min(70dvh,calc(100dvh-7rem-env(safe-area-inset-bottom)))] min-h-[320px] rounded-2xl border border-border bg-background shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-200">
           <div className="flex items-center justify-between gap-2 bg-[#c9a227] text-[#1f1500] px-4 py-3">
             <div>
               <p className="font-semibold text-sm">KDC Support</p>
@@ -285,7 +288,11 @@ export function SupportChatWidget() {
                 </div>
               )}
 
-              <div className="p-3 border-t border-border flex gap-2 items-end bg-background">
+              <div className="p-3 border-t border-border flex flex-col gap-2 bg-background">
+                {formError && started && (
+                  <p className="text-xs text-destructive">{formError}</p>
+                )}
+                <div className="flex gap-2 items-end">
                 <Textarea
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
@@ -311,6 +318,7 @@ export function SupportChatWidget() {
                     <Send className="size-4" />
                   )}
                 </Button>
+                </div>
               </div>
             </>
           )}

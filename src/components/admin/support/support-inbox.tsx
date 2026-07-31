@@ -29,12 +29,16 @@ function formatTime(iso: string) {
 
 export function SupportInbox({
   initialConversations,
+  initialActiveId,
 }: {
   initialConversations: SupportConversation[]
+  initialActiveId?: string | null
 }) {
   const [conversations, setConversations] = React.useState(initialConversations)
   const [activeId, setActiveId] = React.useState<string | null>(
-    initialConversations[0]?.id ?? null
+    initialActiveId && initialConversations.some((c) => c.id === initialActiveId)
+      ? initialActiveId
+      : initialConversations[0]?.id ?? null
   )
   const [messages, setMessages] = React.useState<SupportMessage[]>([])
   const [loadingChat, setLoadingChat] = React.useState(false)

@@ -40,6 +40,19 @@ function setVisitorCookie(token: string) {
   })
 }
 
+async function loadConversationMessages(
+  admin: ReturnType<typeof createAdminClient>,
+  conversationId: string
+): Promise<SupportMessage[]> {
+  const { data: messages } = await admin
+    .from('support_messages')
+    .select('*')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true })
+
+  return (messages ?? []) as SupportMessage[]
+}
+
 export async function getSupportContactPrefill(): Promise<{
   name?: string
   email?: string
@@ -199,8 +212,8 @@ export async function initVisitorSupportChat(input: {
 
   if (!token) {
     token = randomUUID()
-    setVisitorCookie(token)
   }
+  setVisitorCookie(token)
 
   let conversation: SupportConversation | null = null
 
@@ -278,7 +291,7 @@ export async function initVisitorSupportChat(input: {
 export async function sendVisitorSupportMessage(
   conversationId: string,
   body: string
-): Promise<{ message?: SupportMessage; error?: string }> {
+): Promise<{ message?: SupportMessage; messages?: SupportMessage[]; error?: string }> {
   const token = visitorTokenFromCookie()
   if (!token) return { error: 'Session expired. Please refresh and try again.' }
 
@@ -327,7 +340,8 @@ export async function sendVisitorSupportMessage(
     }
   }
 
-  return visitorMessage
+  const messages = await loadConversationMessages(admin, conversationId)
+  return { ...visitorMessage, messages }
 }
 
 export async function sendVisitorBotQuickReply(
@@ -413,8 +427,8 @@ export async function listSupportConversations(): Promise<
   const auth = await requireStaff()
   if ('error' in auth) return auth
 
-  const supabase = createClient()
-  const { data, error } = await supabase
+  const admin = createAdminClient()
+  const { data, error } = await admin
     .from('support_conversations')
     .select('*')
     .order('last_message_at', { ascending: false })
@@ -433,8 +447,8 @@ export async function getSupportConversation(
   const auth = await requireStaff()
   if ('error' in auth) return auth
 
-  const supabase = createClient()
-  const { data: conversation, error: convError } = await supabase
+  const admin = createAdminClient()
+  const { data: conversation, error: convError } = await admin
     .from('support_conversations')
     .select('*')
     .eq('id', conversationId)
@@ -442,18 +456,12 @@ export async function getSupportConversation(
 
   if (convError || !conversation) return { error: 'Conversation not found' }
 
-  await supabase
+  await admin
     .from('support_conversations')
     .update({ unread_staff_count: 0 })
     .eq('id', conversationId)
 
-  const { data: messages, error: msgError } = await supabase
-    .from('support_messages')
-    .select('*')
-    .eq('conversation_id', conversationId)
-    .order('created_at', { ascending: true })
-
-  if (msgError) return { error: msgError.message }
+  const messages = await loadConversationMessages(admin, conversationId)
 
   return {
     conversation: conversation as SupportConversation,
@@ -471,7 +479,6 @@ export async function sendStaffSupportMessage(
   const trimmed = body.trim()
   if (!trimmed) return { error: 'Message cannot be empty.' }
 
-  const supabase = createClient()
   const admin = createAdminClient()
 
   const senderName = auth.name || 'Support'
@@ -487,7 +494,7 @@ export async function sendStaffSupportMessage(
 
   if ('error' in result && result.error) return { error: result.error }
 
-  await supabase
+  await admin
     .from('support_conversations')
     .update({
       status: 'open',
@@ -506,8 +513,8 @@ export async function updateSupportConversationStatus(
   const auth = await requireStaff()
   if ('error' in auth) return auth
 
-  const supabase = createClient()
-  const { error } = await supabase
+  const admin = createAdminClient()
+  const { error } = await admin
     .from('support_conversations')
     .update({ status, updated_at: new Date().toISOString() })
     .eq('id', conversationId)

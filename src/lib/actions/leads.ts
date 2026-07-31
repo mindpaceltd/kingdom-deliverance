@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { requireStaff } from '@/lib/authz'
 
 export interface Lead {
@@ -56,8 +56,8 @@ export async function listLeads(): Promise<Lead[] | { error: string }> {
   const auth = await requireStaff()
   if ('error' in auth) return auth
 
-  const supabase = createClient()
-  const { data, error } = await supabase
+  const admin = createAdminClient()
+  const { data, error } = await admin
     .from('leads')
     .select('*')
     .order('created_at', { ascending: false })
