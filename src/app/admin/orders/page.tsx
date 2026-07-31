@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { EyeIcon, PackageIcon, Trash2 } from 'lucide-react'
@@ -7,12 +7,18 @@ import { format } from 'date-fns'
 import { OrderActions } from '@/components/admin/orders/order-actions'
 
 export default async function AdminOrdersPage() {
-  const supabase = createClient()
-  
-  const { data: orders } = await supabase
+  // Admin routes are already gated by the layout; use the service role so
+  // order-visibility never depends on per-user RLS policies.
+  const supabase = createAdminClient()
+
+  const { data: orders, error } = await supabase
     .from('orders')
     .select('*')
     .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('AdminOrdersPage: failed to load orders', error)
+  }
 
   return (
     <div className="space-y-6">

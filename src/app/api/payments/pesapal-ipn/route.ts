@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     if (transaction) {
       // Update transaction with PesaPal response
-      await supabase
+      const { error: txUpdateError } = await supabase
         .from('transactions')
         .update({
           status: isPaid ? 'success' : 'failed',
@@ -56,6 +56,10 @@ export async function GET(request: NextRequest) {
           updated_at: new Date().toISOString()
         })
         .eq('id', transaction.id)
+
+      if (txUpdateError) {
+        console.error('[PesaPal IPN] Failed to update transaction', transaction.id, txUpdateError)
+      }
 
       // If payment successful and order_id exists, finalize the order
       if (isPaid && transaction.order_id) {
@@ -142,10 +146,10 @@ export async function GET(request: NextRequest) {
     )
   } catch (error) {
     console.error('[PesaPal IPN] Error processing notification:', error)
-    // Still return 200 to prevent PesaPal retries, but log the error
+    // Fail loudly so PesaPal retries; swallowing this loses paid orders permanently.
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 200 }
+      { status: 500 }
     )
   }
 }

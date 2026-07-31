@@ -694,6 +694,44 @@ Return ONLY raw JSON:
   return { error: lastError }
 }
 
+/** Recent AI runs plus draft counts, for the AI Writer overview. */
+export async function getDmAiWriterStats() {
+  const auth = await requireStaff()
+  if ('error' in auth) {
+    return { runs: [], totalRuns: 0, runsThisWeek: 0, draftCount: 0, model: null as string | null }
+  }
+
+  const supabase = createClient()
+  const [{ data: runs }, { count: draftCount }] = await Promise.all([
+    supabase
+      .from('dm_ai_generations')
+      .select('id, agent, model, created_at')
+      .order('created_at', { ascending: false })
+      .limit(12),
+    supabase
+      .from('dm_posts')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'draft')
+      .is('deleted_at', null),
+  ])
+
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+  const list = runs ?? []
+
+  return {
+    runs: list.map((r) => ({
+      id: r.id as string,
+      agent: (r.agent as string) ?? 'unknown',
+      model: (r.model as string) ?? null,
+      createdAt: r.created_at as string,
+    })),
+    totalRuns: list.length,
+    runsThisWeek: list.filter((r) => new Date(r.created_at as string).getTime() > weekAgo).length,
+    draftCount: draftCount ?? 0,
+    model: (list[0]?.model as string) ?? null,
+  }
+}
+
 export async function generateDmDraftFromBrief(params: {
   brief: string
   agent: string

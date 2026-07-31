@@ -1,3 +1,5 @@
+import { getDefaultPublicOrigin } from '@/lib/seo/public-content-urls'
+
 function getPesapalUrl(mode?: string): string {
   const m = mode || process.env.PESAPAL_MODE || 'live'
   return m === 'live'
@@ -55,7 +57,7 @@ export async function getPesapalAuthToken(
 
 export async function registerPesapalIPN(token: string, mode?: string) {
   const url = getPesapalUrl(mode)
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${process.env.VERCEL_URL}` || 'https://kdcuganda.org'
+  const siteUrl = getDefaultPublicOrigin()
   const response = await fetch(`${url}/api/URLSetup/RegisterIPN`, {
     method: 'POST',
     headers: {

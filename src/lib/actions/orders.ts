@@ -4,6 +4,8 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { getPesapalAuthToken, initiatePesapalPayment } from '@/lib/payments/pesapal'
 import { getPesapalSettings } from '@/lib/payments/pesapal-settings'
 import { initiatePayPalPayment } from '@/lib/payments/paypal'
+import { getExchangeRates } from '@/lib/services/exchange-rates'
+import { getDefaultPublicOrigin } from '@/lib/seo/public-content-urls'
 
 /**
  * Fetch payment gateway credentials from site_settings table.
@@ -15,19 +17,47 @@ async function getPaymentSettings() {
   const { data } = await supabase
     .from('site_settings')
     .select('key, value')
-    .in('key', ['paypal_client_id', 'paypal_secret', 'paypal_mode', 'paypal_enabled'])
+    .in('key', ['paypal_client_id', 'paypal_secret', 'paypal_mode', 'paypal_enabled', 'pesapal_enabled'])
 
   const map: Record<string, string> = {}
   for (const row of data ?? []) {
     if (row.value) map[row.key] = row.value
   }
 
+  const paypalClientId = map.paypal_client_id || process.env.PAYPAL_CLIENT_ID || ''
+  const paypalSecret =
+    map.paypal_secret || process.env.PAYPAL_CLIENT_SECRET || process.env.PAYPAL_SECRET || ''
+
   return {
     ...settings,
-    paypalClientId: map.paypal_client_id || process.env.PAYPAL_CLIENT_ID || '',
-    paypalSecret: map.paypal_secret || process.env.PAYPAL_SECRET || '',
+    paypalClientId,
+    paypalSecret,
     paypalMode: map.paypal_mode || process.env.PAYPAL_MODE || 'sandbox',
-    paypalEnabled: map.paypal_enabled === 'true' || map.paypal_enabled === '1',
+    // A gateway is only usable when it is enabled AND has credentials.
+    paypalEnabled:
+      (map.paypal_enabled === 'true' || map.paypal_enabled === '1') &&
+      Boolean(paypalClientId && paypalSecret),
+    pesapalEnabled:
+      map.pesapal_enabled !== 'false' &&
+      map.pesapal_enabled !== '0' &&
+      Boolean(settings.consumerKey && settings.consumerSecret),
+  }
+}
+
+/**
+ * Payment methods the storefront may offer. Checkout uses this so a shopper is
+ * never shown a gateway that cannot complete a payment.
+ */
+export async function getAvailableGateways() {
+  try {
+    const settings = await getPaymentSettings()
+    return {
+      pesapal: settings.pesapalEnabled,
+      paypal: settings.paypalEnabled,
+    }
+  } catch (err) {
+    console.error('getAvailableGateways failed:', err)
+    return { pesapal: true, paypal: false }
   }
 }
 
@@ -51,33 +81,56 @@ export async function createOrder(data: {
   // Check if user is authenticated (optional for guest checkout)
   const { data: { user } } = await supabase.auth.getUser()
   
+  if (!data.items?.length) {
+    return { error: 'Your cart is empty.' }
+  }
+
   // Server-side price validation: re-fetch products from DB
   const productIds = data.items.map(item => item.id)
-  const { data: products } = await adminClient
+  const { data: products, error: productsError } = await adminClient
     .from('products')
     .select('id, price_usd, regular_price_usd, sale_price_usd, is_active')
     .in('id', productIds)
 
-  if (!products || products.length !== productIds.length) {
-    return { error: 'Some products are no longer available.' }
+  if (productsError) {
+    console.error('createOrder: product lookup failed', productsError)
+    return { error: `Could not verify your cart: ${productsError.message}` }
+  }
+
+  // Carts live in localStorage, so they can outlive a product re-import.
+  // Report the exact stale ids so checkout can drop them and let the shopper retry.
+  const productById = new Map((products ?? []).map(p => [p.id, p]))
+  const invalidItems = data.items.filter(item => {
+    const product = productById.get(item.id)
+    return !product || !product.is_active
+  })
+
+  if (invalidItems.length) {
+    const names = invalidItems.map(i => i.name).filter(Boolean)
+    return {
+      error:
+        names.length === 1
+          ? `"${names[0]}" is no longer available and was removed from your cart.`
+          : `${invalidItems.length} items are no longer available and were removed from your cart.`,
+      invalidItemIds: invalidItems.map(i => i.id),
+    }
   }
 
   // Recalculate total from DB prices
   let validatedSubtotal = 0
   for (const item of data.items) {
-    const product = products.find(p => p.id === item.id)
-    if (!product || !product.is_active) {
-      return { error: `Product "${item.name}" is no longer available.` }
-    }
-    const hasDiscount = product.sale_price_usd > 0 && product.sale_price_usd < product.regular_price_usd
-    const unitPrice = hasDiscount ? product.sale_price_usd : (product.regular_price_usd || product.price_usd)
+    const product = productById.get(item.id)!
+    const salePrice = Number(product.sale_price_usd) || 0
+    const regularPrice = Number(product.regular_price_usd) || 0
+    const basePrice = Number(product.price_usd) || 0
+    const hasDiscount = salePrice > 0 && salePrice < regularPrice
+    const unitPrice = hasDiscount ? salePrice : regularPrice || basePrice
     validatedSubtotal += unitPrice * item.quantity
   }
 
-  // Apply currency conversion
-  const RATES: Record<string, number> = {
-    USD: 1, UGX: 3800, KES: 130, RWF: 1250, GBP: 0.8
-  }
+  // Apply currency conversion using the same rate source the storefront prices with,
+  // so the amount charged always matches the amount displayed.
+  const RATES = await getExchangeRates()
   const SHIPPING_RATES_USD: Record<string, number> = {
     standard: 5,
     express: 12,
@@ -95,6 +148,8 @@ export async function createOrder(data: {
   const orderPayload: any = {
     user_id: user?.id || null,
     email: data.email,
+    customer_name: data.name?.trim() || null,
+    customer_phone: data.phone?.trim() || null,
     total_amount: totalInCurrency,
     currency: data.currency,
     status: 'pending',
@@ -114,7 +169,14 @@ export async function createOrder(data: {
     .select()
     .single()
 
-  if (orderError) return { error: orderError.message }
+  if (orderError || !order) {
+    console.error('createOrder: order insert failed', orderError, {
+      currency: data.currency,
+      total: totalInCurrency,
+      itemCount: data.items.length,
+    })
+    return { error: orderError?.message || 'Could not create your order. Please try again.' }
+  }
 
   // 2. Create Order Items
   const orderItems = data.items.map(item => {
@@ -130,12 +192,22 @@ export async function createOrder(data: {
   })
 
   const { error: itemsError } = await adminClient.from('order_items').insert(orderItems)
-  if (itemsError) return { error: itemsError.message }
+  if (itemsError) {
+    console.error('createOrder: order_items insert failed', itemsError, { orderId: order.id })
+    return { error: itemsError.message }
+  }
 
   const tx_ref = `KDC-${order.id.split('-')[0]}-${Date.now()}`
 
   // Load payment credentials from DB settings
   const paySettings = await getPaymentSettings()
+
+  if (gateway === 'paypal' && !paySettings.paypalEnabled) {
+    return { error: 'PayPal is not available right now. Please pay with mobile money or card.' }
+  }
+  if (gateway === 'pesapal' && !paySettings.pesapalEnabled && totalInCurrency > 0) {
+    return { error: 'Payment gateway is not configured. Please contact support.' }
+  }
 
   try {
     if (gateway === 'pesapal') {
@@ -144,7 +216,7 @@ export async function createOrder(data: {
         if (!user) {
           return { error: 'Please sign in to claim free items.' }
         }
-        await adminClient.from('transactions').insert({
+        const { error: freeTxError } = await adminClient.from('transactions').insert({
           order_id: order.id,
           gateway: 'free',
           reference: tx_ref,
@@ -152,6 +224,9 @@ export async function createOrder(data: {
           currency: data.currency,
           status: 'success',
         })
+        if (freeTxError) {
+          console.error('createOrder: free transaction insert failed', freeTxError)
+        }
         const { finalizeOrder } = await import('@/lib/orders/finalize')
         await finalizeOrder(order.id)
         return { success: true, paymentUrl: `/checkout/success?order_id=${order.id}` }
@@ -162,7 +237,7 @@ export async function createOrder(data: {
       const firstName = names[0] || 'Customer'
       const lastName = names.slice(1).join(' ') || firstName
 
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${process.env.VERCEL_URL}` || 'https://kdcuganda.org'
+      const siteUrl = getDefaultPublicOrigin()
 
       const psaResponse = await initiatePesapalPayment({
         id: tx_ref,
@@ -183,7 +258,7 @@ export async function createOrder(data: {
       const paymentUrl = psaResponse.redirect_url || psaResponse.payment_url || psaResponse.url
 
       if (reference && paymentUrl) {
-        await adminClient.from('transactions').insert({
+        const { error: txError } = await adminClient.from('transactions').insert({
           order_id: order.id,
           gateway: 'pesapal',
           reference,
@@ -191,23 +266,32 @@ export async function createOrder(data: {
           currency: data.currency,
           status: 'pending'
         })
+        if (txError) {
+          // Without this row the callback cannot match the payment back to the order.
+          console.error('createOrder: pesapal transaction insert failed', txError, {
+            orderId: order.id,
+            reference,
+          })
+          return { error: 'Could not start payment tracking. Please try again or contact support.' }
+        }
         return { success: true, paymentUrl }
       }
 
       console.error('Pesapal response missing redirect_url:', JSON.stringify(psaResponse))
       return { error: psaResponse.message || psaResponse.error?.message || 'Pesapal initiation failed — no redirect URL returned' }
     } else if (gateway === 'paypal') {
+      const siteUrl = getDefaultPublicOrigin()
       const paypalResponse = await initiatePayPalPayment({
         orderId: order.id,
         amount: totalInCurrency,
         currency: data.currency,
         description: `Order #${order.id.split('-')[0]} from Kingdom Deliverance Store`,
-        returnUrl: `${process.env.NEXT_PUBLIC_SITE_URL || `https://${process.env.VERCEL_URL}` || 'https://kdcuganda.org'}/api/payments/verify?gateway=paypal`,
-        cancelUrl: `${process.env.NEXT_PUBLIC_SITE_URL || `https://${process.env.VERCEL_URL}` || 'https://kdcuganda.org'}/checkout`
+        returnUrl: `${siteUrl}/api/payments/verify?gateway=paypal`,
+        cancelUrl: `${siteUrl}/checkout`
       })
 
       if (paypalResponse.success && paypalResponse.paymentUrl) {
-        await adminClient.from('transactions').insert({
+        const { error: txError } = await adminClient.from('transactions').insert({
           order_id: order.id,
           gateway: 'paypal',
           reference: paypalResponse.orderId,
@@ -215,6 +299,12 @@ export async function createOrder(data: {
           currency: data.currency,
           status: 'pending'
         })
+        if (txError) {
+          console.error('createOrder: paypal transaction insert failed', txError, {
+            orderId: order.id,
+          })
+          return { error: 'Could not start payment tracking. Please try again or contact support.' }
+        }
         return { success: true, paymentUrl: paypalResponse.paymentUrl }
       }
 

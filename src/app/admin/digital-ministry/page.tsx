@@ -18,12 +18,95 @@ function fmt(n: number | null | undefined) {
   return n.toLocaleString()
 }
 
+const MODULES = [
+  {
+    href: '/admin/digital-ministry/studio',
+    title: 'Content Studio',
+    body: 'Draft, preview per platform, schedule, and publish.',
+  },
+  {
+    href: '/admin/digital-ministry/sermon-studio',
+    title: 'Sermon Studio',
+    body: 'Turn one sermon into weeks of posts, Shorts, and newsletter copy.',
+  },
+  {
+    href: '/admin/digital-ministry/ai-writer',
+    title: 'AI Writer',
+    body: 'Specialist agents for captions, SEO, youth, evangelism, and translation.',
+  },
+  {
+    href: '/admin/digital-ministry/calendar',
+    title: 'Calendar',
+    body: 'See the publishing rhythm and spot empty weeks.',
+  },
+  {
+    href: '/admin/digital-ministry/campaigns',
+    title: 'Campaigns',
+    body: 'Plan conferences, series, and outreach pushes end to end.',
+  },
+  {
+    href: '/admin/digital-ministry/community',
+    title: 'Community',
+    body: 'Reply to comments and route prayer requests pastorally.',
+  },
+  {
+    href: '/admin/digital-ministry/growth-coach',
+    title: 'Growth Coach',
+    body: 'Daily briefing, growth score, and prioritised tasks.',
+  },
+  {
+    href: '/admin/digital-ministry/seo',
+    title: 'SEO',
+    body: 'Audit pages and fix what keeps you out of search results.',
+  },
+  {
+    href: '/admin/digital-ministry/reports',
+    title: 'Reports',
+    body: 'Daily to yearly snapshots you can export and share.',
+  },
+]
+
 export default async function DigitalMinistryDashboardPage() {
   const kpis = await getDigitalMinistryKpis()
   const [insights, summary] = await Promise.all([
     getDigitalMinistryInsights(kpis),
     getOrBuildAiSummary(kpis),
   ])
+
+  // Everything a leader should act on today, with the count that makes it urgent.
+  const queue = [
+    {
+      label: 'Unread prayer requests',
+      count: kpis.unreadPrayer ?? 0,
+      href: '/admin/inbox',
+      note: 'Pray and respond first',
+    },
+    {
+      label: 'Unread messages',
+      count: kpis.unreadContact ?? 0,
+      href: '/admin/inbox',
+      note: 'People waiting on a reply',
+    },
+    {
+      label: 'Open comments',
+      count: kpis.openComments ?? 0,
+      href: '/admin/digital-ministry/community',
+      note: 'Conversations without a response',
+    },
+    {
+      label: 'Connected accounts',
+      count: kpis.connectedAccounts ?? 0,
+      href: '/admin/digital-ministry/accounts',
+      note: (kpis.connectedAccounts ?? 0) === 0 ? 'Connect one to publish' : 'Publishing enabled',
+      inverse: true,
+    },
+  ]
+
+  const conversions =
+    (kpis.prayerRequests ?? 0) +
+    (kpis.contactMessages ?? 0) +
+    (kpis.donations ?? 0) +
+    (kpis.testimonies ?? 0)
 
   return (
     <div className="space-y-6">
@@ -82,48 +165,107 @@ export default async function DigitalMinistryDashboardPage() {
         </div>
       </DmCard>
 
-      {/* KPI grid */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
-        <DmKpiCard label="Sermon views" value={fmt(kpis.sermonViews)} hint="Published sermons" />
-        <DmKpiCard label="Published posts" value={fmt(kpis.publishedPosts)} />
-        <DmKpiCard label="Published sermons" value={fmt(kpis.publishedSermons)} />
-        <DmKpiCard label="Prayer requests" value={fmt(kpis.prayerRequests)} hint={`${kpis.unreadPrayer} unread`} />
-        <DmKpiCard label="Contact messages" value={fmt(kpis.contactMessages)} hint={`${kpis.unreadContact} unread`} />
-        <DmKpiCard label="Events" value={fmt(kpis.eventCount)} />
-        <DmKpiCard label="Testimonies" value={fmt(kpis.testimonies)} />
-        <DmKpiCard label="Media assets" value={fmt(kpis.mediaAssets)} />
-        <DmKpiCard label="Connected accounts" value={fmt(kpis.connectedAccounts)} />
-        <DmKpiCard label="Open comments" value={fmt(kpis.openComments)} />
-        <DmKpiCard
-          label="Website visitors"
-          value={fmt(kpis.websiteVisitors)}
-          hint={kpis.websiteVisitors == null ? 'Save a snapshot in DM Analytics after GA sync' : 'From latest DM analytics snapshot'}
-        />
-        <DmKpiCard
-          label="Returning visitors"
-          value={fmt(kpis.returningVisitors)}
-          hint={kpis.returningVisitors == null ? 'Appears when GA metrics are snapshotted' : 'From latest DM analytics snapshot'}
-        />
-        <DmKpiCard
-          label="Form / email leads"
-          value={fmt(kpis.newsletterSignups)}
-          hint="Contact form submissions"
-        />
-        <DmKpiCard
-          label="Donations & paid orders"
-          value={fmt(kpis.donations)}
-          hint="Confirmed donations + paid shop orders"
-        />
-        <DmKpiCard
-          label="Conversions"
-          value={fmt(
-            (kpis.prayerRequests ?? 0) +
-              (kpis.contactMessages ?? 0) +
-              (kpis.donations ?? 0) +
-              (kpis.testimonies ?? 0)
-          )}
-          hint="Prayer + contact + giving + testimonies"
-        />
+      {/* Needs attention */}
+      <div>
+        <h3 className="mb-3 text-sm font-semibold tracking-tight">Needs attention today</h3>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {queue.map((item) => {
+            const urgent = item.inverse ? item.count === 0 : item.count > 0
+            return (
+              <Link key={item.label} href={item.href} className="group">
+                <DmCard
+                  className={cn(
+                    'h-full p-4 transition-colors group-hover:bg-muted/30',
+                    urgent && 'border-amber-500/40'
+                  )}
+                >
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    {item.label}
+                  </p>
+                  <p
+                    className={cn(
+                      'mt-2 text-2xl font-semibold tabular-nums',
+                      urgent && 'text-amber-700 dark:text-amber-400'
+                    )}
+                  >
+                    {fmt(item.count)}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">{item.note}</p>
+                </DmCard>
+              </Link>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Reach & audience */}
+      <div>
+        <h3 className="mb-3 text-sm font-semibold tracking-tight">Reach &amp; audience</h3>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <DmKpiCard
+            label="Website visitors"
+            value={fmt(kpis.websiteVisitors)}
+            hint={
+              kpis.websiteVisitors == null
+                ? 'Save a snapshot in DM Analytics after GA sync'
+                : 'From latest DM analytics snapshot'
+            }
+          />
+          <DmKpiCard
+            label="Returning visitors"
+            value={fmt(kpis.returningVisitors)}
+            hint={
+              kpis.returningVisitors == null
+                ? 'Appears when GA metrics are snapshotted'
+                : 'From latest DM analytics snapshot'
+            }
+          />
+          <DmKpiCard label="Sermon views" value={fmt(kpis.sermonViews)} hint="Published sermons" />
+          <DmKpiCard
+            label="Connected accounts"
+            value={fmt(kpis.connectedAccounts)}
+            hint="Platforms available for publishing"
+          />
+        </div>
+      </div>
+
+      {/* Content library */}
+      <div>
+        <h3 className="mb-3 text-sm font-semibold tracking-tight">Content library</h3>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <DmKpiCard label="Published posts" value={fmt(kpis.publishedPosts)} hint="Across platforms" />
+          <DmKpiCard label="Published sermons" value={fmt(kpis.publishedSermons)} hint="Live on the site" />
+          <DmKpiCard label="Events" value={fmt(kpis.eventCount)} hint="Upcoming and past" />
+          <DmKpiCard label="Testimonies" value={fmt(kpis.testimonies)} hint="Your strongest content" />
+          <DmKpiCard label="Media assets" value={fmt(kpis.mediaAssets)} hint="Images and video" />
+        </div>
+      </div>
+
+      {/* Response & fruit */}
+      <div>
+        <h3 className="mb-3 text-sm font-semibold tracking-tight">Response &amp; fruit</h3>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <DmKpiCard
+            label="Prayer requests"
+            value={fmt(kpis.prayerRequests)}
+            hint={`${fmt(kpis.unreadPrayer)} unread`}
+          />
+          <DmKpiCard
+            label="Contact messages"
+            value={fmt(kpis.contactMessages)}
+            hint={`${fmt(kpis.unreadContact)} unread`}
+          />
+          <DmKpiCard
+            label="Donations & paid orders"
+            value={fmt(kpis.donations)}
+            hint="Confirmed donations + paid shop orders"
+          />
+          <DmKpiCard
+            label="Total conversions"
+            value={fmt(conversions)}
+            hint="Prayer + contact + giving + testimonies"
+          />
+        </div>
       </div>
 
       {/* Insight cards */}
@@ -150,32 +292,19 @@ export default async function DigitalMinistryDashboardPage() {
         </div>
       </div>
 
-      {/* Quick links */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        {[
-          {
-            href: '/admin/digital-ministry/sermon-studio',
-            title: 'Sermon Studio',
-            body: 'Turn one sermon into weeks of posts, Shorts, and newsletter copy.',
-          },
-          {
-            href: '/admin/digital-ministry/ai-writer',
-            title: 'AI Writer',
-            body: 'Specialist agents for captions, SEO, youth, evangelism, and translation.',
-          },
-          {
-            href: '/admin/analytics',
-            title: 'Google Analytics',
-            body: 'Existing GA + Search Console connection powers Website Analytics.',
-          },
-        ].map((item) => (
-          <Link key={item.href} href={item.href} className="group">
-            <DmCard className="h-full p-5 transition-colors group-hover:border-primary/30 group-hover:bg-muted/30">
-              <p className="font-semibold tracking-tight">{item.title}</p>
-              <p className="mt-1.5 text-sm text-muted-foreground">{item.body}</p>
-            </DmCard>
-          </Link>
-        ))}
+      {/* Modules */}
+      <div>
+        <h3 className="mb-3 text-sm font-semibold tracking-tight">All modules</h3>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {MODULES.map((item) => (
+            <Link key={item.href} href={item.href} className="group">
+              <DmCard className="h-full p-5 transition-colors group-hover:border-primary/30 group-hover:bg-muted/30">
+                <p className="font-semibold tracking-tight">{item.title}</p>
+                <p className="mt-1.5 text-sm text-muted-foreground">{item.body}</p>
+              </DmCard>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   )

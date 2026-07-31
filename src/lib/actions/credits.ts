@@ -4,6 +4,7 @@ import { convertGbpToCurrency, creditsToGbpAmount } from '@/lib/credits/pricing'
 import { getCreditSettings } from '@/lib/credits/settings'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { getExchangeRates } from '@/lib/services/exchange-rates'
+import { getDefaultPublicOrigin } from '@/lib/seo/public-content-urls'
 import { revalidatePath } from 'next/cache'
 
 export type CreditPackageWithPricing = {
@@ -208,9 +209,7 @@ async function initiateCreditPurchase({
   const consumerSecret = map.pesapal_consumer_secret || process.env.PESAPAL_CONSUMER_SECRET || ''
   const mode = map.pesapal_mode || process.env.PESAPAL_MODE || 'live'
   const ipnId = map.pesapal_ipn_id || process.env.PESAPAL_IPN_ID || ''
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://kdcuganda.org')
+  const siteUrl = getDefaultPublicOrigin()
 
   try {
     const { getPesapalAuthToken, initiatePesapalPayment } = await import('@/lib/payments/pesapal')

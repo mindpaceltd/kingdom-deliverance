@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
           }
         } else {
           // Handle order payment
-          const { data: tx } = await supabase
+          const { data: tx, error: txError } = await supabase
             .from('transactions')
             .update({ 
               status: 'success', 
@@ -97,6 +97,12 @@ export async function GET(request: NextRequest) {
             await finalizeOrder(tx.order_id)
             redirectUrl = `/checkout/success?order_id=${tx.order_id}`
           } else {
+            // The customer has paid — losing this silently would strand the order.
+            console.error(
+              '[Payments] Paid Pesapal transaction could not be matched',
+              orderTrackingId,
+              txError
+            )
             redirectUrl = '/checkout/error'
           }
         }

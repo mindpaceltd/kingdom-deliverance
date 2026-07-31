@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Trash2, RotateCcw, Package, User, Mail, Phone, MapPin, Calendar, CreditCard } from 'lucide-react'
@@ -8,7 +8,8 @@ import { format } from 'date-fns'
 import { OrderActions } from '@/components/admin/orders/order-actions'
 
 export default async function AdminOrderDetailsPage({ params }: { params: { id: string } }) {
-  const supabase = createClient()
+  // Service role: admin access is enforced by the admin layout, not by RLS.
+  const supabase = createAdminClient()
   
   // Fetch order with items and products
   const { data: order } = await supabase

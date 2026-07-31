@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
-import { createOrder } from '@/lib/actions/orders'
+import { createOrder, getAvailableGateways } from '@/lib/actions/orders'
 import { Loader2, ShieldCheck, Wallet, Package, Download } from 'lucide-react'
 import {
   Select,
@@ -50,10 +50,11 @@ const PAYMENT_METHODS = [
 ]
 
 export default function CheckoutPage() {
-  const { items, subtotal, totalItems } = useCart()
+  const { items, subtotal, totalItems, removeItem } = useCart()
   const { currency, rate, rates, setCurrency, formatPrice } = useCurrency()
   const [loading, setLoading] = useState(false)
   const [gateway, setGateway] = useState<'pesapal' | 'paypal'>('pesapal')
+  const [availableGateways, setAvailableGateways] = useState<Record<string, boolean> | null>(null)
   const [shippingMethod, setShippingMethod] = useState<'standard' | 'express'>('standard')
   const [createAccount, setCreateAccount] = useState(false)
   const [authError, setAuthError] = useState('')
@@ -71,6 +72,20 @@ export default function CheckoutPage() {
 
   // Prevent hydration mismatch — only render price-dependent content after mount
   useEffect(() => { setMounted(true) }, [])
+
+  // Never offer a gateway that has no working credentials.
+  useEffect(() => {
+    getAvailableGateways()
+      .then((gateways) => {
+        setAvailableGateways(gateways)
+        setGateway((current) => (gateways[current] ? current : gateways.pesapal ? 'pesapal' : 'paypal'))
+      })
+      .catch(() => setAvailableGateways({ pesapal: true, paypal: false }))
+  }, [])
+
+  const paymentMethods = PAYMENT_METHODS.filter(
+    (method) => availableGateways === null || availableGateways[method.id]
+  )
 
   const allDigital = items.every(item => item.type === 'digital')
   const selectedShipping = SHIPPING_OPTIONS.find((option) => option.id === shippingMethod)
@@ -133,24 +148,40 @@ export default function CheckoutPage() {
       }
     }
 
-    const result = await createOrder({
-      email: formData.email,
-      name: formData.name,
-      phone: formData.phone,
-      address: formData.address,
-      city: formData.city,
-      country: formData.country,
-      items,
-      subtotal: convertedTotal,
-      shippingMethod: allDigital ? undefined : shippingMethod,
-      currency,
-      gateway: gateway as 'pesapal' | 'paypal',
-    })
+    try {
+      const result = await createOrder({
+        email: formData.email,
+        name: formData.name,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        country: formData.country,
+        items,
+        subtotal: convertedTotal,
+        shippingMethod: allDigital ? undefined : shippingMethod,
+        currency,
+        gateway: gateway as 'pesapal' | 'paypal',
+      })
 
-    if (result.success && result.paymentUrl) {
-      window.location.href = result.paymentUrl
-    } else {
-      alert(result.error || 'Something went wrong')
+      if (result.success && result.paymentUrl) {
+        window.location.href = result.paymentUrl
+        return
+      }
+
+      // Drop cart entries whose products no longer exist so a retry can succeed.
+      if (result.invalidItemIds?.length) {
+        result.invalidItemIds.forEach((id) => removeItem(id))
+      }
+
+      setAuthError(result.error || 'We could not start your payment. Please try again.')
+      setLoading(false)
+    } catch (err: any) {
+      console.error('Checkout failed:', err)
+      setAuthError(
+        err?.message
+          ? `Checkout failed: ${err.message}`
+          : 'Checkout failed unexpectedly. Please try again or contact support.'
+      )
       setLoading(false)
     }
   }
@@ -369,12 +400,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
             )}
-            {authError && (
-              <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                {authError}
-              </div>
-            )}
-
             {!allDigital && (
               <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
                 <h3 className="text-lg font-bold mb-4 text-gray-900">Shipping Options</h3>
@@ -408,7 +433,7 @@ export default function CheckoutPage() {
             <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
               <h3 className="text-lg font-bold mb-4 text-gray-900">Payment Method</h3>
               <div className="grid grid-cols-1 gap-3">
-                {PAYMENT_METHODS.map((method) => (
+                {paymentMethods.map((method) => (
                   <button
                     key={method.id}
                     type="button"
@@ -474,6 +499,12 @@ export default function CheckoutPage() {
                   </span>
                 </div>
               </div>
+
+              {authError && (
+                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {authError}
+                </div>
+              )}
 
               <Button
                 type="submit"

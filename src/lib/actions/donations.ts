@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { getPesapalAuthToken, initiatePesapalPayment } from '@/lib/payments/pesapal'
+import { getDefaultPublicOrigin } from '@/lib/seo/public-content-urls'
 async function getPesapalSettings() {
   const adminClient = createAdminClient()
   const { data } = await adminClient
@@ -71,7 +72,7 @@ export async function createDonationOrder(data: {
     const amountInUsd = data.amount / currentRate
     const amountInUgx = Math.round(amountInUsd * RATES['UGX'])
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${process.env.VERCEL_URL}` || 'https://kdcuganda.org'
+    const siteUrl = getDefaultPublicOrigin()
 
     const psaResponse = await initiatePesapalPayment(
       {
