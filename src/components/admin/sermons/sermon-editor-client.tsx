@@ -30,6 +30,11 @@ import { cn, validateVideoUrl } from '@/lib/utils'
 import { isAIProcessorEnabled } from '@/lib/env'
 import type { Sermon, SermonSeries, SermonDraft } from '@/lib/types'
 import { MediaPicker } from '../media-picker'
+import {
+  defaultScheduleDatetimeLocal,
+  localDatetimeInputToIso,
+  toLocalDatetimeInputValue,
+} from '@/lib/admin/datetime-local'
 
 export interface SermonEditorClientProps {
   sermon?: Sermon
@@ -73,8 +78,8 @@ export function SermonEditorClient({ sermon, allSeries }: SermonEditorClientProp
     series_id: sermon?.series_id ?? null,
     date: sermon?.date ?? new Date().toISOString().split('T')[0],
     duration_minutes: sermon?.duration_minutes ? String(sermon.duration_minutes) : '',
-    status: (sermon?.status as any) ?? 'draft',
-    scheduled_at: sermon?.scheduled_at ?? '',
+    status: (sermon?.status as FormState['status']) ?? 'draft',
+    scheduled_at: toLocalDatetimeInputValue(sermon?.scheduled_at),
     meta_title: sermon?.meta_title ?? '',
     meta_description: sermon?.meta_description ?? '',
     focus_keyword: sermon?.focus_keyword ?? '',
@@ -195,9 +200,27 @@ export function SermonEditorClient({ sermon, allSeries }: SermonEditorClientProp
   async function save(overrideStatus?: 'draft' | 'published' | 'scheduled') {
     if (videoUrlError) return
     setError(null)
-    setSubmitting(true)
 
     const effectiveStatus = overrideStatus ?? form.status
+
+    if (effectiveStatus === 'scheduled') {
+      if (!form.scheduled_at.trim()) {
+        setError('Pick a publish date and time to schedule this sermon.')
+        return
+      }
+      const scheduledIso = localDatetimeInputToIso(form.scheduled_at)
+      if (!scheduledIso) {
+        setError('The scheduled date and time is not valid.')
+        return
+      }
+      if (new Date(scheduledIso).getTime() <= Date.now()) {
+        setError('Scheduled time must be in the future.')
+        return
+      }
+    }
+
+    setSubmitting(true)
+
     const { score } = computeSeoScore({
       focusKeyword: form.focus_keyword,
       seoTitle: form.meta_title || form.title,
@@ -212,7 +235,10 @@ export function SermonEditorClient({ sermon, allSeries }: SermonEditorClientProp
       status: effectiveStatus as 'draft' | 'published' | 'scheduled',
       seo_score: score,
       duration_minutes: form.duration_minutes ? Number(form.duration_minutes) : undefined,
-      scheduled_at: effectiveStatus === 'scheduled' && form.scheduled_at ? new Date(form.scheduled_at).toISOString() : undefined,
+      scheduled_at:
+        effectiveStatus === 'scheduled' && form.scheduled_at
+          ? localDatetimeInputToIso(form.scheduled_at) ?? undefined
+          : undefined,
     }
 
     const result = isEditing
@@ -227,6 +253,18 @@ export function SermonEditorClient({ sermon, allSeries }: SermonEditorClientProp
     }
 
     return result
+  }
+
+  function handleStatusChange(nextStatus: string) {
+    setForm((prev) => {
+      const scheduled_at =
+        nextStatus === 'scheduled' && !prev.scheduled_at
+          ? defaultScheduleDatetimeLocal()
+          : prev.scheduled_at
+      return { ...prev, status: nextStatus as FormState['status'], scheduled_at }
+    })
+    setError(null)
+    setDraftSaved(false)
   }
 
   async function handlePublish() {
@@ -325,6 +363,11 @@ export function SermonEditorClient({ sermon, allSeries }: SermonEditorClientProp
         <div className="flex-1" />
         <span className="min-w-0 truncate text-sm text-muted-foreground">
           {isEditing ? 'Editing sermon' : 'New sermon'}
+          {form.status === 'scheduled' && form.scheduled_at ? (
+            <span className="ml-2 hidden text-violet-600 sm:inline">
+              · scheduled
+            </span>
+          ) : null}
         </span>
       </div>
 
@@ -552,10 +595,11 @@ export function SermonEditorClient({ sermon, allSeries }: SermonEditorClientProp
             isEditing={isEditing}
             submitting={submitting}
             error={error}
-            onStatusChange={(s) => setField('status', s as any)}
+            onStatusChange={handleStatusChange}
             onScheduledAtChange={(v) => setField('scheduled_at', v)}
             onPublish={handlePublish}
             onSaveDraft={handleSaveDraft}
+            scheduleHint="The site checks hourly and publishes automatically when this time arrives."
           />
           
           <div className="rounded-lg border border-border bg-card p-4 space-y-3">

@@ -23,6 +23,21 @@ function suggestAlternativeSlug(slug: string): string {
   return `${slug}-${Date.now().toString(36)}`
 }
 
+function validateScheduledSermon(data: SermonData): string | null {
+  if (data.status !== 'scheduled') return null
+  if (!data.scheduled_at) {
+    return 'Pick a publish date and time to schedule this sermon.'
+  }
+  const when = new Date(data.scheduled_at)
+  if (Number.isNaN(when.getTime())) {
+    return 'The scheduled date and time is not valid.'
+  }
+  if (when.getTime() <= Date.now()) {
+    return 'Scheduled time must be in the future.'
+  }
+  return null
+}
+
 // ---------------------------------------------------------------------------
 // createSermon
 // Inserts a new sermon. Sets `published_at` if status is `published`.
@@ -34,6 +49,9 @@ export async function createSermon(
 ): Promise<{ success: true; id: string } | { error: string }> {
   const result = await requireRoles(ROLES.CONTENT)
   if ('error' in result) return result
+
+  const scheduleError = validateScheduledSermon(data)
+  if (scheduleError) return { error: scheduleError }
 
   const supabase = createClient()
 
@@ -91,6 +109,9 @@ export async function updateSermon(
 ): Promise<{ success: true } | { error: string }> {
   const result = await requireRoles(ROLES.CONTENT)
   if ('error' in result) return result
+
+  const scheduleError = validateScheduledSermon(data)
+  if (scheduleError) return { error: scheduleError }
 
   const supabase = createClient()
 
