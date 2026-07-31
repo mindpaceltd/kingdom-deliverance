@@ -549,7 +549,7 @@ export function SermonImportClient() {
                   </Button>
                   {mode === 'scheduled' ? (
                     <p className="self-center text-xs text-muted-foreground">
-                      Auto-publish runs hourly via{' '}
+                      Auto-publish runs daily via{' '}
                       <code className="rounded bg-muted px-1 py-0.5 text-[10px]">
                         /api/sermons/cron/publish
                       </code>
