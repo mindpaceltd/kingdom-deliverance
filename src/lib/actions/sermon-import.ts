@@ -3,7 +3,6 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireRoles } from '@/lib/authz'
 import { ROLES } from '@/lib/roles'
-import { generateSlug } from '@/lib/utils'
 import { revalidatePath } from 'next/cache'
 import { revalidateSitemap } from '@/lib/seo/revalidate-sitemap'
 import { extractManuscriptText, parseManuscript } from '@/lib/sermons/manuscript'
