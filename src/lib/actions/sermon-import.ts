@@ -7,7 +7,9 @@ import { generateSlug } from '@/lib/utils'
 import { revalidatePath } from 'next/cache'
 import { revalidateSitemap } from '@/lib/seo/revalidate-sitemap'
 import { extractManuscriptText, parseManuscript } from '@/lib/sermons/manuscript'
+import { buildSermonSeo } from '@/lib/sermons/sermon-seo'
 import { generateGeminiJson } from '@/lib/digital-ministry/gemini'
+import { computeSeoScore } from '@/lib/seo-scorer'
 
 export interface SermonImportOptions {
   status: 'draft' | 'published' | 'scheduled'
@@ -17,6 +19,8 @@ export interface SermonImportOptions {
   date?: string | null
   preacher?: string
   seriesId?: string | null
+  /** Cover image for the sermon. Falls back to the organisation OG image. */
+  thumbnailUrl?: string | null
   /** Enrich the description and SEO fields with Gemini when a key is configured. */
   useAi?: boolean
 }
@@ -32,6 +36,7 @@ export interface SermonImportResult {
   estimatedMinutes: number
   mainScripture: string | null
   aiEnriched: boolean
+  seoScore: number
   /** Non-fatal notes, e.g. AI unavailable so heuristics were used. */
   notice?: string
 }
@@ -182,7 +187,6 @@ export async function importSermonManuscript(input: {
   }
 
   const supabase = createAdminClient()
-  const slug = await reserveSlug(supabase, generateSlug(parsed.title))
 
   let notice: string | undefined
   let ai: AiSermonFields | null = null
@@ -200,27 +204,72 @@ export async function importSermonManuscript(input: {
     }
   }
 
+  const preacher = input.options.preacher?.trim() || 'Bishop Climate Wiseman'
   const description = ai?.description ?? parsed.summary
   const status = input.options.status
   const scheduledAt = status === 'scheduled' ? (input.options.scheduledAt ?? null) : null
+
+  const heuristicSeo = buildSermonSeo({
+    title: parsed.title,
+    summary: description || parsed.summary,
+    html: parsed.html,
+    mainScripture: parsed.mainScripture,
+    preacher,
+    suggestedKeyword: ai?.focus_keyword,
+  })
+
+  const slug = await reserveSlug(supabase, heuristicSeo.slugBase)
+
+  const aiSeo = ai
+    ? {
+        meta_title: ai.meta_title,
+        meta_description: ai.meta_description,
+        focus_keyword: ai.focus_keyword,
+        seo_score: computeSeoScore({
+          focusKeyword: ai.focus_keyword,
+          seoTitle: ai.meta_title,
+          metaDescription: ai.meta_description,
+          content: heuristicSeo.content,
+          slug,
+          featuredImage: input.options.thumbnailUrl ?? '',
+        }).score,
+      }
+    : null
+
+  const chosenSeo =
+    aiSeo && aiSeo.seo_score >= heuristicSeo.score ? aiSeo : null
+
+  const meta_title = chosenSeo?.meta_title ?? heuristicSeo.metaTitle
+  const meta_description = chosenSeo?.meta_description ?? heuristicSeo.metaDescription
+  const focus_keyword = chosenSeo?.focus_keyword ?? heuristicSeo.focusKeyword
+  const seo_score = chosenSeo?.seo_score ?? heuristicSeo.score
+
+  if (ai && !chosenSeo) {
+    notice = notice
+      ? `${notice} Heuristic SEO scored higher, so meta fields were tuned for the site checker.`
+      : 'Heuristic SEO scored higher, so meta fields were tuned for the site checker.'
+  }
 
   const { data: sermon, error } = await supabase
     .from('sermons')
     .insert({
       title: parsed.title,
       slug,
-      description: description || null,
-      content: parsed.html,
-      preacher: input.options.preacher?.trim() || 'Bishop Climate Wiseman',
+      description: heuristicSeo.description || null,
+      content: heuristicSeo.content,
+      preacher,
       series_id: input.options.seriesId || null,
       date: input.options.date || parsed.detectedDate || new Date().toISOString().slice(0, 10),
       duration_minutes: parsed.estimatedMinutes,
       status,
       published_at: status === 'published' ? new Date().toISOString() : null,
       scheduled_at: scheduledAt,
-      meta_title: ai?.meta_title ?? truncate(parsed.title, 60),
-      meta_description: ai?.meta_description ?? truncate(description, 160),
-      focus_keyword: ai?.focus_keyword ?? generateSlug(parsed.title).replace(/-/g, ' ').slice(0, 60),
+      thumbnail_url: input.options.thumbnailUrl ?? null,
+      featured_image_alt: heuristicSeo.imageAlt,
+      meta_title,
+      meta_description,
+      focus_keyword,
+      seo_score,
     })
     .select('id')
     .single()
@@ -245,6 +294,7 @@ export async function importSermonManuscript(input: {
     estimatedMinutes: parsed.estimatedMinutes,
     mainScripture: parsed.mainScripture,
     aiEnriched: Boolean(ai),
+    seoScore: seo_score,
     notice,
   }
 }

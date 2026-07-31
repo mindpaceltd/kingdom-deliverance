@@ -119,6 +119,13 @@ function looksLikeScriptureQuote(line: string): boolean {
   return SCRIPTURE_REF.test(line) && line.length > 120
 }
 
+/**
+ * Production run-sheets ("Program Flow: Opening, Prayer, Testimonies") head the
+ * broadcast manuscripts. They belong in the body but read badly in a summary.
+ */
+const BOILERPLATE_LINE =
+  /^(program\s+flow|programme\s+flow|running\s+order|run\s+sheet|order\s+of\s+service|flow|duration|host|presenter|producer|station|channel|air\s*time|venue|segment|call[-\s]?in|contacts?)\b\s*[:\-–]/i
+
 function buildSummary(paragraphs: string[], theme: string | null): string {
   // The theme line is the most quotable one-liner when the preacher provides it.
   const parts: string[] = []
@@ -128,6 +135,7 @@ function buildSummary(paragraphs: string[], theme: string | null): string {
     if (parts.join(' ').length > 220) break
     if (p.length < 60) continue
     if (NON_TITLE_LINES.test(p)) continue
+    if (BOILERPLATE_LINE.test(p)) continue
     if (looksLikeScriptureQuote(p)) continue
     parts.push(p)
   }

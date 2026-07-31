@@ -32,6 +32,7 @@ import {
 import { cn } from '@/lib/utils'
 
 type PublishMode = 'draft' | 'published' | 'scheduled'
+type IntervalUnit = 'days' | 'hours'
 
 interface QueuedFile {
   id: string
@@ -39,6 +40,8 @@ interface QueuedFile {
   /** Prefer keeping .docx when a matching .pdf also exists. */
   preferred: boolean
   duplicateOf?: string
+  /** Per-sermon publish time when mode is scheduled (local datetime string). */
+  scheduledAt?: string
 }
 
 interface FileOutcome {
@@ -49,12 +52,27 @@ interface FileOutcome {
   id?: string
   status?: string
   scheduledAt?: string | null
+  seoScore?: number
   notice?: string
   error?: string
 }
 
 const ACCEPTED = '.docx,.pdf,.txt,.md'
 const MAX_BYTES = 20 * 1024 * 1024
+
+function addInterval(date: Date, amount: number, unit: IntervalUnit) {
+  const next = new Date(date)
+  if (unit === 'hours') {
+    next.setHours(next.getHours() + amount)
+  } else {
+    next.setDate(next.getDate() + amount)
+  }
+  return next
+}
+
+function defaultScheduleForIndex(start: Date, index: number, amount: number, unit: IntervalUnit) {
+  return toLocalDatetimeValue(addInterval(start, index * Math.max(1, amount), unit))
+}
 
 function fileKey(name: string) {
   return name.replace(/\.[^.]+$/, '').trim().toLowerCase()
@@ -116,10 +134,12 @@ function buildQueue(files: File[]): QueuedFile[] {
 export function SermonImportClient() {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
+  const folderInputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [queue, setQueue] = useState<QueuedFile[]>([])
-  const [mode, setMode] = useState<PublishMode>('scheduled')
-  const [intervalDays, setIntervalDays] = useState(2)
+  const [mode, setMode] = useState<PublishMode>('draft')
+  const [intervalAmount, setIntervalAmount] = useState(2)
+  const [intervalUnit, setIntervalUnit] = useState<IntervalUnit>('days')
   const [startAt, setStartAt] = useState(() => toLocalDatetimeValue(addDays(new Date(), 1)))
   const [preacher, setPreacher] = useState('Bishop Climate Wiseman')
   const [seriesId, setSeriesId] = useState<string>('none')
@@ -148,10 +168,27 @@ export function SermonImportClient() {
     const start = new Date(startAt)
     if (Number.isNaN(start.getTime())) return []
     return selected.map((item, index) => ({
+      id: item.id,
       name: item.file.name,
-      at: addDays(start, index * Math.max(1, intervalDays)),
+      at: item.scheduledAt
+        ? new Date(item.scheduledAt)
+        : addInterval(start, index * Math.max(1, intervalAmount), intervalUnit),
     }))
-  }, [mode, selected, startAt, intervalDays])
+  }, [mode, selected, startAt, intervalAmount, intervalUnit])
+
+  const applyDefaultSchedule = useCallback(() => {
+    const start = new Date(startAt)
+    if (Number.isNaN(start.getTime())) return
+    setQueue((prev) => {
+      let slot = 0
+      return prev.map((item) => {
+        if (!item.preferred) return item
+        const scheduledAt = defaultScheduleForIndex(start, slot, intervalAmount, intervalUnit)
+        slot += 1
+        return { ...item, scheduledAt }
+      })
+    })
+  }, [startAt, intervalAmount, intervalUnit])
 
   const addFiles = useCallback((incoming: FileList | File[]) => {
     const list = Array.from(incoming).filter((f) => {
@@ -177,6 +214,10 @@ export function SermonImportClient() {
     })
     setOutcomes([])
   }, [])
+
+  function updateSchedule(id: string, scheduledAt: string) {
+    setQueue((prev) => prev.map((q) => (q.id === id ? { ...q, scheduledAt } : q)))
+  }
 
   function removeFile(id: string) {
     setQueue((prev) => buildQueue(prev.filter((q) => q.id !== id).map((q) => q.file)))
@@ -221,7 +262,9 @@ export function SermonImportClient() {
         const data = await readAsBase64(item.file)
         const scheduledAt =
           mode === 'scheduled'
-            ? addDays(start, i * Math.max(1, intervalDays)).toISOString()
+            ? item.scheduledAt
+              ? new Date(item.scheduledAt).toISOString()
+              : addInterval(start, i * Math.max(1, intervalAmount), intervalUnit).toISOString()
             : null
 
         const result = await importSermonManuscript({
@@ -248,6 +291,7 @@ export function SermonImportClient() {
             id: ok.id,
             status: ok.status,
             scheduledAt: ok.scheduledAt,
+            seoScore: ok.seoScore,
             notice: ok.notice,
           })
         }
@@ -321,14 +365,39 @@ export function SermonImportClient() {
         <UploadCloud className="mx-auto size-10 text-muted-foreground/60" />
         <p className="mt-3 text-sm font-semibold">Drop all sermon manuscripts here</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          or click to browse · .docx preferred · .pdf / .txt also accepted · max 20 MB each
+          or click to browse files · .docx preferred · .pdf / .txt also accepted · max 20 MB each
         </p>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation()
+              folderInputRef.current?.click()
+            }}
+          >
+            Select Sermons folder
+          </Button>
+        </div>
         <input
           ref={inputRef}
           type="file"
           accept={ACCEPTED}
           multiple
           className="hidden"
+          onChange={(e) => {
+            if (e.target.files?.length) addFiles(e.target.files)
+            e.target.value = ''
+          }}
+        />
+        <input
+          ref={folderInputRef}
+          type="file"
+          accept={ACCEPTED}
+          multiple
+          className="hidden"
+          {...({ webkitdirectory: '', directory: '' } as React.InputHTMLAttributes<HTMLInputElement>)}
           onChange={(e) => {
             if (e.target.files?.length) addFiles(e.target.files)
             e.target.value = ''
@@ -387,6 +456,23 @@ export function SermonImportClient() {
                           ? ` · skipped duplicate of ${item.duplicateOf}`
                           : ''}
                       </p>
+                      {mode === 'scheduled' && item.preferred ? (
+                        <Input
+                          type="datetime-local"
+                          className="mt-2 h-8 text-xs"
+                          value={
+                            item.scheduledAt ??
+                            defaultScheduleForIndex(
+                              new Date(startAt),
+                              selected.findIndex((s) => s.id === item.id),
+                              intervalAmount,
+                              intervalUnit
+                            )
+                          }
+                          disabled={running}
+                          onChange={(e) => updateSchedule(item.id, e.target.value)}
+                        />
+                      ) : null}
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
                       {!item.preferred ? (
@@ -438,6 +524,7 @@ export function SermonImportClient() {
                       {o.ok ? (
                         <p className="text-xs text-muted-foreground">
                           {o.status}
+                          {typeof o.seoScore === 'number' ? ` · SEO ${o.seoScore}/100` : ''}
                           {o.scheduledAt
                             ? ` · goes live ${new Date(o.scheduledAt).toLocaleString()}`
                             : ''}
@@ -488,8 +575,8 @@ export function SermonImportClient() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="scheduled">Schedule auto-publish</SelectItem>
                   <SelectItem value="draft">Save as drafts</SelectItem>
+                  <SelectItem value="scheduled">Schedule auto-publish</SelectItem>
                   <SelectItem value="published">Publish immediately</SelectItem>
                 </SelectContent>
               </Select>
@@ -513,14 +600,39 @@ export function SermonImportClient() {
                       id="interval"
                       type="number"
                       min={1}
-                      max={30}
+                      max={intervalUnit === 'hours' ? 168 : 30}
                       className="w-20"
-                      value={intervalDays}
-                      onChange={(e) => setIntervalDays(Math.max(1, Number(e.target.value) || 1))}
+                      value={intervalAmount}
+                      onChange={(e) =>
+                        setIntervalAmount(Math.max(1, Number(e.target.value) || 1))
+                      }
                     />
-                    <span className="text-sm text-muted-foreground">day(s)</span>
+                    <Select
+                      value={intervalUnit}
+                      onValueChange={(v) => setIntervalUnit((v as IntervalUnit) || 'days')}
+                    >
+                      <SelectTrigger className="w-28">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="days">day(s)</SelectItem>
+                        <SelectItem value="hours">hour(s)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
+                {selected.length > 0 ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="w-full"
+                    disabled={running}
+                    onClick={applyDefaultSchedule}
+                  >
+                    Apply stagger to all queued sermons
+                  </Button>
+                ) : null}
                 {schedulePreview.length > 0 ? (
                   <div className="rounded-xl border border-border/60 bg-muted/30 p-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -528,12 +640,14 @@ export function SermonImportClient() {
                     </p>
                     <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto text-xs text-muted-foreground">
                       {schedulePreview.slice(0, 8).map((row) => (
-                        <li key={row.name} className="flex justify-between gap-2">
+                        <li key={row.id} className="flex justify-between gap-2">
                           <span className="truncate">{row.name.replace(/\.[^.]+$/, '')}</span>
                           <span className="shrink-0 tabular-nums">
-                            {row.at.toLocaleDateString(undefined, {
+                            {row.at.toLocaleString(undefined, {
                               month: 'short',
                               day: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit',
                             })}
                           </span>
                         </li>
