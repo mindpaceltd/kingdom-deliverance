@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/server';
 import Image from "next/image";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -16,13 +16,15 @@ import { incrementSermonViews } from "@/lib/actions/event-views";
 interface Props { params: { slug: string } }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const supabase = createClient();
+  const supabase = createPublicClient();
   const [sermonResult, orgOgImage, siteName] = await Promise.all([
     supabase
       .from("sermons")
       .select("title, description, meta_title, meta_description, thumbnail_url, slug")
       .eq("slug", params.slug)
-      .single(),
+      .eq("status", "published")
+      .is("deleted_at", null)
+      .maybeSingle(),
     getOrgOgImageUrl(),
     getSiteName(),
   ]);
@@ -70,13 +72,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export const revalidate = 3600;
 
 export default async function SermonDetailPage({ params }: Props) {
-  const supabase = createClient();
+  const supabase = createPublicClient();
   const [sermonResult, orgOgImage, orgLogoUrl, siteName] = await Promise.all([
     supabase
       .from("sermons")
       .select("*, sermon_series(name)")
       .eq("slug", params.slug)
-      .single(),
+      .eq("status", "published")
+      .is("deleted_at", null)
+      .maybeSingle(),
     getOrgOgImageUrl(),
     getOrgLogoUrl(),
     getSiteName(),
@@ -104,6 +108,7 @@ export default async function SermonDetailPage({ params }: Props) {
     .from("sermons")
     .select("id,title,slug,preacher,date,series")
     .eq("status", "published")
+    .is("deleted_at", null)
     .neq("id", sermon.id)
     .limit(3)
     .order("date", { ascending: false });

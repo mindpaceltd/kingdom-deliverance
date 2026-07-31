@@ -40,6 +40,7 @@ export function SermonsPageClient({
 }: SermonsPageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const visibleSermons = sermons.filter((s) => s.status === "published");
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const hasFilters =
@@ -98,6 +99,27 @@ export function SermonsPageClient({
       <div className="container px-4">
         {/* Filter bar */}
         <div className="bg-white rounded-2xl shadow-sm p-5 mb-10">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-4 border-b border-border">
+            <p className="text-sm text-muted-foreground">
+              {total === 0 ? (
+                'No sermons found'
+              ) : (
+                <>
+                  Showing{' '}
+                  <span className="font-semibold text-primary">
+                    {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)}
+                  </span>{' '}
+                  of <span className="font-semibold text-primary">{total}</span>{' '}
+                  sermon{total !== 1 ? 's' : ''}
+                </>
+              )}
+            </p>
+            {totalPages > 1 && (
+              <p className="text-xs text-muted-foreground">
+                Page {page} of {totalPages}
+              </p>
+            )}
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-4 items-end">
             {/* Preacher filter */}
             <div className="flex flex-col gap-1.5 w-full lg:w-48 lg:min-w-[180px]">
@@ -217,7 +239,7 @@ export function SermonsPageClient({
         </div>
 
         {/* Sermon grid */}
-        {sermons.length === 0 ? (
+        {visibleSermons.length === 0 ? (
           <div className="text-center py-24 text-muted-foreground">
             <Play className="w-16 h-16 mx-auto mb-4 opacity-20" />
             <p className="text-xl font-medium">No sermons found</p>
@@ -240,7 +262,7 @@ export function SermonsPageClient({
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {sermons.map((sermon) => (
+              {visibleSermons.map((sermon) => (
                 <SermonCard key={sermon.id} sermon={sermon} />
               ))}
             </div>

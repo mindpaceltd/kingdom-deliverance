@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createPublicClient } from '@/lib/supabase/server'
 import type { Post, Sermon, Event, Ministry, GalleryItem } from '@/lib/types'
 import { withFireServiceSchedule, withFireServiceSchedules } from '@/lib/events/resolve-fire-service-event'
 
@@ -51,7 +51,7 @@ export async function getSermons(opts?: {
   page?: number
   pageSize?: number
 }): Promise<{ data: Sermon[]; count: number }> {
-  const supabase = createClient()
+  const supabase = createPublicClient()
   const page = opts?.page ?? 1
   const pageSize = opts?.pageSize ?? 12
   const offset = (page - 1) * pageSize
@@ -60,6 +60,7 @@ export async function getSermons(opts?: {
     .from('sermons')
     .select('*', { count: 'exact' })
     .eq('status', 'published')
+    .is('deleted_at', null)
     .order('date', { ascending: false })
 
   if (opts?.preacher) query = query.eq('preacher', opts.preacher)
@@ -76,7 +77,7 @@ export async function getSermons(opts?: {
 }
 
 export async function getSermonBySlug(slug: string): Promise<Sermon | null> {
-  const supabase = createClient()
+  const supabase = createPublicClient()
   const { data, error } = await supabase
     .from('sermons')
     .select('*')
@@ -94,11 +95,12 @@ export async function getSermonFilters(): Promise<{
   preachers: string[]
   series: string[]
 }> {
-  const supabase = createClient()
+  const supabase = createPublicClient()
   const { data, error } = await supabase
     .from('sermons')
     .select('preacher, series')
     .eq('status', 'published')
+    .is('deleted_at', null)
 
   if (error) {
     console.error('[getSermonFilters]', error.message)

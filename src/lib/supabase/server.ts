@@ -28,6 +28,20 @@ export function createClient() {
   )
 }
 
+/** Anonymous client for public pages — never exposes drafts to logged-in staff. */
+export function createPublicClient() {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => [],
+        setAll: () => {},
+      },
+    }
+  )
+}
+
 /**
  * Admin client — bypasses RLS via service role key.
  * ONLY use in Server Actions or API routes. Never expose to browser.

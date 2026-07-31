@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createPublicClient } from '@/lib/supabase/server';
 import { PostsCarousel } from "@/components/home/posts-carousel";
 import { EventCard } from "@/components/content/event-card";
 import { TestimoniesSection } from "@/components/home/testimonies-section";
@@ -77,15 +77,16 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function fetchFeaturedSermon(
-  supabase: ReturnType<typeof createClient>,
   slug?: string
 ): Promise<Sermon | null> {
+  const supabase = createPublicClient()
   if (slug) {
     const { data } = await supabase
       .from('sermons')
       .select('*')
       .eq('slug', slug)
       .eq('status', 'published')
+      .is('deleted_at', null)
       .maybeSingle();
     if (data) return data as Sermon;
   }
@@ -94,6 +95,7 @@ async function fetchFeaturedSermon(
     .from('sermons')
     .select('*')
     .eq('status', 'published')
+    .is('deleted_at', null)
     .order('date', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -111,7 +113,7 @@ export default async function Home() {
 
   const [featuredSermon, featuredEventsRes, postsRes, productsRes, heroRes] =
     await Promise.all([
-      fetchFeaturedSermon(supabase, featuredSlug || undefined),
+      fetchFeaturedSermon(featuredSlug || undefined),
       supabase
         .from("events")
         .select("*")
