@@ -10,6 +10,7 @@ interface MediaUrlPreviewProps {
   alt?: string
   className?: string
   imgClassName?: string
+  onFailed?: () => void
 }
 
 /** Renders a stored media URL with CDN-first loading and proxy fallback. */
@@ -18,6 +19,7 @@ export function MediaUrlPreview({
   alt = '',
   className,
   imgClassName,
+  onFailed,
 }: MediaUrlPreviewProps) {
   const sources = React.useMemo(() => getMediaImageSourcesFromUrl(url), [url])
   const [sourceIndex, setSourceIndex] = React.useState(0)
@@ -57,6 +59,7 @@ export function MediaUrlPreview({
           return
         }
         setFailed(true)
+        onFailed?.()
       }}
     />
   )

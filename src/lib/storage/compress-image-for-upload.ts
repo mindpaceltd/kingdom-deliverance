@@ -17,13 +17,24 @@ function isCompressibleImage(file: File): boolean {
   return mimeFromFilename(file.name) !== null
 }
 
+export function isHeicImageFile(file: File): boolean {
+  const lower = file.name.toLowerCase()
+  const type = (file.type ?? '').toLowerCase()
+  return (
+    lower.endsWith('.heic') ||
+    lower.endsWith('.heif') ||
+    type === 'image/heic' ||
+    type === 'image/heif'
+  )
+}
+
 /**
  * Downscale and re-encode large phone photos so they upload via the server API
- * (no browser CORS to R2). Returns the original file when already small enough.
+ * (no browser CORS to R2). HEIC/HEIF is always converted to JPEG for web previews.
  */
 export async function prepareImageForUpload(file: File): Promise<File> {
   if (!isCompressibleImage(file)) return file
-  if (file.size <= TARGET_MAX_BYTES) return file
+  if (!isHeicImageFile(file) && file.size <= TARGET_MAX_BYTES) return file
 
   const mime = file.type.startsWith('image/')
     ? file.type

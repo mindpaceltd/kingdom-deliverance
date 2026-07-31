@@ -21,6 +21,9 @@ export async function getOrgOgImageUrl(): Promise<string> {
 
     const raw = orgImage.data?.url || settings.data?.value
     const normalized = normalizeMediaUrl(raw)
+    if (normalized && /\.(heic|heif)(\?|#|$)/i.test(normalized)) {
+      return DEFAULT_OG
+    }
     return toAbsoluteSocialImageUrl(normalized) || DEFAULT_OG
   } catch {
     return DEFAULT_OG

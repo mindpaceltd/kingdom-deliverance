@@ -34,6 +34,8 @@ import {
 } from '@/components/ui/select'
 import { saveSettings, registerPesapalIPNAction, testSMTPAction } from '@/lib/actions/settings'
 import { uploadMediaAction } from '@/lib/actions/media'
+import { MediaUrlPreview } from '@/components/admin/media/media-url-preview'
+import { prepareImageForUpload, isHeicImageFile } from '@/lib/storage/compress-image-for-upload'
 import type { SiteSetting } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import {
@@ -72,9 +74,18 @@ interface BrandingImageFieldProps {
   aspectRatio?: 'video' | 'square'
 }
 
+function isUnsupportedBrandingPreviewUrl(url: string): boolean {
+  return /\.(heic|heif)(\?|#|$)/i.test(url)
+}
+
 function BrandingImageField({ label, description, value, onUpload, onClear, aspectRatio = 'video' }: BrandingImageFieldProps) {
   const [uploading, setUploading] = React.useState(false)
+  const [previewFailed, setPreviewFailed] = React.useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+  React.useEffect(() => {
+    setPreviewFailed(false)
+  }, [value])
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -82,11 +93,17 @@ function BrandingImageField({ label, description, value, onUpload, onClear, aspe
 
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('bucket', 'media')
+      const prepared = await prepareImageForUpload(file)
+      if (isHeicImageFile(file) && prepared === file) {
+        throw new Error(
+          'This photo is HEIC format. Save it as JPG or PNG on your device, then upload again.',
+        )
+      }
 
-      // Upload and create record via our generic R2 Server Action
+      const formData = new FormData()
+      formData.append('file', prepared)
+      formData.append('bucket', 'branding')
+
       const result = await uploadMediaAction(formData)
       if ('error' in result) {
         throw new Error(result.error)
@@ -97,6 +114,7 @@ function BrandingImageField({ label, description, value, onUpload, onClear, aspe
       alert(`Upload failed: ${error.message}`)
     } finally {
       setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
@@ -125,23 +143,42 @@ function BrandingImageField({ label, description, value, onUpload, onClear, aspe
           type="file" 
           ref={fileInputRef} 
           className="hidden" 
-          accept="image/*" 
+          accept="image/jpeg,image/png,image/webp,image/gif"
           onChange={handleFileChange}
         />
-        {value && <p className="text-[10px] text-muted-foreground truncate max-w-full italic">{value}</p>}
+        {value && (
+          <p className="text-[10px] text-muted-foreground truncate max-w-full italic">{value}</p>
+        )}
+        {value && (isUnsupportedBrandingPreviewUrl(value) || previewFailed) && (
+          <p className="flex items-start gap-1.5 text-[11px] text-amber-700 dark:text-amber-400">
+            <AlertTriangleIcon className="mt-0.5 size-3 shrink-0" />
+            This image cannot be previewed or used for social sharing. Upload a JPG, PNG, or WebP
+            (1200×630 recommended).
+          </p>
+        )}
       </div>
-      <div className={cn(
-        "relative rounded-lg border border-dashed border-border flex items-center justify-center bg-muted/20 overflow-hidden shadow-inner",
-        aspectRatio === 'video' ? "aspect-video" : "size-24"
-      )}>
-        {value ? (
-          <img src={value} alt={label} className="max-h-full object-contain" />
+      <div
+        className={cn(
+          'relative rounded-lg border border-dashed border-border flex items-center justify-center bg-muted/20 overflow-hidden shadow-inner',
+          aspectRatio === 'video' ? 'aspect-video' : 'size-24',
+        )}
+      >
+        {value && !isUnsupportedBrandingPreviewUrl(value) ? (
+          <MediaUrlPreview
+            url={value}
+            alt={label}
+            className="absolute inset-0"
+            imgClassName="object-contain"
+            onFailed={() => setPreviewFailed(true)}
+          />
+        ) : value ? (
+          <ImageIcon className={cn('opacity-20', aspectRatio === 'video' ? 'size-8' : 'size-6')} />
         ) : (
-          <ImageIcon className={cn("opacity-20", aspectRatio === 'video' ? "size-8" : "size-6")} />
+          <ImageIcon className={cn('opacity-20', aspectRatio === 'video' ? 'size-8' : 'size-6')} />
         )}
         {uploading && (
           <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
-             <div className="size-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="size-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         )}
       </div>
