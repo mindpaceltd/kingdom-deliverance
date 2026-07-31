@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Calendar, MapPin, ArrowLeft, ExternalLink } from "lucide-react";
+import { Calendar, MapPin, ArrowLeft, ExternalLink, Clock, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Metadata } from "next";
 import { createSocialImageMetadata, stripHtmlExcerpt } from "@/lib/seo-image-utils";
@@ -11,6 +11,7 @@ import { BreadcrumbSchema, generateBreadcrumbs } from "@/components/seo/breadcru
 import { EventSchema } from "@/components/seo/event-schema";
 import { incrementEventViews } from "@/lib/actions/event-views";
 import { withFireServiceSchedule } from "@/lib/events/resolve-fire-service-event";
+import { getFireServiceSchedule, isFireServiceEvent } from "@/lib/fire-service-schedule";
 import { EventImage } from "@/components/content/event-image";
 import { ShareButtons } from "@/components/content/share-buttons";
 import { formatSafeDate, normalizeMediaUrl, toValidDate } from "@/lib/media-url";
@@ -101,11 +102,19 @@ export default async function EventDetailPage({ params }: Props) {
   if (!event) notFound();
 
   const displayEvent = withFireServiceSchedule(event);
+  const fireService = isFireServiceEvent(displayEvent);
+  const fireSchedule = fireService ? getFireServiceSchedule() : null;
 
   incrementEventViews(displayEvent.id).catch(console.error);
 
   const imageUrl = normalizeMediaUrl(displayEvent.image_url)
   const statusLabel = eventStatusLabel(displayEvent)
+  const heroDateLabel = fireSchedule?.formattedDate ?? formatSafeDate(displayEvent.date, "EEEE, MMMM d, yyyy")
+  const heroTimeLabel = fireSchedule?.formattedTime ?? (
+    displayEvent.end_date
+      ? `${formatSafeDate(displayEvent.date, "h:mm a")} – ${formatSafeDate(displayEvent.end_date, "h:mm a")}`
+      : formatSafeDate(displayEvent.date, "h:mm a")
+  )
   const excerpt =
     displayEvent.meta_description?.trim() ||
     stripHtmlExcerpt(displayEvent.description, 200) ||
@@ -134,8 +143,14 @@ export default async function EventDetailPage({ params }: Props) {
         orgLogoUrl={orgLogoUrl}
       />
       <div className="flex flex-col">
-        <section className="py-28 bg-primary text-white relative overflow-hidden">
-          {imageUrl && (
+        <section
+          className={`py-28 text-white relative overflow-hidden ${
+            fireService
+              ? 'bg-gradient-to-br from-[#1a0505] via-primary to-[#2d0a0a]'
+              : 'bg-primary'
+          }`}
+        >
+          {imageUrl && !fireService && (
             <div className="absolute inset-0">
               <EventImage
                 src={event.image_url}
@@ -146,22 +161,35 @@ export default async function EventDetailPage({ params }: Props) {
               <div className="absolute inset-0 bg-gradient-to-b from-primary/80 via-primary/90 to-primary" />
             </div>
           )}
+          {fireService ? (
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute -right-20 top-0 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+              <div className="absolute -left-16 bottom-0 h-64 w-64 rounded-full bg-red-600/15 blur-3xl" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,100,0,0.12),transparent_50%)]" />
+            </div>
+          ) : null}
           <div className="container relative z-10 px-4 max-w-4xl mx-auto">
             <Link href="/events" className="inline-flex items-center gap-2 text-white/60 hover:text-accent text-sm mb-8 transition-colors">
               <ArrowLeft className="w-4 h-4" /> Back to Events
             </Link>
-            <div className="inline-block mb-4 text-xs font-bold tracking-widest uppercase text-accent border border-accent/50 rounded-full px-3 py-1">
+            <div className="inline-flex items-center gap-2 mb-4 text-xs font-bold tracking-widest uppercase text-accent border border-accent/50 rounded-full px-3 py-1">
+              {fireService ? <Flame className="w-3.5 h-3.5" /> : null}
               {statusLabel}
             </div>
             <h1 className="font-serif text-4xl md:text-5xl font-bold leading-tight">{displayEvent.title}</h1>
-            <div className="flex flex-wrap gap-6 mt-6 text-white/70 text-sm">
+            <div className="flex flex-col gap-3 mt-6 text-white/80 text-sm sm:text-base">
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-accent" />
-                {formatSafeDate(displayEvent.date, "EEEE, MMMM d, yyyy")}
+                <Calendar className="w-4 h-4 text-accent shrink-0" />
+                <span>{heroDateLabel}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-accent shrink-0" />
+                <span>{heroTimeLabel}</span>
               </div>
               {displayEvent.location && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-accent" />{displayEvent.location}
+                <div className="flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                  <span>{displayEvent.location}</span>
                 </div>
               )}
             </div>
@@ -212,11 +240,9 @@ export default async function EventDetailPage({ params }: Props) {
                     <div className="flex items-start gap-3 text-primary/70">
                       <Calendar className="w-4 h-4 text-accent mt-0.5 shrink-0" />
                       <div>
-                        <p className="font-semibold text-primary">Date</p>
-                        <p>{formatSafeDate(displayEvent.date, "MMMM d, yyyy • h:mm a")}</p>
-                        {displayEvent.end_date && (
-                          <p>Ends: {formatSafeDate(displayEvent.end_date, "MMMM d, yyyy • h:mm a")}</p>
-                        )}
+                        <p className="font-semibold text-primary">Date & time</p>
+                        <p>{heroDateLabel}</p>
+                        <p>{heroTimeLabel}</p>
                       </div>
                     </div>
                     {displayEvent.location && (

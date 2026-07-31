@@ -6,6 +6,8 @@ import { getExchangeRates, FALLBACK_RATES } from '@/lib/services/exchange-rates'
 import { CurrencyProvider } from '@/lib/currency-context'
 import { createClient } from '@/lib/supabase/server'
 import { SupportChatWidget } from '@/components/support/support-chat-widget'
+import { FireServicePromoPopup } from '@/components/fire-service/fire-service-promo-popup'
+import { getFireServicePromoPayload } from '@/lib/fire-service-schedule'
 
 // ─── Geo-detection ────────────────────────────────────────────────────────────
 
@@ -70,12 +72,17 @@ export default async function PublicLayout({
     console.error('[PublicLayout] Logo fetch failed:', err)
   }
 
+  const fireServicePromo = getFireServicePromoPayload()
+
   return (
     <CartProvider>
       <CurrencyProvider detectedCurrency={detectedCurrency} rates={rates}>
         <Navbar logo={siteLogo} />
         <main className="flex-1 w-full max-w-full overflow-x-hidden relative">{children}</main>
         <Footer />
+        {fireServicePromo.shouldShow ? (
+          <FireServicePromoPopup {...fireServicePromo} />
+        ) : null}
         <SupportChatWidget />
       </CurrencyProvider>
     </CartProvider>

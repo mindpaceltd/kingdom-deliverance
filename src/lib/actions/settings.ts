@@ -4,6 +4,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { requireAdmin } from '@/lib/authz'
 import { ensurePaymentGateways } from '@/lib/payments/ensure-payment-gateways'
+import { sanitizeYouTubeChannelId } from '@/lib/youtube-live'
 
 export async function saveSettings(
   data: Record<string, string>
@@ -14,9 +15,14 @@ export async function saveSettings(
   const admin = createAdminClient()
 
   for (const [key, value] of Object.entries(data)) {
+    let normalized = value
+    if (key === 'youtube_channel_id') {
+      normalized = sanitizeYouTubeChannelId(value) ?? value.replace(/[\u2010-\u2015\u2212\uFE58\uFE63\uFF0D]/g, '-')
+    }
+
     const { error } = await admin
       .from('site_settings')
-      .upsert({ key, value }, { onConflict: 'key' })
+      .upsert({ key, value: normalized }, { onConflict: 'key' })
 
     if (error) {
       console.error('[saveSettings] upsert error', key, error.message)
@@ -27,6 +33,7 @@ export async function saveSettings(
   revalidatePath('/')
   revalidatePath('/contact')
   revalidatePath('/give')
+  revalidatePath('/live')
   revalidatePath('/admin/settings')
 
   const paymentKeys = [

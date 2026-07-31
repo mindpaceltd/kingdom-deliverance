@@ -2,8 +2,12 @@ import { format } from 'date-fns'
 
 export const FIRE_SERVICE_EVENT_SLUG = 'fire-service-night-of-prayer-deliverance-kdc'
 const EAT_TIMEZONE = 'Africa/Kampala'
-const FIRE_SERVICE_START_HOUR = 21
-const FIRE_SERVICE_END_HOUR = 24
+/** Last Friday of each month, 6:00 PM – 10:00 PM EAT */
+export const FIRE_SERVICE_START_HOUR = 18
+export const FIRE_SERVICE_END_HOUR = 22
+export const FIRE_SERVICE_PROMO_LEAD_DAYS = 7
+export const FIRE_SERVICE_LOCATION = 'Kingdom Deliverance Centre, Kosovo–Lungujja, Kampala'
+export const FIRE_SERVICE_TIME_LABEL = '6:00 PM — 10:00 PM (EAT)'
 
 export interface FireServiceOccurrence {
   year: number
@@ -101,8 +105,67 @@ export function getFireServiceSchedule(now = new Date()): FireServiceSchedule {
     startIso: start.toISOString(),
     endIso: end.toISOString(),
     formattedDate,
-    formattedTime: '9:00 PM — 12:00 Midnight (EAT)',
+    formattedTime: FIRE_SERVICE_TIME_LABEL,
     ctaTitle: `🔥 The Fire Service: ${formattedDate} 🔥`,
+  }
+}
+
+export interface FireServicePromoState {
+  shouldShow: boolean
+  isToday: boolean
+  isLive: boolean
+  daysUntil: number
+  storageKey: string
+  schedule: FireServiceSchedule
+}
+
+/** Start of promo window: 7 days before the service day (EAT midnight). */
+function getPromoWindowStart(schedule: FireServiceSchedule): Date {
+  const serviceDayStart = eatOccurrenceToUtcDate(schedule.occurrence, 0, 0)
+  return new Date(
+    serviceDayStart.getTime() - FIRE_SERVICE_PROMO_LEAD_DAYS * 24 * 60 * 60 * 1000,
+  )
+}
+
+function isSameEatDay(a: DateParts, occurrence: FireServiceOccurrence): boolean {
+  return a.year === occurrence.year && a.month === occurrence.month && a.day === occurrence.day
+}
+
+/**
+ * Whether the site-wide Fire Service promo should appear.
+ * Visible from 7 days before through the end of the service (10 PM EAT).
+ */
+export function getFireServicePromoState(now = new Date()): FireServicePromoState {
+  const schedule = getFireServiceSchedule(now)
+  const promoStart = getPromoWindowStart(schedule)
+  const shouldShow = now.getTime() >= promoStart.getTime() && now.getTime() <= schedule.end.getTime()
+
+  const eatNow = getEatParts(now)
+  const isToday = isSameEatDay(eatNow, schedule.occurrence)
+  const isLive =
+    isToday && now.getTime() >= schedule.start.getTime() && now.getTime() <= schedule.end.getTime()
+
+  const msUntilStart = schedule.start.getTime() - now.getTime()
+  const daysUntil = Math.max(0, Math.ceil(msUntilStart / (24 * 60 * 60 * 1000)))
+
+  const storageKey = `kdc-fire-service-${schedule.occurrence.year}-${schedule.occurrence.month + 1}-${schedule.occurrence.day}`
+
+  return { shouldShow, isToday, isLive, daysUntil, storageKey, schedule }
+}
+
+/** Serializable payload for the client promo popup. */
+export function getFireServicePromoPayload(now = new Date()) {
+  const state = getFireServicePromoState(now)
+  return {
+    shouldShow: state.shouldShow,
+    isToday: state.isToday,
+    isLive: state.isLive,
+    daysUntil: state.daysUntil,
+    storageKey: state.storageKey,
+    formattedDate: state.schedule.formattedDate,
+    formattedTime: state.schedule.formattedTime,
+    ctaTitle: state.schedule.ctaTitle,
+    location: FIRE_SERVICE_LOCATION,
   }
 }
 

@@ -1,16 +1,26 @@
 const CHANNEL_ID_PATTERN = /UC[\w-]{22}/
 
+/** Unicode dash variants pasted from Word/docs break YouTube embed URLs. */
+const UNICODE_DASHES = /[\u2010-\u2015\u2212\uFE58\uFE63\uFF0D]/g
+
+export function sanitizeYouTubeChannelId(value?: string | null): string | null {
+  if (!value?.trim()) return null
+  const normalized = value.trim().replace(UNICODE_DASHES, '-')
+  const match = normalized.match(CHANNEL_ID_PATTERN)
+  return match?.[0] ?? null
+}
+
 export function parseYouTubeChannelId(value?: string | null): string | null {
   const input = value?.trim()
   if (!input) return null
 
-  const direct = input.match(CHANNEL_ID_PATTERN)
-  if (direct) return direct[0]
+  const sanitized = sanitizeYouTubeChannelId(input)
+  if (sanitized) return sanitized
 
-  const fromChannelPath = input.match(/youtube\.com\/channel\/(UC[\w-]{22})/i)
+  const fromChannelPath = input.replace(UNICODE_DASHES, '-').match(/youtube\.com\/channel\/(UC[\w-]{22})/i)
   if (fromChannelPath) return fromChannelPath[1]
 
-  const fromEmbed = input.match(/[?&]channel=(UC[\w-]{22})/i)
+  const fromEmbed = input.replace(UNICODE_DASHES, '-').match(/[?&]channel=(UC[\w-]{22})/i)
   if (fromEmbed) return fromEmbed[1]
 
   return null
@@ -50,6 +60,15 @@ export async function resolveYouTubeChannelIdFromHandle(handle: string): Promise
   }
 }
 
+export function buildYouTubeVideoEmbedUrl(videoId: string): string {
+  const params = new URLSearchParams({
+    autoplay: '0',
+    rel: '0',
+    modestbranding: '1',
+  })
+  return `https://www.youtube.com/embed/${videoId}?${params.toString()}`
+}
+
 export function buildYouTubeLiveEmbedUrl(channelId: string): string {
   const params = new URLSearchParams({
     channel: channelId,
@@ -70,3 +89,71 @@ export function buildYouTubeChannelUrl(channelId: string): string {
 
 export const DEFAULT_YOUTUBE_CHANNEL_ID = 'UChhdehWEPhFS7ebO8WDEjEA'
 export const DEFAULT_YOUTUBE_CHANNEL_URL = 'https://www.youtube.com/@bishopclimateministries'
+
+export async function validateYouTubeChannelId(channelId: string): Promise<boolean> {
+  try {
+    const response = await fetch(
+      `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`,
+      { next: { revalidate: 86400 } },
+    )
+    if (!response.ok) return false
+    const xml = await response.text()
+    return xml.includes(`<yt:channelId>${channelId}</yt:channelId>`)
+  } catch {
+    return false
+  }
+}
+
+/** Latest full-length upload from the channel RSS (skips Shorts when possible). */
+export async function fetchLatestChannelVideoId(channelId: string): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`,
+      { next: { revalidate: 300 } },
+    )
+    if (!response.ok) return null
+
+    const xml = await response.text()
+    const entries = xml.match(/<entry>[\s\S]*?<\/entry>/g) ?? []
+
+    for (const entry of entries) {
+      const watchLink = entry.match(/<link rel="alternate" href="https:\/\/www\.youtube\.com\/watch\?v=([\w-]{11})"/)
+      if (watchLink) return watchLink[1]
+
+      const videoId = entry.match(/<yt:videoId>([\w-]{11})<\/yt:videoId>/)?.[1]
+      const isShort = entry.includes('/shorts/') || entry.includes('#shorts')
+      if (videoId && !isShort) return videoId
+    }
+
+    const anyId = xml.match(/<yt:videoId>([\w-]{11})<\/yt:videoId>/)?.[1]
+    return anyId ?? null
+  } catch {
+    return null
+  }
+}
+
+/** Returns a video ID when the channel has an active live broadcast. */
+export async function fetchActiveLiveVideoId(channelId: string): Promise<string | null> {
+  try {
+    const response = await fetch(`https://www.youtube.com/channel/${channelId}/live`, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (compatible; KDCUgandaBot/1.0; +https://kdcuganda.org/live)',
+      },
+      next: { revalidate: 60 },
+    })
+    if (!response.ok) return null
+
+    const html = await response.text()
+    if (!html.includes('watching now') && !html.includes('"isLive":true') && !html.includes('LIVE')) {
+      return null
+    }
+
+    const fromRedirect = html.match(/watch\?v=([\w-]{11})/)?.[1]
+    if (fromRedirect) return fromRedirect
+
+    return html.match(/"videoId":"([\w-]{11})"/)?.[1] ?? null
+  } catch {
+    return null
+  }
+}

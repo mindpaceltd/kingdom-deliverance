@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  getFireServicePromoState,
   getFireServiceSchedule,
   getLastFridayOfMonth,
   getUpcomingFireServiceOccurrence,
@@ -55,5 +56,26 @@ describe('fire-service-schedule', () => {
     expect(updated.description).toContain('Friday, June 26, 2026')
     expect(updated.content).toContain('Friday, June 26, 2026')
     expect(new Date(updated.date).toISOString()).toBe(getFireServiceSchedule(new Date('2026-06-20T12:00:00.000Z')).startIso)
+  })
+
+  it('uses 6 PM – 10 PM EAT for the service window', () => {
+    const schedule = getFireServiceSchedule(new Date('2026-06-20T12:00:00.000Z'))
+    expect(schedule.formattedTime).toBe('6:00 PM — 10:00 PM (EAT)')
+  })
+
+  it('shows the promo one week before through the end of the service', () => {
+    const beforeWindow = getFireServicePromoState(new Date('2026-06-18T12:00:00.000Z'))
+    expect(beforeWindow.shouldShow).toBe(false)
+
+    const inWindow = getFireServicePromoState(new Date('2026-06-20T12:00:00.000Z'))
+    expect(inWindow.shouldShow).toBe(true)
+    expect(inWindow.daysUntil).toBeGreaterThan(0)
+
+    const onServiceDay = getFireServicePromoState(new Date('2026-06-26T10:00:00.000Z'))
+    expect(onServiceDay.shouldShow).toBe(true)
+    expect(onServiceDay.isToday).toBe(true)
+
+    const afterService = getFireServicePromoState(new Date('2026-06-26T20:00:00.000Z'))
+    expect(afterService.shouldShow).toBe(false)
   })
 })

@@ -3,6 +3,7 @@ import {
   buildYouTubeLiveEmbedUrl,
   parseYouTubeChannelId,
   parseYouTubeHandle,
+  sanitizeYouTubeChannelId,
 } from '@/lib/youtube-live'
 
 describe('youtube-live', () => {
@@ -31,6 +32,13 @@ describe('youtube-live', () => {
     )
     expect(buildYouTubeLiveEmbedUrl('UChhdehWEPhFS7ebO8WDEjEA')).toContain(
       'channel=UChhdehWEPhFS7ebO8WDEjEA',
+    )
+  })
+
+  it('sanitizes channel IDs with unicode dashes', () => {
+    expect(sanitizeYouTubeChannelId('UCA2h24sSX‑i0ZxM09‑‑qnQg')).toBe('UCA2h24sSX-i0ZxM09--qnQg')
+    expect(sanitizeYouTubeChannelId('UChhdehWEPhFS7ebO8WDEjEA')).toBe(
+      'UChhdehWEPhFS7ebO8WDEjEA',
     )
   })
 })
