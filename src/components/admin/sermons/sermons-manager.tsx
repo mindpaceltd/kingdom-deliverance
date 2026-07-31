@@ -22,6 +22,7 @@ import {
   ExternalLinkIcon,
   XIcon,
   Loader2,
+  UploadCloud,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -474,6 +475,15 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          <Button
+            variant="outline"
+            onClick={() => router.push('/admin/sermons/import')}
+            className="gap-2"
+          >
+            <UploadCloud className="size-4" />
+            Import manuscripts
+          </Button>
 
           <Button onClick={() => router.push('/admin/sermons/new')} className="gap-2">
             <PlusIcon className="size-4" />

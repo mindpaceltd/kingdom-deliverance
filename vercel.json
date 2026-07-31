@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/sermons/cron/publish",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/digital-ministry/cron/growth",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}
