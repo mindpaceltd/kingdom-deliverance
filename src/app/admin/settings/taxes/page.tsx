@@ -5,6 +5,8 @@ import { Plus, Edit2 } from 'lucide-react'
 import { SettingsRowDelete } from '@/components/admin/settings/settings-row-delete'
 import { deleteTaxRate } from '@/lib/actions/settings-shop'
 
+export const dynamic = 'force-dynamic'
+
 export default async function TaxSettingsPage() {
   const admin = createAdminClient()
   const { data: taxes } = await admin

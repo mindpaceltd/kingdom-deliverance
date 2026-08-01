@@ -5,6 +5,8 @@ import { Plus, Edit2 } from 'lucide-react'
 import { SettingsRowDelete } from '@/components/admin/settings/settings-row-delete'
 import { deleteEmailTemplate } from '@/lib/actions/settings-shop'
 
+export const dynamic = 'force-dynamic'
+
 const TEMPLATE_TYPE_LABELS: Record<string, string> = {
   order_confirmation: 'Order Confirmation',
   order_shipped: 'Order Shipped',

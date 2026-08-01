@@ -6,6 +6,8 @@ import { SettingsRowDelete } from '@/components/admin/settings/settings-row-dele
 import { deleteShippingRate } from '@/lib/actions/settings-shop'
 import { formatShippingRate } from '@/lib/shop/currency'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ShippingSettingsPage() {
   const admin = createAdminClient()
   const { data: shippingRates } = await admin

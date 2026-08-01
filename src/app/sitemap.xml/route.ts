@@ -1,5 +1,7 @@
 import { getCachedSitemapEntries, renderSitemapXml } from '@/lib/seo/sitemap'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   const entries = await getCachedSitemapEntries()
   const sitemap = renderSitemapXml(entries)

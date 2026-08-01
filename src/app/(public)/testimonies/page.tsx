@@ -6,6 +6,8 @@ import type { Metadata } from 'next'
 import { buildListPageMetadata } from '@/lib/seo/list-page-metadata'
 import { pageKeywords } from '@/lib/seo/brand-keywords'
 
+export const dynamic = 'force-dynamic'
+
 export async function generateMetadata(): Promise<Metadata> {
   return buildListPageMetadata({
     title: 'Testimonies',

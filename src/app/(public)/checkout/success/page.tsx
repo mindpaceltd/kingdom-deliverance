@@ -4,6 +4,8 @@ import { CheckCircle2, Download, ShoppingBag, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 import { ClearCartOnMount } from '@/components/shop/clear-cart-on-mount'
 
+export const dynamic = 'force-dynamic'
+
 export default async function CheckoutSuccessPage({
   searchParams,
 }: {

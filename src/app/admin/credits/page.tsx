@@ -9,6 +9,8 @@ import { CreditSettingsPanel } from '@/components/admin/credits/credit-settings-
 import { getCreditSettings } from '@/lib/credits/settings'
 import { cn } from '@/lib/utils'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminCreditsPage() {
   const adminClient = createAdminClient()
   const creditSettings = await getCreditSettings()

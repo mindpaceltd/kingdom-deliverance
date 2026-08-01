@@ -8,6 +8,8 @@ import {
   getPaymentGatewayCredentialStatus,
 } from '@/lib/payments/ensure-payment-gateways'
 
+export const dynamic = 'force-dynamic'
+
 export default async function PaymentSettingsPage() {
   const admin = createAdminClient()
 

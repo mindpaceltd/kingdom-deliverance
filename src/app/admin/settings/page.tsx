@@ -5,6 +5,8 @@ import { DEFAULT_YOUTUBE_CHANNEL_ID, DEFAULT_YOUTUBE_CHANNEL_URL } from '@/lib/y
 import { siteKeywordsString } from '@/lib/seo/brand-keywords'
 import type { SiteSetting } from '@/lib/types'
 
+export const dynamic = 'force-dynamic'
+
 const SETTINGS_KEYS = [
   'site_name',
   'tagline',

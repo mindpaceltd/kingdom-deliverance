@@ -3,6 +3,8 @@ import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { ArrowUpCircle, ArrowDownCircle, Info } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function TransactionsPage({ searchParams }: { searchParams: { email?: string } }) {
   const supabase = createAdminClient()
   

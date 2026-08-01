@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { format } from 'date-fns'
 import { OrderActions } from '@/components/admin/orders/order-actions'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminOrdersPage() {
   // Admin routes are already gated by the layout; use the service role so
   // order-visibility never depends on per-user RLS policies.
