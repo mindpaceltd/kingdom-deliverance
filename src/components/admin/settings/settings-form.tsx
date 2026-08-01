@@ -438,7 +438,7 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                    </div>
                    <div className="space-y-1.5">
                       <Label>Site Keywords</Label>
-                      <Input value={values.site_keywords} onChange={e => handleChange('site_keywords', e.target.value)} placeholder="church, uganda, kingdom deliverance, kampala" />
+                      <Input value={values.site_meta_keywords} onChange={e => handleChange('site_meta_keywords', e.target.value)} placeholder="KDC, Kingdom Deliverance Centre, Fire Service, Kosovo church, Kampala church" />
                    </div>
                 </div>
 

@@ -2,6 +2,7 @@ import { getSermons, getSermonFilters } from "@/lib/supabase/queries";
 import { SermonsPageClient } from "@/components/content/sermons-page-client";
 import type { Metadata } from "next";
 import { buildListPageMetadata } from "@/lib/seo/list-page-metadata";
+import { pageKeywords } from "@/lib/seo/brand-keywords";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildListPageMetadata({
@@ -9,8 +10,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       "Watch and listen to powerful sermons from Bishop Climate Wiseman and KDC Uganda. Faith-building messages on healing, deliverance, and the Word of God.",
     path: "/sermons",
-    keywords:
-      "KDC Uganda sermons, Bishop Climate Wiseman sermons, church sermons Uganda, deliverance messages Kampala, Christian preaching Uganda",
+    keywords: pageKeywords('sermons'),
     ogType: "sermon",
   });
 }

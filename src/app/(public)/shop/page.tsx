@@ -4,6 +4,7 @@ import { ShopContent } from '@/components/shop/shop-content'
 import { ShoppingBag, Zap, Lock, HeartHandshake, BookOpen } from 'lucide-react'
 import type { Metadata } from 'next'
 import { buildListPageMetadata } from '@/lib/seo/list-page-metadata'
+import { pageKeywords } from '@/lib/seo/brand-keywords'
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildListPageMetadata({
@@ -11,7 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       'Purchase e-books, sermons, and official Kingdom Deliverance Centre merchandise to support your spiritual growth.',
     path: '/shop',
-    keywords: 'KDC Uganda shop, Christian books Uganda, church merchandise Kampala',
+    keywords: pageKeywords('shop'),
     ogType: 'product',
   })
 }
@@ -98,39 +99,39 @@ export default async function ShopPage({
           className="absolute inset-0 bg-cover bg-center opacity-30"
           style={{ backgroundImage: "url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=2070')" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0d1b2a] via-[#0d1b2a]/90 to-[#0d1b2a]/60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0d1b2a]/95 via-[#0d1b2a]/85 to-[#0d1b2a]/70" />
 
-        <div className="relative z-10 container px-4 mx-auto text-center">
+        <div className="relative z-10 container px-4 mx-auto">
+          <div className="mx-auto flex w-full max-w-4xl flex-col items-center text-center">
           {/* Official badge */}
-          <div className="flex justify-center mb-6">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#d4a017]/20 border border-[#d4a017]/40 text-[#d4a017] text-[11px] font-bold uppercase tracking-widest">
-              <ShoppingBag className="w-3 h-3" />
-              Official Ministry Store
-            </div>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#d4a017]/20 border border-[#d4a017]/40 text-[#d4a017] text-[11px] font-bold uppercase tracking-widest mb-6">
+            <ShoppingBag className="w-3 h-3" />
+            Official Ministry Store
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-black text-white leading-tight mb-4 max-w-2xl mx-auto">
+          <h1 className="text-4xl md:text-6xl font-black text-white leading-tight mb-4 max-w-2xl">
             Resources for{' '}
             <span className="italic text-[#d4a017]">Spirit &amp; Purpose</span>
           </h1>
 
-          <p className="text-white/60 text-base max-w-xl mx-auto mb-10 leading-relaxed">
+          <p className="text-white/60 text-base max-w-xl mb-10 leading-relaxed">
             Explore our collection of e-books, recorded sermons, and church merchandise designed to support your spiritual growth.
           </p>
 
           {/* Trust badges row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
+          <div className="grid w-full max-w-4xl grid-cols-2 justify-items-center gap-4 md:grid-cols-4 md:gap-6">
             {trustBadges.map((b) => (
-              <div key={b.label} className="flex flex-col items-center gap-2 text-center">
+              <div key={b.label} className="flex max-w-[160px] flex-col items-center gap-2 text-center">
                 <div className="size-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
                   <b.icon className="w-4 h-4 text-[#d4a017]" />
                 </div>
-                <div>
+                <div className="space-y-0.5">
                   <p className="text-white text-[12px] font-bold leading-tight">{b.label}</p>
                   <p className="text-white/50 text-[10px] leading-snug">{b.sub}</p>
                 </div>
               </div>
             ))}
+          </div>
           </div>
         </div>
       </section>

@@ -1,9 +1,20 @@
 import { createClient } from '@supabase/supabase-js'
 
+function decodeHtmlEntities(value) {
+  return String(value || '')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&nbsp;/gi, ' ')
+}
+
 function normalizeName(name) {
-  return String(name || '')
+  return decodeHtmlEntities(name)
     .toLowerCase()
     .replace(/^copy of\s+/i, '')
+    .replace(/\s*\(copy\)\s*$/i, '')
     .replace(/\s+/g, ' ')
     .trim()
 }

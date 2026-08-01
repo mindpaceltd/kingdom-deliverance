@@ -18,6 +18,7 @@ import {
   ShoppingBag,
   ListOrdered,
   QrCode,
+  HeartHandshake,
   Sparkles,
   type LucideIcon,
 } from 'lucide-react'
@@ -102,6 +103,7 @@ export const adminNavLinks: AdminNavLink[] = [
     ],
   },
   { href: '/admin/inbox', label: 'Inbox', icon: Inbox, adminOnly: false },
+  { href: '/admin/donations', label: 'Donations', icon: HeartHandshake, adminOnly: true },
   { href: '/admin/leads', label: 'Leads', icon: UserPlus, adminOnly: false },
   { href: '/admin/support', label: 'Live Support', icon: MessageCircle, adminOnly: false },
   { href: '/admin/testimonies', label: 'Testimonies', icon: MessageCircle, adminOnly: false },
@@ -145,6 +147,7 @@ export const adminPageTitles: Record<string, string> = {
   '/admin/credits/requests': 'Service Requests',
   '/admin/credits/transactions': 'Transaction History',
   '/admin/inbox': 'Inbox',
+  '/admin/donations': 'Donations',
   '/admin/leads': 'Leads',
   '/admin/support': 'Live Support',
   '/admin/testimonies': 'Testimonies',

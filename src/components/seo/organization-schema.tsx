@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getOrgLogoUrl, getOrgOgImageUrl } from '@/lib/seo/site-branding'
 import { buildChurchOpeningHoursSpecification } from '@/lib/seo/opening-hours'
+import { BRAND_ALTERNATE_NAMES } from '@/lib/seo/brand-keywords'
 import { KDC_KAMPALA_GEO, parseChurchPostalAddress } from '@/lib/seo/parse-church-address'
 
 interface OrganizationSchemaProps {
@@ -53,7 +54,7 @@ export async function OrganizationSchema({ type = 'Church' }: OrganizationSchema
       '@type': type,
       '@id': 'https://kdcuganda.org/#organization',
       name: siteName,
-      alternateName: ['KDC Uganda', 'Kingdom Deliverance Centre'],
+      alternateName: [...BRAND_ALTERNATE_NAMES],
       description,
       url: 'https://kdcuganda.org',
       logo: resolvedLogoUrl || 'https://kdcuganda.org/logo.png',
@@ -115,6 +116,15 @@ export async function OrganizationSchema({ type = 'Church' }: OrganizationSchema
               '@type': 'Service',
               name: 'Bible Study & Prayer',
               description: 'Wednesday Bible Study and Friday Fire Service prayer meetings.',
+            },
+          },
+          {
+            '@type': 'Offer',
+            itemOffered: {
+              '@type': 'Service',
+              name: 'Fire Service',
+              description:
+                'Monthly Fire Service prayer and deliverance meeting at KDC Kosovo–Lungujja, Kampala.',
             },
           },
           {

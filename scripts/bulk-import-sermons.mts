@@ -31,9 +31,22 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 
 const { extractManuscriptText, parseManuscript } = await import('../src/lib/sermons/manuscript.ts')
 const { buildSermonSeo } = await import('../src/lib/sermons/sermon-seo.ts')
+const { normalizeSermonTitle } = await import('../src/lib/dedupe/normalize.ts')
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 const PREACHER = 'Bishop Climate Wiseman'
+
+async function findExistingSermonByTitle(title: string) {
+  const normalized = normalizeSermonTitle(title)
+  if (!normalized) return null
+  const { data } = await supabase.from('sermons').select('id, slug, title').is('deleted_at', null)
+  for (const row of data ?? []) {
+    if (normalizeSermonTitle(String(row.title ?? '')) === normalized) {
+      return row as { id: string; slug: string; title: string }
+    }
+  }
+  return null
+}
 
 function fileKey(name: string) {
   return name.replace(/\.[^.]+$/, '').trim().toLowerCase()
@@ -77,6 +90,7 @@ console.log(`Importing ${toImport.length} sermons as drafts…\n`)
 
 let ok = 0
 let failed = 0
+let skipped = 0
 
 for (const file of toImport) {
   const buffer = fs.readFileSync(path.join(dir, file))
@@ -91,6 +105,13 @@ for (const file of toImport) {
   if (parsed.wordCount < 50) {
     console.log(`✗ ${file}: only ${parsed.wordCount} words found`)
     failed++
+    continue
+  }
+
+  const existingByTitle = await findExistingSermonByTitle(parsed.title)
+  if (existingByTitle) {
+    console.log(`↷ ${file}: skipped — already exists (${existingByTitle.title})`)
+    skipped++
     continue
   }
 
@@ -111,7 +132,8 @@ for (const file of toImport) {
     .maybeSingle()
 
   if (existing) {
-    console.log(`↷ ${file}: skipped — already exists (${existing.title})`)
+    console.log(`↷ ${file}: skipped — slug already exists (${existing.title})`)
+    skipped++
     continue
   }
 
@@ -152,4 +174,4 @@ for (const file of toImport) {
   ok++
 }
 
-console.log(`Done: ${ok} imported, ${failed} failed, ${toImport.length - ok - failed} skipped`)
+console.log(`Done: ${ok} imported, ${failed} failed, ${skipped} skipped (duplicates)`)

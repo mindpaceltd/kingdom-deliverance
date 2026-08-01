@@ -7,6 +7,14 @@
     {
       "path": "/api/digital-ministry/cron/growth",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/digital-ministry/cron/competitors/capture",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/digital-ministry/cron/competitors/report",
+      "schedule": "0 7 * * 1"
     }
   ]
 }

@@ -56,6 +56,7 @@ import {
   duplicateSermon,
   duplicateSermons,
   deleteSermon,
+  bulkUpdateSermonStatus,
 } from '@/lib/actions/sermons'
 import { analyzeSermonVideo } from '@/lib/actions/sermon-ai'
 import { createClient } from '@/lib/supabase/client'
@@ -259,6 +260,28 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
     toast.success('Sermon duplicated as draft')
     await refreshSermons()
     router.push(`/admin/sermons/${result.id}`)
+  }
+
+  async function handleBulkPublish() {
+    if (selectedIds.size === 0) return
+    if (
+      !window.confirm(
+        `Publish ${selectedIds.size} selected sermon(s)? They will appear on the public sermons page.`
+      )
+    ) {
+      return
+    }
+    setActionLoading('bulk-publish')
+    const result = await bulkUpdateSermonStatus(Array.from(selectedIds), 'published')
+    setActionLoading(null)
+    if ('error' in result) {
+      toast.error(result.error)
+      return
+    }
+    toast.success(`Published ${result.updated} sermon(s)`)
+    setSelectedIds(new Set())
+    await refreshSermons()
+    router.refresh()
   }
 
   async function handleBulkDuplicate() {
@@ -836,6 +859,16 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
             <span className="text-sm font-bold border-r border-white/20 pr-3">
               {selectedIds.size} selected
             </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 hover:bg-white/10"
+              disabled={bulkBusy}
+              onClick={handleBulkPublish}
+            >
+              <GlobeIcon className="size-3.5 mr-1.5" />
+              Publish
+            </Button>
             <Button
               variant="ghost"
               size="sm"

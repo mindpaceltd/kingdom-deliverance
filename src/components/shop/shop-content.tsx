@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { LayoutGrid, List, ShoppingBag } from 'lucide-react'
 import { ProductCard } from './product-card'
 import { SortSelect } from './sort-select'
+import { CurrencySelect } from './currency-select'
 import { cn } from '@/lib/utils'
 
 interface ShopContentProps {
@@ -65,7 +66,10 @@ export function ShopContent({ products, currentPage, totalCount, pageSize }: Sho
             </button>
           </div>
         </div>
-        <SortSelect />
+        <div className="flex items-center gap-3">
+          <CurrencySelect compact className="h-9 w-[88px] text-xs font-semibold" />
+          <SortSelect />
+        </div>
       </div>
 
       {products.length > 0 ? (

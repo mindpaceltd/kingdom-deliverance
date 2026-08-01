@@ -24,6 +24,7 @@ import { getOrgOgImageUrl, getSiteName } from "@/lib/seo/site-branding";
 import { normalizeMediaUrl } from "@/lib/media-url";
 import { createSocialImageMetadata } from "@/lib/seo-image-utils";
 import { createCanonicalMetadata } from "@/lib/seo/canonical-utils";
+import { pageKeywords } from "@/lib/seo/brand-keywords";
 
 /** Always read fresh homepage CMS + sermons/events/posts from Supabase. */
 export const dynamic = 'force-dynamic';
@@ -57,6 +58,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: { absolute: pageTitle },
     description,
+    keywords: pageKeywords('home'),
     ...createCanonicalMetadata('/'),
     openGraph: {
       title: ogTitle,

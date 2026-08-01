@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { QrCodesDisplay } from '@/components/give/qr-codes-display'
 import type { Metadata } from 'next'
 import { buildListPageMetadata } from '@/lib/seo/list-page-metadata'
+import { pageKeywords } from '@/lib/seo/brand-keywords'
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildListPageMetadata({
@@ -9,7 +10,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       'Give and support Kingdom Deliverance Centre Uganda via QR codes, mobile money, and secure online donations.',
     path: '/give',
-    keywords: 'give KDC Uganda, church donations Uganda, tithe Kampala church, support ministry Uganda',
+    keywords: pageKeywords('give'),
   })
 }
 

@@ -47,6 +47,7 @@ interface QueuedFile {
 interface FileOutcome {
   filename: string
   ok: boolean
+  skipped?: boolean
   title?: string
   slug?: string
   id?: string
@@ -137,7 +138,7 @@ export function SermonImportClient() {
   const folderInputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [queue, setQueue] = useState<QueuedFile[]>([])
-  const [mode, setMode] = useState<PublishMode>('draft')
+  const [mode, setMode] = useState<PublishMode>('published')
   const [intervalAmount, setIntervalAmount] = useState(2)
   const [intervalUnit, setIntervalUnit] = useState<IntervalUnit>('days')
   const [startAt, setStartAt] = useState(() => toLocalDatetimeValue(addDays(new Date(), 1)))
@@ -281,6 +282,15 @@ export function SermonImportClient() {
 
         if ('error' in result) {
           results.push({ filename: item.file.name, ok: false, error: result.error })
+        } else if ('skipped' in result && result.skipped) {
+          results.push({
+            filename: result.filename,
+            ok: true,
+            skipped: true,
+            title: result.title,
+            slug: result.slug,
+            notice: result.reason,
+          })
         } else {
           const ok = result as SermonImportResult
           results.push({
@@ -308,14 +318,17 @@ export function SermonImportClient() {
     }
 
     setRunning(false)
-    const success = results.filter((r) => r.ok).length
-    const failed = results.length - success
-    if (success) toast.success(`Imported ${success} sermon${success === 1 ? '' : 's'}`)
+    const imported = results.filter((r) => r.ok && !r.skipped).length
+    const skipped = results.filter((r) => r.skipped).length
+    const failed = results.filter((r) => !r.ok).length
+    if (imported) toast.success(`Imported ${imported} sermon${imported === 1 ? '' : 's'}`)
+    if (skipped) toast.message(`${skipped} duplicate${skipped === 1 ? '' : 's'} skipped`)
     if (failed) toast.error(`${failed} file${failed === 1 ? '' : 's'} failed`)
     startTransition(() => router.refresh())
   }
 
-  const succeeded = outcomes.filter((o) => o.ok)
+  const imported = outcomes.filter((o) => o.ok && !o.skipped)
+  const skipped = outcomes.filter((o) => o.skipped)
   const failed = outcomes.filter((o) => !o.ok)
 
   return (
@@ -504,7 +517,9 @@ export function SermonImportClient() {
           {outcomes.length > 0 ? (
             <div className="rounded-2xl border bg-card p-5 shadow-sm">
               <p className="text-sm font-semibold">
-                Results · {succeeded.length} imported · {failed.length} failed
+                Results · {imported.length} imported
+                {skipped.length ? ` · ${skipped.length} skipped` : ''}
+                {failed.length ? ` · ${failed.length} failed` : ''}
               </p>
               <ul className="mt-3 space-y-2">
                 {outcomes.map((o) => (
@@ -512,8 +527,10 @@ export function SermonImportClient() {
                     key={o.filename}
                     className="flex items-start gap-2 rounded-xl border border-border/60 p-3"
                   >
-                    {o.ok ? (
+                    {o.ok && !o.skipped ? (
                       <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+                    ) : o.skipped ? (
+                      <FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                     ) : (
                       <XCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
                     )}
@@ -523,18 +540,24 @@ export function SermonImportClient() {
                       </p>
                       {o.ok ? (
                         <p className="text-xs text-muted-foreground">
-                          {o.status}
-                          {typeof o.seoScore === 'number' ? ` · SEO ${o.seoScore}/100` : ''}
-                          {o.scheduledAt
-                            ? ` · goes live ${new Date(o.scheduledAt).toLocaleString()}`
-                            : ''}
-                          {o.notice ? ` · ${o.notice}` : ''}
+                          {o.skipped
+                            ? `Skipped duplicate · ${o.notice ?? 'already in library'}`
+                            : [
+                                o.status,
+                                typeof o.seoScore === 'number' ? `SEO ${o.seoScore}/100` : '',
+                                o.scheduledAt
+                                  ? `goes live ${new Date(o.scheduledAt).toLocaleString()}`
+                                  : '',
+                                o.notice ?? '',
+                              ]
+                                .filter(Boolean)
+                                .join(' · ')}
                         </p>
                       ) : (
                         <p className="text-xs text-destructive">{o.error}</p>
                       )}
                     </div>
-                    {o.ok && o.id ? (
+                    {o.ok && o.id && !o.skipped ? (
                       <Button asChild size="sm" variant="outline">
                         <Link href={`/admin/sermons/${o.id}`}>Edit</Link>
                       </Button>
@@ -542,7 +565,7 @@ export function SermonImportClient() {
                   </li>
                 ))}
               </ul>
-              {succeeded.length > 0 ? (
+              {imported.length > 0 ? (
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Button asChild size="sm">
                     <Link href="/admin/sermons">View all sermons</Link>

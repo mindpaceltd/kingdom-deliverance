@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Users, Clock, Music, Heart, BookOpen, Shield, Star, Globe, Zap } from "lucide-react";
 import type { Metadata } from "next";
 import { buildListPageMetadata } from "@/lib/seo/list-page-metadata";
+import { pageKeywords } from "@/lib/seo/brand-keywords";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildListPageMetadata({
@@ -10,8 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       "Discover worship, youth, prayer, outreach, and family ministries at Kingdom Deliverance Centre Uganda — find your place to serve and grow in Kampala.",
     path: "/ministries",
-    keywords:
-      "KDC ministries, church ministries Kampala, youth ministry Uganda, worship ministry Uganda, prayer ministry Kampala",
+    keywords: pageKeywords('ministries'),
     ogType: "ministry",
   });
 }

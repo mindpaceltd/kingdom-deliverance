@@ -7,6 +7,7 @@ import { getOrgOgImageUrl, getSiteName } from '@/lib/seo/site-branding'
 import { createClient } from '@/lib/supabase/server'
 import { createSocialImageMetadata } from '@/lib/seo-image-utils'
 import { createCanonicalMetadata } from '@/lib/seo/canonical-utils'
+import { pageKeywords } from '@/lib/seo/brand-keywords'
 
 export async function generateMetadata(): Promise<Metadata> {
   const supabase = createClient()
@@ -45,6 +46,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: ogTitle,
     description,
+    keywords: pageKeywords('about'),
     ...createCanonicalMetadata('/about'),
     openGraph: {
       title: ogTitle,

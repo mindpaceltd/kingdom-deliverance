@@ -20,6 +20,7 @@ export interface Post {
   featured_image: string | null
   author_id: string | null
   type: 'blog' | 'news'
+  category?: 'sermons' | 'teachings' | 'testimonies' | 'news' | 'bishop' | 'general' | null
   // Extended status union
   status: 'draft' | 'published' | 'archived' | 'scheduled' | 'trash'
   published_at: string | null
@@ -230,6 +231,7 @@ export interface PostData {
   excerpt?: string
   featured_image?: string
   type: 'blog' | 'news'
+  category?: 'sermons' | 'teachings' | 'testimonies' | 'news' | 'bishop' | 'general'
   // Extended status (trash/archived set by dedicated actions only)
   status: 'draft' | 'published' | 'scheduled'
   // New optional SEO + scheduling fields

@@ -7,6 +7,7 @@ import { requireRole } from '@/lib/actions/auth-helpers'
 import { requireAdmin, requireRoles } from '@/lib/authz'
 import { ROLES } from '@/lib/roles'
 import { uploadFile, deleteFile, getKeyFromUrl } from '@/lib/services/r2-storage'
+import { findExistingMediaByFile } from '@/lib/dedupe/find-existing'
 import {
   MEDIA_LIBRARY_PAGE_SIZE,
   MEDIA_LIBRARY_SELECT,
@@ -53,6 +54,17 @@ export async function createMediaRecord(
     }
 
     const supabase = createAdminClient()
+
+    const { data: existingUrl } = await supabase
+      .from('media')
+      .select('id, url')
+      .eq('url', payload.url)
+      .maybeSingle()
+
+    if (existingUrl) {
+      revalidateMediaLibraryCache()
+      return { success: true, id: String(existingUrl.id) }
+    }
 
     const { data, error } = await supabase
       .from('media')
@@ -311,6 +323,13 @@ export async function uploadMediaAction(
   try {
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
+    const admin = createAdminClient()
+
+    const existing = await findExistingMediaByFile(admin, file.name, file.size)
+    if (existing) {
+      return { success: true, url: existing.url, id: existing.id }
+    }
+
     const fileExt = file.name.split('.').pop()
     const uniqueName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`
     

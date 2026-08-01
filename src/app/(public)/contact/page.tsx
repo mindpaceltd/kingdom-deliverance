@@ -5,6 +5,7 @@ import { loadContactPageData } from '@/lib/cms/load-contact-page-data'
 import { createClient } from '@/lib/supabase/server'
 import { parsePageContent } from '@/lib/cms/page-content'
 import { buildCmsPageMetadata } from '@/lib/seo/cms-page-metadata'
+import { pageKeywords } from '@/lib/seo/brand-keywords'
 import { DEFAULT_CONTACT_HERO_IMAGE } from '@/lib/cms/contact-page-defaults'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -28,6 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
     defaultTitle: 'Contact Us',
     defaultDescription:
       'Contact Kingdom Deliverance Centre Uganda in Kampala. Service times, directions, phone, email, and prayer requests.',
+    defaultKeywords: pageKeywords('contact'),
     content,
     heroImageUrl: DEFAULT_CONTACT_HERO_IMAGE,
   })

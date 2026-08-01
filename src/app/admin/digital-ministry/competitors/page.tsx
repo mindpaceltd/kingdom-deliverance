@@ -2,62 +2,17 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { DmKpiCard, DmPageHeader } from '@/components/admin/digital-ministry/dm-ui'
 import { CompetitorsClient } from '@/components/admin/digital-ministry/competitors-client'
-import { listCompetitors, listCompetitorSnapshots } from '@/lib/digital-ministry/competitors'
+import { fetchIntelligenceDashboard, listCompetitors } from '@/lib/digital-ministry/competitors'
+import { parseCompetitorPlatforms } from '@/lib/digital-ministry/competitor-platforms'
 
 export default async function CompetitorsPage() {
-  const competitors = await listCompetitors()
-  const latestById: Record<
-    string,
-    { titles: string[]; captured_at: string; platform: string; excerpt?: string }
-  > = {}
-
-  let withSnapshots = 0
-  let latestCaptureMs = 0
-
-  for (const c of competitors) {
-    const snaps = await listCompetitorSnapshots(c.id, 1)
-    const s = snaps[0]
-    if (!s) continue
-    withSnapshots += 1
-    const captured = new Date(s.captured_at).getTime()
-    if (captured > latestCaptureMs) latestCaptureMs = captured
-
-    const titles = Array.isArray(s.top_content)
-      ? (s.top_content as Array<{ title?: string }>).map((t) => t.title || '').filter(Boolean)
-      : []
-    const excerpt =
-      s.raw && typeof s.raw === 'object' && 'excerpt' in s.raw
-        ? String((s.raw as { excerpt?: string }).excerpt || '')
-        : ''
-
-    latestById[c.id] = {
-      titles,
-      captured_at: s.captured_at,
-      platform: s.platform,
-      excerpt: excerpt || undefined,
-    }
-  }
-
-  const lastCaptureHint = latestCaptureMs
-    ? new Date(latestCaptureMs).toLocaleString(undefined, {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      })
-    : 'No captures yet'
-  const lastCaptureValue = latestCaptureMs
-    ? (() => {
-        const hrs = Math.floor((Date.now() - latestCaptureMs) / 3600000)
-        if (hrs < 1) return '<1h'
-        if (hrs < 48) return `${hrs}h`
-        return `${Math.floor(hrs / 24)}d`
-      })()
-    : '—'
+  const [competitors, dashboard] = await Promise.all([listCompetitors(), fetchIntelligenceDashboard()])
 
   return (
     <div className="space-y-6">
       <DmPageHeader
         title="Competitor Intelligence"
-        description="Watch peer ministries from public RSS feeds and websites only — ethical signals for content strategy, never private scraping."
+        description="Monitor peer ministries — capture public content across websites, RSS, YouTube, and linked social profiles. AI analysis uses verified data only; never invented metrics."
         actions={
           <Button asChild size="sm" variant="outline">
             <Link href="/admin/digital-ministry">Dashboard</Link>
@@ -66,33 +21,33 @@ export default async function CompetitorsPage() {
       />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <DmKpiCard label="Tracked peers" value={competitors.length} hint="Active watchlist" />
+        <DmKpiCard label="Tracked peers" value={dashboard?.trackedPeers ?? competitors.length} hint="Active watchlist" />
+        <DmKpiCard label="Active sources" value={dashboard?.activeSources ?? 0} hint="Connected public sources" />
+        <DmKpiCard label="Content found" value={dashboard?.contentFound ?? 0} hint="Normalized content items" />
         <DmKpiCard
-          label="With snapshots"
-          value={withSnapshots}
-          hint={
-            competitors.length
-              ? `${Math.round((withSnapshots / competitors.length) * 100)}% covered`
-              : 'Capture public content'
-          }
+          label="Opportunities"
+          value={dashboard?.opportunities ?? 0}
+          hint="Content gaps from AI strategy"
         />
-        <DmKpiCard
-          label="Needs capture"
-          value={Math.max(0, competitors.length - withSnapshots)}
-          hint="Missing latest signals"
-        />
-        <DmKpiCard label="Last capture" value={lastCaptureValue} hint={lastCaptureHint} />
       </div>
 
       <CompetitorsClient
-        competitors={competitors.map((c) => ({
-          id: c.id,
-          name: c.name,
-          website_url: c.website_url,
-          notes: c.notes,
-          platforms: (c.platforms ?? {}) as Record<string, string>,
-        }))}
-        latestById={latestById}
+        dashboard={dashboard}
+        competitors={competitors.map((c) => {
+          const parsed = parseCompetitorPlatforms((c.platforms ?? {}) as Record<string, unknown>)
+          return {
+            id: c.id,
+            name: c.name,
+            website_url: c.website_url,
+            notes: c.notes,
+            country: c.country,
+            organization_type: c.organization_type,
+            monitoring_frequency: c.monitoring_frequency,
+            last_captured_at: c.last_captured_at,
+            urls: parsed.urls,
+            metrics: parsed.metrics,
+          }
+        })}
       />
     </div>
   )

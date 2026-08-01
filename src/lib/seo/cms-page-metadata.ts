@@ -11,6 +11,7 @@ export async function buildCmsPageMetadata(options: {
   path: string
   defaultTitle: string
   defaultDescription: string
+  defaultKeywords?: string
   content?: CmsPageContent | null
   /** Resolved hero URL (org photos, etc.) when CMS hero is empty */
   heroImageUrl?: string | null
@@ -42,6 +43,7 @@ export async function buildCmsPageMetadata(options: {
   return {
     title,
     description,
+    ...(options.defaultKeywords ? { keywords: options.defaultKeywords } : {}),
     ...(seo?.noIndex ? { robots: { index: false, follow: false } } : {}),
     ...createCanonicalMetadata(options.path),
     openGraph: {

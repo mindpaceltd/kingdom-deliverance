@@ -319,6 +319,73 @@ export async function duplicateSermon(
   return { success: true, id: newSermon.id }
 }
 
+const SERMON_STATUSES = ['draft', 'published', 'scheduled', 'trash', 'archived'] as const
+export type SermonStatus = (typeof SERMON_STATUSES)[number]
+
+export async function bulkUpdateSermonStatus(
+  ids: string[],
+  status: SermonStatus
+): Promise<{ success: true; updated: number } | { error: string }> {
+  if (ids.length === 0) {
+    return { error: 'No sermons selected.' }
+  }
+
+  if (!SERMON_STATUSES.includes(status)) {
+    return { error: 'Invalid status.' }
+  }
+
+  const auth = await requireRoles(ROLES.CONTENT)
+  if ('error' in auth) return auth
+
+  const supabase = createClient()
+  const now = new Date().toISOString()
+  const patch: Record<string, unknown> = {
+    status,
+    updated_at: now,
+  }
+
+  if (status === 'published') {
+    patch.published_at = now
+    patch.scheduled_at = null
+    patch.deleted_at = null
+  }
+  if (status === 'scheduled') {
+    patch.deleted_at = null
+  }
+  if (status === 'draft') {
+    patch.scheduled_at = null
+    patch.deleted_at = null
+  }
+  if (status === 'trash') {
+    patch.deleted_at = now
+  }
+
+  const { data, error } = await supabase
+    .from('sermons')
+    .update(patch)
+    .in('id', ids)
+    .select('id, slug, status')
+
+  if (error) {
+    console.error('[bulkUpdateSermonStatus]', error.message)
+    return { error: error.message }
+  }
+
+  revalidateSermonPaths()
+  revalidatePath('/admin/sermons')
+
+  const rows = data ?? []
+  if (status === 'published') {
+    await Promise.all(
+      rows.map((row) =>
+        indexOnPublish('sermon', String(row.slug ?? ''), 'published')
+      )
+    )
+  }
+
+  return { success: true, updated: rows.length }
+}
+
 export async function duplicateSermons(
   ids: string[]
 ): Promise<

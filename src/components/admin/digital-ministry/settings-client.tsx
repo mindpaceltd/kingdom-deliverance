@@ -293,10 +293,24 @@ export function SettingsClient({
             <code className="block rounded-lg bg-muted/50 px-2.5 py-2 text-[10px] leading-relaxed">
               GET /api/digital-ministry/cron/growth
             </code>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Competitor captures (daily, due peers only):
+            </p>
+            <code className="block rounded-lg bg-muted/50 px-2.5 py-2 text-[10px] leading-relaxed">
+              GET /api/digital-ministry/cron/competitors/capture
+            </code>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Weekly strategy report + email (Mondays):
+            </p>
+            <code className="block rounded-lg bg-muted/50 px-2.5 py-2 text-[10px] leading-relaxed">
+              GET /api/digital-ministry/cron/competitors/report
+            </code>
             <p className="text-xs text-muted-foreground">
               Authorize with{' '}
               <code className="rounded bg-muted px-1 py-0.5 text-[10px]">CRON_SECRET</code> or{' '}
               <code className="rounded bg-muted px-1 py-0.5 text-[10px]">DM_CRON_SECRET</code>.
+              Report recipients: <code className="rounded bg-muted px-1 py-0.5 text-[10px]">dm_settings.competitor_report_emails</code>{' '}
+              (falls back to site contact email).
             </p>
           </DmCard>
 

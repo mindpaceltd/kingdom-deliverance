@@ -3,6 +3,25 @@ import path from 'node:path'
 import Papa from 'papaparse'
 import { createClient } from '@supabase/supabase-js'
 
+function decodeHtmlEntities(value) {
+  return String(value || '')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&nbsp;/gi, ' ')
+}
+
+function normalizeProductName(name) {
+  return decodeHtmlEntities(name)
+    .toLowerCase()
+    .replace(/^copy of\s+/i, '')
+    .replace(/\s*\(copy\)\s*$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 function slugify(text) {
   return String(text || '')
     .toLowerCase()
@@ -98,12 +117,33 @@ async function main() {
     ;(inserted || []).forEach((c) => categoryMap.set(c.name.toLowerCase(), c.id))
   }
 
-  const productsPayload = rows.map((row) => {
+  const { data: existingProducts, error: existingProductsError } = await supabase
+    .from('products')
+    .select('id,name,slug')
+  if (existingProductsError) throw existingProductsError
+
+  const slugByNormalizedName = new Map(
+    (existingProducts || []).map((product) => [normalizeProductName(product.name), product.slug])
+  )
+
+  const productsPayload = []
+  const skippedDuplicates = []
+
+  for (const row of rows) {
+    const name = getValue(row, 'Name')
+    const slug = getValue(row, 'Slug')
+    const normalizedName = normalizeProductName(name)
+    const existingSlug = slugByNormalizedName.get(normalizedName)
+    if (existingSlug && existingSlug !== slug) {
+      skippedDuplicates.push({ name, existingSlug, slug })
+      continue
+    }
+
     const categories = splitCategories(getValue(row, 'Category'))
     const primaryCategory = categories[0] || ''
-    return {
-      name: getValue(row, 'Name'),
-      slug: getValue(row, 'Slug'),
+    productsPayload.push({
+      name,
+      slug,
       regular_price_usd: parseNumber(getValue(row, 'Regular Price (USD)'), 0),
       sale_price_usd: parseNumber(getValue(row, 'Sale Price (USD)'), 0),
       type: getValue(row, 'Type') || 'digital',
@@ -119,8 +159,25 @@ async function main() {
       is_featured: parseBoolean(getValue(row, 'Is Featured')),
       status: getValue(row, 'Status') || 'published',
       is_active: true,
-    }
-  })
+    })
+    if (normalizedName) slugByNormalizedName.set(normalizedName, slug)
+  }
+
+  if (!productsPayload.length) {
+    console.log(
+      JSON.stringify(
+        {
+          importedProducts: 0,
+          skippedDuplicates: skippedDuplicates.length,
+          createdCategories: missing.length,
+          galleryRows: 0,
+        },
+        null,
+        2
+      )
+    )
+    return
+  }
 
   const { error: upsertError } = await supabase
     .from('products')
@@ -169,6 +226,7 @@ async function main() {
     JSON.stringify(
       {
         importedProducts: productsPayload.length,
+        skippedDuplicates: skippedDuplicates.length,
         createdCategories: missing.length,
         galleryRows: galleryRows.length,
       },

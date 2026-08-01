@@ -9,6 +9,7 @@ import { extractManuscriptText, parseManuscript } from '@/lib/sermons/manuscript
 import { buildSermonSeo } from '@/lib/sermons/sermon-seo'
 import { generateGeminiJson } from '@/lib/digital-ministry/gemini'
 import { computeSeoScore } from '@/lib/seo-scorer'
+import { findExistingSermonByTitle } from '@/lib/dedupe/find-existing'
 
 export interface SermonImportOptions {
   status: 'draft' | 'published' | 'scheduled'
@@ -38,6 +39,14 @@ export interface SermonImportResult {
   seoScore: number
   /** Non-fatal notes, e.g. AI unavailable so heuristics were used. */
   notice?: string
+}
+
+export interface SermonImportSkipped {
+  filename: string
+  skipped: true
+  slug: string
+  title: string
+  reason: string
 }
 
 interface AiSermonFields {
@@ -156,7 +165,7 @@ export async function importSermonManuscript(input: {
   /** Base64-encoded file contents. */
   data: string
   options: SermonImportOptions
-}): Promise<SermonImportResult | { error: string; filename: string }> {
+}): Promise<SermonImportResult | SermonImportSkipped | { error: string; filename: string }> {
   const auth = await requireRoles(ROLES.CONTENT)
   if ('error' in auth) return { error: auth.error, filename: input.filename }
 
@@ -186,6 +195,17 @@ export async function importSermonManuscript(input: {
   }
 
   const supabase = createAdminClient()
+
+  const existingSermon = await findExistingSermonByTitle(supabase, parsed.title)
+  if (existingSermon) {
+    return {
+      filename: input.filename,
+      skipped: true,
+      slug: existingSermon.slug,
+      title: existingSermon.title,
+      reason: `Already exists as “${existingSermon.title}”.`,
+    }
+  }
 
   let notice: string | undefined
   let ai: AiSermonFields | null = null

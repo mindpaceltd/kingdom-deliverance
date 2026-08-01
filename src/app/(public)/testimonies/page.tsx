@@ -4,6 +4,7 @@ import { TestimoniesSection } from '@/components/home/testimonies-section'
 import { TestimonySubmitForm } from '@/components/testimonies/testimony-submit-form'
 import type { Metadata } from 'next'
 import { buildListPageMetadata } from '@/lib/seo/list-page-metadata'
+import { pageKeywords } from '@/lib/seo/brand-keywords'
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildListPageMetadata({
@@ -11,7 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       'Read and share testimonies of healing, deliverance, and breakthrough from Kingdom Deliverance Centre Uganda.',
     path: '/testimonies',
-    keywords: 'church testimonies Uganda, healing testimonies Kampala, deliverance testimonies KDC',
+    keywords: pageKeywords('testimonies'),
   })
 }
 

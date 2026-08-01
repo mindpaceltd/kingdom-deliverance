@@ -27,6 +27,7 @@ import { applyAiSeoFields } from '@/lib/admin/apply-ai-seo'
 import { computeSeoScore } from '@/lib/seo-scorer'
 import { cn } from '@/lib/utils'
 import type { Post, Tag } from '@/lib/types'
+import { BLOG_CATEGORIES } from '@/lib/blog/catalog'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -46,6 +47,7 @@ interface FormState {
   content: string
   featured_image: string
   type: 'blog' | 'news'
+  category: 'sermons' | 'teachings' | 'testimonies' | 'news' | 'bishop' | 'general'
   status: 'draft' | 'published' | 'scheduled'
   scheduled_at: string
   meta_title: string
@@ -68,6 +70,7 @@ export function PostEditorClient({ post, authorName, allTags, initialTags = [] }
     content: post?.content ?? '',
     featured_image: post?.featured_image ?? '',
     type: post?.type ?? 'blog',
+    category: (post?.category as FormState['category']) ?? 'teachings',
     status:
       post?.status === 'archived' || post?.status === 'trash'
         ? 'draft'
@@ -236,6 +239,7 @@ export function PostEditorClient({ post, authorName, allTags, initialTags = [] }
       content: form.content || undefined,
       featured_image: form.featured_image || undefined,
       type: form.type,
+      category: form.category,
       status: effectiveStatus,
       meta_title: form.meta_title.trim() || undefined,
       meta_description: form.meta_description.trim() || undefined,
@@ -353,6 +357,28 @@ export function PostEditorClient({ post, authorName, allTags, initialTags = [] }
                 <SelectContent>
                   <SelectItem value="blog">Blog</SelectItem>
                   <SelectItem value="news">News</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="post-category" className="text-sm font-medium">
+                Listing category
+              </Label>
+              <Select
+                value={form.category}
+                onValueChange={(v) => setField('category', v as FormState['category'])}
+                disabled={submitting}
+              >
+                <SelectTrigger id="post-category" className="w-full max-w-xs">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BLOG_CATEGORIES.filter((c) => c.value).map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

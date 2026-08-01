@@ -1,9 +1,11 @@
+import { BRAND_ALTERNATE_NAMES } from '@/lib/seo/brand-keywords'
+
 export function WebsiteSchema() {
   const websiteData = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'Kingdom Deliverance Centre Uganda',
-    alternateName: ['KDC Uganda', 'Kingdom Deliverance Centre'],
+    alternateName: [...BRAND_ALTERNATE_NAMES],
     url: 'https://kdcuganda.org',
     description:
       'Kingdom Deliverance Centre Uganda — a Pentecostal church in Kampala led by Bishop Climate Wiseman. Watch sermons, join live services, and grow in faith.',

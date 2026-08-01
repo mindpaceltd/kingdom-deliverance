@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Poppins } from "next/font/google";
 import Script from "next/script";
 import { createClient } from '@/lib/supabase/server';
+import { siteKeywordsString } from '@/lib/seo/brand-keywords';
 import { getOrgOgImageUrl, getSiteName } from '@/lib/seo/site-branding';
 import "./globals.css";
 
@@ -23,8 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const metaTitle = defaultSiteName;
   const metaDesc =
     "Kingdom Deliverance Centre Uganda (KDC) — Pentecostal church in Kampala led by Bishop Climate Wiseman. Sunday worship, live sermons, healing, deliverance, and ministry programs.";
-  const metaKeywords =
-    "church Uganda, Kampala church, Pentecostal church Uganda, Kingdom Deliverance Centre, KDC Uganda, Bishop Climate Wiseman, deliverance ministry Uganda, healing church Kampala, live church service Uganda, Christian church Kosovo Lungujja, worship Kampala, Bible study Uganda, Fire Service prayer";
+  const metaKeywords = siteKeywordsString();
   const siteIcon = "/favicon.ico";
   const siteOgImage = await getOrgOgImageUrl();
   const siteName = await getSiteName();
@@ -35,14 +35,14 @@ export async function generateMetadata(): Promise<Metadata> {
   const { data: settings } = await supabase
     .from('site_settings')
     .select('key, value')
-    .in('key', ['site_name', 'tagline', 'site_meta_title', 'site_meta_description', 'site_meta_keywords', 'site_icon', 'site_og_image']);
+    .in('key', ['site_name', 'tagline', 'site_meta_title', 'site_meta_description', 'site_meta_keywords', 'site_keywords', 'site_icon', 'site_og_image']);
 
   const s = new Map(settings?.map(i => [i.key, i.value]) || []);
 
   const resolvedSiteName = s.get('site_name') || siteName || defaultSiteName;
   const resolvedMetaTitle = s.get('site_meta_title') || resolvedSiteName;
   const resolvedMetaDesc = s.get('site_meta_description') || metaDesc;
-  const resolvedMetaKeywords = s.get('site_meta_keywords') || metaKeywords;
+  const resolvedMetaKeywords = s.get('site_meta_keywords') || s.get('site_keywords') || metaKeywords;
   const resolvedSiteIcon = s.get('site_icon') || siteIcon;
   const resolvedSiteOgImage = s.get('site_og_image') || siteOgImage;
 

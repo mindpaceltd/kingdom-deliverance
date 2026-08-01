@@ -68,6 +68,19 @@ export async function createGalleryItemsBulk(
   if ('error' in result) return result
 
   const supabase = createClient()
+
+  const urls = cleaned.map((entry) => entry.url)
+  const { data: existingRows } = await supabase
+    .from('gallery')
+    .select('image_url')
+    .in('image_url', urls)
+
+  const existingUrls = new Set((existingRows ?? []).map((row) => String(row.image_url)))
+  const unique = cleaned.filter((entry) => !existingUrls.has(entry.url))
+  if (unique.length === 0) {
+    return { success: true, count: 0 }
+  }
+
   const { data: last } = await supabase
     .from('gallery')
     .select('display_order')
@@ -76,7 +89,7 @@ export async function createGalleryItemsBulk(
     .maybeSingle()
 
   let nextOrder = (last?.display_order ?? 0) + 1
-  const rows = cleaned.map(({ url, title }) => ({
+  const rows = unique.map(({ url, title }) => ({
     image_url: url,
     album,
     title: title?.trim() || null,

@@ -2,6 +2,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { SettingsForm } from '@/components/admin/settings/settings-form'
 import { CHURCH_SERVICE_TIMES_TEXT } from '@/lib/church-service-times'
 import { DEFAULT_YOUTUBE_CHANNEL_ID, DEFAULT_YOUTUBE_CHANNEL_URL } from '@/lib/youtube-live'
+import { siteKeywordsString } from '@/lib/seo/brand-keywords'
 import type { SiteSetting } from '@/lib/types'
 
 const SETTINGS_KEYS = [
@@ -24,7 +25,7 @@ const SETTINGS_KEYS = [
   'site_icon',
   'site_meta_title',
   'site_meta_description',
-  'site_keywords',
+  'site_meta_keywords',
   'site_og_image',
   'mission',
   'vision',
@@ -63,6 +64,7 @@ const KDC_DEFAULTS: Partial<Record<(typeof SETTINGS_KEYS)[number], string>> = {
   vision: 'A community that is wealthy, healthy, and wise',
   address: 'Kosovo–Lungujja, Kampala, Uganda',
   service_times: CHURCH_SERVICE_TIMES_TEXT,
+  site_meta_keywords: siteKeywordsString(),
   youtube_url: DEFAULT_YOUTUBE_CHANNEL_URL,
   youtube_channel_id: DEFAULT_YOUTUBE_CHANNEL_ID,
 }
@@ -72,11 +74,15 @@ export default async function AdminSettingsPage() {
   const { data: settings } = await admin
     .from('site_settings')
     .select('*')
-    .in('key', [...SETTINGS_KEYS])
+    .in('key', [...SETTINGS_KEYS, 'site_keywords'])
 
   const settingsMap = new Map<string, string>()
   for (const s of settings ?? []) {
     settingsMap.set(s.key, s.value ?? '')
+  }
+
+  if (!settingsMap.get('site_meta_keywords')?.trim() && settingsMap.get('site_keywords')?.trim()) {
+    settingsMap.set('site_meta_keywords', settingsMap.get('site_keywords')!)
   }
 
   const allSettings: SiteSetting[] = SETTINGS_KEYS.map((key) => ({

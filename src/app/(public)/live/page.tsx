@@ -8,6 +8,7 @@ import { getLiveStreamConfig } from '@/lib/live-stream'
 import { YouTubeLivePlayer } from '@/components/live/youtube-live-player'
 import { normalizeExternalHref } from '@/lib/utils/external-url'
 import { buildListPageMetadata } from '@/lib/seo/list-page-metadata'
+import { pageKeywords } from '@/lib/seo/brand-keywords'
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildListPageMetadata({
@@ -15,8 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       'Watch Kingdom Deliverance Centre Uganda live on YouTube. Join Sunday English and Luganda services, Bible Study, and Fire Service from Kampala.',
     path: '/live',
-    keywords:
-      'KDC Uganda live stream, church live Uganda, Bishop Climate live, Sunday service live Kampala, YouTube church Uganda',
+    keywords: pageKeywords('live'),
   })
 }
 

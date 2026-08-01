@@ -79,7 +79,7 @@ export default async function GrowthCoachPage() {
   return (
     <div className="space-y-6">
       <DmPageHeader
-        title="Growth Coach"
+      title="Growth Coach"
         description="Daily score, reasons, and actionable recommendations grounded in KDC’s live digital performance."
         actions={
           <div className="flex flex-wrap gap-2">

@@ -9,6 +9,7 @@ import {
 } from '@/lib/cms/faq-page-defaults'
 import { normalizeMediaUrl } from '@/lib/media-url'
 import { buildCmsPageMetadata } from '@/lib/seo/cms-page-metadata'
+import { pageKeywords } from '@/lib/seo/brand-keywords'
 import { FaqSchema } from '@/components/seo/faq-schema'
 
 export const revalidate = 3600
@@ -28,9 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
     slug: 'faq',
     path: '/faq',
     defaultTitle: 'Frequently Asked Questions',
-    defaultDescription:
-      'Answers about Kingdom Deliverance Centre Uganda — service times in Kampala, giving, live stream, ministries, and how to visit our church.',
-    content,
+    defaultKeywords: pageKeywords('faq'),
     heroImageUrl: normalizeMediaUrl(content?.hero?.imageUrl) || DEFAULT_FAQ_HERO_IMAGE,
   })
 }

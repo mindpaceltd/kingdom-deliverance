@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { buildListPageMetadata } from '@/lib/seo/list-page-metadata'
+import { pageKeywords } from '@/lib/seo/brand-keywords'
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildListPageMetadata({
@@ -7,7 +8,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       'Give securely online to Kingdom Deliverance Centre Uganda — tithes, offerings, and ministry support via mobile money and card.',
     path: '/donations',
-    keywords: 'donate KDC Uganda, online giving Kampala church, tithe Uganda, church offering online',
+    keywords: pageKeywords('donations'),
   })
 }
 

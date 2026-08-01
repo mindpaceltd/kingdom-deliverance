@@ -7,6 +7,7 @@ import { EventImage } from "@/components/content/event-image";
 import { formatSafeDate } from "@/lib/media-url";
 import { getEventsHeroUrl } from "@/lib/seo/page-hero";
 import { buildListPageMetadata } from "@/lib/seo/list-page-metadata";
+import { pageKeywords } from "@/lib/seo/brand-keywords";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildListPageMetadata({
@@ -14,8 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       "Upcoming church events, conferences, outreaches, and special services at Kingdom Deliverance Centre Uganda in Kampala.",
     path: "/events",
-    keywords:
-      "KDC Uganda events, church events Kampala, Christian conferences Uganda, Fire Service Kampala, church outreach Uganda",
+    keywords: pageKeywords('events'),
     ogType: "event",
   });
 }
