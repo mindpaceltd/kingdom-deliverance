@@ -183,7 +183,12 @@ export async function getIntelligenceDashboardData() {
 
   const { data: sources } = await admin.from('dm_competitor_sources').select('id, discovery_status')
 
-  const gapMatrix = await buildContentGapMatrix()
+  let gapMatrix: Awaited<ReturnType<typeof buildContentGapMatrix>> | null = null
+  try {
+    gapMatrix = await buildContentGapMatrix()
+  } catch (err) {
+    console.error('[competitor-intelligence] gap matrix failed:', err)
+  }
 
   return {
     trackedPeers: compList.length,

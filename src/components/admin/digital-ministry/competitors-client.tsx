@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -25,21 +26,31 @@ import {
 import type { StrategyReportPayload } from '@/lib/digital-ministry/competitor-intelligence/types'
 import type { CompetitorCaptureRunResult } from '@/lib/digital-ministry/competitor-intelligence/types'
 import type { ContentGapMatrix } from '@/lib/digital-ministry/competitor-intelligence/types'
-import { ContentGapMatrix as ContentGapMatrixView } from '@/components/admin/digital-ministry/content-gap-matrix'
 import { cn } from '@/lib/utils'
 import {
   AlertTriangle,
   BarChart3,
   CheckCircle2,
   ChevronRight,
+  Download,
   Loader2,
   Plus,
   RefreshCw,
   Sparkles,
   Trash2,
   XCircle,
-  FileDown,
 } from 'lucide-react'
+
+const ContentGapMatrixView = dynamic(
+  () =>
+    import('@/components/admin/digital-ministry/content-gap-matrix').then(
+      (m) => m.ContentGapMatrixHeatmap
+    ),
+  {
+    ssr: false,
+    loading: () => <p className="text-xs text-muted-foreground">Loading gap matrix…</p>,
+  }
+)
 
 type Comp = {
   id: string
@@ -412,7 +423,7 @@ export function CompetitorsClient({
                       target="_blank"
                       rel="noreferrer"
                     >
-                      <FileDown className="mr-1 size-3" />
+                      <Download className="mr-1 size-3" />
                       PDF report
                     </a>
                   </Button>

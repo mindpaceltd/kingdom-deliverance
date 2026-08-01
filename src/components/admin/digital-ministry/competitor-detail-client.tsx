@@ -1,15 +1,26 @@
 'use client'
 
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { DmCard } from '@/components/admin/digital-ministry/dm-ui'
 import { captureCompetitorIntelligence } from '@/lib/digital-ministry/competitors'
-import { ContentGapMatrix as ContentGapMatrixView } from '@/components/admin/digital-ministry/content-gap-matrix'
 import type { ContentGapMatrix } from '@/lib/digital-ministry/competitor-intelligence/types'
 import { cn } from '@/lib/utils'
 import { ArrowLeft, BarChart3, Loader2 } from 'lucide-react'
+
+const ContentGapMatrixView = dynamic(
+  () =>
+    import('@/components/admin/digital-ministry/content-gap-matrix').then(
+      (m) => m.ContentGapMatrixHeatmap
+    ),
+  {
+    ssr: false,
+    loading: () => <p className="text-xs text-muted-foreground">Loading gap matrix…</p>,
+  }
+)
 
 type Tab = 'overview' | 'content' | 'topics' | 'analysis'
 

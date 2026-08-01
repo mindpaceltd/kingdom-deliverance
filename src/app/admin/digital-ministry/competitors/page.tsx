@@ -6,7 +6,14 @@ import { fetchIntelligenceDashboard, listCompetitors } from '@/lib/digital-minis
 import { parseCompetitorPlatforms } from '@/lib/digital-ministry/competitor-platforms'
 
 export default async function CompetitorsPage() {
-  const [competitors, dashboard] = await Promise.all([listCompetitors(), fetchIntelligenceDashboard()])
+  let competitors: Awaited<ReturnType<typeof listCompetitors>> = []
+  let dashboard: Awaited<ReturnType<typeof fetchIntelligenceDashboard>> = null
+
+  try {
+    ;[competitors, dashboard] = await Promise.all([listCompetitors(), fetchIntelligenceDashboard()])
+  } catch (err) {
+    console.error('[competitors page]', err)
+  }
 
   return (
     <div className="space-y-6">
@@ -30,6 +37,13 @@ export default async function CompetitorsPage() {
           hint="Content gaps from AI strategy"
         />
       </div>
+
+      {!dashboard ? (
+        <p className="rounded-xl border border-amber-200/80 bg-amber-50/50 px-4 py-2.5 text-sm text-amber-950">
+          Dashboard metrics could not be loaded — the watchlist below should still work. Refresh or check server logs if
+          this persists.
+        </p>
+      ) : null}
 
       <CompetitorsClient
         dashboard={dashboard}

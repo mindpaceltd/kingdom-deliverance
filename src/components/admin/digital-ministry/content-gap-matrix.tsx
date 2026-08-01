@@ -20,7 +20,7 @@ function cellClass(intensity: number, isKdc: boolean) {
   return 'bg-amber-100 text-amber-950'
 }
 
-export function ContentGapMatrix({
+export function ContentGapMatrixHeatmap({
   matrix,
   compact = false,
   className,
