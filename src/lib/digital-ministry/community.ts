@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { requireStaff } from '@/lib/authz'
 import { generateGeminiJson } from '@/lib/digital-ministry/gemini'
+import { tryDecryptSecret } from '@/lib/digital-ministry/tokens'
+import { metaConfigured, META_GRAPH_BASE } from '@/lib/meta/oauth'
 
 function revalidate() {
   revalidatePath('/admin/digital-ministry/community')
@@ -96,6 +98,117 @@ export async function syncWebsiteCommunityInbox() {
 
   revalidate()
   return { imported }
+}
+
+/** Pull recent Facebook Page comments into the community inbox (requires Meta page token). */
+export async function syncFacebookCommunityInbox() {
+  const auth = await requireStaff()
+  if ('error' in auth) return { error: auth.error }
+
+  if (!metaConfigured()) {
+    return { error: 'Meta OAuth is not configured' }
+  }
+
+  const admin = createAdminClient()
+  const { data: accounts } = await admin
+    .from('dm_social_accounts')
+    .select('id, account_id, account_name, token_encrypted')
+    .eq('platform', 'facebook')
+    .eq('status', 'connected')
+    .is('deleted_at', null)
+    .limit(3)
+
+  let imported = 0
+  let scanned = 0
+
+  for (const account of accounts ?? []) {
+    if (!account.account_id || String(account.account_id).startsWith('no-pages:')) continue
+    const token = tryDecryptSecret(account.token_encrypted)
+    if (!token) continue
+
+    const postsUrl = new URL(`${META_GRAPH_BASE}/${account.account_id}/posts`)
+    postsUrl.searchParams.set('fields', 'id,message,created_time')
+    postsUrl.searchParams.set('limit', '8')
+    postsUrl.searchParams.set('access_token', token)
+    const postsRes = await fetch(postsUrl.toString())
+    const postsJson = (await postsRes.json()) as {
+      data?: Array<{ id: string; message?: string }>
+      error?: { message?: string }
+    }
+    if (!postsRes.ok || postsJson.error) continue
+
+    for (const post of postsJson.data ?? []) {
+      scanned += 1
+      const commentsUrl = new URL(`${META_GRAPH_BASE}/${post.id}/comments`)
+      commentsUrl.searchParams.set('fields', 'id,from,message,created_time')
+      commentsUrl.searchParams.set('filter', 'stream')
+      commentsUrl.searchParams.set('limit', '25')
+      commentsUrl.searchParams.set('access_token', token)
+      const commentsRes = await fetch(commentsUrl.toString())
+      const commentsJson = (await commentsRes.json()) as {
+        data?: Array<{
+          id: string
+          message?: string
+          from?: { name?: string; id?: string }
+          created_time?: string
+        }>
+      }
+      if (!commentsRes.ok) continue
+
+      for (const c of commentsJson.data ?? []) {
+        if (!c.message?.trim()) continue
+        const externalId = `fb_comment:${c.id}`
+        const { data: existing } = await admin
+          .from('dm_comments')
+          .select('id')
+          .eq('external_id', externalId)
+          .maybeSingle()
+        if (existing) continue
+
+        await admin.from('dm_comments').insert({
+          platform: 'facebook',
+          external_id: externalId,
+          author_name: c.from?.name || 'Facebook commenter',
+          body: c.message.trim(),
+          category: 'question',
+          sentiment: 'neutral',
+          status: 'new',
+          metadata: {
+            source: 'facebook_page_comments',
+            page_id: account.account_id,
+            page_name: account.account_name,
+            post_id: post.id,
+            from_id: c.from?.id,
+            created_time: c.created_time,
+          },
+        })
+        imported += 1
+      }
+    }
+  }
+
+  revalidate()
+  return { imported, scanned }
+}
+
+/** Sync website queues + Facebook Page comments in one action. */
+export async function syncCommunityInbox() {
+  const auth = await requireStaff()
+  if ('error' in auth) return { error: auth.error }
+
+  const web = await syncWebsiteCommunityInbox()
+  if ('error' in web) return web
+
+  let fbImported = 0
+  const fb = await syncFacebookCommunityInbox()
+  if (!('error' in fb)) fbImported = fb.imported
+
+  return {
+    imported: web.imported + fbImported,
+    website: web.imported,
+    facebook: fbImported,
+    facebookError: 'error' in fb ? fb.error : undefined,
+  }
 }
 
 export async function draftCommentReply(commentId: string) {

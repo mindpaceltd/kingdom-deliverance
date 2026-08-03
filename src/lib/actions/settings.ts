@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { requireAdmin } from '@/lib/authz'
 import { ensurePaymentGateways } from '@/lib/payments/ensure-payment-gateways'
 import { sanitizeYouTubeChannelId } from '@/lib/youtube-live'
+import { syncServiceTimesToCms } from '@/lib/cms/sync-service-times'
 
 export async function saveSettings(
   data: Record<string, string>
@@ -30,11 +31,21 @@ export async function saveSettings(
     }
   }
 
+  if (typeof data.service_times === 'string' && data.service_times.trim()) {
+    try {
+      await syncServiceTimesToCms(admin, data.service_times)
+    } catch (err) {
+      console.warn('[saveSettings] service times CMS sync failed', err)
+    }
+  }
+
   revalidatePath('/')
   revalidatePath('/contact')
+  revalidatePath('/faq')
   revalidatePath('/give')
   revalidatePath('/live')
   revalidatePath('/admin/settings')
+  revalidatePath('/admin/pages')
 
   const paymentKeys = [
     'pesapal_enabled',

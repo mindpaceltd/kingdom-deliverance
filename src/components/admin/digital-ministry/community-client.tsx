@@ -9,7 +9,7 @@ import { DmCard } from '@/components/admin/digital-ministry/dm-ui'
 import {
   addManualComment,
   draftCommentReply,
-  syncWebsiteCommunityInbox,
+  syncCommunityInbox,
   updateCommentStatus,
 } from '@/lib/digital-ministry/community'
 import { cn } from '@/lib/utils'
@@ -191,12 +191,18 @@ export function CommunityClient({ comments }: { comments: Comment[] }) {
                 disabled={pending}
                 onClick={() =>
                   run(async () => {
-                    const r = await syncWebsiteCommunityInbox()
+                    const r = await syncCommunityInbox()
                     if ('error' in r && r.error) setError(r.error)
                     else {
                       setMessage(
-                        `Synced website inbox${
-                          'imported' in r ? ` · ${r.imported} new` : ''
+                        `Synced inbox${
+                          'imported' in r
+                            ? ` · ${r.imported} new${
+                                'facebook' in r && r.facebook
+                                  ? ` (web ${r.website ?? 0}, FB ${r.facebook})`
+                                  : ''
+                              }`
+                            : ''
                         }`
                       )
                       router.refresh()
@@ -209,7 +215,7 @@ export function CommunityClient({ comments }: { comments: Comment[] }) {
                 ) : (
                   <RefreshCw className="mr-1.5 size-3.5" />
                 )}
-                Sync website
+                Sync inbox
               </Button>
               <Button
                 size="sm"
@@ -330,8 +336,8 @@ export function CommunityClient({ comments }: { comments: Comment[] }) {
               </p>
               <p className="mt-1.5 max-w-sm text-xs text-muted-foreground">
                 {comments.length === 0
-                  ? 'Sync website contact and prayer queues, or add a manual note from a call or WhatsApp.'
-                  : 'Try another filter, or sync the website for new submissions.'}
+                  ? 'Sync website contact/prayer and Facebook Page comments, or add a manual note.'
+                  : 'Try another filter, or sync the inbox for new items.'}
               </p>
               {comments.length === 0 ? (
                 <Button
@@ -340,7 +346,7 @@ export function CommunityClient({ comments }: { comments: Comment[] }) {
                   disabled={pending}
                   onClick={() =>
                     run(async () => {
-                      const r = await syncWebsiteCommunityInbox()
+                      const r = await syncCommunityInbox()
                       if ('error' in r && r.error) setError(r.error)
                       else {
                         setMessage(
@@ -352,7 +358,7 @@ export function CommunityClient({ comments }: { comments: Comment[] }) {
                   }
                 >
                   <RefreshCw className="mr-1.5 size-3.5" />
-                  Sync website inbox
+                  Sync website + Facebook
                 </Button>
               ) : (
                 <Button size="sm" className="mt-5" variant="outline" onClick={() => setFilter('all')}>

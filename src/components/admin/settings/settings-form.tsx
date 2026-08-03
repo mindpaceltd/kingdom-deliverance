@@ -383,6 +383,10 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                       <div className="sm:col-span-2 space-y-1.5">
                          <Label>Service Times</Label>
                          <Textarea value={values.service_times} onChange={e => handleChange('service_times', e.target.value)} rows={3} />
+                         <p className="text-[11px] text-muted-foreground">
+                           Saving updates the homepage “Join Us This Week” slots, Contact page, and FAQ service-times answer.
+                           One line per service, e.g. <span className="font-mono">Sunday English Service — 8:00 AM – 10:30 AM</span>
+                         </p>
                       </div>
                    </div>
                 </div>

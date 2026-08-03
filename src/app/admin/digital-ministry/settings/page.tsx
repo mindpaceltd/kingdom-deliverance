@@ -9,6 +9,10 @@ export default async function SettingsPage() {
   const [health, settings] = await Promise.all([getConnectionHealth(), getDmSettings()])
   const notify = settings.notify_email as { email?: string } | undefined
   const prefs = settings.studio_prefs as { defaultTone?: string } | undefined
+  const reportEmailsRaw = settings.competitor_report_emails
+  const competitorReportEmails = Array.isArray(reportEmailsRaw)
+    ? reportEmailsRaw.filter((e): e is string => typeof e === 'string').join(', ')
+    : ''
 
   const checks = health
     ? [health.google, health.meta, health.gemini, health.tokenEncryption]
@@ -63,6 +67,7 @@ export default async function SettingsPage() {
         health={health}
         notifyEmail={notify?.email || ''}
         defaultTone={(prefs?.defaultTone as DmAiTone) || 'evangelism'}
+        competitorReportEmails={competitorReportEmails}
       />
     </div>
   )

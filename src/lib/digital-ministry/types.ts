@@ -88,7 +88,7 @@ export const DM_STUDIO_PLATFORMS: {
   { id: 'tiktok', label: 'TikTok', publishSupport: 'limited' },
   { id: 'x', label: 'X', publishSupport: 'manual' },
   { id: 'linkedin', label: 'LinkedIn', publishSupport: 'limited' },
-  { id: 'website', label: 'Website / Blog', publishSupport: 'manual' },
+  { id: 'website', label: 'Website / Blog', publishSupport: 'full' },
   { id: 'email', label: 'Newsletter', publishSupport: 'manual' },
 ]
 

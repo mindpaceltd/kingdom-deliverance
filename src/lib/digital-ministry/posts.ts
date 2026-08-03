@@ -373,12 +373,47 @@ async function tryPublishMetaPage(params: {
   accessToken: string
   message: string
   platform: 'facebook' | 'instagram'
+  imageUrl?: string | null
 }): Promise<{ ok: true; externalId?: string; externalUrl?: string } | { ok: false; error: string }> {
   if (params.platform === 'instagram') {
-    // Feed photo publish needs media; text-only → manual for now
+    if (!params.imageUrl?.trim()) {
+      return {
+        ok: false,
+        error: 'Instagram Graph publish needs an image URL. Attach media or mark as manual publish.',
+      }
+    }
+    // Create media container then publish
+    const createUrl = new URL(`${META_GRAPH_BASE}/${params.accountId}/media`)
+    const createRes = await fetch(createUrl.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        image_url: params.imageUrl,
+        caption: params.message,
+        access_token: params.accessToken,
+      }),
+    })
+    const createJson = (await createRes.json()) as { id?: string; error?: { message?: string } }
+    if (!createRes.ok || !createJson.id) {
+      return { ok: false, error: createJson.error?.message || `Instagram media create failed (${createRes.status})` }
+    }
+    const pubUrl = new URL(`${META_GRAPH_BASE}/${params.accountId}/media_publish`)
+    const pubRes = await fetch(pubUrl.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        creation_id: createJson.id,
+        access_token: params.accessToken,
+      }),
+    })
+    const pubJson = (await pubRes.json()) as { id?: string; error?: { message?: string } }
+    if (!pubRes.ok || !pubJson.id) {
+      return { ok: false, error: pubJson.error?.message || `Instagram publish failed (${pubRes.status})` }
+    }
     return {
-      ok: false,
-      error: 'Instagram Graph publish needs an image URL. Attach media or mark as manual publish.',
+      ok: true,
+      externalId: pubJson.id,
+      externalUrl: `https://www.instagram.com/`,
     }
   }
 
@@ -410,7 +445,7 @@ export async function publishDmPostNow(id: string) {
   const admin = createAdminClient()
   const { data: post } = await admin
     .from('dm_posts')
-    .select('id, title, body, platforms, status, ai_metadata')
+    .select('id, title, body, body_markdown, platforms, status, ai_metadata, media_ids')
     .eq('id', id)
     .is('deleted_at', null)
     .maybeSingle()
@@ -420,9 +455,27 @@ export async function publishDmPostNow(id: string) {
   const meta = (post.ai_metadata ?? {}) as {
     platformCaptions?: Record<string, string>
     trimToLimit?: boolean
+    imageUrl?: string
+  }
+  let imageUrl: string | null = typeof meta.imageUrl === 'string' ? meta.imageUrl : null
+  const mediaIds = Array.isArray(post.media_ids) ? (post.media_ids as string[]) : []
+  if (!imageUrl && mediaIds.length) {
+    const { data: mediaRows } = await admin
+      .from('media')
+      .select('url')
+      .in('id', mediaIds)
+      .limit(5)
+    for (const m of mediaRows ?? []) {
+      if (typeof m.url === 'string' && m.url.trim()) {
+        imageUrl = m.url.trim()
+        break
+      }
+    }
   }
   const trim = meta.trimToLimit !== false
   const { platformCaption } = await import('@/lib/digital-ministry/platform-guides')
+  const { generateSlug } = await import('@/lib/utils')
+  const { revalidateSitemap } = await import('@/lib/seo/revalidate-sitemap')
 
   const platforms = (post.platforms as string[]) ?? []
   if (platforms.length === 0) return { error: 'Select at least one platform' }
@@ -473,13 +526,18 @@ export async function publishDmPostNow(id: string) {
     const account = accountByPlatform.get(platform)
     const now = new Date().toISOString()
 
-    if (platform === 'facebook' && metaConfigured() && account?.account_id && account.token_encrypted) {
+    if (
+      (platform === 'facebook' || platform === 'instagram') &&
+      metaConfigured() &&
+      account?.account_id &&
+      account.token_encrypted
+    ) {
       const token = tryDecryptSecret(account.token_encrypted)
       if (token && !String(account.account_id).startsWith('no-pages:')) {
         const message = platformCaption(
           post.title || '',
           post.body || '',
-          'facebook',
+          platform,
           meta.platformCaptions,
           trim
         )
@@ -487,7 +545,8 @@ export async function publishDmPostNow(id: string) {
           accountId: account.account_id,
           accessToken: token,
           message,
-          platform: 'facebook',
+          platform,
+          imageUrl,
         })
         if (result.ok) {
           anyPublished = true
@@ -517,6 +576,67 @@ export async function publishDmPostNow(id: string) {
           .eq('id', pub.id)
         continue
       }
+    }
+
+    if (platform === 'website') {
+      const title = (post.title || 'Untitled update').trim()
+      const slugBase = generateSlug(title) || `dm-${id.slice(0, 8)}`
+      const slug = `${slugBase}-${Date.now().toString(36)}`
+      const bodyHtml =
+        (typeof post.body === 'string' && post.body.trim()) ||
+        (typeof post.body_markdown === 'string' && post.body_markdown.trim()) ||
+        `<p>${defaultMessage}</p>`
+      const excerpt = stripHtmlForPublish(String(bodyHtml)).slice(0, 180)
+      const { data: blogPost, error: blogErr } = await admin
+        .from('posts')
+        .insert({
+          title,
+          slug,
+          content: bodyHtml,
+          excerpt,
+          featured_image: imageUrl,
+          type: 'blog',
+          status: 'published',
+          published_at: now,
+          meta_title: title.slice(0, 60),
+          meta_description: excerpt.slice(0, 155),
+        })
+        .select('id, slug')
+        .single()
+
+      if (!blogErr && blogPost) {
+        anyPublished = true
+        await admin
+          .from('dm_post_publications')
+          .update({
+            status: 'published' as DmPublicationStatus,
+            external_id: blogPost.id,
+            external_url: `/blog/${blogPost.slug}`,
+            error_message: null,
+            published_at: now,
+            updated_at: now,
+          })
+          .eq('id', pub.id)
+        revalidatePath('/blog')
+        revalidatePath(`/blog/${blogPost.slug}`)
+        revalidatePath('/')
+        try {
+          await revalidateSitemap()
+        } catch {
+          /* ignore */
+        }
+        continue
+      }
+      anyFailed = true
+      await admin
+        .from('dm_post_publications')
+        .update({
+          status: 'failed',
+          error_message: blogErr?.message || 'Website publish failed',
+          updated_at: now,
+        })
+        .eq('id', pub.id)
+      continue
     }
 
     if (support === 'full' && (platform === 'facebook' || platform === 'instagram') && !metaConfigured()) {

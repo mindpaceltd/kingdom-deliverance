@@ -78,14 +78,17 @@ export function SettingsClient({
   health,
   notifyEmail,
   defaultTone,
+  competitorReportEmails = '',
 }: {
   health: Health
   notifyEmail: string
   defaultTone: DmAiTone
+  competitorReportEmails?: string
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [email, setEmail] = useState(notifyEmail)
+  const [reportEmails, setReportEmails] = useState(competitorReportEmails)
   const [tone, setTone] = useState<DmAiTone>(defaultTone)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -220,6 +223,47 @@ export function SettingsClient({
           <DmCard className="space-y-4 p-5">
             <div className="flex items-start gap-3">
               <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted">
+                <Mail className="size-4 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">Competitor strategy report emails</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Weekly AI strategy report (Mondays). Comma or newline separated. Falls back to site contact email if empty.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Recipients
+              </label>
+              <Input
+                value={reportEmails}
+                onChange={(e) => setReportEmails(e.target.value)}
+                placeholder="media@kdcuganda.org, pastor@kdcuganda.org"
+              />
+            </div>
+            <Button
+              size="sm"
+              disabled={pending}
+              onClick={() => {
+                const list = reportEmails
+                  .split(/[\n,;]+/)
+                  .map((e) => e.trim())
+                  .filter((e) => e.includes('@'))
+                save(
+                  () => setDmSetting('competitor_report_emails', list),
+                  list.length ? `Saved ${list.length} report recipient(s)` : 'Cleared report recipients (will use contact email)'
+                )
+              }}
+            >
+              {pending ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : null}
+              Save report emails
+            </Button>
+          </DmCard>
+
+          <DmCard className="space-y-4 p-5">
+            <div className="flex items-start gap-3">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted">
                 <Sparkles className="size-4 text-muted-foreground" />
               </div>
               <div>
@@ -309,8 +353,7 @@ export function SettingsClient({
               Authorize with{' '}
               <code className="rounded bg-muted px-1 py-0.5 text-[10px]">CRON_SECRET</code> or{' '}
               <code className="rounded bg-muted px-1 py-0.5 text-[10px]">DM_CRON_SECRET</code>.
-              Report recipients: <code className="rounded bg-muted px-1 py-0.5 text-[10px]">dm_settings.competitor_report_emails</code>{' '}
-              (falls back to site contact email).
+              Edit report recipients in the card on the left.
             </p>
           </DmCard>
 

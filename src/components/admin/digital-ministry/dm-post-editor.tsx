@@ -355,18 +355,24 @@ export function DmPostEditor({
             Platforms
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Select networks to unlock recommendations and live previews.
+            Select networks. Badge shows auto-publish vs manual.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {DM_STUDIO_PLATFORMS.map((p) => {
               const on = platforms.includes(p.id)
               const guide = DM_PLATFORM_GUIDES[p.id]
+              const mode =
+                p.publishSupport === 'full'
+                  ? 'Auto'
+                  : p.publishSupport === 'limited'
+                    ? 'Limited'
+                    : 'Manual'
               return (
                 <button
                   key={p.id}
                   type="button"
                   onClick={() => togglePlatform(p.id)}
-                  title={guide?.recommendations[0]}
+                  title={`${guide?.recommendations[0] ?? p.label} · ${mode} publish`}
                   className={cn(
                     'rounded-full border px-2.5 py-1 text-xs transition-colors',
                     on
@@ -376,6 +382,9 @@ export function DmPostEditor({
                   style={on && guide ? { background: guide.accent } : undefined}
                 >
                   {p.label}
+                  <span className={cn('ml-1 opacity-80', on ? 'text-white/80' : 'text-muted-foreground')}>
+                    · {mode}
+                  </span>
                 </button>
               )
             })}
