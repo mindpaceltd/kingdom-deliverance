@@ -2,12 +2,14 @@ import { format } from 'date-fns'
 
 export const FIRE_SERVICE_EVENT_SLUG = 'fire-service-night-of-prayer-deliverance-kdc'
 const EAT_TIMEZONE = 'Africa/Kampala'
-/** Last Friday of each month, 7:00 PM – 9:00 PM EAT */
-export const FIRE_SERVICE_START_HOUR = 19
+/** Last Friday of each month, 6:00 PM – 9:30 PM EAT */
+export const FIRE_SERVICE_START_HOUR = 18
+export const FIRE_SERVICE_START_MINUTE = 0
 export const FIRE_SERVICE_END_HOUR = 21
+export const FIRE_SERVICE_END_MINUTE = 30
 export const FIRE_SERVICE_PROMO_LEAD_DAYS = 7
 export const FIRE_SERVICE_LOCATION = 'Kingdom Deliverance Centre, Kosovo–Lungujja, Kampala'
-export const FIRE_SERVICE_TIME_LABEL = '7:00 PM — 9:00 PM (EAT)'
+export const FIRE_SERVICE_TIME_LABEL = '6:00 PM — 9:30 PM (EAT)'
 
 export interface FireServiceOccurrence {
   year: number
@@ -81,7 +83,7 @@ function eatOccurrenceToUtcDate(
 export function getUpcomingFireServiceOccurrence(now = new Date()): FireServiceOccurrence {
   const eatNow = getEatParts(now)
   let occurrence = getLastFridayOfMonth(eatNow.year, eatNow.month)
-  let end = eatOccurrenceToUtcDate(occurrence, FIRE_SERVICE_END_HOUR)
+  let end = eatOccurrenceToUtcDate(occurrence, FIRE_SERVICE_END_HOUR, FIRE_SERVICE_END_MINUTE)
 
   if (now.getTime() > end.getTime()) {
     const nextMonth = eatNow.month === 11 ? 0 : eatNow.month + 1
@@ -94,8 +96,16 @@ export function getUpcomingFireServiceOccurrence(now = new Date()): FireServiceO
 
 export function getFireServiceSchedule(now = new Date()): FireServiceSchedule {
   const occurrence = getUpcomingFireServiceOccurrence(now)
-  const start = eatOccurrenceToUtcDate(occurrence, FIRE_SERVICE_START_HOUR)
-  const end = eatOccurrenceToUtcDate(occurrence, FIRE_SERVICE_END_HOUR)
+  const start = eatOccurrenceToUtcDate(
+    occurrence,
+    FIRE_SERVICE_START_HOUR,
+    FIRE_SERVICE_START_MINUTE,
+  )
+  const end = eatOccurrenceToUtcDate(
+    occurrence,
+    FIRE_SERVICE_END_HOUR,
+    FIRE_SERVICE_END_MINUTE,
+  )
   const formattedDate = format(start, 'EEEE, MMMM d, yyyy')
 
   return {

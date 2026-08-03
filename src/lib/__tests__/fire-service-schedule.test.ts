@@ -60,7 +60,7 @@ describe('fire-service-schedule', () => {
 
   it('uses 7 PM – 9 PM EAT for the service window', () => {
     const schedule = getFireServiceSchedule(new Date('2026-06-20T12:00:00.000Z'))
-    expect(schedule.formattedTime).toBe('7:00 PM — 9:00 PM (EAT)')
+    expect(schedule.formattedTime).toBe('6:00 PM — 9:30 PM (EAT)')
   })
 
   it('shows the promo one week before through the end of the service', () => {

@@ -1,18 +1,20 @@
-import type { LucideIcon } from 'lucide-react'
+import type { ComponentType } from 'react'
 import {
-  Facebook,
   Globe2,
-  Instagram,
-  Linkedin,
   Mail,
   MessageCircle,
-  Music2,
-  Radio,
   Rss,
   Send,
   Share2,
-  Youtube,
 } from 'lucide-react'
+import {
+  IconFacebook,
+  IconInstagram,
+  IconLinkedin,
+  IconTiktok,
+  IconTwitter,
+  IconYoutube,
+} from '@/components/icons/social-inline'
 
 /** Keys stored in dm_competitors.platforms JSONB (URLs + optional metrics). */
 export type CompetitorPlatformKey =
@@ -38,7 +40,7 @@ export interface CompetitorPlatformField {
   label: string
   placeholder: string
   group: 'web' | 'social' | 'other'
-  icon: LucideIcon
+  icon: ComponentType<{ className?: string }>
   /** Shown in capture / performance panels */
   captureKind: 'web' | 'rss' | 'youtube' | 'social'
   metricLabels?: {
@@ -89,7 +91,7 @@ export const COMPETITOR_PLATFORM_FIELDS: CompetitorPlatformField[] = [
     label: 'YouTube channel',
     placeholder: 'https://youtube.com/@channel',
     group: 'social',
-    icon: Youtube,
+    icon: IconYoutube,
     captureKind: 'youtube',
     metricLabels: {
       subscribers: 'Subscribers',
@@ -102,7 +104,7 @@ export const COMPETITOR_PLATFORM_FIELDS: CompetitorPlatformField[] = [
     label: 'Facebook page',
     placeholder: 'https://facebook.com/…',
     group: 'social',
-    icon: Facebook,
+    icon: IconFacebook,
     captureKind: 'social',
     metricLabels: { followers: 'Followers', engagement: 'Engagement %' },
   },
@@ -111,7 +113,7 @@ export const COMPETITOR_PLATFORM_FIELDS: CompetitorPlatformField[] = [
     label: 'Instagram',
     placeholder: 'https://instagram.com/…',
     group: 'social',
-    icon: Instagram,
+    icon: IconInstagram,
     captureKind: 'social',
     metricLabels: { followers: 'Followers', engagement: 'Engagement %' },
   },
@@ -120,7 +122,7 @@ export const COMPETITOR_PLATFORM_FIELDS: CompetitorPlatformField[] = [
     label: 'TikTok',
     placeholder: 'https://tiktok.com/@…',
     group: 'social',
-    icon: Music2,
+    icon: IconTiktok,
     captureKind: 'social',
     metricLabels: { followers: 'Followers', views: 'Total views' },
   },
@@ -129,7 +131,7 @@ export const COMPETITOR_PLATFORM_FIELDS: CompetitorPlatformField[] = [
     label: 'X (Twitter)',
     placeholder: 'https://x.com/…',
     group: 'social',
-    icon: MessageCircle,
+    icon: IconTwitter,
     captureKind: 'social',
     metricLabels: { followers: 'Followers' },
   },
@@ -138,7 +140,7 @@ export const COMPETITOR_PLATFORM_FIELDS: CompetitorPlatformField[] = [
     label: 'LinkedIn',
     placeholder: 'https://linkedin.com/company/…',
     group: 'social',
-    icon: Linkedin,
+    icon: IconLinkedin,
     captureKind: 'social',
     metricLabels: { followers: 'Followers' },
   },

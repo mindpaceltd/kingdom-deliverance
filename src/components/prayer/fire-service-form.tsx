@@ -303,7 +303,7 @@ export function FireServiceForm() {
           Fire Service Prayer
         </h2>
         <p className="text-accent text-sm md:text-base font-medium tracking-wide">
-          Global Fire Altar · 7:00 PM — 9:00 PM (EAT)
+          Global Fire Altar · 6:00 PM — 9:30 PM (EAT)
         </p>
       </div>
 

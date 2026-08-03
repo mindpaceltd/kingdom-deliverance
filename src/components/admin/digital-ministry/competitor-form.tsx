@@ -221,7 +221,7 @@ export function CompetitorForm({
                   className={cn('space-y-1.5', isMultiline && 'sm:col-span-2')}
                 >
                   <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    <Icon className="size-3 opacity-70" />
+                    {Icon ? <Icon className="size-3 opacity-70" /> : null}
                     {field.label}
                   </label>
                   {isMultiline ? (
