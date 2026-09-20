@@ -13,6 +13,8 @@ import { getOrgOgImageUrl, getSiteName } from '@/lib/seo/site-branding'
 import { normalizeMediaUrl } from '@/lib/media-url'
 import { ProductPrice } from '@/components/shop/product-price'
 import { ProductViewTracker } from '@/components/shop/product-view-tracker'
+import { ProductSchema } from '@/components/seo/product-schema'
+import { BreadcrumbSchema, generateBreadcrumbs } from '@/components/seo/breadcrumb-schema'
 import type { Metadata } from 'next'
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -158,8 +160,24 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <ProductViewTracker productId={product.id} />
+    <>
+      <ProductSchema
+        product={{
+          name: product.name,
+          description: product.description || product.short_description,
+          slug: product.slug,
+          price: product.price_ugx || (displayPrice ? Math.round(displayPrice * RATE) : 0),
+          compare_at_price: product.regular_price_usd ? Math.round(product.regular_price_usd * RATE) : null,
+          currency: 'UGX',
+          image_url: product.image_url,
+          sku: `KDC-${product.id?.toString().slice(0, 8).toUpperCase()}`,
+          stock_quantity: product.stock_quantity,
+          is_active: product.is_active,
+        }}
+      />
+      <BreadcrumbSchema items={generateBreadcrumbs('product', product.name, product.slug)} />
+      <div className="min-h-screen bg-gray-50">
+        <ProductViewTracker productId={product.id} />
       {/* Main product area */}
       <div className="pt-20 lg:pt-24">
         <div className="container px-4 mx-auto max-w-6xl">
@@ -345,6 +363,7 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
         </div>
       </div>
     </div>
+    </>
   )
 }
 

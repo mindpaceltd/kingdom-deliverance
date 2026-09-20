@@ -8,10 +8,11 @@ export default function robots(): MetadataRoute.Robots {
       disallow: [
         '/admin/',
         '/api/',
+        '/account/',
         '/cart',
         '/checkout',
-        '/account/',
         '/search',
+        '/_next/',
       ],
     },
     sitemap: 'https://kdcuganda.org/sitemap.xml',

@@ -13,6 +13,7 @@ const nextConfig = {
   experimental: {
     webpackBuildWorker: false, // Disabling this saves significant RAM
     optimizePackageImports: [],
+    serverComponentsExternalPackages: ['bullmq', 'ioredis'],
   },
   images: {
     formats: ['image/avif', 'image/webp'],

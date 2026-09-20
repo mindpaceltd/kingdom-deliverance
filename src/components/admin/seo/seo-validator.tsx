@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { validateLiveUrlSeo } from '@/lib/actions/seo-validator'
 
 interface ValidationResult {
   status: 'pass' | 'warning' | 'fail'
@@ -41,59 +42,8 @@ export function SEOValidator() {
 
     setValidating(true)
     try {
-      // This would be a server action that validates SEO
-      // For now, we'll simulate a validation report
-      const mockReport: SEOValidationReport = {
-        url,
-        overall: 'needs_work',
-        score: 75,
-        timestamp: new Date().toISOString(),
-        validations: {
-          title: {
-            status: 'pass',
-            message: 'Title is optimal length (50-60 characters)',
-            details: 'Title: "Home | Kingdom Deliverance Centre Uganda" (42 chars)'
-          },
-          description: {
-            status: 'pass',
-            message: 'Meta description is optimal length (150-160 characters)',
-            details: 'Description: 158 characters'
-          },
-          h1: {
-            status: 'pass',
-            message: 'Exactly one H1 tag found',
-            details: 'H1: "Welcome to Kingdom Deliverance Centre Uganda"'
-          },
-          images: {
-            status: 'warning',
-            message: 'Some images missing alt text',
-            details: '3 of 8 images have alt text',
-            action: 'Add descriptive alt text to all images'
-          },
-          links: {
-            status: 'pass',
-            message: 'All internal links are working',
-            details: '24 internal links checked'
-          },
-          schema: {
-            status: 'pass',
-            message: 'Structured data found and valid',
-            details: 'Organization schema detected'
-          },
-          canonical: {
-            status: 'pass',
-            message: 'Canonical tag present',
-            details: 'Canonical URL matches page URL'
-          },
-          social: {
-            status: 'warning',
-            message: 'OpenGraph tags present but could be improved',
-            details: 'Missing og:image:width and og:image:height',
-            action: 'Add image dimensions to OpenGraph tags'
-          }
-        }
-      }
-      setReport(mockReport)
+      const realReport = await validateLiveUrlSeo(url)
+      setReport(realReport)
     } catch (error) {
       console.error('Validation failed:', error)
     } finally {

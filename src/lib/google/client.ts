@@ -53,7 +53,7 @@ export async function getAuthedGoogleClient(userId: string) {
     try {
       await oauth2Client.getAccessToken();
     } catch (refreshError: any) {
-      console.error('Google token refresh failed:', refreshError);
+      console.warn(`[Google OAuth] Token refresh skipped/failed for user ${userId}: ${refreshError?.message || 'Token expired or revoked'}`);
     }
   }
 
