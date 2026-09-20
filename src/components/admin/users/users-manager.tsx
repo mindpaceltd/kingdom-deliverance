@@ -14,6 +14,7 @@ import {
   SaveIcon,
   ExternalLinkIcon,
   XIcon,
+  KeyIcon,
 } from 'lucide-react'
 import { 
   DataTable, 
@@ -47,6 +48,7 @@ import {
   updateUserRole,
   deactivateUser,
   updateUserProfileAsAdmin,
+  sendPasswordResetForUser,
 } from '@/lib/actions/users'
 import type { Profile, UserRole } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -174,6 +176,20 @@ export function UsersManager({ initialUsers, currentUserId }: UsersManagerProps)
     setProfileMsg('Profile saved.')
   }
 
+  async function handleSendPasswordReset(user: UserRow) {
+    if (!user.email) {
+      alert('This user does not have an email address.')
+      return
+    }
+    if (!window.confirm(`Send a password reset link to ${user.email}?`)) return
+    const result = await sendPasswordResetForUser(user.email, user.role)
+    if ('success' in result) {
+      alert(`Password reset email successfully dispatched to ${user.email}.`)
+    } else {
+      alert(`Failed to send password reset: ${result.error}`)
+    }
+  }
+
   async function handleDeactivate(user: UserRow) {
     if (!window.confirm(`Permanently deactivate "${user.name || user.email}"?`)) return
     const result = await deactivateUser(user.id)
@@ -215,14 +231,9 @@ export function UsersManager({ initialUsers, currentUserId }: UsersManagerProps)
                <UserIcon className="size-4 text-muted-foreground" />
              )}
           </div>
-          <div className="flex flex-col min-w-0">
-             <button 
-               onClick={() => setSelectedUser(user)}
-               className="text-sm font-semibold hover:underline text-left truncate"
-             >
-               {user.name || 'Untitled'}
-             </button>
-             <span className="text-xs text-muted-foreground truncate">{user.email}</span>
+          <div>
+            <div className="font-medium text-sm text-foreground">{user.name || 'Unnamed'}</div>
+            <div className="text-xs text-muted-foreground">{user.email}</div>
           </div>
         </div>
       )
@@ -232,18 +243,20 @@ export function UsersManager({ initialUsers, currentUserId }: UsersManagerProps)
       header: 'Role',
       cell: (user) => (
         <span className={cn(
-          "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+          'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize',
           ROLE_COLORS[user.role]
         )}>
-          {ROLE_LABELS[user.role]}
+          {user.role}
         </span>
       )
     },
     {
       key: 'joined',
-      header: 'Date Joined',
+      header: 'Joined',
       cell: (user) => (
-        <span className="text-xs text-muted-foreground">{formatDate(user.created_at)}</span>
+        <span className="text-xs text-muted-foreground">
+          {formatDate(user.created_at)}
+        </span>
       )
     },
     {
@@ -258,10 +271,15 @@ export function UsersManager({ initialUsers, currentUserId }: UsersManagerProps)
                     <MoreVerticalIcon className="size-4" />
                  </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuContent align="end" className="w-48">
                  <DropdownMenuItem onClick={() => setSelectedUser(user)}>
                     <UserIcon className="size-4 mr-2" /> View Profile
                  </DropdownMenuItem>
+                 {user.email && (
+                   <DropdownMenuItem onClick={() => void handleSendPasswordReset(user)}>
+                      <KeyIcon className="size-4 mr-2" /> Reset Password
+                   </DropdownMenuItem>
+                 )}
                  {user.id !== currentUserId && (
                    <DropdownMenuItem onClick={() => handleDeactivate(user)} className="text-destructive">
                       <Trash2Icon className="size-4 mr-2" /> Deactivate
@@ -588,6 +606,15 @@ export function UsersManager({ initialUsers, currentUserId }: UsersManagerProps)
                   )}
                   {profileSaving ? 'Saving…' : 'Save profile'}
                 </Button>
+                {selectedUser.email && (
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2 border-white/20 text-white hover:bg-white/10"
+                    onClick={() => void handleSendPasswordReset(selectedUser)}
+                  >
+                    <KeyIcon className="size-4" /> Send Password Reset
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   className="w-full border-white/20 text-white hover:bg-white/10"

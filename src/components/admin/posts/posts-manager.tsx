@@ -11,22 +11,54 @@ import {
   ExternalLinkIcon,
   XIcon,
   GlobeIcon,
+  CalendarClockIcon,
+  SparklesIcon,
+  Loader2,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'sonner'
 
 import { StatusBadge } from '@/components/admin/status-badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useAdmin } from '@/lib/admin-context'
 import {
+  createPost,
   duplicatePost,
   trashPost,
   restorePost,
   permanentDeletePost,
+  bulkSchedulePosts,
 } from '@/lib/actions/posts'
+import { generatePostContent } from '@/lib/actions/ai'
 import { createClient } from '@/lib/supabase/client'
 import { getSeoScoreColor, filterPostsByStatus, type PostStatusFilter } from '@/lib/posts-helpers'
-import { cn } from '@/lib/utils'
+import { computeSeoScore } from '@/lib/seo-scorer'
+import {
+  defaultScheduleDatetimeLocal,
+  formatScheduledPublishLabel,
+  localDatetimeInputToIso,
+  toLocalDatetimeInputValue,
+} from '@/lib/admin/datetime-local'
+import { cn, generateSlug } from '@/lib/utils'
 import type { Post } from '@/lib/types'
 
 // ---------------------------------------------------------------------------
@@ -123,6 +155,17 @@ export function PostsManager({ initialPosts, initialFilter }: PostsManagerProps)
   // Selection state
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set())
 
+  // Schedule dialog
+  const [scheduleOpen, setScheduleOpen] = React.useState(false)
+  const [scheduleIds, setScheduleIds] = React.useState<string[]>([])
+  const [scheduleAt, setScheduleAt] = React.useState(defaultScheduleDatetimeLocal())
+
+  // Bulk AI drafts from titles
+  const [titlesOpen, setTitlesOpen] = React.useState(false)
+  const [titlesText, setTitlesText] = React.useState('')
+  const [titlesType, setTitlesType] = React.useState<'blog' | 'news'>('blog')
+  const [titlesProgress, setTitlesProgress] = React.useState<string | null>(null)
+
   // Re-fetch posts from Supabase using the browser client
   const refreshPosts = React.useCallback(async () => {
     const supabase = createClient()
@@ -186,6 +229,135 @@ export function PostsManager({ initialPosts, initialFilter }: PostsManagerProps)
     await permanentDeletePost(post.id)
     await refreshPosts()
     setActionLoading(null)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Schedule + AI bulk generate
+  // ---------------------------------------------------------------------------
+
+  function openScheduleDialog(ids: string[]) {
+    if (ids.length === 0) return
+    const first = posts.find((p) => p.id === ids[0])
+    setScheduleIds(ids)
+    setScheduleAt(
+      first?.scheduled_at
+        ? toLocalDatetimeInputValue(first.scheduled_at) || defaultScheduleDatetimeLocal()
+        : defaultScheduleDatetimeLocal()
+    )
+    setScheduleOpen(true)
+  }
+
+  async function confirmSchedule() {
+    if (scheduleIds.length === 0) return
+    const iso = localDatetimeInputToIso(scheduleAt)
+    if (!iso) {
+      toast.error('Pick a valid publish date and time.')
+      return
+    }
+    if (new Date(iso).getTime() <= Date.now()) {
+      toast.error('Scheduled time must be in the future.')
+      return
+    }
+
+    setActionLoading('bulk-schedule')
+    const result = await bulkSchedulePosts(scheduleIds, iso)
+    setActionLoading(null)
+    if ('error' in result) {
+      toast.error(result.error)
+      return
+    }
+
+    const whenLabel = formatScheduledPublishLabel(scheduleAt)
+    toast.success(
+      `Scheduled ${result.updated} post(s)${whenLabel ? ` for ${whenLabel}` : ''}`
+    )
+    setScheduleOpen(false)
+    setScheduleIds([])
+    setSelectedIds(new Set())
+    await refreshPosts()
+    router.refresh()
+  }
+
+  async function confirmGenerateFromTitles() {
+    const titles = titlesText
+      .split('\n')
+      .map((t) => t.trim())
+      .filter(Boolean)
+
+    if (titles.length === 0) {
+      toast.error('Enter at least one title (one per line).')
+      return
+    }
+
+    setActionLoading('bulk-titles')
+    let created = 0
+    let failed = 0
+
+    for (let i = 0; i < titles.length; i++) {
+      const title = titles[i]!
+      setTitlesProgress(`Generating ${i + 1}/${titles.length}: ${title}`)
+
+      const ai = await generatePostContent({ mode: 'full', title })
+      if ('error' in ai) {
+        failed += 1
+        toast.error(`“${title}”: ${ai.error}`)
+        continue
+      }
+
+      let slug = (ai.slug || generateSlug(title)).trim() || generateSlug(title)
+      const { score } = computeSeoScore({
+        focusKeyword: ai.focusKeyword || '',
+        seoTitle: ai.seoTitle || title,
+        metaDescription: ai.metaDescription || ai.excerpt || '',
+        content: ai.html || '',
+        slug,
+        featuredImage: '',
+      })
+
+      let result = await createPost({
+        title,
+        slug,
+        content: ai.html || undefined,
+        excerpt: ai.excerpt || undefined,
+        type: titlesType,
+        status: 'draft',
+        meta_title: ai.seoTitle || undefined,
+        meta_description: ai.metaDescription || undefined,
+        focus_keyword: ai.focusKeyword || undefined,
+        seo_score: score,
+      })
+
+      if ('error' in result && /slug already exists/i.test(result.error)) {
+        slug = `${slug}-${Date.now().toString(36)}`
+        result = await createPost({
+          title,
+          slug,
+          content: ai.html || undefined,
+          excerpt: ai.excerpt || undefined,
+          type: titlesType,
+          status: 'draft',
+          meta_title: ai.seoTitle || undefined,
+          meta_description: ai.metaDescription || undefined,
+          focus_keyword: ai.focusKeyword || undefined,
+          seo_score: score,
+        })
+      }
+
+      if ('error' in result) {
+        failed += 1
+        toast.error(`“${title}”: ${result.error}`)
+      } else {
+        created += 1
+      }
+    }
+
+    setActionLoading(null)
+    setTitlesProgress(null)
+    setTitlesOpen(false)
+    setTitlesText('')
+    toast.success(`Created ${created} draft(s)${failed ? `, ${failed} failed` : ''}`)
+    await refreshPosts()
+    router.refresh()
   }
 
   // ---------------------------------------------------------------------------
@@ -359,7 +531,22 @@ export function PostsManager({ initialPosts, initialFilter }: PostsManagerProps)
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
+            className="flex flex-wrap items-center gap-2"
           >
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="rounded-full gap-2 border-violet-500/30 text-violet-700"
+              onClick={() => {
+                setTitlesText('')
+                setTitlesProgress(null)
+                setTitlesOpen(true)
+              }}
+            >
+              <SparklesIcon className="h-4 w-4" />
+              Drafts from titles
+            </Button>
             <Button 
               onClick={() => router.push('/admin/posts/new')} 
               size="lg"
@@ -462,6 +649,16 @@ export function PostsManager({ initialPosts, initialFilter }: PostsManagerProps)
               <div className="flex items-center gap-2">
                 {!isTrashFilter ? (
                   <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openScheduleDialog(Array.from(selectedIds))}
+                      disabled={Boolean(actionLoading)}
+                      className="h-8 hover:bg-white/10"
+                    >
+                      <CalendarClockIcon className="mr-2 h-3.5 w-3.5" />
+                      Schedule
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -639,8 +836,13 @@ export function PostsManager({ initialPosts, initialFilter }: PostsManagerProps)
                     </div>
 
                     {/* Status */}
-                    <div className="hidden md:flex items-center justify-center">
+                    <div className="hidden md:flex flex-col items-center justify-center gap-0.5">
                       <StatusBadge status={post.status} className="shadow-sm" />
+                      {post.status === 'scheduled' && post.scheduled_at ? (
+                        <span className="text-[10px] text-violet-600 tabular-nums">
+                          {formatScheduledPublishLabel(post.scheduled_at)}
+                        </span>
+                      ) : null}
                     </div>
 
                     {/* SEO Score */}
@@ -681,6 +883,17 @@ export function PostsManager({ initialPosts, initialFilter }: PostsManagerProps)
                           <Button variant="ghost" size="icon-sm" onClick={() => router.push(`/admin/posts/${post.id}`)} title="Edit">
                             <PencilIcon className="h-3.5 w-3.5" />
                           </Button>
+                          {canModify(post) && (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              title="Schedule publish"
+                              disabled={Boolean(actionLoading)}
+                              onClick={() => openScheduleDialog([post.id])}
+                            >
+                              <CalendarClockIcon className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                           {post.status === 'published' && (
                             <>
                               <Button variant="ghost" size="icon-sm" onClick={() => handleSingleIndex(post)} title="Submit to Google Indexing">
@@ -761,6 +974,155 @@ export function PostsManager({ initialPosts, initialFilter }: PostsManagerProps)
           </div>
         )}
       </div>
+
+      <Dialog
+        open={scheduleOpen}
+        onOpenChange={(open) => {
+          setScheduleOpen(open)
+          if (!open) setScheduleIds([])
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarClockIcon className="size-5 text-violet-600" />
+              Schedule publish
+            </DialogTitle>
+            <DialogDescription>
+              {scheduleIds.length === 1
+                ? 'Pick when this post should go live automatically.'
+                : `Pick when ${scheduleIds.length} selected posts should go live automatically.`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="post-bulk-schedule-at">Publish date &amp; time</Label>
+            <Input
+              id="post-bulk-schedule-at"
+              type="datetime-local"
+              value={scheduleAt}
+              onChange={(e) => setScheduleAt(e.target.value)}
+              disabled={actionLoading === 'bulk-schedule'}
+            />
+            {formatScheduledPublishLabel(scheduleAt) ? (
+              <p className="text-xs text-muted-foreground">
+                Goes live{' '}
+                <span className="font-medium text-foreground">
+                  {formatScheduledPublishLabel(scheduleAt)}
+                </span>
+              </p>
+            ) : null}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setScheduleOpen(false)}
+              disabled={actionLoading === 'bulk-schedule'}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmSchedule}
+              disabled={actionLoading === 'bulk-schedule' || !scheduleAt.trim()}
+            >
+              {actionLoading === 'bulk-schedule' ? (
+                <>
+                  <Loader2 className="size-4 animate-spin mr-2" />
+                  Scheduling…
+                </>
+              ) : (
+                'Schedule'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={titlesOpen}
+        onOpenChange={(open) => {
+          if (actionLoading === 'bulk-titles') return
+          setTitlesOpen(open)
+          if (!open) {
+            setTitlesProgress(null)
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <SparklesIcon className="size-5 text-violet-600" />
+              Generate draft posts from titles
+            </DialogTitle>
+            <DialogDescription>
+              Paste one title per line. AI writes the full draft and SEO fields for each —
+              saved as drafts so you can review before publishing or scheduling.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-1">
+            <div className="space-y-1.5">
+              <Label htmlFor="post-titles-bulk">Titles</Label>
+              <Textarea
+                id="post-titles-bulk"
+                value={titlesText}
+                onChange={(e) => setTitlesText(e.target.value)}
+                placeholder={'Walking in Faith Through Storms\nThe Power of Midnight Prayer\n…'}
+                rows={8}
+                disabled={actionLoading === 'bulk-titles'}
+                className="text-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="post-titles-type">Post type</Label>
+              <Select
+                value={titlesType}
+                onValueChange={(v) => setTitlesType(v as 'blog' | 'news')}
+                disabled={actionLoading === 'bulk-titles'}
+              >
+                <SelectTrigger id="post-titles-type" className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="blog">Blog</SelectItem>
+                  <SelectItem value="news">News</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {titlesProgress ? (
+              <p className="text-xs text-muted-foreground flex items-center gap-2">
+                <Loader2 className="size-3.5 animate-spin" />
+                {titlesProgress}
+              </p>
+            ) : null}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setTitlesOpen(false)}
+              disabled={actionLoading === 'bulk-titles'}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmGenerateFromTitles}
+              disabled={actionLoading === 'bulk-titles' || !titlesText.trim()}
+              className="bg-violet-600 hover:bg-violet-700"
+            >
+              {actionLoading === 'bulk-titles' ? (
+                <>
+                  <Loader2 className="size-4 animate-spin mr-2" />
+                  Generating…
+                </>
+              ) : (
+                'Generate drafts'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

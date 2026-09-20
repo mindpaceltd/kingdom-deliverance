@@ -1,0 +1,36 @@
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-error.log*
+
+# Git / IDE
+.git
+.github
+.cursor
+.vscode
+*.md
+!docs/LIQUIDWEB_DEPLOY.md
+
+# Env / secrets (pass at runtime)
+.env
+.env.*
+!.env.example
+!.env.liquidweb.example
+
+# Next / build
+.next
+out
+coverage
+deploy.tar.gz
+
+# Local / reports
+import-reports
+product-import*.csv
+supabase/.temp
+agent-transcripts
+
+# Tests / misc
+**/*.test.ts
+**/*.test.tsx
+**/__tests__
+vitest.config.*

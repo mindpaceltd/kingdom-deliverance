@@ -21,7 +21,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     const [productResult, orgOgImage, siteName] = await Promise.all([
       supabase
         .from('products')
-        .select('name, slug, description, short_description, meta_title, meta_description, image_url')
+        .select(
+          'name, slug, description, short_description, meta_title, meta_description, image_url, image_alt'
+        )
         .eq('slug', params.slug)
         .eq('status', 'published')
         .eq('is_active', true)
@@ -46,6 +48,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       'product',
       orgOgImage
     )
+    if (product.image_alt?.trim()) {
+      socialImage.alt = product.image_alt.trim()
+    }
     const pageUrl = `https://kdcuganda.org/shop/${product.slug}`
 
     return {
@@ -73,7 +78,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
 }
 
-export const revalidate = 3600
+export const revalidate = 300
 
 const RATE = 3800
 
@@ -313,7 +318,7 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
                     <Link key={p.id} href={`/shop/${p.slug}`} className="block flex flex-col group bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-all">
                       <div className="relative aspect-square overflow-hidden bg-gray-100">
                         <img
-                          src={normalizeMediaUrl(p.image_url) || '/placeholder.png'}
+                          src={normalizeMediaUrl(p.image_url) || '/placeholder.svg'}
                           alt={p.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />

@@ -392,6 +392,64 @@ export async function permanentDeletePost(
   return { success: true }
 }
 
+/**
+ * Schedule one or more posts for auto-publish at a future time.
+ */
+export async function bulkSchedulePosts(
+  ids: string[],
+  scheduledAt: string
+): Promise<{ success: true; updated: number } | { error: string }> {
+  if (ids.length === 0) {
+    return { error: 'No posts selected.' }
+  }
+
+  const when = new Date(scheduledAt)
+  if (Number.isNaN(when.getTime())) {
+    return { error: 'The scheduled date and time is not valid.' }
+  }
+  if (when.getTime() <= Date.now()) {
+    return { error: 'Scheduled time must be in the future.' }
+  }
+
+  const auth = await requireRole('author')
+  if ('error' in auth) return auth
+
+  const supabase = createClient()
+  const now = new Date().toISOString()
+
+  let query = supabase
+    .from('posts')
+    .update({
+      status: 'scheduled',
+      scheduled_at: when.toISOString(),
+      updated_at: now,
+    })
+    .in('id', ids)
+    .neq('status', 'trash')
+
+  // Authors may only schedule their own posts; editors/admins can schedule any.
+  if (auth.role === 'author') {
+    query = query.eq('author_id', auth.userId)
+  }
+
+  const { data, error } = await query.select('id')
+
+  if (error) {
+    console.error('[bulkSchedulePosts]', error.message)
+    return { error: error.message }
+  }
+
+  revalidatePostPaths()
+  revalidatePath('/admin/posts')
+
+  const updated = (data ?? []).length
+  if (updated === 0) {
+    return { error: 'No posts were scheduled. Check selection and permissions.' }
+  }
+
+  return { success: true, updated }
+}
+
 // ---------------------------------------------------------------------------
 // checkSlugAvailability
 // Checks whether a slug is available (not used by any other post).

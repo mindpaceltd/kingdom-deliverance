@@ -10,6 +10,10 @@ import { buildSermonSeo } from '@/lib/sermons/sermon-seo'
 import { generateGeminiJson } from '@/lib/digital-ministry/gemini'
 import { computeSeoScore } from '@/lib/seo-scorer'
 import { findExistingSermonByTitle } from '@/lib/dedupe/find-existing'
+import {
+  SERMON_PUBLISH_MEDIA_REQUIRED,
+  sermonHasPublishMedia,
+} from '@/lib/sermons/publish-readiness'
 
 export interface SermonImportOptions {
   status: 'draft' | 'published' | 'scheduled'
@@ -225,8 +229,21 @@ export async function importSermonManuscript(input: {
 
   const preacher = input.options.preacher?.trim() || 'Bishop Climate Wiseman'
   const description = ai?.description ?? parsed.summary
-  const status = input.options.status
-  const scheduledAt = status === 'scheduled' ? (input.options.scheduledAt ?? null) : null
+  const requestedStatus = input.options.status
+  const hasCover = sermonHasPublishMedia({
+    thumbnail_url: input.options.thumbnailUrl,
+  })
+  const wantsLive =
+    requestedStatus === 'published' || requestedStatus === 'scheduled'
+  const status = wantsLive && !hasCover ? 'draft' : requestedStatus
+  const scheduledAt =
+    status === 'scheduled' && input.options.scheduledAt
+      ? input.options.scheduledAt
+      : null
+  if (wantsLive && !hasCover) {
+    const mediaNotice = `Saved as draft — ${SERMON_PUBLISH_MEDIA_REQUIRED}`
+    notice = notice ? `${notice} ${mediaNotice}` : mediaNotice
+  }
 
   const heuristicSeo = buildSermonSeo({
     title: parsed.title,

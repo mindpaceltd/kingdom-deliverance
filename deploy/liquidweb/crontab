@@ -1,0 +1,21 @@
+# Liquid Web / host crontab. Copy into /etc/cron.d/kdc
+# Install:
+#   sudo cp deploy/liquidweb/crontab /etc/cron.d/kdc
+#   sudo chmod 644 /etc/cron.d/kdc
+#   sudo chown root:root /etc/cron.d/kdc
+# Note: /etc/cron.d times use the server local timezone (LW-B is EDT).
+
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Competitor capture — daily 05:00 local
+0 5 * * * root cd /home/kdcugandaorg/kdcuganda.org/html && set -a && . ./.env.production && set +a && APP_URL=http://127.0.0.1:3005 /home/kdcugandaorg/kdcuganda.org/html/deploy/liquidweb/cron-runner.sh competitors-capture >> /var/log/kdc-cron.log 2>&1
+
+# Growth Coach — daily 06:00 local
+0 6 * * * root cd /home/kdcugandaorg/kdcuganda.org/html && set -a && . ./.env.production && set +a && APP_URL=http://127.0.0.1:3005 /home/kdcugandaorg/kdcuganda.org/html/deploy/liquidweb/cron-runner.sh growth >> /var/log/kdc-cron.log 2>&1
+
+# Sermon scheduled publish — every 5 minutes
+*/5 * * * * root cd /home/kdcugandaorg/kdcuganda.org/html && set -a && . ./.env.production && set +a && APP_URL=http://127.0.0.1:3005 /home/kdcugandaorg/kdcuganda.org/html/deploy/liquidweb/cron-runner.sh sermons-publish >> /var/log/kdc-cron.log 2>&1
+
+# Competitor weekly strategy report — Mondays 07:00 local
+0 7 * * 1 root cd /home/kdcugandaorg/kdcuganda.org/html && set -a && . ./.env.production && set +a && APP_URL=http://127.0.0.1:3005 /home/kdcugandaorg/kdcuganda.org/html/deploy/liquidweb/cron-runner.sh competitors-report >> /var/log/kdc-cron.log 2>&1

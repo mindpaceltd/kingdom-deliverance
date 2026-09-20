@@ -7,7 +7,7 @@ import { useCart } from '@/lib/cart-context'
 import { useCurrency } from '@/lib/currency-context'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
-import { normalizeMediaUrl } from '@/lib/media-url'
+import { getMediaProxyUrl, normalizeMediaUrl } from '@/lib/media-url'
 
 interface ProductCardProps {
   product: any
@@ -15,7 +15,9 @@ interface ProductCardProps {
 }
 
 function ProductCardImage({ src, alt, className }: { src?: string | null; alt: string; className: string }) {
-  const normalized = normalizeMediaUrl(src) || '/placeholder.png'
+  const normalized = normalizeMediaUrl(src) || '/placeholder.svg'
+  const proxyUrl = getMediaProxyUrl(src)
+
   return (
     <img
       src={normalized}
@@ -23,7 +25,14 @@ function ProductCardImage({ src, alt, className }: { src?: string | null; alt: s
       className={className}
       onError={(e) => {
         const target = e.currentTarget
-        if (!target.src.endsWith('/placeholder.png')) target.src = '/placeholder.png'
+        const current = target.getAttribute('src') || ''
+        if (proxyUrl && !current.includes('/api/media/asset')) {
+          target.src = proxyUrl
+          return
+        }
+        if (!current.endsWith('/placeholder.svg') && !current.endsWith('/placeholder.png')) {
+          target.src = '/placeholder.svg'
+        }
       }}
     />
   )

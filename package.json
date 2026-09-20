@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start -p 3005",
     "lint": "next lint",
+    "deploy:liquidweb": "bash deploy/liquidweb/deploy.sh",
+    "deploy:liquidweb:docker": "bash deploy/liquidweb/deploy-docker.sh",
     "smoke": "node scripts/smoke.mjs",
     "convert:woocommerce": "node scripts/woocommerce-to-kdc-import.mjs",
     "test": "vitest run",
@@ -14,7 +16,8 @@
     "test:queue": "npx tsx scripts/test-queue.ts",
     "worker": "npx tsx src/workers/sermon-processor.ts",
     "worker:dev": "npx tsx --watch src/workers/sermon-processor.ts",
-    "migrate:public-assets": "npx tsx scripts/migrate_public_assets.ts"
+    "migrate:public-assets": "npx tsx scripts/migrate_public_assets.ts",
+    "seo:products": "node --env-file=.env.local scripts/generate-product-seo.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1048.0",

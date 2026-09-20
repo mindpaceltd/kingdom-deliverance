@@ -7,6 +7,10 @@ import { indexOnPublish } from '@/lib/seo/google-indexing'
 import { requireRoles } from '@/lib/authz'
 import { ROLES } from '@/lib/roles'
 import type { SermonData } from '@/lib/types'
+import {
+  SERMON_PUBLISH_MEDIA_REQUIRED,
+  sermonHasPublishMedia,
+} from '@/lib/sermons/publish-readiness'
 
 // ---------------------------------------------------------------------------
 // Revalidate all sermon-related paths after any mutation
@@ -38,6 +42,13 @@ function validateScheduledSermon(data: SermonData): string | null {
   return null
 }
 
+/** Published/scheduled sermons must include a featured image. */
+function validatePublishMedia(data: SermonData): string | null {
+  if (data.status !== 'published' && data.status !== 'scheduled') return null
+  if (!sermonHasPublishMedia(data)) return SERMON_PUBLISH_MEDIA_REQUIRED
+  return null
+}
+
 // ---------------------------------------------------------------------------
 // createSermon
 // Inserts a new sermon. Sets `published_at` if status is `published`.
@@ -52,6 +63,9 @@ export async function createSermon(
 
   const scheduleError = validateScheduledSermon(data)
   if (scheduleError) return { error: scheduleError }
+
+  const mediaError = validatePublishMedia(data)
+  if (mediaError) return { error: mediaError }
 
   const supabase = createClient()
 
@@ -112,6 +126,9 @@ export async function updateSermon(
 
   const scheduleError = validateScheduledSermon(data)
   if (scheduleError) return { error: scheduleError }
+
+  const mediaError = validatePublishMedia(data)
+  if (mediaError) return { error: mediaError }
 
   const supabase = createClient()
 
@@ -360,10 +377,32 @@ export async function bulkUpdateSermonStatus(
     patch.deleted_at = now
   }
 
+  let targetIds = ids
+  if (status === 'published' || status === 'scheduled') {
+    const { data: candidates, error: loadError } = await supabase
+      .from('sermons')
+      .select('id, thumbnail_url')
+      .in('id', ids)
+
+    if (loadError) {
+      console.error('[bulkUpdateSermonStatus] load', loadError.message)
+      return { error: loadError.message }
+    }
+
+    const ready = (candidates ?? []).filter((row) =>
+      sermonHasPublishMedia(row)
+    )
+    targetIds = ready.map((row) => row.id as string)
+
+    if (targetIds.length === 0) {
+      return { error: SERMON_PUBLISH_MEDIA_REQUIRED }
+    }
+  }
+
   const { data, error } = await supabase
     .from('sermons')
     .update(patch)
-    .in('id', ids)
+    .in('id', targetIds)
     .select('id, slug, status')
 
   if (error) {
@@ -384,6 +423,71 @@ export async function bulkUpdateSermonStatus(
   }
 
   return { success: true, updated: rows.length }
+}
+
+/**
+ * Schedule one or more sermons for auto-publish at a future time.
+ * Requires a featured image on each target sermon (same gate as publish).
+ */
+export async function bulkScheduleSermons(
+  ids: string[],
+  scheduledAt: string
+): Promise<{ success: true; updated: number; skipped: number } | { error: string }> {
+  if (ids.length === 0) {
+    return { error: 'No sermons selected.' }
+  }
+
+  const when = new Date(scheduledAt)
+  if (Number.isNaN(when.getTime())) {
+    return { error: 'The scheduled date and time is not valid.' }
+  }
+  if (when.getTime() <= Date.now()) {
+    return { error: 'Scheduled time must be in the future.' }
+  }
+
+  const auth = await requireRoles(ROLES.CONTENT)
+  if ('error' in auth) return auth
+
+  const supabase = createClient()
+  const { data: candidates, error: loadError } = await supabase
+    .from('sermons')
+    .select('id, thumbnail_url')
+    .in('id', ids)
+
+  if (loadError) {
+    console.error('[bulkScheduleSermons] load', loadError.message)
+    return { error: loadError.message }
+  }
+
+  const ready = (candidates ?? []).filter((row) => sermonHasPublishMedia(row))
+  const targetIds = ready.map((row) => row.id as string)
+  const skipped = ids.length - targetIds.length
+
+  if (targetIds.length === 0) {
+    return { error: SERMON_PUBLISH_MEDIA_REQUIRED }
+  }
+
+  const now = new Date().toISOString()
+  const { data, error } = await supabase
+    .from('sermons')
+    .update({
+      status: 'scheduled',
+      scheduled_at: when.toISOString(),
+      deleted_at: null,
+      updated_at: now,
+    })
+    .in('id', targetIds)
+    .select('id')
+
+  if (error) {
+    console.error('[bulkScheduleSermons]', error.message)
+    return { error: error.message }
+  }
+
+  revalidateSermonPaths()
+  revalidatePath('/admin/sermons')
+
+  return { success: true, updated: (data ?? []).length, skipped }
 }
 
 export async function duplicateSermons(

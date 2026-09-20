@@ -45,20 +45,23 @@ export async function middleware(request: NextRequest) {
 
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
   const isLoginPage = request.nextUrl.pathname === '/admin/login'
+  const isForgotPasswordPage = request.nextUrl.pathname === '/admin/forgot-password'
+  const isResetPasswordPage = request.nextUrl.pathname === '/admin/reset-password'
+  const isAuthPage = isLoginPage || isForgotPasswordPage || isResetPasswordPage
 
   // Unauthenticated request to a protected admin route → redirect to login,
   // preserving the original path in `redirectTo` so the user lands back after
   // signing in. (Requirements 1.1, 1.7)
-  if (isAdminRoute && !isLoginPage && !user) {
+  if (isAdminRoute && !isAuthPage && !user) {
     const url = request.nextUrl.clone()
     url.pathname = '/admin/login'
     url.searchParams.set('redirectTo', request.nextUrl.pathname)
     return NextResponse.redirect(url)
   }
 
-  // Authenticated user visiting the login page → redirect to dashboard.
-  // (Requirement 1.2)
-  if (isLoginPage && user) {
+  // Authenticated user visiting login or forgot-password → redirect to dashboard.
+  // Note: reset-password allows authenticated session so recovery tokens can update password.
+  if ((isLoginPage || isForgotPasswordPage) && user) {
     const url = request.nextUrl.clone()
     url.pathname = '/admin'
     return NextResponse.redirect(url)

@@ -138,7 +138,7 @@ export function SermonImportClient() {
   const folderInputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [queue, setQueue] = useState<QueuedFile[]>([])
-  const [mode, setMode] = useState<PublishMode>('published')
+  const [mode, setMode] = useState<PublishMode>('draft')
   const [intervalAmount, setIntervalAmount] = useState(2)
   const [intervalUnit, setIntervalUnit] = useState<IntervalUnit>('days')
   const [startAt, setStartAt] = useState(() => toLocalDatetimeValue(addDays(new Date(), 1)))
@@ -603,6 +603,10 @@ export function SermonImportClient() {
                   <SelectItem value="published">Publish immediately</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                Manuscript imports stay as drafts until you add a featured image
+                — even if you pick publish or schedule.
+              </p>
             </div>
 
             {mode === 'scheduled' ? (

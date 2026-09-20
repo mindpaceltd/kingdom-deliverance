@@ -5,7 +5,14 @@ import { AdminSidebar } from '@/components/admin/admin-sidebar'
 import { AdminHeader } from '@/components/admin/admin-header'
 
 function isAuthRoute(pathname: string): boolean {
-  return pathname === '/admin/login' || pathname.startsWith('/admin/login/')
+  return (
+    pathname === '/admin/login' ||
+    pathname.startsWith('/admin/login/') ||
+    pathname === '/admin/forgot-password' ||
+    pathname.startsWith('/admin/forgot-password/') ||
+    pathname === '/admin/reset-password' ||
+    pathname.startsWith('/admin/reset-password/')
+  )
 }
 
 export default async function AdminLayout({

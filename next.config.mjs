@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Required for Docker / Liquid Web VPS (smaller runtime image)
+  output: 'standalone',
   eslint: {
     // Pre-existing lint warnings in non-critical files — don't block production builds
     ignoreDuringBuilds: true,

@@ -43,6 +43,9 @@ yarn-error.log*
 .env
 .env.local
 .env*.local
+# keep templates
+!.env.example
+!.env.liquidweb.example
 
 # vercel
 .vercel
@@ -50,3 +53,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+.env.production
+.env.vps
+.migration-staging/
+supabase/.temp/
+import-reports/

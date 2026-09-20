@@ -2,7 +2,14 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeftIcon, SparklesIcon, EyeIcon, EyeOffIcon, LoaderIcon } from 'lucide-react'
+import {
+  ArrowLeftIcon,
+  SparklesIcon,
+  EyeIcon,
+  EyeOffIcon,
+  LoaderIcon,
+  CalendarClockIcon,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -28,6 +35,11 @@ import { computeSeoScore } from '@/lib/seo-scorer'
 import { cn } from '@/lib/utils'
 import type { Post, Tag } from '@/lib/types'
 import { BLOG_CATEGORIES } from '@/lib/blog/catalog'
+import {
+  defaultScheduleDatetimeLocal,
+  formatScheduledPublishLabel,
+  toLocalDatetimeInputValue,
+} from '@/lib/admin/datetime-local'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -75,7 +87,7 @@ export function PostEditorClient({ post, authorName, allTags, initialTags = [] }
       post?.status === 'archived' || post?.status === 'trash'
         ? 'draft'
         : (post?.status as 'draft' | 'published' | 'scheduled') ?? 'draft',
-    scheduled_at: post?.scheduled_at ?? '',
+    scheduled_at: toLocalDatetimeInputValue(post?.scheduled_at),
     meta_title: post?.meta_title ?? '',
     meta_description: post?.meta_description ?? '',
     focus_keyword: post?.focus_keyword ?? '',
@@ -102,6 +114,22 @@ export function PostEditorClient({ post, authorName, allTags, initialTags = [] }
 
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
+    setError(null)
+    setDraftSaved(false)
+  }
+
+  function handleStatusChange(nextStatus: string) {
+    setForm((prev) => {
+      const scheduled_at =
+        nextStatus === 'scheduled' && !prev.scheduled_at
+          ? defaultScheduleDatetimeLocal()
+          : prev.scheduled_at
+      return {
+        ...prev,
+        status: nextStatus as FormState['status'],
+        scheduled_at,
+      }
+    })
     setError(null)
     setDraftSaved(false)
   }
@@ -308,7 +336,30 @@ export function PostEditorClient({ post, authorName, allTags, initialTags = [] }
         <div className="flex-1" />
         <span className="min-w-0 truncate text-sm text-muted-foreground">
           {isEditing ? 'Editing post' : 'New post'}
+          {form.status === 'scheduled' && form.scheduled_at ? (
+            <span className="ml-2 hidden text-violet-600 sm:inline">
+              · {formatScheduledPublishLabel(form.scheduled_at) ?? 'scheduled'}
+            </span>
+          ) : null}
         </span>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          disabled={submitting}
+          onClick={() => {
+            handleStatusChange('scheduled')
+            requestAnimationFrame(() => {
+              document
+                .getElementById('post-publish-panel')
+                ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+            })
+          }}
+        >
+          <CalendarClockIcon className="size-4" />
+          Schedule
+        </Button>
       </div>
 
       {/* Main layout — fills remaining height, both panels scroll independently */}
@@ -536,18 +587,21 @@ export function PostEditorClient({ post, authorName, allTags, initialTags = [] }
 
         {/* Right: sidebar — scrolls independently, stays fixed while content scrolls */}
         <aside className="w-full lg:w-80 lg:shrink-0 border-t lg:border-t-0 lg:border-l border-border overflow-y-auto px-4 py-6 space-y-4">
-          <PublishPanel
-            status={form.status}
-            scheduledAt={form.scheduled_at}
-            authorName={authorName}
-            isEditing={isEditing}
-            submitting={submitting}
-            error={error}
-            onStatusChange={(s) => setField('status', s)}
-            onScheduledAtChange={(v) => setField('scheduled_at', v)}
-            onPublish={handlePublish}
-            onSaveDraft={handleSaveDraft}
-          />
+          <div id="post-publish-panel">
+            <PublishPanel
+              status={form.status}
+              scheduledAt={form.scheduled_at}
+              authorName={authorName}
+              isEditing={isEditing}
+              submitting={submitting}
+              error={error}
+              onStatusChange={handleStatusChange}
+              onScheduledAtChange={(v) => setField('scheduled_at', v)}
+              onPublish={handlePublish}
+              onSaveDraft={handleSaveDraft}
+              scheduleHint="The site publishes automatically when this time arrives."
+            />
+          </div>
           <FeaturedImagePanel
             value={form.featured_image}
             onChange={(url) => setField('featured_image', url)}

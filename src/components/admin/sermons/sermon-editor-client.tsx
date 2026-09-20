@@ -2,7 +2,14 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeftIcon, SparklesIcon, EyeIcon, EyeOffIcon, LoaderIcon } from 'lucide-react'
+import {
+  ArrowLeftIcon,
+  SparklesIcon,
+  EyeIcon,
+  EyeOffIcon,
+  LoaderIcon,
+  CalendarClockIcon,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -32,9 +39,14 @@ import type { Sermon, SermonSeries, SermonDraft } from '@/lib/types'
 import { MediaPicker } from '../media-picker'
 import {
   defaultScheduleDatetimeLocal,
+  formatScheduledPublishLabel,
   localDatetimeInputToIso,
   toLocalDatetimeInputValue,
 } from '@/lib/admin/datetime-local'
+import {
+  SERMON_PUBLISH_MEDIA_REQUIRED,
+  sermonHasPublishMedia,
+} from '@/lib/sermons/publish-readiness'
 
 export interface SermonEditorClientProps {
   sermon?: Sermon
@@ -203,6 +215,14 @@ export function SermonEditorClient({ sermon, allSeries }: SermonEditorClientProp
 
     const effectiveStatus = overrideStatus ?? form.status
 
+    if (
+      (effectiveStatus === 'published' || effectiveStatus === 'scheduled') &&
+      !sermonHasPublishMedia({ thumbnail_url: form.thumbnail_url })
+    ) {
+      setError(SERMON_PUBLISH_MEDIA_REQUIRED)
+      return
+    }
+
     if (effectiveStatus === 'scheduled') {
       if (!form.scheduled_at.trim()) {
         setError('Pick a publish date and time to schedule this sermon.')
@@ -292,6 +312,15 @@ export function SermonEditorClient({ sermon, allSeries }: SermonEditorClientProp
    */
   async function handleDraftSave(data: SermonFormData, status: 'draft' | 'published') {
     setError(null)
+
+    if (
+      status === 'published' &&
+      !sermonHasPublishMedia({ thumbnail_url: data.thumbnail_url })
+    ) {
+      setError(SERMON_PUBLISH_MEDIA_REQUIRED)
+      throw new Error(SERMON_PUBLISH_MEDIA_REQUIRED)
+    }
+
     setSubmitting(true)
 
     const { score } = computeSeoScore({
@@ -365,10 +394,28 @@ export function SermonEditorClient({ sermon, allSeries }: SermonEditorClientProp
           {isEditing ? 'Editing sermon' : 'New sermon'}
           {form.status === 'scheduled' && form.scheduled_at ? (
             <span className="ml-2 hidden text-violet-600 sm:inline">
-              · scheduled
+              · {formatScheduledPublishLabel(form.scheduled_at) ?? 'scheduled'}
             </span>
           ) : null}
         </span>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          disabled={submitting}
+          onClick={() => {
+            handleStatusChange('scheduled')
+            requestAnimationFrame(() => {
+              document
+                .getElementById('sermon-publish-panel')
+                ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+            })
+          }}
+        >
+          <CalendarClockIcon className="size-4" />
+          Schedule
+        </Button>
       </div>
 
       {/* Main layout */}
@@ -588,19 +635,21 @@ export function SermonEditorClient({ sermon, allSeries }: SermonEditorClientProp
 
         {/* Sidebar */}
         <aside className="w-full lg:w-80 lg:shrink-0 border-t lg:border-t-0 lg:border-l border-border overflow-y-auto px-4 py-6 space-y-4">
-          <PublishPanel
-            status={form.status}
-            scheduledAt={form.scheduled_at}
-            authorName={form.preacher}
-            isEditing={isEditing}
-            submitting={submitting}
-            error={error}
-            onStatusChange={handleStatusChange}
-            onScheduledAtChange={(v) => setField('scheduled_at', v)}
-            onPublish={handlePublish}
-            onSaveDraft={handleSaveDraft}
-            scheduleHint="The site checks hourly and publishes automatically when this time arrives."
-          />
+          <div id="sermon-publish-panel">
+            <PublishPanel
+              status={form.status}
+              scheduledAt={form.scheduled_at}
+              authorName={form.preacher}
+              isEditing={isEditing}
+              submitting={submitting}
+              error={error}
+              onStatusChange={handleStatusChange}
+              onScheduledAtChange={(v) => setField('scheduled_at', v)}
+              onPublish={handlePublish}
+              onSaveDraft={handleSaveDraft}
+              scheduleHint="The site checks hourly and publishes automatically when this time arrives. A featured image is required before scheduling."
+            />
+          </div>
           
           <div className="rounded-lg border border-border bg-card p-4 space-y-3">
              <h3 className="text-sm font-semibold">Thumbnail</h3>

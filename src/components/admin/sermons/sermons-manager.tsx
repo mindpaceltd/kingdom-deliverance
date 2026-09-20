@@ -23,6 +23,8 @@ import {
   XIcon,
   Loader2,
   UploadCloud,
+  CalendarClockIcon,
+  ClockIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -57,7 +59,14 @@ import {
   duplicateSermons,
   deleteSermon,
   bulkUpdateSermonStatus,
+  bulkScheduleSermons,
 } from '@/lib/actions/sermons'
+import {
+  defaultScheduleDatetimeLocal,
+  formatScheduledPublishLabel,
+  localDatetimeInputToIso,
+  toLocalDatetimeInputValue,
+} from '@/lib/admin/datetime-local'
 import { analyzeSermonVideo } from '@/lib/actions/sermon-ai'
 import { createClient } from '@/lib/supabase/client'
 import { buildPublicContentUrl } from '@/lib/seo/public-content-urls'
@@ -166,6 +175,9 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
   const [magicLoading, setMagicLoading] = React.useState(false)
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState('url')
+  const [scheduleOpen, setScheduleOpen] = React.useState(false)
+  const [scheduleIds, setScheduleIds] = React.useState<string[]>([])
+  const [scheduleAt, setScheduleAt] = React.useState(defaultScheduleDatetimeLocal())
 
   const [filterPreacher, setFilterPreacher] = React.useState('all')
   const [filterStatus, setFilterStatus] = React.useState('all')
@@ -219,6 +231,7 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
       total: sermons.length,
       published: sermons.filter((s) => s.status === 'published').length,
       drafts: sermons.filter((s) => s.status === 'draft').length,
+      scheduled: sermons.filter((s) => s.status === 'scheduled').length,
       views: sermons.reduce((acc, s) => acc + (s.views || 0), 0),
     }),
     [sermons]
@@ -279,6 +292,53 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
       return
     }
     toast.success(`Published ${result.updated} sermon(s)`)
+    setSelectedIds(new Set())
+    await refreshSermons()
+    router.refresh()
+  }
+
+  function openScheduleDialog(ids: string[]) {
+    if (ids.length === 0) return
+    const first = sermons.find((s) => ids[0] === s.id)
+    setScheduleIds(ids)
+    setScheduleAt(
+      first?.scheduled_at
+        ? toLocalDatetimeInputValue(first.scheduled_at) || defaultScheduleDatetimeLocal()
+        : defaultScheduleDatetimeLocal()
+    )
+    setScheduleOpen(true)
+  }
+
+  async function confirmSchedule() {
+    if (scheduleIds.length === 0) return
+    const iso = localDatetimeInputToIso(scheduleAt)
+    if (!iso) {
+      toast.error('Pick a valid publish date and time.')
+      return
+    }
+    if (new Date(iso).getTime() <= Date.now()) {
+      toast.error('Scheduled time must be in the future.')
+      return
+    }
+
+    setActionLoading('bulk-schedule')
+    const result = await bulkScheduleSermons(scheduleIds, iso)
+    setActionLoading(null)
+    if ('error' in result) {
+      toast.error(result.error)
+      return
+    }
+
+    const whenLabel = formatScheduledPublishLabel(scheduleAt)
+    const skipNote =
+      result.skipped > 0
+        ? ` (${result.skipped} skipped — need a featured image)`
+        : ''
+    toast.success(
+      `Scheduled ${result.updated} sermon(s)${whenLabel ? ` for ${whenLabel}` : ''}${skipNote}`
+    )
+    setScheduleOpen(false)
+    setScheduleIds([])
     setSelectedIds(new Set())
     await refreshSermons()
     router.refresh()
@@ -515,11 +575,12 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-4">
         {[
           { label: 'Total Sermons', value: stats.total, icon: VideoIcon },
           { label: 'Total Views', value: stats.views.toLocaleString(), icon: EyeIcon },
           { label: 'Published', value: stats.published, icon: EyeIcon },
+          { label: 'Scheduled', value: stats.scheduled, icon: ClockIcon },
           { label: 'Drafts', value: stats.drafts, icon: PencilIcon },
         ].map((stat) => (
           <div
@@ -702,6 +763,11 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
                         )}
                         <div className="mt-2 flex flex-wrap items-center gap-2 lg:hidden">
                           <StatusBadge status={sermon.status} />
+                          {sermon.status === 'scheduled' && sermon.scheduled_at ? (
+                            <span className="text-[10px] text-violet-600">
+                              {formatScheduledPublishLabel(sermon.scheduled_at)}
+                            </span>
+                          ) : null}
                           <span className="text-[10px] text-muted-foreground">
                             {formatDate(sermon.date)}
                           </span>
@@ -722,8 +788,13 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
                       <OgReadiness sermon={sermon} />
                     </div>
 
-                    <div className="lg:flex hidden justify-center">
+                    <div className="lg:flex hidden flex-col items-center gap-0.5">
                       <StatusBadge status={sermon.status} />
+                      {sermon.status === 'scheduled' && sermon.scheduled_at ? (
+                        <span className="text-[10px] text-violet-600 tabular-nums">
+                          {formatScheduledPublishLabel(sermon.scheduled_at)}
+                        </span>
+                      ) : null}
                     </div>
 
                     <div className="flex items-center justify-end gap-1 flex-wrap col-span-full lg:col-span-1 pt-1 lg:pt-0 border-t lg:border-0 mt-1 lg:mt-0">
@@ -758,6 +829,15 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
                             onClick={() => router.push(`/admin/sermons/${sermon.id}`)}
                           >
                             <PencilIcon className="size-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            title="Schedule publish"
+                            disabled={busy}
+                            onClick={() => openScheduleDialog([sermon.id])}
+                          >
+                            <CalendarClockIcon className="size-3.5" />
                           </Button>
                           {sermon.status === 'published' && sermon.slug && (
                             <>
@@ -848,6 +928,71 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
         )}
       </div>
 
+      <Dialog
+        open={scheduleOpen}
+        onOpenChange={(open) => {
+          setScheduleOpen(open)
+          if (!open) setScheduleIds([])
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarClockIcon className="size-5 text-violet-600" />
+              Schedule publish
+            </DialogTitle>
+            <DialogDescription>
+              {scheduleIds.length === 1
+                ? 'Pick when this sermon should go live automatically.'
+                : `Pick when ${scheduleIds.length} selected sermons should go live automatically.`}{' '}
+              Sermons need a featured image to be scheduled.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="bulk-schedule-at">Publish date &amp; time</Label>
+            <Input
+              id="bulk-schedule-at"
+              type="datetime-local"
+              value={scheduleAt}
+              onChange={(e) => setScheduleAt(e.target.value)}
+              disabled={actionLoading === 'bulk-schedule'}
+            />
+            {formatScheduledPublishLabel(scheduleAt) ? (
+              <p className="text-xs text-muted-foreground">
+                Goes live{' '}
+                <span className="font-medium text-foreground">
+                  {formatScheduledPublishLabel(scheduleAt)}
+                </span>
+              </p>
+            ) : null}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setScheduleOpen(false)}
+              disabled={actionLoading === 'bulk-schedule'}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmSchedule}
+              disabled={actionLoading === 'bulk-schedule' || !scheduleAt.trim()}
+            >
+              {actionLoading === 'bulk-schedule' ? (
+                <>
+                  <Loader2 className="size-4 animate-spin mr-2" />
+                  Scheduling…
+                </>
+              ) : (
+                'Schedule'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <AnimatePresence>
         {selectedIds.size > 0 && (
           <motion.div
@@ -868,6 +1013,16 @@ export function SermonsManager({ initialSermons }: SermonsManagerProps) {
             >
               <GlobeIcon className="size-3.5 mr-1.5" />
               Publish
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 hover:bg-white/10"
+              disabled={bulkBusy}
+              onClick={() => openScheduleDialog(Array.from(selectedIds))}
+            >
+              <CalendarClockIcon className="size-3.5 mr-1.5" />
+              Schedule
             </Button>
             <Button
               variant="ghost"

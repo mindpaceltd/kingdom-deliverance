@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS public.sermons (
   series TEXT,
   date DATE NOT NULL DEFAULT CURRENT_DATE,
   duration_minutes INTEGER,
-  status TEXT NOT NULL DEFAULT 'published' CHECK (status IN ('draft', 'published')),
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

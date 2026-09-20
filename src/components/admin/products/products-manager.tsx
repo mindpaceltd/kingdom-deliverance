@@ -424,12 +424,14 @@ export function ProductsManager({
                   <div className="h-14 w-14 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0 border">
                     {product.image_url ? (
                       <img
-                        src={normalizeMediaUrl(product.image_url) || '/placeholder.png'}
+                        src={normalizeMediaUrl(product.image_url) || '/placeholder.svg'}
                         alt={product.name}
                         className="h-full w-full object-cover"
                         onError={(e) => {
                           const target = e.currentTarget
-                          if (!target.src.endsWith('/placeholder.png')) target.src = '/placeholder.png'
+                          if (!target.src.endsWith('/placeholder.svg') && !target.src.endsWith('/placeholder.png')) {
+                            target.src = '/placeholder.svg'
+                          }
                         }}
                       />
                     ) : (
@@ -544,12 +546,14 @@ export function ProductsManager({
                         <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0 border">
                           {product.image_url ? (
                             <img
-                              src={normalizeMediaUrl(product.image_url) || '/placeholder.png'}
+                              src={normalizeMediaUrl(product.image_url) || '/placeholder.svg'}
                               alt={product.name}
                               className="h-full w-full object-cover"
                               onError={(e) => {
                                 const target = e.currentTarget
-                                if (!target.src.endsWith('/placeholder.png')) target.src = '/placeholder.png'
+                                if (!target.src.endsWith('/placeholder.svg') && !target.src.endsWith('/placeholder.png')) {
+                            target.src = '/placeholder.svg'
+                          }
                               }}
                             />
                           ) : (

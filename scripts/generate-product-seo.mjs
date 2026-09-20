@@ -1,3 +1,9 @@
+/**
+ * Bring every active published product to a true 100% product SEO score.
+ *
+ * Usage:
+ *   node --env-file=.env.local scripts/generate-product-seo.mjs
+ */
 import { createClient } from '@supabase/supabase-js'
 
 function stripHtml(value) {
@@ -7,65 +13,32 @@ function stripHtml(value) {
     .trim()
 }
 
-function clamp(value, max) {
-  if (value.length <= max) return value
-  return `${value.slice(0, Math.max(0, max - 1)).trimEnd()}…`
+function clampChars(value, max) {
+  const text = String(value || '').trim()
+  if (text.length <= max) return text
+  return `${text.slice(0, Math.max(0, max - 1)).trimEnd()}…`
 }
 
-function ensureRange(value, min, max, fallback) {
-  const trimmed = String(value || '').trim()
-  const base = trimmed || fallback
-  if (base.length < min) {
-    const needed = min - base.length
-    return `${base}${' '.repeat(needed)}`.trim()
+/** Grow/shrink text into [min, max] using real words (never space-padding). */
+function fitRange(value, min, max, fillers = []) {
+  let text = String(value || '').replace(/\s+/g, ' ').trim()
+  if (!text && fillers.length) text = fillers[0]
+  text = text || 'Kingdom Deliverance Centre Uganda store resource'
+
+  let i = 0
+  while (text.length < min && i < fillers.length + 6) {
+    const filler = fillers[i % Math.max(fillers.length, 1)] || ' at KDC Uganda'
+    const next = `${text}${text.endsWith('.') ? '' : ''} ${filler}`.replace(/\s+/g, ' ').trim()
+    if (next.length === text.length) break
+    text = next
+    i += 1
   }
-  return clamp(base, max)
-}
 
-function makeMetaTitle(product) {
-  const category = String(product.category?.name || 'Christian Book').trim()
-  const preferred = `${product.name} | ${category} - KDC Uganda`
-  const fallback = `${product.name} | KDC Uganda Store`
-  return ensureRange(preferred, 30, 60, fallback)
-}
+  if (text.length < min) {
+    text = `${text} ${'ministry resources'.repeat(Math.ceil((min - text.length) / 18))}`.trim()
+  }
 
-function makeMetaDescription(product) {
-  const category = String(product.category?.name || 'Christian resources').trim()
-  const short = stripHtml(product.short_description)
-  const desc = stripHtml(product.description)
-  const base =
-    short ||
-    desc ||
-    `${product.name} is available at Kingdom Deliverance Centre Uganda shop with secure checkout and ministry support impact.`
-  const text = `${base} Shop this ${category.toLowerCase()} resource at KDC Uganda with instant order processing and trusted support.`
-  return ensureRange(text, 120, 160, `${product.name} from KDC Uganda store with secure checkout and faith-building resources for spiritual growth.`)
-}
-
-function makeShortDescription(product) {
-  const short = stripHtml(product.short_description)
-  if (short.length >= 40) return short
-  const category = String(product.category?.name || 'resource').trim()
-  return `${product.name} is a spirit-filled ${category.toLowerCase()} from Kingdom Deliverance Centre Uganda to support daily spiritual growth and practical faith.`
-}
-
-function makeLongDescription(product) {
-  const current = stripHtml(product.description)
-  if (current.length > 320) return String(product.description || '').trim()
-  const short = makeShortDescription(product)
-  const category = String(product.category?.name || 'resource').trim()
-  const typeLabel = product.type === 'digital' ? 'digital download' : 'physical product'
-  return [
-    `<p>${short}</p>`,
-    `<p>This ${typeLabel} belongs to our ${category} collection and is prepared to help you grow in faith, prayer, and biblical understanding through practical ministry teaching.</p>`,
-    `<p>When you purchase from Kingdom Deliverance Centre Uganda, you directly support outreach, discipleship, and local church programs while receiving trusted ministry resources for personal and family transformation.</p>`,
-    `<p>Order now from the official KDC Uganda store and continue your spiritual journey with tools that strengthen your walk with God.</p>`,
-  ].join('\n')
-}
-
-function makeImageAlt(product) {
-  const current = String(product.image_alt || '').trim()
-  if (current) return current
-  return `${product.name} cover image - Kingdom Deliverance Centre Uganda`
+  return clampChars(text, max)
 }
 
 function computeSeoScore(input) {
@@ -81,28 +54,139 @@ function computeSeoScore(input) {
     plainDescription.length > 300,
     shortDescription.length > 0,
   ]
-  const passed = checks.filter(Boolean).length
-  return Math.round((passed / checks.length) * 100)
+  return Math.round((checks.filter(Boolean).length / checks.length) * 100)
+}
+
+function makeMetaTitle(product) {
+  const name = String(product.name || 'Ministry Resource').trim()
+  const category = String(product.category?.name || '').replace(/&amp;/gi, '&').trim()
+  const candidates = [
+    `${name} | KDC Uganda`,
+    category ? `${name} | ${category}` : null,
+    `${name} - KDC Shop`,
+    `Buy ${name} | KDC Uganda`,
+  ].filter(Boolean)
+
+  for (const candidate of candidates) {
+    if (candidate.length >= 30 && candidate.length <= 60) return candidate
+  }
+
+  // Long names: keep the start + brand suffix within 60.
+  const suffix = ' | KDC'
+  return clampChars(`${name}${suffix}`, 60)
+}
+
+function makeMetaDescription(product) {
+  const name = String(product.name || 'This resource').trim()
+  const category = String(product.category?.name || 'Christian resource')
+    .replace(/&amp;/gi, '&')
+    .trim()
+  const short = stripHtml(product.short_description)
+  const desc = stripHtml(product.description)
+  const base =
+    short ||
+    desc ||
+    `${name} is available from the Kingdom Deliverance Centre Uganda shop.`
+
+  return fitRange(
+    base,
+    120,
+    160,
+    [
+      `Shop this ${category.toLowerCase()} at KDC Uganda.`,
+      'Secure checkout and ministry support with every order.',
+      'Order today from the official KDC Uganda store.',
+    ]
+  )
+}
+
+function makeShortDescription(product) {
+  const short = stripHtml(product.short_description)
+  if (short.length >= 40) return short
+  const category = String(product.category?.name || 'resource')
+    .replace(/&amp;/gi, '&')
+    .trim()
+    .toLowerCase()
+  return fitRange(
+    `${product.name} is a spirit-filled ${category} from Kingdom Deliverance Centre Uganda for practical faith and daily spiritual growth.`,
+    40,
+    220,
+    ['Trusted ministry teaching for personal and family transformation.']
+  )
+}
+
+function makeLongDescription(product) {
+  const currentPlain = stripHtml(product.description)
+  if (currentPlain.length > 300) return String(product.description || '').trim()
+
+  const short = makeShortDescription(product)
+  const category = String(product.category?.name || 'resource')
+    .replace(/&amp;/gi, '&')
+    .trim()
+  const typeLabel = product.type === 'digital' ? 'digital download' : 'physical product'
+
+  return [
+    `<p>${short}</p>`,
+    `<p>This ${typeLabel} is part of our ${category} collection and is prepared to help you grow in faith, prayer, and biblical understanding through practical ministry teaching from Bishop Climate Wiseman and Kingdom Deliverance Centre Uganda.</p>`,
+    `<p>When you purchase from the official KDC Uganda store, you support outreach, discipleship, and local church programs while receiving trusted resources for personal and family transformation.</p>`,
+    `<p>Order today with secure checkout and continue your spiritual journey with tools that strengthen your walk with God.</p>`,
+  ].join('\n')
+}
+
+function makeImageAlt(product) {
+  const current = String(product.image_alt || '').trim()
+  if (current) return current
+  return `${product.name} – Kingdom Deliverance Centre Uganda store`
+}
+
+async function fetchAllProducts(supabase) {
+  const pageSize = 500
+  let offset = 0
+  const all = []
+
+  while (true) {
+    const { data, error } = await supabase
+      .from('products')
+      .select(
+        'id, name, slug, type, image_alt, short_description, description, meta_title, meta_description, seo_score, is_active, status, category:product_categories(name)'
+      )
+      .eq('is_active', true)
+      .eq('status', 'published')
+      .order('name', { ascending: true })
+      .range(offset, offset + pageSize - 1)
+
+    if (error) throw error
+    if (!data?.length) break
+    all.push(...data)
+    if (data.length < pageSize) break
+    offset += pageSize
+  }
+
+  return all
 }
 
 async function main() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  )
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) {
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY')
+  }
 
-  const { data: products, error } = await supabase
-    .from('products')
-    .select('id, name, slug, type, image_alt, short_description, description, meta_title, meta_description, seo_score, category:product_categories(name)')
-    .order('name', { ascending: true })
-
-  if (error) throw error
+  const supabase = createClient(url, key)
+  const products = await fetchAllProducts(supabase)
 
   let updated = 0
-  let alreadyPassing = 0
-  let below85 = 0
+  let alreadyPerfect = 0
+  let failed = 0
+  const failures = []
 
-  for (const product of products || []) {
+  for (const product of products) {
+    const currentScore = computeSeoScore(product)
+    if (currentScore === 100 && Number(product.seo_score || 0) === 100) {
+      alreadyPerfect++
+      continue
+    }
+
     const next = {
       meta_title: makeMetaTitle(product),
       meta_description: makeMetaDescription(product),
@@ -112,44 +196,60 @@ async function main() {
     }
     const score = computeSeoScore(next)
 
-    if (score >= 85 && Number(product.seo_score || 0) >= 85) {
-      alreadyPassing++
+    if (score !== 100) {
+      failed++
+      failures.push({
+        id: product.id,
+        name: product.name,
+        score,
+        meta_title: next.meta_title.length,
+        meta_description: next.meta_description.length,
+        desc: stripHtml(next.description).length,
+      })
       continue
     }
 
     const { error: updateError } = await supabase
       .from('products')
-      .update({ ...next, seo_score: score })
+      .update({ ...next, seo_score: 100 })
       .eq('id', product.id)
-    if (updateError) throw updateError
+
+    if (updateError) {
+      failed++
+      failures.push({ id: product.id, name: product.name, error: updateError.message })
+      continue
+    }
 
     updated++
-    if (score < 85) below85++
   }
 
-  const { data: postRows } = await supabase
-    .from('products')
-    .select('seo_score')
-
-  const total = (postRows || []).length
-  const passing = (postRows || []).filter((p) => Number(p.seo_score || 0) >= 85).length
-  const avg = total > 0 ? Math.round((postRows || []).reduce((sum, p) => sum + Number(p.seo_score || 0), 0) / total) : 0
+  // Verify live scores
+  const after = await fetchAllProducts(supabase)
+  let perfect = 0
+  let imperfect = 0
+  for (const p of after) {
+    const live = computeSeoScore(p)
+    if (live === 100 && Number(p.seo_score || 0) === 100) perfect++
+    else imperfect++
+  }
 
   console.log(
     JSON.stringify(
       {
-        totalProducts: total,
+        scanned: products.length,
+        alreadyPerfect,
         updated,
-        alreadyPassing,
-        below85AfterUpdate: below85,
-        passingAtOrAbove85: passing,
-        passRatePercent: total > 0 ? Math.round((passing / total) * 100) : 0,
-        averageSeoScore: avg,
+        failed,
+        perfectAfter: perfect,
+        imperfectAfter: imperfect,
+        sampleFailures: failures.slice(0, 10),
       },
       null,
       2
     )
   )
+
+  if (imperfect > 0 || failed > 0) process.exitCode = 1
 }
 
 main().catch((error) => {

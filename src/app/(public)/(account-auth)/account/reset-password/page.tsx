@@ -20,15 +20,22 @@ function ResetPasswordForm() {
 
   const supabase = createClient()
 
-  // Supabase sends the token in the URL hash — exchange it for a session
+  // Handle PKCE code in URL if redirected directly, or token hash via onAuthStateChange
   useEffect(() => {
+    const code = searchParams.get('code')
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (error) setError(error.message)
+      })
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
-      if (event === 'PASSWORD_RECOVERY') {
+      if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
         // Session is now active — user can set a new password
       }
     })
     return () => subscription.unsubscribe()
-  }, [])
+  }, [searchParams, supabase])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -13,13 +13,15 @@ export async function GET(request: Request) {
     const supabase = createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      // Password reset flow — send to reset page
+      // Password reset flow — send to the requested reset page or default to customer reset page
       if (type === 'recovery') {
-        return NextResponse.redirect(`${origin}/account/reset-password`)
+        const resetDestination = next && next !== '/account' ? next : '/account/reset-password'
+        return NextResponse.redirect(`${origin}${resetDestination}`)
       }
       return NextResponse.redirect(`${origin}${next}`)
     }
   }
 
-  return NextResponse.redirect(`${origin}/account/login?error=auth-callback-failed`)
+  const failureLogin = next?.startsWith('/admin') ? '/admin/login' : '/account/login'
+  return NextResponse.redirect(`${origin}${failureLogin}?error=auth-callback-failed`)
 }

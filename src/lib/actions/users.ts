@@ -131,3 +131,30 @@ export async function deactivateUser(
 
   return { success: true }
 }
+
+export async function sendPasswordResetForUser(
+  email: string,
+  role?: UserRole
+): Promise<{ success: true } | { error: string }> {
+  const result = await requireAdmin()
+  if ('error' in result) return result
+
+  const cleanEmail = email.trim().toLowerCase()
+  if (!cleanEmail) return { error: 'Valid email address is required' }
+
+  const adminClient = createAdminClient()
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
+  const nextParam = role === 'admin' ? '/admin/reset-password' : '/account/reset-password'
+  const redirectTo = siteUrl ? `${siteUrl}/auth/callback?next=${encodeURIComponent(nextParam)}` : undefined
+
+  const { error } = await adminClient.auth.resetPasswordForEmail(cleanEmail, {
+    ...(redirectTo ? { redirectTo } : {}),
+  })
+
+  if (error) {
+    console.error('[sendPasswordResetForUser]', error.message)
+    return { error: error.message }
+  }
+
+  return { success: true }
+}

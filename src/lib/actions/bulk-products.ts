@@ -47,11 +47,22 @@ function parseUrls(value: string) {
   return urls.filter(Boolean)
 }
 
-function getUniqueSlug(base: string, existingSlugSet: Set<string>, usedSlugs: Set<string>) {
-  let slug = base || 'product'
+function getUniqueSlug(
+  base: string,
+  existingSlugSet: Set<string>,
+  usedSlugs: Set<string>,
+  /** When true, reuse an already-existing slug so upsert updates instead of inserting a duplicate. */
+  preferExisting = false
+) {
+  const root = base || 'product'
+  if (preferExisting && existingSlugSet.has(root) && !usedSlugs.has(root)) {
+    usedSlugs.add(root)
+    return root
+  }
+  let slug = root
   let suffix = 1
   while (existingSlugSet.has(slug) || usedSlugs.has(slug)) {
-    slug = `${base || 'product'}-${suffix++}`
+    slug = `${root}-${suffix++}`
   }
   usedSlugs.add(slug)
   return slug
@@ -112,7 +123,7 @@ export async function importProductsFromCSV(csvData: any[]) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
-  const { data: categories } = await supabase.from('product_categories').select('id, name')
+  const { data: categories } = await supabase.from('product_categories').select('id, name, slug')
   const categoryMap = new Map(categories?.map((c) => [c.name.toLowerCase(), c.id]))
 
   const { data: existingProducts } = await supabase.from('products').select('slug')
@@ -129,7 +140,7 @@ export async function importProductsFromCSV(csvData: any[]) {
     const name = getValue(row, 'Name', 'name', 'post_title', 'title')
     const rawSlug = getValue(row, 'Slug', 'slug', 'post_name')
     const catNameRaw = getValue(row, 'Category', 'category', 'tax:product_cat', 'Categories', 'categories')
-    const catName = parseCategoryName(catNameRaw)
+    const catName = parseCategoryName(catNameRaw).replace(/&amp;/gi, '&')
     if (catName) categoryNames.add(catName.toLowerCase())
     const downloadable = getValue(row, 'Downloadable', 'downloadable', 'is_downloadable')
     const isDigital = parseBoolean(downloadable) || !!getValue(row, 'File URL', 'file_url', 'downloadable_files')
@@ -142,7 +153,8 @@ export async function importProductsFromCSV(csvData: any[]) {
     const height = parseNumber(getValue(row, 'Height', 'height'))
 
     const slugBase = generateSlug(rawSlug || name)
-    const slug = getUniqueSlug(slugBase, existingSlugSet, usedSlugs)
+    // Prefer the CSV slug when it already exists so re-imports upsert instead of duplicating.
+    const slug = getUniqueSlug(slugBase, existingSlugSet, usedSlugs, Boolean(rawSlug))
 
     const featuredImageFromImages = getValue(row, 'Images', 'images', 'image_url', 'Featured Image URL', 'image', 'featured_image')
     const allImageUrls = parseUrls(featuredImageFromImages)
@@ -191,7 +203,10 @@ export async function importProductsFromCSV(csvData: any[]) {
 
   const missingCategoryNames = Array.from(categoryNames).filter((name) => !categoryMap.has(name))
   if (missingCategoryNames.length > 0) {
-    const insertPayload = missingCategoryNames.map((name) => ({ name }))
+    const insertPayload = missingCategoryNames.map((name) => ({
+      name,
+      slug: generateSlug(name),
+    }))
     const { data: insertedCategories } = await supabase
       .from('product_categories')
       .insert(insertPayload)

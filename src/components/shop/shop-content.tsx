@@ -85,7 +85,7 @@ export function ShopContent({ products, currentPage, totalCount, pageSize }: Sho
             ))}
           </div>
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <button
                 type="button"
                 onClick={() => goToPage(currentPage - 1)}
@@ -94,24 +94,41 @@ export function ShopContent({ products, currentPage, totalCount, pageSize }: Sho
               >
                 Prev
               </button>
-              {Array.from({ length: totalPages }).slice(0, 7).map((_, index) => {
-                const page = index + 1
-                return (
-                  <button
-                    type="button"
-                    key={page}
-                    onClick={() => goToPage(page)}
-                    className={cn(
-                      'rounded-lg border px-3 py-1.5 text-sm',
-                      page === currentPage
-                        ? 'border-[#d4a017] bg-[#d4a017]/15 text-primary font-semibold'
-                        : 'border-gray-200'
-                    )}
-                  >
-                    {page}
-                  </button>
-                )
-              })}
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((page) => {
+                  if (totalPages <= 7) return true
+                  if (page === 1 || page === totalPages) return true
+                  return Math.abs(page - currentPage) <= 2
+                })
+                .reduce<(number | '…')[]>((acc, page, idx, arr) => {
+                  if (idx > 0) {
+                    const prev = arr[idx - 1]!
+                    if (page - prev > 1) acc.push('…')
+                  }
+                  acc.push(page)
+                  return acc
+                }, [])
+                .map((page, idx) =>
+                  page === '…' ? (
+                    <span key={`ellipsis-${idx}`} className="px-1 text-sm text-gray-400">
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      key={page}
+                      onClick={() => goToPage(page)}
+                      className={cn(
+                        'rounded-lg border px-3 py-1.5 text-sm',
+                        page === currentPage
+                          ? 'border-[#d4a017] bg-[#d4a017]/15 text-primary font-semibold'
+                          : 'border-gray-200'
+                      )}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
               <button
                 type="button"
                 onClick={() => goToPage(currentPage + 1)}

@@ -8,7 +8,7 @@ export const maxDuration = 60
  * Flip scheduled sermons whose time has passed to published.
  * Authorize with Authorization: Bearer $CRON_SECRET (or DM_CRON_SECRET) or ?secret=
  *
- * Suggested cadence: every hour via Vercel Cron / external scheduler.
+ * Suggested cadence: every 5 minutes via host crontab / Vercel Cron.
  */
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET || process.env.DM_CRON_SECRET

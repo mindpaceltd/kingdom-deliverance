@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { normalizeMediaUrl } from '@/lib/media-url'
+import { getMediaProxyUrl, normalizeMediaUrl } from '@/lib/media-url'
 
 interface Product {
   id: string
@@ -28,9 +28,11 @@ interface ProductCarouselProps {
 }
 
 function ProductThumb({ src, alt, priority = false }: { src?: string; alt: string; priority?: boolean }) {
-  const [imageSrc, setImageSrc] = useState(normalizeMediaUrl(src) || '/placeholder.png')
+  const [imageSrc, setImageSrc] = useState(normalizeMediaUrl(src) || '/placeholder.svg')
+  const proxyUrl = getMediaProxyUrl(src)
+
   useEffect(() => {
-    setImageSrc(normalizeMediaUrl(src) || '/placeholder.png')
+    setImageSrc(normalizeMediaUrl(src) || '/placeholder.svg')
   }, [src])
 
   return (
@@ -39,7 +41,13 @@ function ProductThumb({ src, alt, priority = false }: { src?: string; alt: strin
       alt={alt}
       loading={priority ? 'eager' : 'lazy'}
       className="w-full h-full object-cover object-top"
-      onError={() => setImageSrc('/placeholder.png')}
+      onError={() => {
+        if (proxyUrl && !imageSrc.includes('/api/media/asset')) {
+          setImageSrc(proxyUrl)
+          return
+        }
+        setImageSrc('/placeholder.svg')
+      }}
     />
   )
 }
