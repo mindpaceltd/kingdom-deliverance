@@ -51,7 +51,7 @@ export default async function SermonsPage({ searchParams }: SermonsPageProps) {
           className="absolute inset-0 bg-cover bg-center"
           style={{
             backgroundImage:
-              "url('https://images.unsplash.com/photo-1544427920-c49ccfb85579?q=80&w=2000&auto=format&fit=crop')",
+              "url('/images/sermons/sermons-featured-hero.jpg')",
           }}
         />
         <div className="absolute inset-0 bg-black/70" />

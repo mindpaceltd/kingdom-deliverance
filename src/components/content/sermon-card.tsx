@@ -24,7 +24,7 @@ export function SermonCard({ sermon }: SermonCardProps) {
         {sermon.thumbnail_url ? (
           <Image
             src={sermon.thumbnail_url}
-            alt={sermon.title}
+            alt={sermon.featured_image_alt || `${sermon.title} — sermon by ${sermon.preacher} at Kingdom Deliverance Centre Uganda`}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

@@ -58,6 +58,7 @@ export function SermonSchema({
       ? videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'www.youtube.com/embed/')
       : videoUrl
     base.uploadDate = datePublished
+    base.thumbnailUrl = [imageUrl]
   }
 
   if (audioUrl) {

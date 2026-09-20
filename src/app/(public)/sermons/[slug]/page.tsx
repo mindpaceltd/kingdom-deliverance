@@ -135,7 +135,7 @@ export default async function SermonDetailPage({ params }: Props) {
             <div className="relative mt-20 w-full aspect-video md:hidden">
               <Image
                 src={sermon.thumbnail_url}
-                alt=""
+                alt={sermon.featured_image_alt || `${sermon.title} — sermon by ${sermon.preacher} at Kingdom Deliverance Centre Uganda`}
                 fill
                 priority
                 sizes="100vw"
