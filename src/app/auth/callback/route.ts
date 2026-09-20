@@ -4,7 +4,16 @@ import { createClient } from '@/lib/supabase/server'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url)
+  const { searchParams } = new URL(request.url)
+  const forwardedHost = request.headers.get('x-forwarded-host')
+  const host = forwardedHost || request.headers.get('host') || 'kdcuganda.org'
+  const proto = request.headers.get('x-forwarded-proto') || 'https'
+  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, '')
+
+  let origin = `${proto}://${host}`
+  if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+    origin = configuredSiteUrl || 'https://kdcuganda.org'
+  }
   const token_hash = searchParams.get('token_hash')
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/account'
