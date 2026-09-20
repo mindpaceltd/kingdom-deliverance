@@ -22,8 +22,13 @@ function ResetPasswordForm() {
 
   // Handle PKCE code in URL if redirected directly, or token hash via onAuthStateChange
   useEffect(() => {
+    const tokenHash = searchParams.get('token_hash')
     const code = searchParams.get('code')
-    if (code) {
+    if (tokenHash) {
+      supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' }).then(({ error }) => {
+        if (error) setError(error.message)
+      })
+    } else if (code) {
       supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
         if (error) setError(error.message)
       })

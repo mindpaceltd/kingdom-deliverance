@@ -4,7 +4,7 @@ import { useState, Suspense } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { createClient } from '@/lib/supabase/client'
+import { requestPasswordResetAction } from '@/lib/actions/auth-recovery'
 import { Mail, Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -14,20 +14,18 @@ function ForgotPasswordForm() {
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
 
-  const supabase = createClient()
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${siteUrl}/auth/callback?next=/account/reset-password`,
+    const res = await requestPasswordResetAction({
+      email: email.trim(),
+      nextPath: '/account/reset-password',
     })
 
-    if (error) {
-      setError(error.message)
+    if (res?.error) {
+      setError(res.error)
       setLoading(false)
     } else {
       setSent(true)

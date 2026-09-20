@@ -45,9 +45,26 @@ function AdminResetPasswordForm() {
         // Logo fetch is non-critical
       }
 
-      // 2. Handle PKCE code in URL query params if redirected directly
+      // 2. Handle token_hash or PKCE code in URL query params if redirected directly
+      const tokenHash = searchParams.get("token_hash");
       const code = searchParams.get("code");
-      if (code) {
+      if (tokenHash) {
+        try {
+          const { error: otpError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: "recovery",
+          });
+          if (otpError) {
+            setError(otpError.message);
+            setVerifyingSession(false);
+            return;
+          }
+        } catch {
+          setError("Failed to verify recovery token. Please request a new link.");
+          setVerifyingSession(false);
+          return;
+        }
+      } else if (code) {
         try {
           const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {

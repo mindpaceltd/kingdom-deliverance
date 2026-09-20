@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { Loader2, ShieldCheck, Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { requestPasswordResetAction } from "@/lib/actions/auth-recovery";
 
 function AdminForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -41,14 +42,13 @@ function AdminForgotPasswordForm() {
     setError(null);
 
     try {
-      const supabase = createClient();
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${siteUrl}/auth/callback?next=/admin/reset-password`,
+      const res = await requestPasswordResetAction({
+        email: email.trim(),
+        nextPath: "/admin/reset-password",
       });
 
-      if (resetError) {
-        setError(resetError.message);
+      if (res?.error) {
+        setError(res.error);
         setLoading(false);
         return;
       }
