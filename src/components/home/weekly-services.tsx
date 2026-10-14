@@ -11,7 +11,7 @@ export function WeeklyServices({ label = 'Join us this week', services }: { labe
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{services.map((service, index) => {
         const fire = /fire/i.test(service.label);
         return <div key={`${service.label}-${index}`} className={`relative overflow-hidden rounded-2xl border p-5 ${fire ? 'border-[#e7ca83]/50 bg-[#0d1b3e] text-white' : 'border-slate-200/80 bg-white text-[#0d1b3e]'}`}>
-          <div className="flex items-center gap-3"><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${fire ? 'bg-[#e7ca83]/15 text-[#e7ca83]' : 'bg-[#f7f5ef] text-[#806125]'}`}>{fire ? <Flame size={18} aria-hidden="true" /> : <Clock3 size={18} aria-hidden="true" />}</span><h3 className="text-sm font-semibold leading-5">{service.label}</h3></div>
+          <div className="flex items-center gap-3"><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${fire ? 'bg-[#e7ca83]/15 text-[#e7ca83]' : 'bg-[#f7f5ef] text-[#806125]'}`}>{fire ? <Flame size={18} aria-hidden="true" /> : <Clock3 size={18} aria-hidden="true" />}</span><h3 className={`text-sm font-semibold leading-5 ${fire ? 'text-white' : 'text-[#0d1b3e]'}`}>{service.label}</h3></div>
           <p className={`mt-4 text-sm font-medium leading-6 ${fire ? 'text-[#e7ca83]' : 'text-slate-600'}`}>{service.time}</p>
         </div>;
       })}</div>
