@@ -25,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const metaDesc =
     "Kingdom Deliverance Centre Uganda (KDC) — Pentecostal church in Kampala led by Bishop Climate Wiseman. Sunday worship, live sermons, healing, deliverance, and ministry programs.";
   const metaKeywords = siteKeywordsString();
-  const siteIcon = "/favicon.ico";
+  const siteIcon = "/branding/church-icon.jpeg";
   const siteOgImage = await getOrgOgImageUrl();
   const siteName = await getSiteName();
 
@@ -43,7 +43,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const resolvedMetaTitle = s.get('site_meta_title') || resolvedSiteName;
   const resolvedMetaDesc = s.get('site_meta_description') || metaDesc;
   const resolvedMetaKeywords = s.get('site_meta_keywords') || s.get('site_keywords') || metaKeywords;
-  const resolvedSiteIcon = s.get('site_icon') || siteIcon;
+  const resolvedSiteIcon = siteIcon;
   const resolvedSiteOgImage = s.get('site_og_image') || siteOgImage;
 
   return {

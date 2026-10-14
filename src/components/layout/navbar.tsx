@@ -70,7 +70,7 @@ export function Navbar({ logo }: { logo?: string }) {
       className={cn(
         "fixed top-0 z-50 w-full transition-all duration-500",
         (scrolled || pathname !== "/")
-          ? "bg-[#0d1b3e]/95 backdrop-blur-xl shadow-2xl border-b border-white/10"
+          ? "bg-[#0d1b3e] backdrop-blur-xl shadow-2xl border-b border-white/10"
           : "bg-transparent"
       )}
     >
@@ -78,12 +78,8 @@ export function Navbar({ logo }: { logo?: string }) {
 
         {/* ── Logo ── */}
         <Link href="/" className="flex items-center gap-2 group min-w-0 mr-4 shrink-0">
-          <div className="relative w-9 h-9 rounded-full bg-gradient-to-br from-accent to-yellow-400 flex items-center justify-center shadow-lg shadow-accent/30 overflow-hidden shrink-0">
-            {logo ? (
-              <img src={logo} alt="Logo" className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-primary font-bold text-base leading-none">K</span>
-            )}
+          <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center shrink-0">
+            <img src="/branding/church-logo.png" alt="Kingdom Deliverance Centre Uganda" className="w-full h-full object-contain" />
           </div>
           <div className="flex flex-col leading-tight min-w-0">
             <span className="font-serif text-sm sm:text-base md:text-lg font-bold text-white tracking-wide group-hover:text-accent transition-colors truncate">
@@ -135,7 +131,7 @@ export function Navbar({ logo }: { logo?: string }) {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 8 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute left-0 top-full z-50 min-w-[185px] bg-[#0d1b3e]/95 backdrop-blur-xl border border-white/10 text-white p-2 rounded-xl shadow-2xl before:content-[''] before:absolute before:-top-3 before:left-0 before:right-0 before:h-3"
+                      className="absolute left-0 top-full z-50 min-w-[185px] bg-[#0d1b3e] backdrop-blur-xl border border-white/10 text-white p-2 rounded-xl shadow-2xl before:content-[''] before:absolute before:-top-3 before:left-0 before:right-0 before:h-3"
                     >
                       {item.children.map((child) => {
                         const active =

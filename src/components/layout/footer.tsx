@@ -34,7 +34,7 @@ export async function Footer() {
   const socialYoutube = normalizeExternalHref(settingsMap.youtube_url || process.env.NEXT_PUBLIC_SOCIAL_YOUTUBE || '');
 
   return (
-    <footer className="bg-[#0a1628] text-white">
+    <footer className="bg-[#0d1b3e] text-white">
       {/* Main Footer */}
       <div className="container px-4 py-14">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
@@ -42,16 +42,12 @@ export async function Footer() {
           {/* Brand col */}
           <div className="md:col-span-4 space-y-5">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center shrink-0 overflow-hidden">
-                {siteLogo ? (
-                  <img 
-                    src={siteLogo} 
-                    alt="Logo" 
-                    className="w-full h-full object-cover"
+              <div className="w-24 h-24 flex items-center justify-center shrink-0">
+                <img
+                    src="/branding/church-logo.png"
+                    alt="Kingdom Deliverance Centre Uganda"
+                    className="w-full h-full object-contain"
                   />
-                ) : (
-                  <span className="text-primary font-bold text-lg leading-none">K</span>
-                )}
               </div>
               <div>
                 <p className="font-serif text-lg font-bold text-white leading-tight">{settingsMap.site_name || "Kingdom Deliverance"}</p>
@@ -158,7 +154,7 @@ export async function Footer() {
                   <MapPin className="w-4 h-4 text-accent shrink-0 mt-0.5" />
                   {settingsMap.address || "Kingdom Deliverance Centre Uganda, Kampala"}
                 </a>
-                
+
                 {/* Main Phone */}
                 <a href={`tel:${settingsMap.contact_phone || "+256700000000"}`} className="flex items-center gap-3 text-sm text-white/55 hover:text-accent transition-colors duration-200">
                   <Phone className="w-4 h-4 text-accent shrink-0" />
