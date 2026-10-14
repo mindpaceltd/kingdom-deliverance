@@ -1,3 +1,4 @@
+import { PartnershipProjects, SupportUs } from '@/components/home/partnership-sections';
 import { preload } from "react-dom";
 import { HeroSection } from "@/components/home/hero-section";
 import { getHeroImageSrc } from "@/components/home/hero-background";
@@ -249,6 +250,8 @@ export default async function Home() {
         </div>
       </section>
 
+      <PartnershipProjects />
+
       {/* Product Carousel */}
       {featuredProducts.length > 0 && (
         <ProductCarousel
@@ -427,6 +430,8 @@ export default async function Home() {
           viewAllUrl={home.postsViewAllUrl || "/blog"}
         />
       )}
+
+      <SupportUs />
 
       {/* CTA Banner - Fire Service */}
       <section className="py-12 bg-gradient-to-r from-red-600 via-orange-500 to-red-600 relative overflow-hidden">
