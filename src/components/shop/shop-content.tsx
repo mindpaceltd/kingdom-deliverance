@@ -3,13 +3,13 @@
 import React, { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { LayoutGrid, List, ShoppingBag } from 'lucide-react'
-import { ProductCard } from './product-card'
+import { ProductCard, type ShopProduct } from './product-card'
 import { SortSelect } from './sort-select'
 import { CurrencySelect } from './currency-select'
 import { cn } from '@/lib/utils'
 
 interface ShopContentProps {
-  products: any[]
+  products: ShopProduct[]
   currentPage: number
   totalCount: number
   pageSize: number
@@ -32,11 +32,11 @@ export function ShopContent({ products, currentPage, totalCount, pageSize }: Sho
   }
 
   return (
-    <div className="flex-1">
+    <div className="min-w-0 flex-1">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center justify-between mb-6 bg-white rounded-2xl border border-gray-100 px-4 py-3 shadow-sm gap-4">
-        <div className="flex items-center gap-4">
-          <p className="text-sm text-gray-500 hidden sm:block">
+      <div className="flex flex-wrap items-center justify-between mb-5 bg-white rounded-2xl border border-[#0d1b3e]/10 px-3 py-3 gap-3">
+        <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start sm:gap-3">
+          <p className="whitespace-nowrap text-[10px] text-slate-500 sm:text-xs">
             Showing{' '}
             <span className="font-bold text-primary">
               {showingFrom}-{showingTo}
@@ -47,27 +47,29 @@ export function ShopContent({ products, currentPage, totalCount, pageSize }: Sho
             <button
               onClick={() => setView('grid')}
               className={cn(
-                "p-1.5 rounded-md transition-all",
+                "min-h-10 min-w-10 p-2 rounded-md transition-all",
                 view === 'grid' ? "bg-white text-primary shadow-sm" : "text-gray-400 hover:text-gray-600"
               )}
               aria-label="Grid view"
+              aria-pressed={view === 'grid'}
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
             <button
               onClick={() => setView('list')}
               className={cn(
-                "p-1.5 rounded-md transition-all",
+                "min-h-10 min-w-10 p-2 rounded-md transition-all",
                 view === 'list' ? "bg-white text-primary shadow-sm" : "text-gray-400 hover:text-gray-600"
               )}
               aria-label="List view"
+              aria-pressed={view === 'list'}
             >
               <List className="w-4 h-4" />
             </button>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <CurrencySelect compact className="h-9 w-[88px] text-xs font-semibold" />
+        <div className="flex w-full min-w-0 items-center justify-end gap-2 sm:w-auto [&_select]:min-w-0 [&_select]:max-w-full">
+          <CurrencySelect compact className="h-10 w-[88px] shrink-0 text-xs font-semibold" />
           <SortSelect />
         </div>
       </div>
@@ -76,8 +78,8 @@ export function ShopContent({ products, currentPage, totalCount, pageSize }: Sho
         <div className="space-y-6">
           <div className={cn(
             "grid",
-            view === 'grid' 
-              ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-6" 
+            view === 'grid'
+              ? "grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-5"
               : "grid-cols-1 gap-4"
           )}>
             {products.map((product) => (
@@ -90,7 +92,7 @@ export function ShopContent({ products, currentPage, totalCount, pageSize }: Sho
                 type="button"
                 onClick={() => goToPage(currentPage - 1)}
                 disabled={currentPage <= 1}
-                className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm disabled:opacity-40"
+                className="min-h-11 rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:opacity-40"
               >
                 Prev
               </button>
@@ -118,8 +120,9 @@ export function ShopContent({ products, currentPage, totalCount, pageSize }: Sho
                       type="button"
                       key={page}
                       onClick={() => goToPage(page)}
+                      aria-current={page === currentPage ? 'page' : undefined}
                       className={cn(
-                        'rounded-lg border px-3 py-1.5 text-sm',
+                        'min-h-11 min-w-11 rounded-lg border px-3 py-2 text-sm',
                         page === currentPage
                           ? 'border-[#d4a017] bg-[#d4a017]/15 text-primary font-semibold'
                           : 'border-gray-200'
@@ -133,7 +136,7 @@ export function ShopContent({ products, currentPage, totalCount, pageSize }: Sho
                 type="button"
                 onClick={() => goToPage(currentPage + 1)}
                 disabled={currentPage >= totalPages}
-                className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm disabled:opacity-40"
+                className="min-h-11 rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:opacity-40"
               >
                 Next
               </button>

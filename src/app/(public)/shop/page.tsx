@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { ShopFilters } from '@/components/shop/shop-filters'
 import { ShopContent } from '@/components/shop/shop-content'
-import { ShoppingBag, Zap, Lock, HeartHandshake, BookOpen } from 'lucide-react'
+import type { ShopProduct } from '@/components/shop/product-card'
+import Link from 'next/link'
+import { ArrowDown, BookOpen, Download } from 'lucide-react'
 import type { Metadata } from 'next'
 import { buildListPageMetadata } from '@/lib/seo/list-page-metadata'
 import { pageKeywords } from '@/lib/seo/brand-keywords'
@@ -28,7 +30,7 @@ export default async function ShopPage({
     type?: string
   }
 }) {
-  let products: any[] = []
+  let products: ShopProduct[] = []
   let categories: { id: string; name: string; slug: string; count: number }[] = []
   let filteredCount = 0
   let catalogTotal = 0
@@ -125,69 +127,32 @@ export default async function ShopPage({
     loadError = true
   }
 
-  const trustBadges = [
-    { icon: BookOpen, label: 'Spirit-filled Resources', sub: 'Carefully selected for your growth' },
-    { icon: Zap, label: 'Instant Access', sub: 'Download and access immediately' },
-    { icon: Lock, label: 'Secure Checkout', sub: 'Safe, fast and reliable payments' },
-    { icon: HeartHandshake, label: 'Support Our Ministry', sub: 'Every purchase helps us reach more souls' },
-  ]
-
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
-      <section className="relative overflow-hidden pb-12 pt-28 lg:pb-16 lg:pt-40">
-        <div className="absolute inset-0 bg-[#0d1b2a]" />
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-30"
-          style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=2070')",
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0d1b2a]/95 via-[#0d1b2a]/85 to-[#0d1b2a]/70" />
-
-        <div className="relative z-10 container mx-auto px-4">
-          <div className="mx-auto flex w-full max-w-4xl flex-col items-center text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#d4a017]/40 bg-[#d4a017]/20 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-[#d4a017]">
-              <ShoppingBag className="size-3" />
-              Official Ministry Store
-            </div>
-
-            <h1 className="mb-4 max-w-2xl text-4xl font-black leading-tight text-white md:text-6xl">
-              Resources for{' '}
-              <span className="italic text-[#d4a017]">Spirit &amp; Purpose</span>
-            </h1>
-
-            <p className="mb-10 max-w-xl text-base leading-relaxed text-white/60">
-              Explore our collection of e-books, recorded sermons, and church merchandise designed
-              to support your spiritual growth.
-            </p>
-
-            <div className="grid w-full max-w-4xl grid-cols-2 justify-items-center gap-4 md:grid-cols-4 md:gap-6">
-              {trustBadges.map((b) => (
-                <div key={b.label} className="flex max-w-[160px] flex-col items-center gap-2 text-center">
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10">
-                    <b.icon className="size-4 text-[#d4a017]" />
-                  </div>
-                  <div className="space-y-0.5">
-                    <p className="text-[12px] font-bold leading-tight text-white">{b.label}</p>
-                    <p className="text-[10px] leading-snug text-white/50">{b.sub}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+    <div className="flex min-h-screen flex-col bg-[#faf8f4] pt-[89px] sm:pt-[105px]">
+      <section aria-labelledby="shop-title" className="border-b border-[#e8e1d5] bg-[#0d1b3e] text-white">
+        <div className="container grid items-center gap-6 px-4 py-8 md:grid-cols-[1fr_auto] md:px-6 md:py-10">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#e7ca83]">KDC Ministry Store</p>
+            <h1 id="shop-title" className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-white md:text-4xl lg:text-5xl">Resources for your <span className="text-[#e7ca83]">faith.</span></h1>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-white/75">Explore books, teaching and ministry resources to help you grow in the Word and live your faith.</p>
+            <Link href="#shop-catalog" className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-[#e7ca83] px-5 py-2 text-sm font-semibold text-[#0d1b3e] transition hover:bg-[#f4dca2]">Browse the collection <ArrowDown size={16} aria-hidden="true" /></Link>
+          </div>
+          <div className="hidden gap-3 md:flex md:max-w-xs md:flex-col" aria-label="Store formats">
+            <div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/5 px-4 py-3"><BookOpen size={21} className="text-[#e7ca83]" aria-hidden="true" /><div><p className="text-sm font-semibold">Books &amp; teaching</p><p className="mt-1 text-xs text-white/60">Resources for your next step</p></div></div>
+            <div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/5 px-4 py-3"><Download size={21} className="text-[#e7ca83]" aria-hidden="true" /><div><p className="text-sm font-semibold">Digital &amp; physical formats</p><p className="mt-1 text-xs text-white/60">Choose what works for you</p></div></div>
           </div>
         </div>
       </section>
 
-      <section className="flex-1 py-10">
-        <div className="container mx-auto max-w-6xl px-4">
+      <section id="shop-catalog" aria-label="Shop catalog" className="flex-1 scroll-mt-28 py-6 md:py-8">
+        <div className="container px-4 md:px-6">
           {loadError ? (
             <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               The shop could not load products right now. Please refresh and try again.
             </p>
           ) : null}
-          <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
-            <aside className="hidden w-full shrink-0 lg:block lg:w-[17.5rem] xl:w-80">
+          <div className="flex flex-col gap-5 xl:flex-row xl:gap-6">
+            <aside className="hidden w-56 shrink-0 xl:block">
               <ShopFilters
                 categories={categories}
                 totalCount={catalogTotal}
@@ -198,7 +163,7 @@ export default async function ShopPage({
             </aside>
 
             <div className="min-w-0 flex-1 space-y-4">
-              <div className="lg:hidden">
+              <div className="xl:hidden">
                 <ShopFilters
                   categories={categories}
                   totalCount={catalogTotal}
