@@ -1,3 +1,4 @@
+import { WeeklyServices } from '@/components/home/weekly-services';
 import { PartnershipProjects, SupportUs } from '@/components/home/partnership-sections';
 import { preload } from "react-dom";
 import { HeroSection } from "@/components/home/hero-section";
@@ -187,6 +188,7 @@ export default async function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       <HeroSection backgroundImage={heroImageUrl} content={heroCopy} />
+      <WeeklyServices label={home.joinUsLabel} services={home.serviceSlots || []} />
 
       {/* Mission / Stats */}
       <PageSection className="bg-white py-24">

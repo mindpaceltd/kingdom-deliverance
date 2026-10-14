@@ -1,6 +1,8 @@
 'use server'
 
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { getExchangeRates, SUPPORTED_CURRENCIES } from '@/lib/services/exchange-rates'
+import { donationRate } from '@/lib/donation-currency'
+import { createAdminClient } from '@/lib/supabase/server'
 import { getPesapalAuthToken, initiatePesapalPayment } from '@/lib/payments/pesapal'
 import { getDefaultPublicOrigin } from '@/lib/seo/public-content-urls'
 async function getPesapalSettings() {
@@ -31,7 +33,17 @@ export async function createDonationOrder(data: {
   notes?: string
   is_anonymous: boolean
 }) {
-  const supabase = createClient()
+  if (!Number.isFinite(data.amount) || data.amount <= 0 || !(SUPPORTED_CURRENCIES as readonly string[]).includes(data.currency)) {
+    return { error: 'Please enter a valid amount and supported currency.' }
+  }
+  let amountInUgx: number
+  try {
+    const rates = await getExchangeRates()
+    amountInUgx = Math.round(data.amount / donationRate(data.currency, rates) * donationRate('UGX', rates))
+    if (!Number.isSafeInteger(amountInUgx) || amountInUgx < 1) return { error: 'Please enter a valid gift amount.' }
+  } catch {
+    return { error: 'Unable to calculate your payment. Please try again.' }
+  }
   const adminClient = createAdminClient()
 
   // Create donation record
@@ -63,14 +75,6 @@ export async function createDonationOrder(data: {
     const names = data.donor_name ? data.donor_name.trim().split(' ') : ['Anonymous', 'Donor']
     const firstName = names[0] || 'Anonymous'
     const lastName = names.slice(1).join(' ') || 'Donor'
-
-    // Convert amount to UGX for Pesapal
-    const RATES: Record<string, number> = {
-      USD: 1, UGX: 3800, KES: 130, RWF: 1250, GBP: 0.79, EUR: 0.92, TZS: 2600, NGN: 1600, GHS: 15, ZAR: 18
-    }
-    const currentRate = RATES[data.currency] || 1
-    const amountInUsd = data.amount / currentRate
-    const amountInUgx = Math.round(amountInUsd * RATES['UGX'])
 
     const siteUrl = getDefaultPublicOrigin()
 
