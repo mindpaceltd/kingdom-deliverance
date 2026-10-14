@@ -144,7 +144,7 @@ export default async function EventsPage() {
       )}
 
       {/* ── Upcoming Events Grid ── */}
-      <section className="py-20 bg-white">
+      {(upcoming.length > 0 || !featured) && <section className="py-20 bg-white">
         <div className="container px-4">
           <h2 className="font-serif text-3xl font-bold text-primary mb-10">
             {upcoming.length > 0 ? "More Upcoming Events" : "Upcoming Events"}
@@ -166,7 +166,7 @@ export default async function EventsPage() {
             </div>
           )}
         </div>
-      </section>
+      </section>}
 
       {/* ── Past Events ── */}
       {pastEvents && pastEvents.length > 0 && (

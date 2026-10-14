@@ -77,7 +77,7 @@ export function getPublicEventListings(events: Event[], now = new Date()) {
     ?? publicEvents.find(isFireServiceEvent)
     ?? createRecurringFireServiceEvent(now)
   const nextFireService = {
-    ...withFireServiceSchedule(recurring, now), status: 'upcoming' as const,
+    ...withFireServiceSchedule(recurring, now), slug: FIRE_SERVICE_EVENT_SLUG, status: 'upcoming' as const,
     image_url: 'https://kdcuganda.org/events/fire-service-monthly.webp',
   }
   const others = publicEvents.filter(event => !isFireServiceEvent(event))
