@@ -14,10 +14,10 @@ type NavLink = { name: string; href: string };
 type NavItem = NavLink | { name: string; children: NavLink[] };
 const navigation: NavItem[] = [
   { name: 'Home', href: '/' },
-  { name: 'Visit', href: '/visit' },
+  { name: 'Events', href: '/events' },
   { name: 'About Us', children: [{ name: 'Our Story', href: '/about' }, { name: 'Gallery', href: '/gallery' }, { name: 'Contact Us', href: '/contact' }] },
   { name: 'Watch', href: '/sermons' },
-  { name: 'Connect', children: [{ name: 'Testimonies', href: '/testimonies' }, { name: 'Events', href: '/events' }, { name: 'Fire Service', href: '/fire-service' }, { name: 'Ministries', href: '/ministries' }, { name: 'Live Broadcast', href: '/live' }, { name: 'Prayer Request', href: '/prayer' }] },
+  { name: 'Connect', children: [{ name: 'Testimonies', href: '/testimonies' }, { name: 'Fire Service', href: '/fire-service' }, { name: 'Ministries', href: '/ministries' }, { name: 'Live Broadcast', href: '/live' }, { name: 'Prayer Request', href: '/prayer' }] },
   { name: 'Shop', href: '/shop' },
   { name: 'More', children: [{ name: 'Blog', href: '/blog' }, { name: 'Partner With Us', href: '/donations' }] },
 ];
