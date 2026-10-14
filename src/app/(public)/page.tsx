@@ -1,3 +1,5 @@
+import { CHURCH_SERVICE_SLOTS } from '@/lib/church-service-times';
+import { FireServiceSection } from '@/components/home/fire-service-section';
 import { HomeGalleryPreview } from '@/components/home/gallery-preview';
 import { WeeklyServices } from '@/components/home/weekly-services';
 import { PartnershipProjects, SupportUs } from '@/components/home/partnership-sections';
@@ -21,7 +23,6 @@ import { ProductCarousel } from "@/components/home/product-carousel";
 import type { Post, Sermon, Event } from "@/lib/types";
 import { getPublishedPageBySlug } from "@/lib/cms/get-published-page";
 import { resolveHomeDetails } from "@/lib/cms/home-page-defaults";
-import { resolveFireServiceCtaTitle } from "@/lib/fire-service-schedule";
 import { withFireServiceSchedules } from "@/lib/events/resolve-fire-service-event";
 import { getOrgOgImageUrl, getSiteName } from "@/lib/seo/site-branding";
 import { normalizeMediaUrl } from "@/lib/media-url";
@@ -189,7 +190,8 @@ export default async function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       <HeroSection backgroundImage={heroImageUrl} content={heroCopy} />
-      <WeeklyServices label={home.joinUsLabel} services={home.serviceSlots || []} />
+      <WeeklyServices label={home.joinUsLabel} services={(home.serviceSlots || []).map(slot => /fire/i.test(slot.label) ? {...slot, label:'Monthly Fire Service', time:CHURCH_SERVICE_SLOTS[3].time} : slot)} />
+      <FireServiceSection />
 
       {/* Mission / Stats */}
       <PageSection className="bg-white py-24">
@@ -436,27 +438,6 @@ export default async function Home() {
       )}
 
       <SupportUs />
-
-      {/* CTA Banner - Fire Service */}
-      <section className="py-12 bg-gradient-to-r from-red-600 via-orange-500 to-red-600 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.2)_0%,transparent_100%)] mix-blend-multiply" />
-        <div className="container px-4 text-center space-y-6 relative z-10">
-          <h2 className="text-3xl md:text-4xl font-bold font-serif text-white">
-            {resolveFireServiceCtaTitle(home.fireCtaTitle)}
-          </h2>
-          <p className="text-white/90 text-base md:text-xl max-w-2xl mx-auto font-medium">
-            {home.fireCtaBody}
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
-            <Button
-              asChild
-              className="bg-white hover:bg-gray-100 text-red-600 font-bold rounded-full px-10 py-6 text-lg shadow-2xl hover:scale-105 transition-all duration-300"
-            >
-              <Link href={home.fireCtaUrl || "/fire-service"}>{home.fireCtaLabel}</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
 
       {/* Testimonies Section */}
       <TestimoniesSection home={homeContent?.home} />
