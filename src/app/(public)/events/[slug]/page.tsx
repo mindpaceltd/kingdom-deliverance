@@ -10,8 +10,8 @@ import { getOrgLogoUrl, getOrgOgImageUrl, getSiteName } from "@/lib/seo/site-bra
 import { BreadcrumbSchema, generateBreadcrumbs } from "@/components/seo/breadcrumb-schema";
 import { EventSchema } from "@/components/seo/event-schema";
 import { incrementEventViews } from "@/lib/actions/event-views";
-import { withFireServiceSchedule } from "@/lib/events/resolve-fire-service-event";
-import { getFireServiceSchedule, isFireServiceEvent } from "@/lib/fire-service-schedule";
+import { createRecurringFireServiceEvent, withFireServiceSchedule } from "@/lib/events/resolve-fire-service-event";
+import { FIRE_SERVICE_EVENT_SLUG, getFireServiceSchedule, isFireServiceEvent } from "@/lib/fire-service-schedule";
 import { EventImage } from "@/components/content/event-image";
 import { ShareButtons } from "@/components/content/share-buttons";
 import { formatSafeDate, normalizeMediaUrl, toValidDate } from "@/lib/media-url";
@@ -24,18 +24,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     supabase
       .from("events")
       .select("title, description, meta_title, meta_description, image_url, slug")
-      .eq("slug", params.slug)
+      .eq("slug", params.slug).in("status", ["published", "upcoming", "ongoing"])
       .single(),
     getOrgOgImageUrl(),
     getSiteName(),
   ]);
 
-  const event = eventResult.data;
+  const event = eventResult.data ?? (params.slug === FIRE_SERVICE_EVENT_SLUG ? createRecurringFireServiceEvent() : null);
   if (!event) return { title: "Event Not Found" };
 
+  if (isFireServiceEvent(event)) event.image_url = 'https://kdcuganda.org/events/fire-service-monthly.webp'
   const ogTitle = event.meta_title || event.title;
   const excerpt =
-    event.meta_description?.trim() ||
+    stripHtmlExcerpt(event.meta_description, 160) ||
     stripHtmlExcerpt(event.description, 160) ||
     "Join us for this upcoming event at Kingdom Deliverance Centre Uganda.";
   const socialImage = createSocialImageMetadata(
@@ -70,7 +71,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 function eventStatusLabel(event: { date: string; end_date?: string | null; status?: string }) {
   const now = new Date()
@@ -87,13 +88,14 @@ function eventStatusLabel(event: { date: string; end_date?: string | null; statu
 export default async function EventDetailPage({ params }: Props) {
   const supabase = createClient();
   const [eventResult, orgOgImage, orgLogoUrl, siteName] = await Promise.all([
-    supabase.from("events").select("*").eq("slug", params.slug).maybeSingle(),
+    supabase.from("events").select("*").eq("slug", params.slug).in("status", ["published", "upcoming", "ongoing"]).maybeSingle(),
     getOrgOgImageUrl(),
     getOrgLogoUrl(),
     getSiteName(),
   ]);
 
-  const { data: event, error } = eventResult;
+  const { error } = eventResult;
+  const event = eventResult.data ?? (params.slug === FIRE_SERVICE_EVENT_SLUG ? createRecurringFireServiceEvent() : null);
 
   if (error) {
     console.error('[EventDetailPage] Fetch failed:', error.message)
@@ -105,8 +107,9 @@ export default async function EventDetailPage({ params }: Props) {
   const fireService = isFireServiceEvent(displayEvent);
   const fireSchedule = fireService ? getFireServiceSchedule() : null;
 
-  incrementEventViews(displayEvent.id).catch(console.error);
+  if (displayEvent.id !== 'recurring-fire-service') incrementEventViews(displayEvent.id).catch(console.error);
 
+  if (fireService) displayEvent.image_url = 'https://kdcuganda.org/events/fire-service-monthly.webp'
   const imageUrl = normalizeMediaUrl(displayEvent.image_url)
   const statusLabel = eventStatusLabel(displayEvent)
   const heroDateLabel = fireSchedule?.formattedDate ?? formatSafeDate(displayEvent.date, "EEEE, MMMM d, yyyy")
@@ -153,7 +156,7 @@ export default async function EventDetailPage({ params }: Props) {
           {imageUrl && !fireService && (
             <div className="absolute inset-0">
               <EventImage
-                src={event.image_url}
+                src={displayEvent.image_url}
                 alt={event.title}
                 className="w-full h-full object-cover opacity-40"
                 fallbackClassName="hidden"
@@ -199,11 +202,11 @@ export default async function EventDetailPage({ params }: Props) {
         <section className="py-16 bg-white">
           <div className="container px-4 max-w-4xl mx-auto">
             {imageUrl && (
-              <div className="mb-10 rounded-2xl overflow-hidden border border-primary/10 shadow-lg aspect-[21/9] relative">
+              <div className={`mb-10 rounded-2xl overflow-hidden border border-primary/10 shadow-lg relative ${fireService ? "mx-auto max-w-md" : "aspect-[21/9]"}`}>
                 <EventImage
-                  src={event.image_url}
+                  src={displayEvent.image_url}
                   alt={event.title}
-                  className="w-full h-full object-cover"
+                  className={fireService ? "w-full h-auto object-contain" : "w-full h-full object-cover"}
                 />
               </div>
             )}

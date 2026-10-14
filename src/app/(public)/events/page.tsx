@@ -1,3 +1,5 @@
+import { getPublicEventListings } from '@/lib/events/resolve-fire-service-event';
+import { getFireServiceSchedule, isFireServiceEvent } from '@/lib/fire-service-schedule';
 import { createClient } from '@/lib/supabase/server';
 import Link from "next/link";
 import { Calendar, MapPin, Clock, ArrowRight, Star } from "lucide-react";
@@ -20,28 +22,17 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export default async function EventsPage() {
   const supabase = createClient();
-  const now = new Date().toISOString();
+  const now = new Date();
+  const { data } = await supabase.from('events').select('*')
+    .in('status', ['upcoming', 'ongoing', 'published', 'past']);
+  const { upcoming: events, past: pastEvents } = getPublicEventListings(data ?? [], now);
 
-  const { data: events } = await supabase
-    .from("events")
-    .select("*")
-    .in("status", ["upcoming", "ongoing", "published"])
-    .gte("date", now)
-    .order("date", { ascending: true });
-
-  const { data: pastEvents } = await supabase
-    .from("events")
-    .select("*")
-    .or(`status.eq.past,and(status.eq.published,date.lt.${now})`)
-    .order("date", { ascending: false })
-    .limit(8);
-
-  const featured = events?.find((e) => e.is_featured);
-  const upcoming = events?.filter((e) => !e.is_featured) ?? [];
+  const featured = events.find(isFireServiceEvent) ?? events.find((e) => e.is_featured);
+  const upcoming = events.filter((e) => e.id !== featured?.id);
   const heroUrl = await getEventsHeroUrl(events ?? []);
 
   return (
@@ -100,8 +91,8 @@ export default async function EventsPage() {
                   </div>
                   <div className="flex items-center gap-2.5">
                     <Clock className="w-4 h-4 text-accent shrink-0" />
-                    {formatSafeDate(featured.date, "h:mm a")}
-                    {featured.end_date &&
+                    {isFireServiceEvent(featured) ? getFireServiceSchedule().formattedTime : formatSafeDate(featured.date, "h:mm a")}
+                    {!isFireServiceEvent(featured) && featured.end_date &&
                       ` – ${formatSafeDate(featured.end_date, "h:mm a")}`}
                   </div>
                   {featured.location && (
@@ -122,26 +113,14 @@ export default async function EventsPage() {
               </div>
 
               {/* Right — image or date display */}
-              <div className="md:col-span-2 min-h-56 relative overflow-hidden flex flex-col items-center justify-center">
+              <div className="md:col-span-2 bg-[#100d18] relative overflow-hidden flex flex-col items-center justify-center">
                 {featured.image_url ? (
                   <>
                     <EventImage
                       src={featured.image_url}
                       alt={featured.title}
-                      className="absolute inset-0 w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
-                    {/* Date overlay */}
-                    <div className="relative z-10 bg-black/50 backdrop-blur-sm rounded-2xl px-8 py-6 text-center">
-                      <div className="text-7xl font-serif font-black text-white leading-none">
-                        {formatSafeDate(featured.date, "dd")}
-                      </div>
-                      <div className="text-xl font-bold text-accent mt-1">
-                        {formatSafeDate(featured.date, "MMMM yyyy")}
-                      </div>
-                      <div className="mt-1 text-sm text-white/70 font-medium">
-                        {formatSafeDate(featured.date, "EEEE")}
-                      </div>
-                    </div>
                   </>
                 ) : (
                   <div className="bg-gradient-to-br from-accent/15 via-accent/5 to-white w-full h-full flex items-center justify-center p-10">

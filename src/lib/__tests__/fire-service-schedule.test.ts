@@ -79,3 +79,29 @@ describe('fire-service-schedule', () => {
     expect(afterService.shouldShow).toBe(false)
   })
 })
+
+import { createRecurringFireServiceEvent, getPublicEventListings } from '@/lib/events/resolve-fire-service-event'
+
+describe('automatic Fire Service event listings', () => {
+  const now = new Date('2026-10-14T06:00:00Z')
+  it('provides October 30 when the events table is empty', () => {
+    const { upcoming } = getPublicEventListings([], now)
+    expect(upcoming).toHaveLength(1)
+    expect(upcoming[0].date).toBe('2026-10-30T15:00:00.000Z')
+  })
+  it('resolves an expired stored date before filtering upcoming events', () => {
+    const old = { ...createRecurringFireServiceEvent(now), date: '2026-05-29T15:00:00Z', status: 'past' as const }
+    const { upcoming, past } = getPublicEventListings([old], now)
+    expect(upcoming).toHaveLength(1)
+    expect(upcoming[0].date).toBe('2026-10-30T15:00:00.000Z')
+    expect(past).toHaveLength(0)
+  })
+  it('rolls automatically to November immediately after the October service ends', () => {
+    const { upcoming } = getPublicEventListings([], new Date('2026-10-30T18:30:01Z'))
+    expect(upcoming[0].date).toBe('2026-11-27T15:00:00.000Z')
+  })
+  it('does not expose drafts as the recurring service', () => {
+    const draft = { ...createRecurringFireServiceEvent(now), title: 'Private draft', status: 'draft' as const }
+    expect(getPublicEventListings([draft], now).upcoming[0].title).not.toBe('Private draft')
+  })
+})
