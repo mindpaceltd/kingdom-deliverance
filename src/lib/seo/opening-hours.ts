@@ -8,7 +8,7 @@ export interface OpeningHoursSpecification {
   name?: string
 }
 
-/** Schema.org opening hours derived from published church service times. */
+/** Weekly services only; monthly Fire Service dates are described by Event schema. */
 export function buildChurchOpeningHoursSpecification(): OpeningHoursSpecification[] {
   return [
     {
@@ -31,13 +31,6 @@ export function buildChurchOpeningHoursSpecification(): OpeningHoursSpecificatio
       opens: '18:00',
       closes: '21:30',
       name: CHURCH_SERVICE_SLOTS[2].label,
-    },
-    {
-      '@type': 'OpeningHoursSpecification',
-      dayOfWeek: 'Friday',
-      opens: '18:00',
-      closes: '21:30',
-      name: CHURCH_SERVICE_SLOTS[3].label,
     },
   ]
 }

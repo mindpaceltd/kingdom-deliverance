@@ -1,3 +1,4 @@
+import { seoPageTitle } from '@/lib/seo-image-utils'
 import type { Metadata } from 'next'
 import type { CmsPageContent } from '@/lib/cms/page-content'
 import { createCanonicalMetadata } from '@/lib/seo/canonical-utils'
@@ -17,8 +18,8 @@ export async function buildCmsPageMetadata(options: {
   heroImageUrl?: string | null
 }): Promise<Metadata> {
   const seo = options.content?.seo
-  const title = seo?.metaTitle ?? options.defaultTitle
-  const description = seo?.metaDescription ?? options.defaultDescription
+  const title = seo?.metaTitle?.trim() || options.defaultTitle
+  const description = seo?.metaDescription?.trim() || options.defaultDescription
   const ogTitle = seo?.ogTitle?.trim() || title
   const ogDescription = seo?.ogDescription?.trim() || description
 
@@ -41,7 +42,7 @@ export async function buildCmsPageMetadata(options: {
   const pageUrl = buildPublicPageUrl(options.slug)
 
   return {
-    title,
+    title: seoPageTitle(title),
     description,
     ...(options.defaultKeywords ? { keywords: options.defaultKeywords } : {}),
     ...(seo?.noIndex ? { robots: { index: false, follow: false } } : {}),
@@ -52,7 +53,7 @@ export async function buildCmsPageMetadata(options: {
       url: pageUrl,
       siteName,
       type: 'website',
-      locale: 'en_US',
+      locale: 'en_UG',
       images: [socialImage],
     },
     twitter: {

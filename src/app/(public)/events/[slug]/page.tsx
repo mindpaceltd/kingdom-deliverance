@@ -1,3 +1,4 @@
+import { seoPageTitle } from '@/lib/seo-image-utils'
 import { createClient } from '@/lib/supabase/server';
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -24,7 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     supabase
       .from("events")
       .select("title, description, meta_title, meta_description, image_url, slug")
-      .eq("slug", params.slug).in("status", ["published", "upcoming", "ongoing"])
+      .eq("slug", params.slug).in("status", ["published", "upcoming", "ongoing", "past"]).is("deleted_at", null)
       .single(),
     getOrgOgImageUrl(),
     getSiteName(),
@@ -50,7 +51,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const pageUrl = `https://kdcuganda.org/events/${event.slug}`;
 
   return {
-    title: ogTitle,
+    title: seoPageTitle(ogTitle),
     description: excerpt,
     ...createCanonicalMetadata(`/events/${event.slug}`),
     openGraph: {
@@ -59,7 +60,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: pageUrl,
       siteName,
       type: "website",
-      locale: "en_US",
+      locale: "en_UG",
       images: [socialImage],
     },
     twitter: {
@@ -88,7 +89,7 @@ function eventStatusLabel(event: { date: string; end_date?: string | null; statu
 export default async function EventDetailPage({ params }: Props) {
   const supabase = createClient();
   const [eventResult, orgOgImage, orgLogoUrl, siteName] = await Promise.all([
-    supabase.from("events").select("*").eq("slug", params.slug).in("status", ["published", "upcoming", "ongoing"]).maybeSingle(),
+    supabase.from("events").select("*").eq("slug", params.slug).in("status", ["published", "upcoming", "ongoing", "past"]).is("deleted_at", null).maybeSingle(),
     getOrgOgImageUrl(),
     getOrgLogoUrl(),
     getSiteName(),

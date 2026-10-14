@@ -1,0 +1,296 @@
+[
+  {
+    "slug": "home",
+    "content_json": {
+      "seo": {
+        "ogTitle": "KDC Uganda | Church, Worship & Prayer in Kampala",
+        "metaTitle": "KDC Uganda | Church, Worship & Prayer in Kampala",
+        "ogImageUrl": "https://pub-6299bd19a8614368b611590ccf05ac14.r2.dev/images/1779884569845-photo-1438232992991-995b7058bbb3.jpg",
+        "focusKeyword": "Kingdom Deliverance Centre Uganda",
+        "ogDescription": "Welcome to Kingdom Deliverance Centre Uganda in Kampala. Join our church family for worship, prayer, biblical teaching, testimonies, and community.",
+        "metaDescription": "Welcome to Kingdom Deliverance Centre Uganda in Kampala. Join our church family for worship, prayer, biblical teaching, testimonies, and community."
+      },
+      "hero": {
+        "badge": "Kingdom Deliverance Centre Uganda",
+        "title": "Welcome to Kingdom Deliverance Centre Uganda",
+        "imageUrl": "https://pub-6299bd19a8614368b611590ccf05ac14.r2.dev/images/1779884569845-photo-1438232992991-995b7058bbb3.jpg",
+        "subtitle": "A church community in Kampala gathering for worship, prayer and Bible teaching. Join our Sunday services, Wednesday Bible study and monthly Fire Service."
+      },
+      "home": {
+        "stats": [
+          {
+            "value": "2",
+            "label": "Sunday Services"
+          },
+          {
+            "value": "Wednesday",
+            "label": "Bible Study"
+          },
+          {
+            "value": "Monthly",
+            "label": "Fire Service"
+          },
+          {
+            "value": "Kampala",
+            "label": "Our Community"
+          }
+        ],
+        "values": [
+          {
+            "title": "Wealthy",
+            "description": "We believe in God's provision and financial breakthrough for His people, enabling us to be a blessing to others."
+          },
+          {
+            "title": "Healthy",
+            "description": "God's desire is for His children to walk in total health — spirit, soul, and body, free from all infirmities."
+          },
+          {
+            "title": "Wise",
+            "description": "Through the Word of God, we gain the wisdom needed to navigate life and build lasting generations."
+          }
+        ],
+        "features": [
+          {
+            "link": "/ministries",
+            "title": "Grow in community",
+            "imageAlt": "A moment from the supplied KDC ministry film",
+            "imageUrl": "https://pub-6299bd19a8614368b611590ccf05ac14.r2.dev/homepage/2026-10/kdc-worship-moment.jpg",
+            "linkText": "Explore Ministries",
+            "description": "Meet our ministries and find ways to serve."
+          },
+          {
+            "link": "/events",
+            "title": "Gather with us",
+            "imageAlt": "Inside Kingdom Deliverance Centre",
+            "imageUrl": "https://pub-6299bd19a8614368b611590ccf05ac14.r2.dev/images/1779107313642-IMG_0317.jpg",
+            "linkText": "See Events",
+            "description": "Discover upcoming services and church events."
+          },
+          {
+            "link": "/contact",
+            "title": "Stay connected",
+            "imageAlt": "People gathered in the KDC ministry film",
+            "imageUrl": "https://pub-6299bd19a8614368b611590ccf05ac14.r2.dev/homepage/2026-10/kdc-hero-poster.jpg?v=2",
+            "linkText": "Contact Us",
+            "description": "Talk to our team about prayer, visits and church life."
+          }
+        ],
+        "heroLead": "Join our church family in Kampala. There is a place for you here.",
+        "growTitle": "Find your place.",
+        "fireCtaUrl": "/fire-service",
+        "postsBadge": "Latest Posts",
+        "postsTitle": "News & Teachings",
+        "prayerBody": "Share your prayer request with our team.",
+        "storeBadge": "KDC Store",
+        "storeLimit": "12",
+        "storeTitle": "Resources for your faith.",
+        "eventsBadge": "Upcoming Events",
+        "eventsTitle": "What's Coming Up",
+        "fireCtaBody": "There is a matter in your life that will not respond until it is brought into the place of fire. Submit your case to the Fire Altar tonight.",
+        "joinUsLabel": "Join us this week",
+        "missionBody": "We are a church community in Kampala, gathering for worship, prayer, and the teaching of God’s Word. Whether you are visiting for the first time or looking for a church home, you are welcome here.",
+        "prayerTitle": "How can we pray with you?",
+        "sermonBadge": "Watch & grow",
+        "sermonTitle": "Recent Message",
+        "valuesBadge": "Our Values",
+        "valuesTitle": "Growing Together in Faith",
+        "fireCtaLabel": "Submit Your Fire List Now",
+        "fireCtaTitle": "🔥 The Fire Service 🔥",
+        "galleryBadge": "Worship. Fellowship. Community.",
+        "galleryTitle": "A glimpse of life at KDC.",
+        "growSubtitle": "Life at KDC",
+        "heroVideoUrl": "https://pub-6299bd19a8614368b611590ccf05ac14.r2.dev/homepage/2026-10/kdc-hero-desktop.mp4",
+        "missionBadge": "Welcome to KDC",
+        "missionTitle": "Come as you are. Grow together.",
+        "prayerCtaUrl": "/prayer",
+        "serviceSlots": [
+          {
+            "label": "Sunday English Service",
+            "time": "8:00 AM – 10:30 AM (EAT)"
+          },
+          {
+            "label": "Sunday Luganda Service",
+            "time": "10:30 AM – 2:00 PM (EAT)"
+          },
+          {
+            "label": "Wednesday Bible Study",
+            "time": "6:00 PM – 9:30 PM (EAT)"
+          },
+          {
+            "label": "Monthly Fire Service",
+            "time": "Last Friday · 6:00 PM – 9:30 PM (EAT)"
+          }
+        ],
+        "galleryCtaUrl": "/gallery",
+        "galleryImage1": "https://pub-6299bd19a8614368b611590ccf05ac14.r2.dev/images/1779823258016-IMG_0351.jpeg",
+        "galleryImage2": "https://pub-6299bd19a8614368b611590ccf05ac14.r2.dev/homepage/2026-10/kdc-worship-moment.jpg",
+        "galleryImage3": "https://pub-6299bd19a8614368b611590ccf05ac14.r2.dev/images/1779820721108-IMG_0412.jpeg",
+        "galleryImage4": "https://pub-6299bd19a8614368b611590ccf05ac14.r2.dev/homepage/2026-10/kdc-ministry-moment.jpg",
+        "heroPosterUrl": "https://pub-6299bd19a8614368b611590ccf05ac14.r2.dev/homepage/2026-10/kdc-hero-poster.jpg?v=2",
+        "missionCtaUrl": "/about",
+        "storeSubtitle": "Explore books, teaching and resources from our shop.",
+        "heroHeadingTop": "A place to worship,",
+        "prayerCtaLabel": "Request Prayer",
+        "sermonSubtitle": "The latest word from our leadership.",
+        "sermonVideoUrl": "",
+        "testimonyLimit": "10",
+        "valuesSubtitle": "",
+        "galleryCtaLabel": "Explore the Gallery",
+        "heroWelcomeText": "Kingdom Deliverance Centre Uganda",
+        "missionCtaLabel": "Get to Know KDC",
+        "missionImageAlt": "Ministry at Kingdom Deliverance Centre",
+        "missionImageUrl": "https://pub-6299bd19a8614368b611590ccf05ac14.r2.dev/images/1779820086714-IMG_0414.jpeg",
+        "postsViewAllUrl": "/blog",
+        "storeAutoScroll": "on",
+        "storeViewAllUrl": "/shop",
+        "eventsViewAllUrl": "/events",
+        "heroVideoEnabled": "on",
+        "sermonViewAllUrl": "/sermons",
+        "sermonWatchLabel": "Watch Full Message",
+        "testimoniesBadge": "Faith. People. Stories.",
+        "testimoniesTitle": "Stories from our church family.",
+        "heroHeadingBottom": "pray & grow.",
+        "heroPrimaryCtaUrl": "/visit",
+        "postsViewAllLabel": "Read All Posts",
+        "storeViewAllLabel": "Explore the Shop",
+        "testimoniesCtaUrl": "/testimonies#share-story",
+        "eventsViewAllLabel": "View All Events",
+        "heroMobileVideoUrl": "https://pub-6299bd19a8614368b611590ccf05ac14.r2.dev/homepage/2026-10/kdc-hero-mobile.mp4",
+        "sermonFeaturedSlug": "",
+        "sermonThumbnailUrl": "",
+        "sermonViewAllLabel": "View All Sermons",
+        "testimoniesCtaBody": "Share your experience with our church family.",
+        "heroPrimaryCtaLabel": "Plan Your Visit",
+        "heroSecondaryCtaUrl": "/live",
+        "sermonFeaturedBadge": "Featured Sermon",
+        "testimoniesCtaLabel": "Share Your Story",
+        "testimoniesCtaTitle": "Have a testimony?",
+        "testimoniesSubtitle": "Meet the people behind the testimonies. Follow their stories and discover life at KDC.",
+        "testimonyAutoScroll": "on",
+        "testimonyScrollSpeed": "22",
+        "heroSecondaryCtaLabel": "Watch Live"
+      },
+      "excerpt": "Welcome to Kingdom Deliverance Centre Uganda in Kampala. Join our church family for worship, prayer, biblical teaching, testimonies, and community.",
+      "isSystem": true,
+      "pageType": "home",
+      "serviceSlots": [
+        {
+          "label": "Sunday English Service",
+          "time": "8:00 AM – 10:30 AM (EAT)"
+        },
+        {
+          "label": "Sunday Luganda Service",
+          "time": "10:30 AM – 2:00 PM (EAT)"
+        },
+        {
+          "label": "Wednesday Bible Study",
+          "time": "6:00 PM – 9:30 PM (EAT)"
+        },
+        {
+          "label": "Monthly Fire Service",
+          "time": "Last Friday · 6:00 PM – 9:30 PM (EAT)"
+        }
+      ]
+    }
+  },
+  {
+    "slug": "faq",
+    "content_json": {
+      "faq": {
+        "intro": "Quick answers about services, giving, support, and using the KDC Uganda website.",
+        "sections": [
+          {
+            "items": [
+              {
+                "answer": "Sunday English Service: 8:00–10:30 AM EAT. Sunday Luganda Service: 10:30 AM–2:00 PM EAT. Wednesday Bible study: 6:00–9:30 PM EAT. Monthly Fire Service: the last Friday, 6:00–9:30 PM EAT. Check Events for the actual Fire Service date.",
+                "question": "What are your regular service times?"
+              },
+              {
+                "answer": "We meet at Kingdom Deliverance Centre, Kosovo Trading Centre in Lungujja, Kampala, Uganda. Visit the Contact page for the map and directions, or speak with our team before travelling.",
+                "question": "Where is Kingdom Deliverance Centre Uganda located?"
+              },
+              {
+                "answer": "Visit the Live page to check for an available stream, and browse Sermons for published teaching. Streaming availability depends on the service and current broadcast.",
+                "question": "Do you have online/live services?"
+              }
+            ],
+            "title": "Services & Worship"
+          },
+          {
+            "items": [
+              {
+                "answer": "Use the Give or Donations page and follow the payment options displayed. Check the amount and selected currency before proceeding to the payment provider.",
+                "question": "How can I give or donate?"
+              },
+              {
+                "answer": "For a payment error or refund question, contact our team with your transaction reference, payment date and the email used. The team can review the issue and explain the applicable process. Avoid sharing card details or mobile-money PINs.",
+                "question": "Are donations refundable?"
+              },
+              {
+                "answer": "After payment, check the result page and any confirmation sent to the email address you supplied. If you are unsure whether payment completed, contact support with the transaction reference before trying again.",
+                "question": "Will I receive confirmation after donating?"
+              }
+            ],
+            "title": "Giving & Donations"
+          },
+          {
+            "items": [
+              {
+                "answer": "Use the Contact page or open the website support chat to send your question. Include the practical details the team needs to help you, without sharing passwords or payment PINs.",
+                "question": "How do I contact your team quickly?"
+              },
+              {
+                "answer": "Yes. Use the Prayer page to share a request. For the monthly Fire Service, the Fire Service page includes a Fire List form. Be considerate of other people’s privacy when describing your request.",
+                "question": "Can I request prayer support?"
+              },
+              {
+                "answer": "Open the website chat and choose the option to speak with a person if available. You can also send your question through the Contact page. Response times depend on team availability.",
+                "question": "How can I speak to a human support agent?"
+              }
+            ],
+            "title": "Support & Contact"
+          },
+          {
+            "items": [
+              {
+                "answer": "No account is needed to browse public sermons, events, church information and blog articles. Sign in when you need account features such as orders and downloads.",
+                "question": "Do I need an account to browse sermons, events, and ministries?"
+              },
+              {
+                "answer": "Open the account sign-in page, choose the forgot-password option and follow the reset instructions for the email address linked to your account. Contact support if you need further help.",
+                "question": "I forgot my account password. What should I do?"
+              },
+              {
+                "answer": "Links to the Privacy Policy and Terms of Service appear in the footer. Read those pages for information about using the website, your data and applicable terms.",
+                "question": "Where can I read your legal policies?"
+              }
+            ],
+            "title": "Website & Account"
+          }
+        ],
+        "helpTitle": "Still need help?",
+        "helpLinkUrl": "/contact",
+        "lastUpdated": "October 14, 2026",
+        "helpLinkLabel": "Contact page",
+        "helpMessageLead": "Reach out on our",
+        "helpMessageTail": "or use the support chat at the bottom-left corner of this website.",
+        "lastUpdatedLabel": "Last Updated:"
+      },
+      "seo": {
+        "ogTitle": "Frequently Asked Questions | KDC Uganda",
+        "metaTitle": "Frequently Asked Questions | KDC Uganda",
+        "ogImageUrl": "https://kdcuganda.org/og?title=Frequently%20Asked%20Questions%20%7C%20KDC%20Uganda&description=Find%20answers%20about%20visiting%20KDC%20Uganda%2C%20worship%20services%2C%20prayer%20requests%2C%20giving%2C%20and%20getting%20support%20from%20our%20church%20team%20in%20Kampala.",
+        "ogDescription": "Find answers about visiting KDC Uganda, worship services, prayer requests, giving, and getting support from our church team in Kampala.",
+        "metaDescription": "Find answers about visiting KDC Uganda, worship services, prayer requests, giving, and getting support from our church team in Kampala."
+      },
+      "hero": {
+        "title": "Frequently Asked Questions",
+        "imageUrl": "https://images.unsplash.com/photo-1515169067868-5387ec356754?q=80&w=2069&auto=format&fit=crop",
+        "subtitle": "Quick answers about services, giving, support, and using the KDC Uganda website."
+      },
+      "excerpt": "Find answers about visiting KDC Uganda, worship services, prayer requests, giving, and getting support from our church team in Kampala.",
+      "isSystem": true,
+      "pageType": "faq"
+    }
+  }
+]

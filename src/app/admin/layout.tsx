@@ -1,3 +1,5 @@
+import { NOINDEX_METADATA } from '@/lib/seo/noindex-metadata'
+export const metadata = NOINDEX_METADATA
 import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { AdminProvider } from '@/lib/admin-context'

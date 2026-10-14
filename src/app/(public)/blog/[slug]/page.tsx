@@ -1,3 +1,4 @@
+import { seoPageTitle } from '@/lib/seo-image-utils'
 import { createClient } from '@/lib/supabase/server';
 import { format } from "date-fns";
 import Link from "next/link";
@@ -24,8 +25,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const [postResult, orgOgImage, siteName] = await Promise.all([
     supabase
       .from("posts")
-      .select("title, excerpt, featured_image, meta_title, meta_description, slug")
+      .select("title, excerpt, featured_image, meta_title, meta_description, slug, content")
       .eq("slug", params.slug)
+      .eq("status", "published")
+      .is("deleted_at", null)
       .single(),
     getOrgOgImageUrl(),
     getSiteName(),
@@ -36,9 +39,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const ogTitle = data.meta_title?.trim() || data.title;
   const excerpt =
-    data.meta_description?.trim() ||
-    data.excerpt?.trim() ||
-    stripHtmlExcerpt(data.excerpt, 160) ||
+    stripHtmlExcerpt(data.meta_description, 160) ||
+
+    stripHtmlExcerpt(data.excerpt || data.content, 160) ||
     "Read this post on Kingdom Deliverance Centre Uganda.";
   const pageUrl = `https://kdcuganda.org/blog/${data.slug}`;
   const socialImage = createSocialImageMetadata(
@@ -50,7 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   );
 
   return {
-    title: ogTitle,
+    title: seoPageTitle(ogTitle),
     description: excerpt,
     ...createCanonicalMetadata(`/blog/${data.slug}`),
     openGraph: {
@@ -164,6 +167,7 @@ export default async function BlogPostPage({ params }: Props) {
       .select("*, profiles(name, avatar_url, bio)")
       .eq("slug", params.slug)
       .eq("status", "published")
+      .is("deleted_at", null)
       .single(),
     Promise.resolve(headers()),
   ]);
@@ -189,6 +193,7 @@ export default async function BlogPostPage({ params }: Props) {
       .from("posts")
       .select("id, title, slug, excerpt, featured_image, published_at, type")
       .eq("status", "published")
+      .is("deleted_at", null)
       .eq("type", post.type)
       .neq("id", post.id)
       .order("published_at", { ascending: false })
@@ -215,7 +220,7 @@ export default async function BlogPostPage({ params }: Props) {
   const postUrl = `https://kdcuganda.org/blog/${post.slug}`;
   const headings = extractHeadings(post.content);
   const cleanContent = fixExternalLinks(post.content);
-  const contentWithIds = injectHeadingIds(cleanContent);
+  const contentWithIds = injectHeadingIds(cleanContent.replace(/<(\/?)h1(\s[^>]*)?>/gi, '<$1h2$2>'));
   const rt = readTime(post.content);
   const isLongContent = (post.content?.length ?? 0) > 1500;
 

@@ -28,7 +28,7 @@ export default async function EventsPage() {
   const supabase = createClient();
   const now = new Date();
   const { data } = await supabase.from('events').select('*')
-    .in('status', ['upcoming', 'ongoing', 'published', 'past']);
+    .in('status', ['upcoming', 'ongoing', 'published', 'past']).is('deleted_at', null);
   const { upcoming: events, past: pastEvents } = getPublicEventListings(data ?? [], now);
 
   const featured = events.find(isFireServiceEvent) ?? events.find((e) => e.is_featured);

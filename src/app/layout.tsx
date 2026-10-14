@@ -44,13 +44,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const resolvedMetaDesc = s.get('site_meta_description') || metaDesc;
   const resolvedMetaKeywords = s.get('site_meta_keywords') || s.get('site_keywords') || metaKeywords;
   const resolvedSiteIcon = siteIcon;
-  const resolvedSiteOgImage = s.get('site_og_image') || siteOgImage;
+  const resolvedSiteOgImage = siteOgImage;
 
   return {
     metadataBase: new URL('https://kdcuganda.org'),
     title: {
       default: resolvedMetaTitle,
-      template: `%s | ${resolvedSiteName}`
+      template: `%s | KDC Uganda`
     },
     description: resolvedMetaDesc,
     keywords: resolvedMetaKeywords,
@@ -61,7 +61,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     openGraph: {
       type: "website",
-      locale: "en_US",
+      locale: "en_UG",
       url: "https://kdcuganda.org",
       title: resolvedMetaTitle,
       description: resolvedMetaDesc,
@@ -86,13 +86,13 @@ export async function generateMetadata(): Promise<Metadata> {
     console.error('[generateMetadata] Failed to load site settings:', err)
     return {
       metadataBase: new URL('https://kdcuganda.org'),
-      title: { default: metaTitle, template: `%s | ${siteName || defaultSiteName}` },
+      title: { default: metaTitle, template: `%s | KDC Uganda` },
       description: metaDesc,
       keywords: metaKeywords,
       icons: { icon: siteIcon, shortcut: siteIcon, apple: siteIcon },
       openGraph: {
         type: "website",
-        locale: "en_US",
+        locale: "en_UG",
         url: "https://kdcuganda.org",
         title: metaTitle,
         description: metaDesc,

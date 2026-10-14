@@ -8,8 +8,9 @@ import type { Metadata } from 'next'
 import { buildListPageMetadata } from '@/lib/seo/list-page-metadata'
 import { pageKeywords } from '@/lib/seo/brand-keywords'
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ searchParams }: { searchParams: Record<string, string | undefined> }): Promise<Metadata> {
   return buildListPageMetadata({
+    searchParams,
     title: 'Shop',
     description:
       'Purchase e-books, sermons, and official Kingdom Deliverance Centre merchandise to support your spiritual growth.',

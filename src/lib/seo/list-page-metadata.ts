@@ -1,3 +1,8 @@
+import { resolveListQuerySeo } from '@/lib/seo/list-query-metadata'
+import { createClient } from '@/lib/supabase/server'
+import { getPublishedPageBySlug } from '@/lib/cms/get-published-page'
+import { stripHtmlExcerpt } from '@/lib/seo-image-utils'
+import { seoPageTitle } from '@/lib/seo-image-utils'
 import type { Metadata } from 'next'
 import { createCanonicalMetadata } from '@/lib/seo/canonical-utils'
 import { getOrgOgImageUrl, getSiteName } from '@/lib/seo/site-branding'
@@ -16,6 +21,7 @@ export interface ListPageMetadataOptions {
   title: string
   description: string
   path: string
+  searchParams?: Record<string, string | undefined>
   keywords?: string
   ogType?: ListPageSeoType
   locale?: 'en_UG' | 'en_US'
@@ -28,26 +34,35 @@ export async function buildListPageMetadata(
   options: ListPageMetadataOptions
 ): Promise<Metadata> {
   const [orgOgImage, siteName] = await Promise.all([getOrgOgImageUrl(), getSiteName()])
+  const slug = options.path === '/' ? 'home' : options.path.slice(1)
+  const page = !slug.includes('/') ? await getPublishedPageBySlug(createClient(), slug) : null
+  const seo = page?.content?.seo
+  const querySeo = resolveListQuerySeo(options.path, options.searchParams)
+  const title = (seo?.metaTitle?.trim() || options.title) + querySeo.suffix
+  const description = stripHtmlExcerpt(seo?.metaDescription || options.description, 160)
+  const ogTitle = seo?.ogTitle?.trim() ? seo.ogTitle.trim() + querySeo.suffix : title
+  const ogDescription = stripHtmlExcerpt(seo?.ogDescription || description, 160)
   const ogType = options.ogType ?? 'default'
   const locale = options.locale ?? 'en_UG'
-  const pageUrl = `https://kdcuganda.org${options.path === '/' ? '' : options.path}`
+  const pageUrl = `https://kdcuganda.org${querySeo.path === '/' ? '' : querySeo.path}`
 
   const socialImage = createSocialImageMetadata(
-    options.title,
-    options.description,
-    null,
+    ogTitle,
+    ogDescription,
+    seo?.ogImageUrl || null,
     ogType,
     orgOgImage
   )
 
   return {
-    title: options.title,
-    description: options.description,
+    title: seoPageTitle(title),
+    description,
     ...(options.keywords ? { keywords: options.keywords } : {}),
-    ...createCanonicalMetadata(options.path),
+    ...((seo?.noIndex || querySeo.noIndex) ? { robots: { index: false, follow: true } } : {}),
+    ...createCanonicalMetadata(querySeo.path),
     openGraph: {
-      title: options.title,
-      description: options.description,
+      title: ogTitle,
+      description: ogDescription,
       url: pageUrl,
       siteName,
       type: 'website',
@@ -56,8 +71,8 @@ export async function buildListPageMetadata(
     },
     twitter: {
       card: 'summary_large_image',
-      title: options.title,
-      description: options.description,
+      title: ogTitle,
+      description: ogDescription,
       images: [socialImage.url],
     },
   }

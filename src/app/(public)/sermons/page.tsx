@@ -4,8 +4,9 @@ import type { Metadata } from "next";
 import { buildListPageMetadata } from "@/lib/seo/list-page-metadata";
 import { pageKeywords } from "@/lib/seo/brand-keywords";
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ searchParams }: { searchParams: Record<string, string | undefined> }): Promise<Metadata> {
   return buildListPageMetadata({
+    searchParams,
     title: "Sermons & Messages",
     description:
       "Watch and listen to powerful sermons from Bishop Climate Wiseman and KDC Uganda. Faith-building messages on healing, deliverance, and the Word of God.",

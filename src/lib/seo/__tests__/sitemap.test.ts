@@ -6,6 +6,11 @@ describe('sitemap', () => {
     expect(escapeXml('https://example.com/a&b')).toBe('https://example.com/a&amp;b')
   })
 
+  it('omits modification dates when no genuine content date is known', () => {
+    const xml = renderSitemapXml([{ loc: 'https://kdcuganda.org/', changefreq: 'weekly', priority: 1 }])
+    expect(xml).not.toContain('<lastmod>')
+  })
+
   it('renders valid urlset XML', () => {
     const entries: SitemapEntry[] = [
       {

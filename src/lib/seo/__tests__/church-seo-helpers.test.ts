@@ -3,13 +3,13 @@ import { buildChurchOpeningHoursSpecification } from '../opening-hours'
 import { parseChurchPostalAddress } from '../parse-church-address'
 
 describe('buildChurchOpeningHoursSpecification', () => {
-  it('includes Sunday, Wednesday, and Friday service windows', () => {
+  it('includes weekly services without misrepresenting monthly Fire Service', () => {
     const hours = buildChurchOpeningHoursSpecification()
-    expect(hours).toHaveLength(4)
+    expect(hours).toHaveLength(3)
     expect(hours.some((h) => h.dayOfWeek === 'Sunday' && h.opens === '08:00' && h.closes === '10:30')).toBe(true)
     expect(hours.some((h) => h.dayOfWeek === 'Sunday' && h.opens === '10:30' && h.closes === '14:00')).toBe(true)
     expect(hours.some((h) => h.dayOfWeek === 'Wednesday' && h.opens === '18:00' && h.closes === '21:30')).toBe(true)
-    expect(hours.some((h) => h.dayOfWeek === 'Friday' && h.opens === '18:00' && h.closes === '21:30')).toBe(true)
+    expect(hours.some((h) => h.dayOfWeek === 'Friday')).toBe(false)
   })
 })
 

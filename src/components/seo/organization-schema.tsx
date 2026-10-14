@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getOrgLogoUrl, getOrgOgImageUrl } from '@/lib/seo/site-branding'
 import { buildChurchOpeningHoursSpecification } from '@/lib/seo/opening-hours'
 import { BRAND_ALTERNATE_NAMES } from '@/lib/seo/brand-keywords'
-import { KDC_KAMPALA_GEO, parseChurchPostalAddress } from '@/lib/seo/parse-church-address'
+import { parseChurchPostalAddress } from '@/lib/seo/parse-church-address'
 
 interface OrganizationSchemaProps {
   type?: 'Church' | 'LocalBusiness'
@@ -67,7 +67,7 @@ export async function OrganizationSchema({ type = 'Church' }: OrganizationSchema
       contactPoint: [
         {
           '@type': 'ContactPoint',
-          telephone: s.get('contact_phone') || '+256-700-000-000',
+          ...(s.get('contact_phone') ? { telephone: s.get('contact_phone') } : {}),
           contactType: 'customer support',
           email: s.get('contact_email') || 'info@kdcuganda.org',
           areaServed: 'UG',
@@ -81,13 +81,7 @@ export async function OrganizationSchema({ type = 'Church' }: OrganizationSchema
         addressRegion: postal.addressRegion,
         addressCountry: postal.addressCountry,
       },
-      geo: {
-        '@type': 'GeoCoordinates',
-        latitude: KDC_KAMPALA_GEO.latitude,
-        longitude: KDC_KAMPALA_GEO.longitude,
-      },
       openingHoursSpecification: buildChurchOpeningHoursSpecification(),
-      foundingDate: '2025',
       founder: {
         '@type': 'Person',
         name: 'Bishop Climate Wiseman Irungu',
@@ -115,7 +109,7 @@ export async function OrganizationSchema({ type = 'Church' }: OrganizationSchema
             itemOffered: {
               '@type': 'Service',
               name: 'Bible Study & Prayer',
-              description: 'Wednesday Bible Study and Friday Fire Service prayer meetings.',
+              description: 'Wednesday Bible study and monthly Fire Service on the last Friday of each month.',
             },
           },
           {
@@ -124,7 +118,7 @@ export async function OrganizationSchema({ type = 'Church' }: OrganizationSchema
               '@type': 'Service',
               name: 'Fire Service',
               description:
-                'Monthly Fire Service prayer and deliverance meeting at KDC Kosovo–Lungujja, Kampala.',
+                'Fire Service prayer and deliverance on the last Friday of each month, 6:00–9:30 PM EAT, at KDC Kosovo–Lungujja, Kampala.',
             },
           },
           {
@@ -142,7 +136,7 @@ export async function OrganizationSchema({ type = 'Church' }: OrganizationSchema
     return (
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationData) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationData).replace(/</g, '\\u003c') }}
       />
     )
   } catch (err) {

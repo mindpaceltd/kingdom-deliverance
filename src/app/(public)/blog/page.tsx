@@ -15,8 +15,9 @@ import {
 import { BlogPostImage } from '@/components/blog/blog-post-image'
 import { formatSafeDate } from '@/lib/media-url'
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ searchParams }: { searchParams: Record<string, string | undefined> }): Promise<Metadata> {
   return buildListPageMetadata({
+    searchParams,
     title: 'Blog & News',
     description:
       'Faith-building teachings, ministry updates, and news from Kingdom Deliverance Centre Uganda — Bishop Climate Wiseman and the KDC leadership team.',
