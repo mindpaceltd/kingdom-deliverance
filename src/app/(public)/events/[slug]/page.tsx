@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const event = eventResult.data ?? (params.slug === FIRE_SERVICE_EVENT_SLUG ? createRecurringFireServiceEvent() : null);
   if (!event) return { title: "Event Not Found" };
 
-  if (isFireServiceEvent(event)) event.image_url = 'https://kdcuganda.org/events/fire-service-monthly.webp'
+  if (isFireServiceEvent(event)) event.image_url = 'https://kdcuganda.org/events/fire-service-poster.png'
   const ogTitle = event.meta_title || event.title;
   const excerpt =
     stripHtmlExcerpt(event.meta_description, 160) ||
@@ -109,7 +109,7 @@ export default async function EventDetailPage({ params }: Props) {
 
   if (displayEvent.id !== 'recurring-fire-service') incrementEventViews(displayEvent.id).catch(console.error);
 
-  if (fireService) displayEvent.image_url = 'https://kdcuganda.org/events/fire-service-monthly.webp'
+  if (fireService) displayEvent.image_url = 'https://kdcuganda.org/events/fire-service-poster.png'
   const imageUrl = normalizeMediaUrl(displayEvent.image_url)
   const statusLabel = eventStatusLabel(displayEvent)
   const heroDateLabel = fireSchedule?.formattedDate ?? formatSafeDate(displayEvent.date, "EEEE, MMMM d, yyyy")

@@ -1,0 +1,10 @@
+# Fire Service poster revision
+
+Created with the built-in imagegen tool using the previous poster, the website’s Bishop Climate portrait, two actual church photographs, and the supplied KDC logo. Asset: `public/events/fire-service-bishop-church.png`.
+
+The public image `/events/fire-service-poster.png` prints the current service date. The October edition uses the artwork directly; subsequent editions replace the date panel using the same monthly schedule. The November render was checked separately.
+
+## Final imagegen prompt
+
+Edit reference 1, the approved Fire Service poster, into a complete church event poster with the actual event date and supplied real imagery. Keep its premium luminous gold FIRE, ivory SERVICE, navy/burgundy and flame style. Reference 2 is Bishop Climate's actual portrait: use this exact man prominently, cleanly cut out his portrait, preserve his face/likeness, blue suit, microphone and pointing pose without invention. Caption him 'BISHOP CLIMATE WISEMAN'. References 3 and 4 are real church photos: integrate both as two smaller clearly recognizable photo panels in the composition, do not replace with invented church scenes. Reference 5 is the exact church logo; include it small at top, preserving it. Portrait poster aspect 4:5, target 1200x1500. Layout: small church name/logo at top; large FIRE SERVICE title in upper-left area with Bishop portrait in upper-right/middle area; subtitle 'A NIGHT OF PRAYER & DELIVERANCE'; two church photo panels below the portrait/title around 58–75% of height. Important: reserve the region x6–94%, y79–90% exclusively for a clean opaque midnight navy rectangular date panel with thin gold border, no flames or photos over this panel. In that panel print exact text 'FRIDAY, OCTOBER 30, 2026' above '6:00 PM – 9:30 PM EAT'. Never use 'last Friday' or 'every month'. Bottom below date panel: 'Kingdom Deliverance Centre' and 'Kosovo–Lungujja, Kampala' and small 'kdcuganda.org/fire-service'. Keep date and all typography legible with generous margin, no overlap, no extra people, no invented attendance claims. Retain the actual reference photographs rather than recreating people's faces.
+

@@ -62,7 +62,7 @@ export function createRecurringFireServiceEvent(now = new Date()): Event {
     description: 'Join us at the Fire Altar for worship, prayer and deliverance. Bring your prayer requests and come expectant. Last Friday of every month.',
     content: '<p>Gather with Kingdom Deliverance Centre Uganda for our monthly Fire Service: a night of worship, prayer, deliverance and restoration.</p><p>Bring your prayer requests and join our church family at Kosovo–Lungujja, Kampala. The service takes place on the last Friday of every month, from 6:00 PM to 9:30 PM EAT.</p>',
     date: schedule.startIso, end_date: schedule.endIso,
-    location: FIRE_SERVICE_LOCATION, image_url: 'https://kdcuganda.org/events/fire-service-monthly.webp',
+    location: FIRE_SERVICE_LOCATION, image_url: 'https://kdcuganda.org/events/fire-service-poster.png',
     is_featured: true, registration_url: null, status: 'upcoming',
     published_at: null, scheduled_at: null, deleted_at: null,
     created_at: schedule.startIso, updated_at: schedule.startIso,
@@ -78,7 +78,7 @@ export function getPublicEventListings(events: Event[], now = new Date()) {
     ?? createRecurringFireServiceEvent(now)
   const nextFireService = {
     ...withFireServiceSchedule(recurring, now), slug: FIRE_SERVICE_EVENT_SLUG, status: 'upcoming' as const,
-    image_url: 'https://kdcuganda.org/events/fire-service-monthly.webp',
+    image_url: 'https://kdcuganda.org/events/fire-service-poster.png',
   }
   const others = publicEvents.filter(event => !isFireServiceEvent(event))
   const upcoming = [nextFireService, ...others.filter(event =>
