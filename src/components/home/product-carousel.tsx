@@ -1,266 +1,132 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useRef } from 'react'
-import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
-import { getMediaProxyUrl, normalizeMediaUrl } from '@/lib/media-url'
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowUpRight, BookOpen, ChevronLeft, ChevronRight, Download, Package, Pause, Play } from 'lucide-react';
+import Link from 'next/link';
+import { useCurrency } from '@/lib/currency-context';
+import { getMediaProxyUrl, normalizeMediaUrl } from '@/lib/media-url';
+import styles from './product-carousel.module.css';
 
 interface Product {
-  id: string
-  name: string
-  slug: string
-  image_url: string
-  price_usd: number
-  regular_price_usd: number
-  sale_price_usd: number
-  short_description: string
-  type: 'digital' | 'physical'
+  id: string; name: string; slug: string; image_url: string;
+  price_usd: number; regular_price_usd: number; sale_price_usd: number;
+  short_description: string; type: 'digital' | 'physical';
+}
+interface Props { products: Product[]; badge?: string; title?: string; subtitle?: string; viewAllLabel?: string; viewAllUrl?: string; autoScroll?: boolean }
+
+function ProductThumb({ src, alt }: { src: string; alt: string }) {
+  const [url, setUrl] = useState(normalizeMediaUrl(src) || '/placeholder.svg');
+  useEffect(() => setUrl(normalizeMediaUrl(src) || '/placeholder.svg'), [src]);
+  // Remote product media can require the existing same-origin proxy fallback.
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={url} alt={alt} loading="lazy" className="h-full w-full object-contain p-3 drop-shadow-lg transition-transform duration-500 motion-safe:group-hover:-translate-y-1 motion-safe:group-hover:scale-[1.03] sm:p-4" onError={() => { const proxy = getMediaProxyUrl(src); if (url !== '/placeholder.svg') setUrl(proxy && url !== proxy ? proxy : '/placeholder.svg'); }} />;
 }
 
-interface ProductCarouselProps {
-  products: Product[]
-  badge?: string
-  title?: string
-  subtitle?: string
-  viewAllLabel?: string
-  viewAllUrl?: string
+function trackMetrics(element: HTMLDivElement) {
+  const css = getComputedStyle(element);
+  return { columns: Number(css.getPropertyValue('--product-columns')) || 2, step: ((element.firstElementChild as HTMLElement | null)?.getBoundingClientRect().width || 0) + (parseFloat(css.columnGap) || 0) };
 }
 
-function ProductThumb({ src, alt, priority = false }: { src?: string; alt: string; priority?: boolean }) {
-  const [imageSrc, setImageSrc] = useState(normalizeMediaUrl(src) || '/placeholder.svg')
-  const proxyUrl = getMediaProxyUrl(src)
+export function ProductCarousel({ products, badge = 'KDC Store', title = 'Resources for your faith.', subtitle = 'Books, teaching and resources for your daily walk.', viewAllLabel = 'Explore the Shop', viewAllUrl = '/shop', autoScroll = true }: Props) {
+  const { formatPrice } = useCurrency();
+  const track = useRef<HTMLDivElement>(null);
+  const [paused, setPaused] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [reduced, setReduced] = useState(true);
+  const [visible, setVisible] = useState(false);
+  const [position, setPosition] = useState({ start: 0, columns: 2 });
+  const count = products.length;
 
   useEffect(() => {
-    setImageSrc(normalizeMediaUrl(src) || '/placeholder.svg')
-  }, [src])
-
-  return (
-    <img
-      src={imageSrc}
-      alt={alt}
-      loading={priority ? 'eager' : 'lazy'}
-      className="w-full h-full object-cover object-top"
-      onError={() => {
-        if (proxyUrl && !imageSrc.includes('/api/media/asset')) {
-          setImageSrc(proxyUrl)
-          return
-        }
-        setImageSrc('/placeholder.svg')
-      }}
-    />
-  )
-}
-
-export function ProductCarousel({
-  products,
-  badge = 'KDC Store',
-  title = 'Featured Products',
-  subtitle = 'Discover resources to enrich your spiritual journey',
-  viewAllLabel = 'View All Products',
-  viewAllUrl = '/shop',
-}: ProductCarouselProps) {
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const trackRef = useRef<HTMLDivElement | null>(null)
-  const [isPaused, setIsPaused] = useState(false)
-  const visibleCount = 5
-
-  const maxIndex = Math.max(products.length - visibleCount, 0)
-
+    const media = matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setReduced(media.matches);
+    update(); media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
   useEffect(() => {
-    setCurrentIndex(0)
-    if (trackRef.current) {
-      trackRef.current.scrollTo({ left: 0, behavior: 'smooth' })
-    }
-  }, [products])
+    const element = track.current;
+    if (!element) return;
+    const update = () => {
+      const { columns, step } = trackMetrics(element);
+      const start = Math.max(0, Math.min(Math.max(0, count - columns), step ? Math.round(element.scrollLeft / step) : 0));
+      setPosition(previous => previous.start === start && previous.columns === columns ? previous : { start, columns });
+    };
+    update();
+    const resize = new ResizeObserver(() => {
+      const { columns, step } = trackMetrics(element);
+      if (step) element.scrollLeft = Math.min(Math.max(0, count - columns), Math.round(element.scrollLeft / step)) * step;
+      update();
+    });
+    resize.observe(element);
+    const intersection = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting)); intersection.observe(element);
+    element.addEventListener('scroll', update, { passive: true });
+    return () => { resize.disconnect(); intersection.disconnect(); element.removeEventListener('scroll', update); };
+  }, [count]);
 
-  // Auto-scroll logic
+  const advance = useCallback((direction: number, automatic = false) => {
+    const element = track.current;
+    if (!element) return;
+    if (!automatic) setPaused(true);
+    const { columns, step } = trackMetrics(element);
+    const end = element.scrollWidth - element.clientWidth;
+    const next = direction > 0 && element.scrollLeft >= end - 3 ? 0 : direction < 0 && element.scrollLeft <= 3 ? end : element.scrollLeft + direction * step * (automatic ? 1 : columns);
+    element.scrollTo({ left: Math.max(0, Math.min(end, next)), behavior: reduced ? 'auto' : 'smooth' });
+  }, [reduced]);
   useEffect(() => {
-    if (isPaused || products.length <= visibleCount) return
+    if (!autoScroll || paused || hovered || reduced || !visible || count <= position.columns) return;
+    const timer = setInterval(() => { if (!document.hidden) advance(1, true); }, 6000);
+    return () => clearInterval(timer);
+  }, [advance, autoScroll, paused, hovered, reduced, visible, count, position.columns]);
 
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => {
-        const nextIndex = prev >= maxIndex ? 0 : prev + 1
-        if (trackRef.current) {
-          const step = (trackRef.current.scrollWidth - trackRef.current.clientWidth) / maxIndex
-          trackRef.current.scrollTo({ left: nextIndex * step, behavior: 'smooth' })
-        }
-        return nextIndex
-      })
-    }, 4000)
+  if (!count) return null;
+  const words = (title || 'Resources for your faith.').trim().split(/\s+/);
+  const lastWord = words.pop();
+  const lastVisible = Math.min(count, position.start + position.columns);
+  const hasMore = count > position.columns;
+  const controlClass = 'flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#0d1b3e]/15 bg-white text-[#0d1b3e] transition hover:border-[#0d1b3e] hover:bg-[#0d1b3e] hover:text-white focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-[#e7ca83] sm:h-11 sm:w-11';
 
-    return () => clearInterval(interval)
-  }, [isPaused, maxIndex, products.length, visibleCount])
-
-  const goToPrevious = () => {
-    setCurrentIndex((prev) => {
-      const nextIndex = Math.max(prev - 1, 0)
-      if (trackRef.current) {
-        const step = (trackRef.current.scrollWidth - trackRef.current.clientWidth) / maxIndex
-        trackRef.current.scrollTo({ left: nextIndex * step, behavior: 'smooth' })
-      }
-      return nextIndex
-    })
-  }
-
-  const goToNext = () => {
-    setCurrentIndex((prev) => {
-      const nextIndex = Math.min(prev + 1, maxIndex)
-      if (trackRef.current) {
-        const step = (trackRef.current.scrollWidth - trackRef.current.clientWidth) / maxIndex
-        trackRef.current.scrollTo({ left: nextIndex * step, behavior: 'smooth' })
-      }
-      return nextIndex
-    })
-  }
-
-  const goToSlide = (index: number) => {
-    setCurrentIndex(index)
-    if (!trackRef.current) return
-    const step = (trackRef.current.scrollWidth - trackRef.current.clientWidth) / maxIndex
-    trackRef.current.scrollTo({ left: index * step, behavior: 'smooth' })
-  }
-
-  if (!products || products.length === 0) {
-    return null
-  }
-
-  return (
-    <section className="py-12 bg-gradient-to-br from-gray-50 to-white">
-      <div className="container px-4">
-        {/* Header */}
-        <div className="mb-8 text-center space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/8 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-accent">
-            <ShoppingCart className="h-3 w-3" />
-            {badge}
-          </div>
-          <h2 className="text-3xl font-bold md:text-4xl font-serif text-primary">{title}</h2>
-          <p className="text-sm text-primary/60 max-w-xl mx-auto">{subtitle}</p>
+  return <section id="products" aria-labelledby="products-heading" className="border-y border-[#e7ca83]/20 bg-[#f8f6f1] py-12 md:py-16">
+    <div className="container px-4 md:px-8 lg:px-10">
+      <div className="mb-7 flex flex-wrap items-end justify-between gap-6">
+        <div className="max-w-2xl">
+          <p className="inline-flex items-center gap-2 rounded-full border border-[#b89447]/20 bg-[#eee4ce]/60 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#74591f]"><BookOpen size={14} aria-hidden="true" />{badge}</p>
+          <h2 id="products-heading" className="mt-4 text-3xl font-semibold leading-tight tracking-tight text-[#0d1b3e] md:text-4xl">{words.join(' ')} <span className="text-[#806125]">{lastWord}</span></h2>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">{subtitle}</p>
         </div>
-
-        {/* Carousel */}
-        <div 
-          className="relative"
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-        >
-          <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-xl">
-            <div
-              ref={trackRef}
-              className="flex gap-4 px-4 py-8 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-none"
-            >
-              {products.map((product, index) => {
-                const hasDiscount = product.sale_price_usd > 0 && product.sale_price_usd < product.regular_price_usd
-                const displayPrice = hasDiscount ? product.sale_price_usd : (product.regular_price_usd || product.price_usd)
-                const ugxPrice = Math.round(displayPrice * 3800)
-
-                return (
-                  <div
-                    key={product.id}
-                    className="snap-start min-w-[calc((100%-1rem)/2)] sm:min-w-[calc((100%-1rem)/2)] md:min-w-[calc((100%-3rem)/4)] lg:min-w-[calc((100%-4rem)/5)] rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col"
-                  >
-                    <div className="relative aspect-[4/5] w-full overflow-hidden rounded-t-2xl bg-gray-50">
-                      <ProductThumb src={product.image_url} alt={product.name} priority={index < 3} />
-                      {hasDiscount && (
-                        <div className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-                          SALE
-                        </div>
-                      )}
-                      <div className="absolute top-3 right-3 bg-primary/90 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-sm">
-                        {product.type === 'digital' ? 'DIGITAL' : 'PHYSICAL'}
-                      </div>
-                    </div>
-                    <div className="p-3 flex-1 flex flex-col justify-between space-y-2">
-                      <div className="space-y-0.5">
-                        <h3 className="text-[13px] font-bold text-primary line-clamp-2 leading-tight">
-                          {product.name}
-                        </h3>
-                        <p className="text-[10px] text-gray-500 line-clamp-2 leading-tight">
-                          {product.short_description}
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-base font-bold text-primary">
-                            UGX {ugxPrice.toLocaleString()}
-                          </span>
-                          {hasDiscount && (
-                            <span className="text-[10px] text-gray-400 line-through">
-                              {Math.round(product.regular_price_usd * 3800).toLocaleString()}
-                            </span>
-                          )}
-                        </div>
-                        {hasDiscount && (
-                          <p className="text-[10px] text-green-600 font-bold">
-                            Save {Math.round((1 - product.sale_price_usd / product.regular_price_usd) * 100)}%
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex gap-1.5 pt-1">
-                        <Button asChild size="sm" className="h-8 flex-1 bg-accent hover:bg-accent/90 text-primary text-[10px] font-bold px-0">
-                          <Link href={`/shop/${product.slug}`}>
-                            View
-                          </Link>
-                        </Button>
-                        <Button asChild variant="outline" size="sm" className="h-8 flex-1 border-primary/20 text-primary text-[10px] font-bold px-0 hover:bg-primary/5">
-                          <Link href="/shop">
-                            Shop
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {products.length > visibleCount && (
-            <>
-              <button
-                onClick={goToPrevious}
-                disabled={currentIndex <= 0}
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-white/90 border border-gray-200 shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Previous product"
-              >
-                <ChevronLeft className="w-6 h-6 text-gray-700" />
-              </button>
-              <button
-                onClick={goToNext}
-                disabled={currentIndex >= maxIndex}
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-white/90 border border-gray-200 shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Next product"
-              >
-                <ChevronRight className="w-6 h-6 text-gray-700" />
-              </button>
-            </>
-          )}
-
-          {products.length > visibleCount && (
-            <div className="flex justify-center gap-2 mt-6">
-              {Array.from({ length: maxIndex + 1 }).map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => goToSlide(index)}
-                  className={`w-3 h-3 rounded-full transition-all duration-200 ${
-                    index === currentIndex ? 'bg-[#d4a017] scale-125' : 'bg-gray-300 hover:bg-gray-400'
-                  }`}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* View All Button */}
-        <div className="text-center mt-8">
-          <Button asChild size="sm" className="bg-[#1e3a5f] hover:bg-[#162d4a] text-white px-6">
-            <Link href={viewAllUrl}>
-              {viewAllLabel}
-            </Link>
-          </Button>
+        <div className="flex w-full items-center justify-between gap-3 lg:w-auto lg:gap-5">
+          <Link href={viewAllUrl || '/shop'} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#0d1b3e] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#24395f] focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-[#b89447] sm:px-5 sm:text-sm">{viewAllLabel}<ArrowUpRight size={16} aria-hidden="true" /></Link>
+          {hasMore && <div className="flex items-center gap-1.5" aria-label="Product carousel controls">
+            {autoScroll && !reduced && <button type="button" className={controlClass} onClick={() => setPaused(value => !value)} aria-label={paused ? 'Play products carousel' : 'Pause products carousel'}>{paused ? <Play size={15} /> : <Pause size={15} />}</button>}
+            <button type="button" className={controlClass} onClick={() => advance(-1)} aria-label="Previous products"><ChevronLeft size={19} /></button>
+            <button type="button" className={controlClass} onClick={() => advance(1)} aria-label="Next products"><ChevronRight size={19} /></button>
+          </div>}
         </div>
       </div>
-    </section>
-  )
+      <div ref={track} role="region" aria-label="Featured products" aria-roledescription="carousel" tabIndex={0} className={`${styles.track} rounded-xl focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-[#b89447]`} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onFocusCapture={() => setPaused(true)} onPointerDown={() => setPaused(true)} onWheel={() => setPaused(true)} onKeyDown={event => { if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); advance(event.key === 'ArrowRight' ? 1 : -1); } }}>
+        {products.map(product => {
+          const sale = product.sale_price_usd > 0 && product.sale_price_usd < product.regular_price_usd;
+          const price = sale ? product.sale_price_usd : product.regular_price_usd || product.price_usd;
+          const saving = sale ? Math.round((1 - price / product.regular_price_usd) * 100) : 0;
+          return <article key={product.id} className={`${styles.card} group overflow-hidden rounded-2xl border border-[#0d1b3e]/10 bg-white shadow-sm transition-shadow hover:shadow-lg`}>
+            <Link href={`/shop/${product.slug}`} aria-label={`View ${product.name}`} className="flex h-full flex-col rounded-2xl focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-[-4px] focus-visible:outline-[#b89447]">
+              <div className={`${styles.cover} relative m-2 aspect-square overflow-hidden rounded-xl`}>
+                <ProductThumb src={product.image_url} alt={product.name} />
+                <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-md bg-[#0d1b3e] px-2 py-1 text-[8px] font-semibold uppercase tracking-wider text-white sm:text-[9px]">{product.type === 'digital' ? <Download size={10} aria-hidden="true" /> : <Package size={10} aria-hidden="true" />}{product.type === 'digital' ? 'Digital' : 'Physical'}</span>
+                {sale && <span className="absolute bottom-2 right-2 rounded-full bg-[#e7ca83] px-2 py-1 text-[10px] font-bold text-[#0d1b3e]">Save {saving}%</span>}
+              </div>
+              <div className="flex flex-1 flex-col px-3 pb-3 pt-2 md:px-3 xl:px-4 xl:pb-4">
+                <h3 className="line-clamp-3 min-h-[60px] text-xs font-semibold leading-5 text-[#0d1b3e] sm:text-[13px] xl:text-sm">{product.name}</h3>
+                <div className="mb-4 mt-3 flex min-h-7 flex-wrap items-baseline gap-x-2 gap-y-1"><p className="text-sm font-bold tracking-tight text-[#0d1b3e] xl:text-base">{formatPrice(price)}</p>{sale && <s className="text-[11px] text-slate-500">{formatPrice(product.regular_price_usd)}</s>}</div>
+                <span className="mt-auto flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-[#e7ca83] px-1.5 py-2 text-[11px] font-semibold text-[#0d1b3e] transition-colors group-hover:bg-[#0d1b3e] group-hover:text-white sm:text-xs">View Product <ArrowUpRight size={14} aria-hidden="true" /></span>
+              </div>
+            </Link>
+          </article>;
+        })}
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-5 border-t border-[#0d1b3e]/10 pt-5">
+        <p className="text-xs text-slate-500" aria-label={`Showing products ${position.start + 1} to ${lastVisible} of ${count}`}><span className="font-semibold tabular-nums text-[#0d1b3e]">{position.start + 1}–{lastVisible}</span> of {count} resources</p>
+        <div aria-hidden="true" className="h-1 max-w-[180px] flex-1 overflow-hidden rounded-full bg-[#0d1b3e]/10"><div className="h-full rounded-full bg-[#b89447] transition-[width] motion-reduce:transition-none" style={{ width: `${lastVisible / count * 100}%` }} /></div>
+      </div>
+    </div>
+  </section>;
 }
