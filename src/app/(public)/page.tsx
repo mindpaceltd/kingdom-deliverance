@@ -1,3 +1,4 @@
+import { HomeGalleryPreview } from '@/components/home/gallery-preview';
 import { WeeklyServices } from '@/components/home/weekly-services';
 import { PartnershipProjects, SupportUs } from '@/components/home/partnership-sections';
 import { preload } from "react-dom";
@@ -253,6 +254,7 @@ export default async function Home() {
       </section>
 
       <PartnershipProjects />
+      <HomeGalleryPreview badge={home.galleryBadge} title={home.galleryTitle} ctaLabel={home.galleryCtaLabel} ctaUrl={home.galleryCtaUrl} />
 
       {/* Product Carousel */}
       {featuredProducts.length > 0 && (
